@@ -4,3 +4,6 @@ dist/
 .DS_Store
 
 data/
+.e2e-data/
+test-results/
+playwright-report/

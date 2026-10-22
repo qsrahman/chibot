@@ -1,0 +1,10 @@
+{
+  // Like the root config, plus DOM types for code run in the browser via
+  // page.evaluate().
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM", "DOM.Iterable"]
+  },
+  "include": ["./**/*.ts"],
+  "exclude": []
+}

@@ -10,6 +10,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 - Token usage: each answer shows its token count, and the header shows the chat's total across all versions. Hover either for input (cached) and output (reasoning) tokens.
 - Keyboard shortcuts (ChatGPT's core set): new chat ⌘/Ctrl+⇧+O, search ⌘/Ctrl+K, toggle sidebar ⌘/Ctrl+⇧+S, focus the message box ⇧+Esc, copy the last answer ⌘/Ctrl+⇧+C, stop Esc, and ⌘/Ctrl+/ (or the sidebar's Keyboard shortcuts) for the list.
 - Copy buttons on messages, answers and code blocks. Code blocks get a header with the language and Copy code.
+- End-to-end tests (`pnpm test:e2e`, Playwright) against a fake OpenAI-compatible server: chat, titles, usage and copy; edit and regenerate versions with their own follow-ups; switching chats mid-answer; revisiting a just-created chat; keyboard shortcuts.
 - API: `POST /api/conversations/:id/turns` accepts `parentId` (edit or regenerate), `PUT /api/conversations/:id/leaf` switches versions, and `GET /api/conversations/:id` reports each item's `siblingIds` and the chat's token totals.
 
 ### Fixed
