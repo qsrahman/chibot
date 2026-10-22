@@ -15,6 +15,8 @@ interface Pending {
   keep: number
   question: Question
   answer: string
+  /** The reasoning summary streamed so far. */
+  thinking: string
 }
 
 interface Options {
@@ -115,8 +117,10 @@ export function useChat(
     }
 
     setError(null)
-    setPending({ ...display, answer: '' })
+    setPending({ ...display, answer: '', thinking: '' })
     let answer = ''
+    let thinking = ''
+    let summaryIndex = 0
     let id = conversationId
     try {
       if (!id) {
@@ -139,7 +143,14 @@ export function useChat(
         if (!live()) continue
         if (event.type === 'response.output_text.delta') {
           answer += event.delta
-          setPending({ ...display, answer })
+          setPending({ ...display, answer, thinking })
+        } else if (event.type === 'response.reasoning_summary_text.delta') {
+          // Summaries can come in parts; a new part starts a new paragraph.
+          if (thinking && event.summary_index !== summaryIndex)
+            thinking += '\n\n'
+          summaryIndex = event.summary_index
+          thinking += event.delta
+          setPending({ ...display, answer, thinking })
         } else if (
           event.type === 'response.completed' ||
           event.type === 'response.incomplete'
@@ -177,6 +188,7 @@ export function useChat(
               ? {
                   itemId: null,
                   text: answer,
+                  thinking,
                   usage: null,
                   model: null,
                   versions: null,

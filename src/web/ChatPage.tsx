@@ -152,15 +152,17 @@ export function ChatPage({ health, settings, onListChanged }: Props) {
                 turn={{
                   key: 'pending',
                   question: pending.question,
-                  answer: pending.answer
-                    ? {
-                        itemId: null,
-                        text: pending.answer,
-                        usage: null,
-                        model: null,
-                        versions: null,
-                      }
-                    : null,
+                  answer:
+                    pending.answer || pending.thinking
+                      ? {
+                          itemId: null,
+                          text: pending.answer,
+                          thinking: pending.thinking,
+                          usage: null,
+                          model: null,
+                          versions: null,
+                        }
+                      : null,
                 }}
                 pending
               />
@@ -251,12 +253,18 @@ function TurnView({
         </div>
       )}
 
-      {answer ? (
+      {answer?.thinking && (
+        <Thoughts text={answer.thinking} live={pending && !answer.text} />
+      )}
+      {answer?.text ? (
         <div className="message assistant">
           <Markdown text={answer.text} />
         </div>
       ) : (
-        pending && <div className="thinking" aria-label="Waiting for answer" />
+        pending &&
+        !answer?.thinking && (
+          <div className="thinking" aria-label="Waiting for answer" />
+        )
       )}
       {!pending && (
         <div className="actions answer-actions">
@@ -290,6 +298,20 @@ function TurnView({
         </div>
       )}
     </div>
+  )
+}
+
+/** The model's reasoning summary, collapsed (as on ChatGPT). */
+function Thoughts({ text, live }: { text: string; live?: boolean }) {
+  return (
+    <details className="thoughts">
+      <summary className={live ? 'live' : undefined}>
+        {live ? 'Thinking…' : 'Thoughts'}
+      </summary>
+      <div className="thoughts-body">
+        <Markdown text={text} />
+      </div>
+    </details>
   )
 }
 

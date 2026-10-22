@@ -56,6 +56,8 @@ export interface TitleOptions {
   titleCalls?: ResponseCreateParams[]
   /** What `models.list()` yields, or the error it throws. */
   models?: string[] | Error
+  /** Streaming calls with `reasoning` fail with 400, like non-reasoning models. */
+  rejectReasoning?: boolean
 }
 
 /**
@@ -70,6 +72,7 @@ export function fakeClient(
     title = 'Test Title',
     titleCalls = [],
     models = ['m-2', 'm-1'],
+    rejectReasoning = false,
   }: TitleOptions = {},
 ): OpenAI {
   const create = async (
@@ -87,6 +90,14 @@ export function fakeClient(
       signal: options?.signal,
     })
     if (events instanceof Error) throw events
+    if (rejectReasoning && params.reasoning) {
+      throw new OpenAI.BadRequestError(
+        400,
+        { message: 'reasoning is not supported' },
+        'reasoning is not supported',
+        new Headers(),
+      )
+    }
     return (async function* () {
       for (const event of events) {
         await Promise.resolve()

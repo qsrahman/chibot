@@ -20,6 +20,8 @@ export interface Question {
 export interface Answer {
   itemId: number | null
   text: string
+  /** The model's reasoning summary, `''` if it gave none. */
+  thinking: string
   usage: ResponseUsage | null
   /** The model that wrote it, if known. */
   model: string | null
@@ -62,18 +64,28 @@ export function toTurns(items: StoredItem[]): Turn[] {
     turn.answer ??= {
       itemId: item.id,
       text: '',
+      thinking: '',
       usage: null,
       model: null,
       versions: versionsOf(item),
     }
     if (message) {
-      turn.answer.text += (turn.answer.text ? '\n\n' : '') + message.text
+      turn.answer.text = join(turn.answer.text, message.text)
+    }
+    if (item.data.type === 'reasoning') {
+      for (const part of item.data.summary) {
+        turn.answer.thinking = join(turn.answer.thinking, part.text)
+      }
     }
     if (item.usage) turn.answer.usage = item.usage
     if (item.model) turn.answer.model = item.model
   }
   return turns
 }
+
+/** Joins paragraphs with a blank line. */
+const join = (text: string, more: string) =>
+  text ? `${text}\n\n${more}` : more
 
 function versionsOf(item: StoredItem): Versions | null {
   if (item.siblingIds.length < 2) return null

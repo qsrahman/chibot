@@ -1,4 +1,5 @@
 import OpenAI from 'openai'
+import type { Reasoning } from 'openai/resources/shared'
 import type {
   ResponseCreateParamsNonStreaming,
   ResponseInputItem,
@@ -18,6 +19,9 @@ export class ChatService {
   readonly #client: OpenAI
   readonly #store: ConversationStore
   readonly #settings: SettingsStore
+  // "model|effort" combinations whose `reasoning` the server rejected (400)
+  // while the same request without it worked. Kept until restart.
+  readonly #withoutReasoning = new Set<string>()
 
   constructor(
     client: OpenAI,
@@ -62,7 +66,7 @@ export class ChatService {
     const input = this.#store
       .getPath(conversationId, questionId)
       .map((item) => item.data)
-    const { model } = this.#settings.get()
+    const { model, reasoningEffort } = this.#settings.get()
 
     let partial = ''
     let saved = false
@@ -70,17 +74,26 @@ export class ChatService {
       // Not `responses.stream()`: its accumulator rejects some compatible
       // servers' streams (Ollama gpt-oss: "missing content at index 0"), and
       // chibot must save the answer before relaying `response.completed`.
-      const stream = await this.#client.responses.create(
+      const stream = await this.#tryReasoning(
+        model,
         {
-          model,
-          input,
-          stream: true,
-          store: false,
-          // Reasoning items can only be replayed without server-side storage
-          // when they carry their encrypted content.
-          include: ['reasoning.encrypted_content'],
+          summary: 'auto',
+          ...(reasoningEffort && { effort: reasoningEffort }),
         },
-        { signal },
+        (reasoning) =>
+          this.#client.responses.create(
+            {
+              model,
+              input,
+              stream: true,
+              store: false,
+              // Reasoning items can only be replayed without server-side
+              // storage when they carry their encrypted content.
+              include: ['reasoning.encrypted_content'],
+              ...(reasoning && { reasoning }),
+            },
+            { signal },
+          ),
       )
       for await (const event of stream) {
         if (event.type === 'response.output_text.delta') {
@@ -140,6 +153,29 @@ export class ChatService {
     }
   }
 
+  /**
+   * Calls `send` with `reasoning`, or without it for models that reject it:
+   * models without reasoning (or without that effort) answer 400. A 400 is
+   * retried once without `reasoning`; if that works, the combination is
+   * remembered so later requests skip the failing attempt.
+   */
+  async #tryReasoning<T>(
+    model: string,
+    reasoning: Reasoning,
+    send: (reasoning?: Reasoning) => Promise<T>,
+  ): Promise<T> {
+    const key = `${model}|${reasoning.effort ?? ''}`
+    if (this.#withoutReasoning.has(key)) return send()
+    try {
+      return await send(reasoning)
+    } catch (err) {
+      if (!(err instanceof OpenAI.BadRequestError)) throw err
+      const result = await send()
+      this.#withoutReasoning.add(key)
+      return result
+    }
+  }
+
   /** Names the conversation from its opening messages. Never throws. */
   async #generateTitle(
     conversationId: string,
@@ -151,24 +187,23 @@ export class ChatService {
       .slice(0, 2)
       .map(({ role, text }) => `${role}: ${text.slice(0, 1000)}`)
       .join('\n\n')
+    const { model } = this.#settings.get()
     const params: ResponseCreateParamsNonStreaming = {
-      model: this.#settings.get().model,
+      model,
       instructions: TITLE_INSTRUCTIONS,
       input: transcript,
       store: false,
     }
     try {
-      let response
-      try {
-        response = await this.#client.responses.create(
-          { ...params, reasoning: { effort: 'low' } },
-          { signal },
-        )
-      } catch (err) {
-        // Models without reasoning reject the parameter; retry without it.
-        if (!(err instanceof OpenAI.BadRequestError)) throw err
-        response = await this.#client.responses.create(params, { signal })
-      }
+      const response = await this.#tryReasoning(
+        model,
+        { effort: 'low' },
+        (reasoning) =>
+          this.#client.responses.create(
+            { ...params, ...(reasoning && { reasoning }) },
+            { signal },
+          ),
+      )
       const title = cleanTitle(response.output_text)
       if (title) this.#store.updateConversation(conversationId, { title })
       return title

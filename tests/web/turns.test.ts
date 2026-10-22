@@ -23,7 +23,14 @@ describe('toTurns', () => {
   it('groups each question with the output items that answer it', () => {
     const turns = toTurns([
       item(1, { role: 'user', content: 'Hi' }),
-      item(2, { type: 'reasoning', id: 'rs_1', summary: [] }),
+      item(2, {
+        type: 'reasoning',
+        id: 'rs_1',
+        summary: [
+          { type: 'summary_text', text: '**Plan**' },
+          { type: 'summary_text', text: 'Say hello.' },
+        ],
+      }),
       item(3, {
         type: 'message',
         role: 'assistant',
@@ -41,6 +48,7 @@ describe('toTurns', () => {
         answer: {
           itemId: 2,
           text: 'Hello \n\nthere',
+          thinking: '**Plan**\n\nSay hello.',
           usage,
           model: 'm-1',
           versions: null,
