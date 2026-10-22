@@ -7,8 +7,16 @@ describe('Config', () => {
     expect(config).toMatchObject({
       apiKey: 'sk-test',
       model: 'gpt-6-astra',
+      host: '127.0.0.1',
       port: 3000,
     })
+    expect(config.isLoopback).toBe(true)
+  })
+
+  it('flags a non-loopback HOST', () => {
+    const config = new Config({ OPENAI_API_KEY: 'k', HOST: '0.0.0.0' })
+    expect(config.host).toBe('0.0.0.0')
+    expect(config.isLoopback).toBe(false)
   })
 
   it('reads overrides', () => {

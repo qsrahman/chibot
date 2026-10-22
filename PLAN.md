@@ -33,13 +33,15 @@ via the official `openai` Node SDK.
 | Frontend | React 19 + Vite | Mature Markdown/highlighting/streaming ecosystem; Vite gives fast dev + a static build. Next.js was considered and rejected: its server/client split, caching and router add concepts a local, client-interactive app doesn't use. |
 | Styling | Plain CSS + CSS variables | No dependencies. Menus and dialogs build on native `<dialog>` and the Popover API. Themes follow `prefers-color-scheme`. |
 | Server | Hono on `@hono/node-server` | Small, Web-standard `Request`/`Response`, built-in `streamSSE` and static serving, trivially testable with `app.request()`. |
+| Network | Listens on `127.0.0.1` by default; `HOST` opts into LAN access | There's no auth and the server spends the owner's API key. A non-loopback `HOST` prints a warning. |
+| Routing | URL `/c/:id` from Phase 1 | A reload reopens the same chat; the Phase 2 sidebar builds on the same routes. The router library is chosen in Phase 1. |
 | Server runtime | Node ≥ 26 running `.ts` directly | No server build step. Requires `erasableSyntaxOnly` (no `enum`, no constructor parameter properties). |
 | Conversation state | **Stateless**: `store: false`; full history kept in local SQLite and sent on every request | The app owns its data, so nothing depends on OpenAI-side retention, and editing, versions and export are local operations. |
 | History shape | **Tree** of items (`parent_id`) | Supports ChatGPT-style message versions. Chosen from Phase 1 so no migration is needed later. |
 | Storage | `node:sqlite` (built-in) | Zero dependencies, synchronous, transactional, recursive CTEs for tree paths. |
 | Wire protocol | Server relays the SDK's own `ResponseStreamEvent`s over SSE | The browser reuses the SDK's types (type-only import), so there are no hand-written mirror types. |
 | SSE parsing in browser | `eventsource-parser` | `EventSource` can't `POST`. |
-| Markdown | `react-markdown` + `remark-gfm` + `rehype-highlight` | Standard, safe by default (no raw HTML). |
+| Markdown | `react-markdown` + `remark-gfm` + `rehype-highlight` + `remark-math`/`rehype-katex` | Standard, safe by default (no raw HTML). Math rendering matches ChatGPT, since models often answer in LaTeX. |
 | Testing | vitest units throughout; Playwright smoke test from Phase 3 | The UI has little logic worth unit-testing; one e2e test against a fake OpenAI backend covers the integration. |
 
 ### Stateless details
@@ -53,7 +55,9 @@ via the official `openai` Node SDK.
   current leaf, plus the new user message.
 - When a request is **stopped**, the partial assistant text is stored as an
   `EasyInputMessage` with `role: 'assistant'`, which is valid input and needs no
-  server-side id.
+  server-side id. A **browser disconnect** (tab closed, network drop) is
+  handled the same way: the request's `AbortSignal` aborts the upstream call
+  and the partial answer is saved. Nothing generates in the background.
 - When a request **fails**, the user message is kept and the UI offers *Retry*
   (that's a regenerate from that message).
 - **Context growth:** long chats will eventually exceed the context window.
@@ -146,11 +150,15 @@ updated, and a commit.
   stateless).
 - Single-conversation UI: message list, composer (Enter to send, Shift+Enter
   for a newline), streamed tokens, **Stop** (aborts the upstream request through
-  `AbortSignal`), Markdown with syntax highlighting.
+  `AbortSignal`), Markdown with syntax highlighting and LaTeX math.
+- The first message creates a conversation and moves to `/c/:id`. A reload
+  reopens it, and the production server falls back to `index.html` for
+  client routes.
 - Readable errors that surface `APIError` status and request id.
 - **Done when:** a multi-turn chat streams and remembers earlier turns; Stop
-  keeps the partial answer; a bad API key shows a readable error; unit tests
-  cover the store, the service (fake client) and the routes.
+  and closing the tab both keep the partial answer; a reload reopens the chat;
+  a bad API key shows a readable error; unit tests cover the store, the
+  service (fake client) and the routes.
 
 ### Phase 2 — Conversations
 - Sidebar: list, new chat, select, rename, delete; URL `/c/:id`.
@@ -209,6 +217,7 @@ updated, and a commit.
 | `OPENAI_MODEL` | `gpt-6-astra` | Chat model |
 | `OPENAI_TITLE_MODEL` | `gpt-6-luna` | Cheap model for titles (Phase 2) |
 | `OPENAI_BASE_URL` | SDK default | Read by the SDK itself; tests point it at a fake server |
+| `HOST` | `127.0.0.1` | Interface to listen on; `0.0.0.0` exposes it on the LAN with no auth |
 | `PORT` | `3000` | API server port |
 | `CHIBOT_DB_PATH` | `data/chibot.db` | SQLite file (Phase 1) |
 

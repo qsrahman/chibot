@@ -9,7 +9,8 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     build: { outDir: '../../dist/web', emptyOutDir: true },
     server: {
-      proxy: { '/api': `http://localhost:${env.PORT || 3000}` },
+      host: env.HOST || '127.0.0.1',
+      proxy: { '/api': `http://127.0.0.1:${env.PORT || 3000}` },
     },
   }
 })

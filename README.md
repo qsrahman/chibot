@@ -27,7 +27,13 @@ Set these in `.env` or the environment.
 |---|---|---|
 | `OPENAI_API_KEY` | — (required) | Your API key |
 | `OPENAI_MODEL` | `gpt-6-astra` | Chat model |
+| `HOST` | `127.0.0.1` | Interface to listen on (see below) |
 | `PORT` | `3000` | API server port |
+
+chibot has no login, and anyone who can reach it spends your API key. It
+therefore listens only on this machine by default. To use it from another
+device on your network, set `HOST=0.0.0.0` (this applies to both `pnpm dev`
+and `pnpm start`). The server prints a warning when it's exposed.
 
 ## Running
 
@@ -38,7 +44,7 @@ server (hot reload) together:
 pnpm dev
 ```
 
-Then open http://localhost:5173.
+Then open http://127.0.0.1:5173.
 
 **Production** builds the web app once and serves everything from one port:
 
@@ -50,7 +56,7 @@ pnpm build
 pnpm start
 ```
 
-Then open http://localhost:3000.
+Then open http://127.0.0.1:3000.
 
 ## Other scripts
 

@@ -22,6 +22,14 @@ if (existsSync(webRoot)) {
   app.use('/*', serveStatic({ root: webRoot }))
 }
 
-serve({ fetch: app.fetch, port: config.port }, (info) => {
-  console.log(`chibot listening on http://localhost:${info.port}`)
-})
+serve(
+  { fetch: app.fetch, hostname: config.host, port: config.port },
+  (info) => {
+    console.log(`chibot listening on http://${config.host}:${info.port}`)
+    if (!config.isLoopback) {
+      console.warn(
+        `Warning: HOST=${config.host} exposes chibot beyond this machine, with no authentication.`,
+      )
+    }
+  },
+)

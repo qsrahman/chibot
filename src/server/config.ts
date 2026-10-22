@@ -2,6 +2,7 @@
 export class Config {
   readonly apiKey: string
   readonly model: string
+  readonly host: string
   readonly port: number
 
   constructor(env: NodeJS.ProcessEnv) {
@@ -15,6 +16,12 @@ export class Config {
     }
     this.apiKey = apiKey
     this.model = env.OPENAI_MODEL?.trim() || 'gpt-6-astra'
+    // Loopback by default: the app has no auth and spends the owner's API key.
+    this.host = env.HOST?.trim() || '127.0.0.1'
     this.port = port
+  }
+
+  get isLoopback(): boolean {
+    return ['127.0.0.1', '::1', 'localhost'].includes(this.host)
   }
 }
