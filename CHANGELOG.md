@@ -8,6 +8,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 - Switching to another chat while an answer was streaming kept writing the old answer into the new chat and, once done, showed the old conversation under the new chat's URL. Leaving a chat mid-answer now stops it (the partial answer is kept), as closing the tab does.
 - Returning to a chat you had just started (via New chat, then the sidebar) showed an empty view.
+- While an answer streamed, the chat kept jumping to the bottom, so you couldn't scroll up to read. It now follows the answer only while you're at the bottom.
 
 ## [0.3.0] - 2026-10-22
 

@@ -26,15 +26,24 @@ export function ChatPage({ health, onListChanged }: Props) {
     },
   )
   const endRef = useRef<HTMLDivElement>(null)
+  // Follow the answer only while the user is at the bottom, so scrolling up
+  // to read isn't undone by every new token.
+  const followRef = useRef(true)
 
   useEffect(() => {
+    followRef.current = true
     // A new chat starts as a normal one again.
     if (!id) setTemporaryMode(false)
   }, [id])
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ block: 'end' })
+    if (followRef.current) endRef.current?.scrollIntoView({ block: 'end' })
   }, [messages, pending])
+
+  function sendAndFollow(text: string) {
+    followRef.current = true
+    void send(text)
+  }
 
   // An empty chat centres the composer under a greeting, as ChatGPT does.
   // The composer stays the third child either way, so it keeps its focus
@@ -74,7 +83,14 @@ export function ChatPage({ health, onListChanged }: Props) {
           )}
         </div>
       ) : (
-        <div className="messages">
+        <div
+          className="messages"
+          onScroll={(e) => {
+            const el = e.currentTarget
+            followRef.current =
+              el.scrollHeight - el.scrollTop - el.clientHeight < 40
+          }}
+        >
           <div className="thread">
             {messages.map((m) => (
               <Message key={m.key} message={m} />
@@ -106,7 +122,7 @@ export function ChatPage({ health, onListChanged }: Props) {
           </div>
         </div>
       )}
-      <Composer busy={busy} onSend={send} onStop={stop} />
+      <Composer busy={busy} onSend={sendAndFollow} onStop={stop} />
       <p className="disclaimer">
         chibot can make mistakes. Check important info.
       </p>
