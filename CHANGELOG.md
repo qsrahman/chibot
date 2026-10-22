@@ -10,6 +10,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 - Returning to a chat you had just started (via New chat, then the sidebar) showed an empty view.
 - While an answer streamed, the chat kept jumping to the bottom, so you couldn't scroll up to read. It now follows the answer only while you're at the bottom.
 - Renaming, pinning, archiving, restoring or deleting a chat failed silently. Errors now show in the sidebar or the Archived chats dialog, and the list resyncs.
+- Links in answers opened in the same tab, leaving chibot (and stopping an answer in progress). They now open in a new tab; footnote links stay on the page.
 
 ## [0.3.0] - 2026-10-22
 

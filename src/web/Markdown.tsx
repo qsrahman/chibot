@@ -8,7 +8,7 @@ import 'katex/dist/katex.min.css'
 
 const remarkPlugins = [remarkGfm, remarkMath]
 const rehypePlugins = [rehypeKatex, rehypeHighlight]
-const components: Components = { pre: CodeBlock }
+const components: Components = { pre: CodeBlock, a: Link }
 
 /** Renders model output. Raw HTML in the text is not rendered. */
 export function Markdown({ text }: { text: string }) {
@@ -41,4 +41,15 @@ function CodeBlock({ node, ...props }: ComponentProps<'pre'> & ExtraProps) {
       <pre {...props} />
     </div>
   )
+}
+
+/** Opens links in a new tab, so following one doesn't leave (and stop) the chat. */
+function Link({
+  node: _node,
+  href,
+  ...props
+}: ComponentProps<'a'> & ExtraProps) {
+  // Footnote references (#…) stay on the page.
+  if (href?.startsWith('#')) return <a href={href} {...props} />
+  return <a href={href} target="_blank" rel="noopener noreferrer" {...props} />
 }
