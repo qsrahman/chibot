@@ -7,8 +7,8 @@ via the official `openai` Node SDK.
 ## 1. Goals
 
 - A chat experience that feels like ChatGPT: streaming answers, Markdown and
-  code rendering, a conversation sidebar, stop/regenerate/edit, attachments and
-  tools.
+  code rendering, a conversation sidebar, stop/regenerate/edit with message
+  versions, attachments and tools.
 - Built **incrementally**: every phase ships working code, tests, docs and a
   commit.
 - A codebase that is simple to read and easy to extend: a handful of
@@ -22,8 +22,8 @@ via the official `openai` Node SDK.
 
 - Multi-user support, accounts or authentication (it's a local, single-user app).
 - Hosted deployment (serverless platforms are not a target).
-- Branching message versions ("< 2/3 >"). Edit and regenerate replace the tail
-  of the conversation. The data model doesn't rule branching out later.
+- Dollar cost estimates. The SDK has no pricing data and a hand-kept price
+  table would go stale, so usage is shown in tokens only.
 - Voice, realtime audio, mobile apps.
 
 ## 3. Key decisions
@@ -31,13 +31,16 @@ via the official `openai` Node SDK.
 | Decision | Choice | Why |
 |---|---|---|
 | Frontend | React 19 + Vite | Mature Markdown/highlighting/streaming ecosystem; Vite gives fast dev + a static build. Next.js was considered and rejected: its server/client split, caching and router add concepts a local, client-interactive app doesn't use. |
+| Styling | Plain CSS + CSS variables | No dependencies. Menus and dialogs build on native `<dialog>` and the Popover API. Themes follow `prefers-color-scheme`. |
 | Server | Hono on `@hono/node-server` | Small, Web-standard `Request`/`Response`, built-in `streamSSE` and static serving, trivially testable with `app.request()`. |
 | Server runtime | Node ≥ 26 running `.ts` directly | No server build step. Requires `erasableSyntaxOnly` (no `enum`, no constructor parameter properties). |
-| Conversation state | **Stateless**: `store: false`; full history kept in local SQLite and sent on every request | The app owns its data, so nothing depends on OpenAI-side retention, and editing or deleting history is a local operation. |
-| Storage | `node:sqlite` (built-in) | Zero dependencies, synchronous, transactional. |
+| Conversation state | **Stateless**: `store: false`; full history kept in local SQLite and sent on every request | The app owns its data, so nothing depends on OpenAI-side retention, and editing, versions and export are local operations. |
+| History shape | **Tree** of items (`parent_id`) | Supports ChatGPT-style message versions. Chosen from Phase 1 so no migration is needed later. |
+| Storage | `node:sqlite` (built-in) | Zero dependencies, synchronous, transactional, recursive CTEs for tree paths. |
 | Wire protocol | Server relays the SDK's own `ResponseStreamEvent`s over SSE | The browser reuses the SDK's types (type-only import), so there are no hand-written mirror types. |
 | SSE parsing in browser | `eventsource-parser` | `EventSource` can't `POST`. |
 | Markdown | `react-markdown` + `remark-gfm` + `rehype-highlight` | Standard, safe by default (no raw HTML). |
+| Testing | vitest units throughout; Playwright smoke test from Phase 3 | The UI has little logic worth unit-testing; one e2e test against a fake OpenAI backend covers the integration. |
 
 ### Stateless details
 
@@ -46,6 +49,8 @@ via the official `openai` Node SDK.
 - Each stored item **is** a `ResponseInputItem` (JSON). User turns are stored as
   `EasyInputMessage`; assistant output items (`message`, `reasoning`,
   tool calls, …) come verbatim from `response.completed` → `response.output`.
+- The input for a turn is the path from the root to the conversation's
+  current leaf, plus the new user message.
 - When a request is **stopped**, the partial assistant text is stored as an
   `EasyInputMessage` with `role: 'assistant'`, which is valid input and needs no
   server-side id.
@@ -54,8 +59,20 @@ via the official `openai` Node SDK.
 - **Context growth:** long chats will eventually exceed the context window.
   The SDK marks `truncation` as deprecated in favour of
   `context_management: [{ type: 'compaction', compact_threshold }]`. Whether
-  that works with `store: false` gets verified in Phase 3; if it doesn't, the
+  that works with `store: false` gets verified in Phase 4; if it doesn't, the
   fallback is `responses.compact`.
+
+### Message versions
+
+- **Edit** a user message: a new user item with the same parent as the
+  original, so the two are siblings, then a new answer is generated under it.
+- **Regenerate** an answer: a new output chain under the same user item.
+- Versions of a message are its siblings, ordered by `id`. Switching to a
+  version moves the conversation's current leaf to the newest leaf below that
+  sibling, so each version keeps its own follow-up history.
+- A response that yields several output items (reasoning, message, tool
+  calls) stores them as a chain, each the parent of the next. The response's
+  `usage` is saved on its last item.
 
 ## 4. Architecture
 
@@ -65,8 +82,8 @@ Browser (React + Vite)                        Node server (Hono)
 │ App / Sidebar / ChatView │ ─────────────▶ │ createApp(deps)          routes      │
 │ Composer / Markdown      │ ◀───────────── │ ChatService     builds request,      │
 │ useChat (stream client)  │                │                 streams, tool loop   │
-└──────────────────────────┘                │ ConversationStore  node:sqlite       │
-                                            │ ToolRegistry + Tool (Phase 5/6)      │
+└──────────────────────────┘                │ ConversationStore  node:sqlite tree  │
+                                            │ ToolRegistry + Tool (Phase 6/7)      │
                                             │ Config          env → typed settings │
                                             └──────────────┬───────────────────────┘
                                                            ▼
@@ -75,26 +92,31 @@ Browser (React + Vite)                        Node server (Hono)
 
 - **Config:** reads `.env` with `process.loadEnvFile`, validates it and exposes
   typed settings.
-- **ConversationStore:** CRUD over conversations and their items, in SQLite.
-- **ChatService:** turns (history + new input + settings) into a
+- **ConversationStore:** CRUD over conversations and their item tree, path and
+  sibling queries, all in SQLite.
+- **ChatService:** turns (path + new input + settings) into a
   `responses.create({ stream: true })` call. It yields the SDK events and
   persists the outcome. Later phases add the function-calling loop here.
 - **`createApp(deps)`:** the Hono app. It's a factory so tests can inject fakes.
 - **`main.ts`:** wires the real dependencies together and starts the server.
 
 Dependencies go in through constructors, so tests pass a fake `OpenAI` client
-whose `responses.create` returns an async generator of events.
+whose `responses.create` returns an async generator of events. The Playwright
+test instead points the real SDK at a local fake server through the SDK's
+built-in `OPENAI_BASE_URL` support.
 
 ### Data model (SQLite)
 
 ```sql
-conversations(id TEXT PK, title TEXT, created_at INTEGER, updated_at INTEGER)
-items(id INTEGER PK AUTOINCREMENT, conversation_id TEXT FK → conversations ON DELETE CASCADE,
-      data TEXT /* JSON ResponseInputItem */, created_at INTEGER)
+conversations(id TEXT PK, title TEXT, current_leaf_id INTEGER NULL,
+              created_at INTEGER, updated_at INTEGER)
+items(id INTEGER PK AUTOINCREMENT,
+      conversation_id TEXT FK → conversations ON DELETE CASCADE,
+      parent_id INTEGER NULL FK → items,  -- NULL for the first message
+      data TEXT,                          -- JSON ResponseInputItem
+      usage TEXT NULL,                    -- JSON ResponseUsage, last item of a response
+      created_at INTEGER)
 ```
-
-Item order is `items.id`. Editing or regenerating from a message deletes it
-(if edited) and every item after it, then runs a new turn.
 
 ### HTTP API (grows per phase)
 
@@ -102,25 +124,26 @@ Item order is `items.id`. Editing or regenerating from a message deletes it
 |---|---|---|
 | `GET /api/health` | 0 | Liveness + configured model |
 | `POST /api/conversations` | 1 | Create a conversation |
-| `GET /api/conversations/:id/items` | 1 | Full history (`ResponseInputItem[]`) |
-| `POST /api/conversations/:id/turns` | 1 | Send a message; SSE stream of `ResponseStreamEvent`s |
+| `GET /api/conversations/:id` | 1 | Conversation with its current path (items + sibling info) |
+| `POST /api/conversations/:id/turns` | 1 | Send a message; SSE stream of `ResponseStreamEvent`s. Phase 3 adds `parentId` for edit/regenerate. |
 | `GET /api/conversations` | 2 | List conversations for the sidebar |
 | `PATCH/DELETE /api/conversations/:id` | 2 | Rename / delete |
+| `PUT /api/conversations/:id/leaf` | 3 | Switch to a message version |
+| `GET /api/conversations/:id/export` · `POST /api/conversations/import` | 4 | Export / import |
 
 ## 5. Phases
 
 Every phase ends with: tests green, `pnpm typecheck` clean, docs + CHANGELOG
 updated, and a commit.
 
-### Phase 0 — Foundations
+### Phase 0 — Foundations ✅
 - Dependencies, `Config`, Hono app with `GET /api/health`, `main.ts`.
 - Vite + React shell served by Vite in dev and by Hono in production.
 - `pnpm dev` runs both servers; Vite proxies `/api`.
-- **Done when:** `pnpm dev` shows the shell, which displays `/api/health`, and
-  the tests for Config and the health route pass.
 
 ### Phase 1 — Minimal chatbot
-- `ConversationStore` (SQLite) and `ChatService` (streaming, stateless).
+- `ConversationStore` (SQLite item tree) and `ChatService` (streaming,
+  stateless).
 - Single-conversation UI: message list, composer (Enter to send, Shift+Enter
   for a newline), streamed tokens, **Stop** (aborts the upstream request through
   `AbortSignal`), Markdown with syntax highlighting.
@@ -136,35 +159,47 @@ updated, and a commit.
 - **Done when:** conversations survive a server restart and can be reopened,
   renamed and deleted.
 
-### Phase 3 — Chat UX
-- Regenerate the last answer, edit a user message, copy message/code buttons.
+### Phase 3 — Edit & versions
+- Regenerate an answer, edit a user message, `< 2/3 >` version switching.
+- Copy buttons for messages and code blocks.
+- Token usage for each answer (input, cached, output, reasoning) and a running
+  total for the conversation.
+- Playwright smoke test against a fake OpenAI backend.
+- **Done when:** editing and regenerating create versions you can switch
+  between, each keeping its own follow-ups, and the e2e test passes.
+
+### Phase 4 — Models & settings
 - Model picker (from `models.list()`), custom instructions (`instructions`),
   reasoning effort, collapsible "Thinking…" view of the reasoning summary.
 - Context-growth strategy (compaction, see §3).
-- Playwright end-to-end smoke test.
-- **Done when:** these work end to end and the e2e test passes.
+- Export a conversation as Markdown (current path) or JSON (full tree), and
+  import JSON.
+- **Done when:** settings apply to new turns; a long chat keeps working past the
+  context window; an exported JSON round-trips through import unchanged.
 
-### Phase 4 — Attachments
+### Phase 5 — Attachments
 - Images and PDFs added by paste, drag-drop or picker. They upload through the
   Files API and are sent as `input_image` / `input_file`.
 - **Done when:** the model can answer questions about an attached image and an
   attached PDF.
 
-### Phase 5 — Built-in tools
+### Phase 6 — Built-in tools
 - `ToolRegistry`; toggles for `web_search` (inline citations from
   `url_citation` annotations) and `image_generation` (partial-image previews,
   saved images).
 - **Done when:** a web-search answer shows clickable sources and a generated
   image renders and persists.
 
-### Phase 6 — Custom function tools
+### Phase 7 — Custom function tools
 - Abstract `Tool` class (name, description, JSON-schema parameters, `run()`).
   The function-calling loop in `ChatService` streams tool activity to the UI.
 - One or two sample tools; AGENTS.md documents how to add more.
 - **Done when:** the model calls a sample tool mid-answer and uses its result.
 
-### Phase 7 — Projects (optional)
-- Per-project files indexed in a vector store and searched with `file_search`.
+### Phase 8 — Projects
+- Group conversations into projects. Each project has its own files, indexed in
+  a vector store and searched with `file_search`.
+- **Done when:** an answer in a project cites content from one of its files.
 
 ## 6. Configuration
 
@@ -173,6 +208,7 @@ updated, and a commit.
 | `OPENAI_API_KEY` | — (required) | API key |
 | `OPENAI_MODEL` | `gpt-6-astra` | Chat model |
 | `OPENAI_TITLE_MODEL` | `gpt-6-luna` | Cheap model for titles (Phase 2) |
+| `OPENAI_BASE_URL` | SDK default | Read by the SDK itself; tests point it at a fake server |
 | `PORT` | `3000` | API server port |
 | `CHIBOT_DB_PATH` | `data/chibot.db` | SQLite file (Phase 1) |
 
@@ -180,7 +216,10 @@ updated, and a commit.
 
 - **Model names change.** Models are configured through env, never hard-coded
   in logic. Defaults are checked against `models.list()` when the model picker
-  arrives in Phase 3.
-- **Stateless + compaction compatibility** gets verified in Phase 3.
+  arrives in Phase 4. `gpt-6-luna` as the cheap tier is unverified until Phase 2.
+- **Stateless + compaction compatibility** gets verified in Phase 4. Compaction
+  items become part of the tree like any other output item.
+- **Export format** is versioned (`{ version: 1, … }`) so that later phases
+  (attachments, tool output) can extend it.
 - **`node:sqlite` stability:** it's built into Node 26. If its API shifts, the
   `ConversationStore` is the only place to change.

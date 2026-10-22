@@ -76,8 +76,11 @@ transpiles it.
   only then write a utility.
 - **Stateless chat.** Always `store: false` +
   `include: ['reasoning.encrypted_content']`. The SQLite history is the source
-  of truth (see PLAN.md §3).
+  of truth. History is a tree (`parent_id`). A turn's input is the root→leaf
+  path (see PLAN.md §3).
 - **Models come from config**, never string literals in logic.
+- **Styling** is plain CSS with CSS variables for colours and spacing. Build
+  menus and dialogs on native `<dialog>` and the Popover API, not a UI library.
 
 ## Comments
 
@@ -91,6 +94,9 @@ invariants, API quirks. No line-by-line narration.
 - OpenAI: pass a fake client whose `responses.create` returns an async
   generator of `ResponseStreamEvent`s. Tests never hit the network.
 - SQLite: use `':memory:'` databases.
+- Web: no component unit tests. From Phase 3, a Playwright smoke test drives
+  the real app with the real SDK pointed at a local fake server through
+  `OPENAI_BASE_URL`.
 
 ## Workflow
 
