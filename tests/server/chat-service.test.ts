@@ -2,13 +2,13 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import OpenAI from 'openai'
 import { ChatService } from '../../src/server/chat-service.ts'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
-import { answerEvents, fakeClient, usage, type FakeCall } from './fakes.ts'
-
-async function drain(stream: AsyncIterable<unknown>) {
-  const seen: unknown[] = []
-  for await (const event of stream) seen.push(event)
-  return seen
-}
+import {
+  answerEvents,
+  drain,
+  fakeClient,
+  usage,
+  type FakeCall,
+} from './fakes.ts'
 
 describe('ChatService', () => {
   let store: ConversationStore

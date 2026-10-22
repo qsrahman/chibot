@@ -7,6 +7,13 @@ import type {
   ResponseUsage,
 } from 'openai/resources/responses/responses'
 
+/** Collects everything a stream yields. */
+export async function drain<T>(stream: AsyncIterable<T>): Promise<T[]> {
+  const seen: T[] = []
+  for await (const item of stream) seen.push(item)
+  return seen
+}
+
 export const usage = {
   input_tokens: 12,
   input_tokens_details: { cached_tokens: 0 },

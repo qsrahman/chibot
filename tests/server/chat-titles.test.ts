@@ -3,13 +3,10 @@ import OpenAI from 'openai'
 import type { ResponseCreateParams } from 'openai/resources/responses/responses'
 import { ChatService } from '../../src/server/chat-service.ts'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
-import { answerEvents, fakeClient, type TitleOptions } from './fakes.ts'
+import { answerEvents, drain, fakeClient, type TitleOptions } from './fakes.ts'
 
-async function drain(stream: AsyncIterable<{ type: string }>) {
-  const types: string[] = []
-  for await (const event of stream) types.push(event.type)
-  return types
-}
+const eventTypes = async (stream: AsyncIterable<{ type: string }>) =>
+  (await drain(stream)).map((event) => event.type)
 
 const badRequest = () =>
   new OpenAI.BadRequestError(
@@ -40,7 +37,7 @@ describe('ChatService titles', () => {
     const { id } = store.createConversation()
 
     expect(
-      await drain(chat.sendMessage(id, 'Tell me about pangolins')),
+      await eventTypes(chat.sendMessage(id, 'Tell me about pangolins')),
     ).toContain('chibot.title')
     expect(store.getConversation(id)!.title).toBe('Pangolin Facts')
     expect(titleCalls[0]).toMatchObject({
@@ -50,7 +47,7 @@ describe('ChatService titles', () => {
     })
     expect(titleCalls[0]!.input).toContain('user: Tell me about pangolins')
 
-    expect(await drain(chat.sendMessage(id, 'More?'))).not.toContain(
+    expect(await eventTypes(chat.sendMessage(id, 'More?'))).not.toContain(
       'chibot.title',
     )
     expect(titleCalls).toHaveLength(1)
@@ -63,7 +60,7 @@ describe('ChatService titles', () => {
       title: (params) => (params.reasoning ? badRequest() : 'Plain Title'),
     })
     const { id } = store.createConversation()
-    await drain(chat.sendMessage(id, 'Hi'))
+    await eventTypes(chat.sendMessage(id, 'Hi'))
 
     expect(titleCalls.map((p) => p.reasoning)).toEqual([
       { effort: 'low' },
@@ -75,7 +72,7 @@ describe('ChatService titles', () => {
   it('cleans quotes, Markdown and a trailing full stop', async () => {
     const chat = service({ title: '**"Trip to Lisbon."**\nextra line' })
     const { id } = store.createConversation()
-    await drain(chat.sendMessage(id, 'Hi'))
+    await eventTypes(chat.sendMessage(id, 'Hi'))
     expect(store.getConversation(id)!.title).toBe('Trip to Lisbon')
   })
 
@@ -84,7 +81,7 @@ describe('ChatService titles', () => {
     const chat = service({ title: new Error('boom') })
     const { id } = store.createConversation()
 
-    expect(await drain(chat.sendMessage(id, 'Hi'))).not.toContain(
+    expect(await eventTypes(chat.sendMessage(id, 'Hi'))).not.toContain(
       'chibot.title',
     )
     expect(store.getConversation(id)!.title).toBeNull()
@@ -95,7 +92,7 @@ describe('ChatService titles', () => {
     const titleCalls: ResponseCreateParams[] = []
     const chat = service({ titleCalls })
     const { id } = store.createConversation({ temporary: true })
-    await drain(chat.sendMessage(id, 'Hi'))
+    await eventTypes(chat.sendMessage(id, 'Hi'))
     expect(titleCalls).toEqual([])
   })
 })

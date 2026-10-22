@@ -1,14 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import type { ResponseUsage } from 'openai/resources/responses/responses'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
-
-const usage = {
-  input_tokens: 10,
-  input_tokens_details: { cached_tokens: 0 },
-  output_tokens: 5,
-  output_tokens_details: { reasoning_tokens: 2 },
-  total_tokens: 15,
-} as ResponseUsage
+import { usage } from './fakes.ts'
 
 describe('ConversationStore', () => {
   let store: ConversationStore
