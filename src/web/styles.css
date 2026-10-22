@@ -12,8 +12,13 @@
   --fg: #0d0d0d;
   --fg-muted: #5d5d5d;
   --border: rgb(0 0 0 / 10%);
-  --accent: #0d0d0d;
+  --accent: #3566f0;
   --accent-fg: #ffffff;
+  --button: #0d0d0d;
+  --button-fg: #ffffff;
+  --bubble-bg: #edf3ff;
+  --bubble-fg: #2451da;
+  --code-chip: rgb(238 238 238 / 82%);
   --danger: #d93025;
   --composer-shadow:
     0 0 0 1px rgb(0 0 0 / 4%), 0 2px 8px rgb(0 0 0 / 4%),
@@ -22,7 +27,10 @@
   --column: 48rem;
   --radius-composer: 28px;
   --radius-card: 16px;
-  --radius-bubble: 18px;
+  --radius-bubble: 22px;
+  --font-mono:
+    'SF Mono', SFMono-Regular, ui-monospace, Consolas, 'Liberation Mono', Menlo,
+    monospace;
   --radius-row: 10px;
 
   font-family:
@@ -48,8 +56,11 @@
     --fg: #ffffff;
     --fg-muted: #cdcdcd;
     --border: rgb(255 255 255 / 15%);
-    --accent: #ffffff;
-    --accent-fg: #0d0d0d;
+    --button: #ffffff;
+    --button-fg: #0d0d0d;
+    --bubble-bg: #020562;
+    --bubble-fg: #d9e6ff;
+    --code-chip: rgb(42 42 42 / 82%);
     --danger: #ff6b6b;
     --composer-shadow: inset 0 0 1px rgb(255 255 255 / 20%);
   }
@@ -175,11 +186,16 @@ body {
   margin: 0;
   padding: 10px 16px;
   border-radius: var(--radius-bubble);
-  background: var(--surface-muted);
+  background: var(--bubble-bg);
+  color: var(--bubble-fg);
   white-space: pre-wrap;
 }
 
 /* Markdown */
+
+.markdown {
+  line-height: 26px;
+}
 
 .markdown > :first-child {
   margin-top: 0;
@@ -189,6 +205,18 @@ body {
   margin-bottom: 0;
 }
 
+.markdown p,
+.markdown ul,
+.markdown ol,
+.markdown table,
+.markdown .code-block {
+  margin: 16px 0;
+}
+
+.markdown strong {
+  font-weight: 600;
+}
+
 .markdown h1,
 .markdown h2,
 .markdown h3 {
@@ -196,23 +224,34 @@ body {
   line-height: 1.3;
 }
 
-.markdown pre {
-  overflow-x: auto;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-card);
-  font-size: 14px;
-  line-height: 20px;
+/* Code blocks have no box, as on ChatGPT: a label, then the code. */
+.code-label {
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 16px;
 }
 
+.markdown pre {
+  margin: 8px 0 0;
+  overflow-x: auto;
+}
+
+.markdown pre code,
 .markdown pre code.hljs {
-  padding: 16px;
+  padding: 0;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  line-height: 26px;
 }
 
 .markdown :not(pre) > code {
-  padding: 2px 6px;
-  border-radius: 6px;
-  background: var(--surface-muted);
-  font-size: 0.875em;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--code-chip);
+  font-family: var(--font-mono);
+  font-size: 0.93em;
+  font-weight: 500;
 }
 
 .markdown table {

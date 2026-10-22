@@ -11,6 +11,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 ### Changed
 
 - UI restyled to the design guide: centred empty state that docks the composer after the first message, pill composer with icon send/stop buttons (`lucide-react`), ChatGPT-like palette and type scale in both themes, and a disclaimer under the composer.
+- Chat window matches ChatGPT's measured styles: blue user bubbles (22 px radius), a blue send button, 16/26 px answers, code blocks without a box under a language label, and SF Mono inline-code chips.
 
 ## [0.2.0] - 2026-10-22
 
