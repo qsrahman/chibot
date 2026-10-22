@@ -1,6 +1,6 @@
 {
   "name": "chibot",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Local ChatGPT-style chatbot on the OpenAI Responses API",
   "main": "src/server/main.ts",
   "private": true,
