@@ -10,6 +10,7 @@ import { Link, NavLink, useMatch, useNavigate } from 'react-router'
 import {
   Archive,
   Ellipsis,
+  Keyboard,
   PanelLeft,
   Pencil,
   Pin,
@@ -23,6 +24,8 @@ import { ArchivedDialog } from './ArchivedDialog.tsx'
 import { groupConversations } from './dates.ts'
 import { DeleteChatDialog } from './Dialog.tsx'
 import { SearchDialog } from './SearchDialog.tsx'
+import { ShortcutsDialog } from './ShortcutsDialog.tsx'
+import { SHORTCUTS, useShortcuts } from './shortcuts.ts'
 import { UNTITLED, type ConversationsApi } from './useConversations.ts'
 
 interface Props {
@@ -36,6 +39,26 @@ export function Sidebar({ collapsed, onToggle, conversations }: Props) {
   const openId = useMatch('/c/:id')?.params.id
   const [searchOpen, setSearchOpen] = useState(false)
   const [archivedOpen, setArchivedOpen] = useState(false)
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
+
+  useShortcuts({
+    [SHORTCUTS.newChat.keys]: (e) => {
+      e.preventDefault()
+      navigate('/')
+    },
+    [SHORTCUTS.search.keys]: (e) => {
+      e.preventDefault()
+      setSearchOpen(true)
+    },
+    [SHORTCUTS.toggleSidebar.keys]: (e) => {
+      e.preventDefault()
+      onToggle()
+    },
+    [SHORTCUTS.showShortcuts.keys]: (e) => {
+      e.preventDefault()
+      setShortcutsOpen(true)
+    },
+  })
   const [toDelete, setToDelete] = useState<ConversationListItem | null>(null)
 
   async function remove(id: string) {
@@ -104,12 +127,21 @@ export function Sidebar({ collapsed, onToggle, conversations }: Props) {
           label="Archived chats"
           onClick={() => setArchivedOpen(true)}
         />
+        <SidebarButton
+          icon={<Keyboard />}
+          label="Keyboard shortcuts"
+          onClick={() => setShortcutsOpen(true)}
+        />
       </div>
 
       <SearchDialog
         open={searchOpen}
         onClose={() => setSearchOpen(false)}
         recent={conversations.conversations}
+      />
+      <ShortcutsDialog
+        open={shortcutsOpen}
+        onClose={() => setShortcutsOpen(false)}
       />
       <ArchivedDialog
         open={archivedOpen}

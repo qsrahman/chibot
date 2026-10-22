@@ -835,6 +835,37 @@ body {
   line-height: 16px;
 }
 
+.shortcut-list {
+  margin: 0;
+}
+
+.shortcut {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.shortcut dd {
+  display: flex;
+  gap: 4px;
+  margin: 0;
+}
+
+kbd {
+  min-width: 24px;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-muted);
+  font: inherit;
+  font-size: 12px;
+  text-align: center;
+}
+
 .dialog.archived {
   width: min(100% - 32px, 560px);
 }

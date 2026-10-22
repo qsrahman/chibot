@@ -5,6 +5,7 @@ import type { Health } from './api.ts'
 import { Composer } from './Composer.tsx'
 import { Markdown } from './Markdown.tsx'
 import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
+import { SHORTCUTS, useShortcuts } from './shortcuts.ts'
 import type { Turn } from './turns.ts'
 import { describeUsage } from './usage.ts'
 import { useChat } from './useChat.ts'
@@ -27,6 +28,7 @@ export function ChatPage({ health, onListChanged }: Props) {
   const { turns, pending, error, isTemporary, busy } = chat
   const chatUsage = describeUsage(chat.usage)
   const endRef = useRef<HTMLDivElement>(null)
+  const composerRef = useRef<HTMLTextAreaElement>(null)
   // Follow the answer only while the user is at the bottom, so scrolling up
   // to read isn't undone by every new token.
   const followRef = useRef(true)
@@ -40,6 +42,23 @@ export function ChatPage({ health, onListChanged }: Props) {
   useEffect(() => {
     if (followRef.current) endRef.current?.scrollIntoView({ block: 'end' })
   }, [turns, pending])
+
+  useShortcuts({
+    [SHORTCUTS.focusComposer.keys]: (e) => {
+      e.preventDefault()
+      composerRef.current?.focus()
+    },
+    [SHORTCUTS.copyLastAnswer.keys]: (e) => {
+      const text = turns.at(-1)?.answer?.text
+      if (!text) return
+      e.preventDefault()
+      void navigator.clipboard.writeText(text).catch(() => {})
+    },
+    [SHORTCUTS.stop.keys]: () => {
+      // Esc in a dialog closes the dialog; it shouldn't also stop the answer.
+      if (busy && !document.querySelector('dialog[open]')) chat.stop()
+    },
+  })
 
   /** Wraps an action that starts a turn: the view follows its answer. */
   function following<A extends unknown[]>(action: (...args: A) => unknown) {
@@ -143,7 +162,12 @@ export function ChatPage({ health, onListChanged }: Props) {
           </div>
         </div>
       )}
-      <Composer busy={busy} onSend={following(chat.send)} onStop={chat.stop} />
+      <Composer
+        busy={busy}
+        onSend={following(chat.send)}
+        onStop={chat.stop}
+        inputRef={composerRef}
+      />
       <p className="disclaimer">
         chibot can make mistakes. Check important info.
       </p>

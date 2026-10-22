@@ -8,6 +8,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 - Edit a sent message (inline, Enter to send, Esc to cancel) and regenerate an answer, each creating a new version. `< 2/3 >` switches between versions, and each version keeps its own follow-up messages. A failed answer shows Retry.
 - Token usage: each answer shows its token count, and the header shows the chat's total across all versions. Hover either for input (cached) and output (reasoning) tokens.
+- Keyboard shortcuts (ChatGPT's core set): new chat ⌘/Ctrl+⇧+O, search ⌘/Ctrl+K, toggle sidebar ⌘/Ctrl+⇧+S, focus the message box ⇧+Esc, copy the last answer ⌘/Ctrl+⇧+C, stop Esc, and ⌘/Ctrl+/ (or the sidebar's Keyboard shortcuts) for the list.
 - Copy buttons on messages, answers and code blocks. Code blocks get a header with the language and Copy code.
 - API: `POST /api/conversations/:id/turns` accepts `parentId` (edit or regenerate), `PUT /api/conversations/:id/leaf` switches versions, and `GET /api/conversations/:id` reports each item's `siblingIds` and the chat's token totals.
 

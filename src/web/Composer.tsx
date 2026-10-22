@@ -1,15 +1,16 @@
-import { useRef, useState, type KeyboardEvent } from 'react'
+import { useState, type KeyboardEvent, type RefObject } from 'react'
 import { ArrowUp, Square } from 'lucide-react'
 
 interface Props {
   busy: boolean
   onSend: (text: string) => void
   onStop: () => void
+  /** The textarea, so the page can focus it (e.g. from a shortcut). */
+  inputRef: RefObject<HTMLTextAreaElement | null>
 }
 
-export function Composer({ busy, onSend, onStop }: Props) {
+export function Composer({ busy, onSend, onStop, inputRef }: Props) {
   const [text, setText] = useState('')
-  const inputRef = useRef<HTMLTextAreaElement>(null)
   const canSend = !busy && text.trim() !== ''
 
   function submit() {
