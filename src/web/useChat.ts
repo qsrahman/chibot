@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   createConversation,
   deleteConversation,
@@ -21,7 +21,14 @@ interface Options {
   temporary: boolean
 }
 
-/** Chat state for one conversation. */
+/** A message being answered. */
+interface Turn {
+  controller: AbortController
+  /** The answer is complete and saved; only the title may still arrive. */
+  answered: boolean
+}
+
+/** Chat state for the conversation on screen. */
 export function useChat(
   conversationId: string | undefined,
   { onCreated, onListChanged, temporary }: Options,
@@ -30,27 +37,43 @@ export function useChat(
   const [pending, setPending] = useState<Pending | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isTemporary, setIsTemporary] = useState(false)
-  const abortRef = useRef<AbortController | null>(null)
-  // The id `send` just created. Its history is already on screen, and
-  // reloading it would wipe the answer that's streaming in.
+  // The turn whose updates belong on screen. Cleared when the user switches
+  // chats, so a turn still running for the old chat can't touch the new one.
+  const turnRef = useRef<Turn | null>(null)
+  // Set by `send` when it creates a conversation, so the navigation to its
+  // URL keeps the turn running and doesn't reload over the streaming answer.
   const createdIdRef = useRef<string | null>(null)
 
-  const reload = useCallback(async (id: string) => {
-    const { conversation, items } = await getConversation(id)
-    setMessages(toChatMessages(items))
-    setIsTemporary(conversation.temporary)
-  }, [])
-
   useEffect(() => {
+    if (conversationId && conversationId === createdIdRef.current) {
+      createdIdRef.current = null
+      return
+    }
+    // Leaving a chat mid-answer counts as Stop: the server keeps the partial
+    // answer. After the answer, the turn just stops updating the screen.
+    const turn = turnRef.current
+    if (turn && !turn.answered) turn.controller.abort()
+    turnRef.current = null
+    setPending(null)
     setError(null)
     if (!conversationId) {
       setMessages([])
       setIsTemporary(false)
       return
     }
-    if (conversationId === createdIdRef.current) return
-    reload(conversationId).catch((err: Error) => setError(err.message))
-  }, [conversationId, reload])
+    let current = true
+    getConversation(conversationId).then(
+      ({ conversation, items }) => {
+        if (!current) return
+        setMessages(toChatMessages(items))
+        setIsTemporary(conversation.temporary)
+      },
+      (err: Error) => current && setError(err.message),
+    )
+    return () => {
+      current = false
+    }
+  }, [conversationId])
 
   // A temporary chat is deleted as soon as the user leaves it: another chat,
   // a new chat, or closing/reloading the tab. The server also sweeps any
@@ -64,29 +87,38 @@ export function useChat(
     window.addEventListener('pagehide', discard)
     return () => {
       window.removeEventListener('pagehide', discard)
-      abortRef.current?.abort()
       discard()
     }
   }, [conversationId, isTemporary])
 
   async function send(text: string) {
+    const turn: Turn = { controller: new AbortController(), answered: false }
+    turnRef.current = turn
+    const live = () => turnRef.current === turn
+    const showHistory = async (id: string) => {
+      const { items } = await getConversation(id)
+      if (live()) setMessages(toChatMessages(items))
+    }
+
     setError(null)
-    const controller = new AbortController()
-    abortRef.current = controller
     setPending({ user: text, assistant: '' })
     let assistant = ''
-    let finished = false
     let id = conversationId
     try {
       if (!id) {
         const created = await createConversation({ temporary })
         id = created.id
+        if (!created.temporary) onListChanged()
+        if (!live()) return
         createdIdRef.current = id
         setIsTemporary(created.temporary)
         onCreated(id)
-        if (!created.temporary) onListChanged()
       }
-      for await (const event of streamTurn(id, text, controller.signal)) {
+      for await (const event of streamTurn(id, text, turn.controller.signal)) {
+        // The sidebar shows every chat, so a title is news even after the
+        // user has moved on. Everything else only matters while on screen.
+        if (event.type === 'chibot.title') onListChanged()
+        if (!live()) continue
         if (event.type === 'response.output_text.delta') {
           assistant += event.delta
           setPending({ user: text, assistant })
@@ -94,14 +126,11 @@ export function useChat(
           event.type === 'response.completed' ||
           event.type === 'response.incomplete'
         ) {
-          // The answer is saved by now. The stream may stay open a little
-          // longer for the title, but the chat is free again.
-          finished = true
-          await reload(id)
-          setPending(null)
-          abortRef.current = null
-        } else if (event.type === 'chibot.title') {
-          onListChanged()
+          // Saved by now. The stream may stay open a little longer for the
+          // title, but the chat is free again.
+          turn.answered = true
+          await showHistory(id)
+          if (live()) setPending(null)
         } else if (event.type === 'chibot.error') {
           setError(
             [event.message, event.requestId && `(request ${event.requestId})`]
@@ -114,10 +143,10 @@ export function useChat(
           setError(event.message)
         }
       }
-      if (!finished) await reload(id)
+      if (live() && !turn.answered) await showHistory(id)
     } catch (err) {
-      if (finished) return // e.g. the user left while the title was coming
-      if (controller.signal.aborted) {
+      if (!live() || turn.answered) return
+      if (turn.controller.signal.aborted) {
         // The server keeps the partial answer. Show it without reloading,
         // because the save may not have landed yet.
         setMessages((prev) => [
@@ -135,15 +164,20 @@ export function useChat(
         ])
       } else {
         setError((err as Error).message)
-        if (id) await reload(id).catch(() => {})
+        if (id) await showHistory(id).catch(() => {})
       }
     } finally {
-      if (abortRef.current === controller) abortRef.current = null
-      setPending(null)
+      if (live()) {
+        turnRef.current = null
+        setPending(null)
+      }
     }
   }
 
-  const stop = () => abortRef.current?.abort()
+  function stop() {
+    const turn = turnRef.current
+    if (turn && !turn.answered) turn.controller.abort()
+  }
 
   return {
     messages,

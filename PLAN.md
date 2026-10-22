@@ -224,7 +224,9 @@ bumps the minor version. Work stops after each phase for review.
   lists them.
 - Token usage for each answer (input, cached, output, reasoning) and a running
   total for the conversation.
-- Playwright smoke test against a fake OpenAI backend.
+- Playwright smoke test against a fake OpenAI backend, including regressions
+  found in review: switching chats mid-answer, and returning to a just-created
+  chat via New chat.
 - **Done when:** editing and regenerating create versions you can switch
   between, each keeping its own follow-ups, and the e2e test passes.
 
