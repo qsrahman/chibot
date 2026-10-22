@@ -38,13 +38,21 @@ export function ArchivedDialog({ open, onClose, onChanged, onDeleted }: Props) {
   }, [open, load])
 
   async function restore(id: string) {
-    await updateConversation(id, { archived: false })
+    try {
+      await updateConversation(id, { archived: false })
+    } catch (err) {
+      return setError((err as Error).message)
+    }
     await load()
     onChanged()
   }
 
   async function remove(id: string) {
-    await deleteConversation(id)
+    try {
+      await deleteConversation(id)
+    } catch (err) {
+      return setError((err as Error).message)
+    }
     await load()
     onDeleted(id)
   }

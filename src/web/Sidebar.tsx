@@ -39,8 +39,7 @@ export function Sidebar({ collapsed, onToggle, conversations }: Props) {
   const [toDelete, setToDelete] = useState<ConversationListItem | null>(null)
 
   async function remove(id: string) {
-    await conversations.remove(id)
-    if (id === openId) navigate('/')
+    if ((await conversations.remove(id)) && id === openId) navigate('/')
   }
 
   const toolbar = (
