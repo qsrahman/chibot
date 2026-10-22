@@ -9,8 +9,25 @@ export interface Conversation {
   id: string
   title: string | null
   currentLeafId: number | null
+  pinned: boolean
+  archived: boolean
+  /** Hidden from lists and search, and deleted when the user leaves it. */
+  temporary: boolean
   createdAt: number
   updatedAt: number
+}
+
+/** A row in the sidebar or in search results. */
+export interface ConversationListItem extends Conversation {
+  /** Search only: matching message text around the hit. */
+  snippet?: string
+}
+
+/** Fields `PATCH /api/conversations/:id` accepts. */
+export interface ConversationPatch {
+  title?: string
+  pinned?: boolean
+  archived?: boolean
 }
 
 /** One node of a conversation's history tree. */
@@ -35,4 +52,10 @@ export interface TurnErrorEvent {
   message: string
   status?: number
   requestId?: string
+}
+
+/** SSE event sent after `response.completed` once a new title is generated. */
+export interface TurnTitleEvent {
+  type: 'chibot.title'
+  title: string
 }

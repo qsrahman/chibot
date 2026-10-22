@@ -3,10 +3,17 @@ import type {
   ResponseInputItem,
   ResponseUsage,
 } from 'openai/resources/responses/responses'
-import type { Conversation, StoredItem } from '../shared/types.ts'
+import { messageText } from '../shared/messages.ts'
+import type {
+  Conversation,
+  ConversationListItem,
+  ConversationPatch,
+  StoredItem,
+} from '../shared/types.ts'
 
-// Applied in order; PRAGMA user_version records how many have run.
-const MIGRATIONS = [
+// Applied in order; PRAGMA user_version records how many have run. A function
+// migration is for steps SQL alone can't do.
+const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
   `CREATE TABLE conversations (
      id TEXT PRIMARY KEY,
      title TEXT,
@@ -23,14 +30,37 @@ const MIGRATIONS = [
      created_at INTEGER NOT NULL
    );
    CREATE INDEX items_parent ON items(parent_id);`,
+  (db) => {
+    db.exec(
+      `ALTER TABLE conversations ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0;
+       ALTER TABLE conversations ADD COLUMN archived_at INTEGER;
+       ALTER TABLE conversations ADD COLUMN temporary INTEGER NOT NULL DEFAULT 0;
+       -- rowid = items.id, so an item's text can be found or removed by id.
+       CREATE VIRTUAL TABLE items_fts USING fts5(text, conversation_id UNINDEXED);`,
+    )
+    const index = db.prepare(
+      'INSERT INTO items_fts (rowid, text, conversation_id) VALUES (?, ?, ?)',
+    )
+    const rows = db
+      .prepare('SELECT id, conversation_id, data FROM items')
+      .all() as { id: number; conversation_id: string; data: string }[]
+    for (const row of rows) {
+      const message = messageText(JSON.parse(row.data))
+      if (message) index.run(row.id, message.text, row.conversation_id)
+    }
+  },
 ]
 
 interface ConversationRow {
   id: string
   title: string | null
   current_leaf_id: number | null
+  pinned: number
+  archived_at: number | null
+  temporary: number
   created_at: number
   updated_at: number
+  snippet?: string | null
 }
 
 interface ItemRow {
@@ -40,6 +70,9 @@ interface ItemRow {
   usage: string | null
   created_at: number
 }
+
+const LIST_LIMIT = 200
+const SEARCH_LIMIT = 50
 
 /** Conversations and their history trees, persisted in SQLite. */
 export class ConversationStore {
@@ -55,14 +88,15 @@ export class ConversationStore {
     this.#db.close()
   }
 
-  createConversation(): Conversation {
+  createConversation({ temporary = false } = {}): Conversation {
     const now = Date.now()
     const id = crypto.randomUUID()
     this.#db
       .prepare(
-        'INSERT INTO conversations (id, created_at, updated_at) VALUES (?, ?, ?)',
+        `INSERT INTO conversations (id, temporary, created_at, updated_at)
+         VALUES (?, ?, ?, ?)`,
       )
-      .run(id, now, now)
+      .run(id, temporary ? 1 : 0, now, now)
     return this.getConversation(id)!
   }
 
@@ -71,6 +105,106 @@ export class ConversationStore {
       .prepare('SELECT * FROM conversations WHERE id = ?')
       .get(id) as ConversationRow | undefined
     return row && toConversation(row)
+  }
+
+  /** Saved conversations, pinned first, then most recently active. */
+  listConversations({ archived = false } = {}): ConversationListItem[] {
+    const rows = this.#db
+      .prepare(
+        `SELECT * FROM conversations
+          WHERE temporary = 0 AND (archived_at IS NOT NULL) = ?
+          ORDER BY pinned DESC, updated_at DESC
+          LIMIT ${LIST_LIMIT}`,
+      )
+      .all(archived ? 1 : 0) as unknown as ConversationRow[]
+    return rows.map(toConversation)
+  }
+
+  /**
+   * Saved conversations (archived included) whose title or message text
+   * matches every word of `query` as a prefix. Message hits carry a snippet.
+   */
+  searchConversations(query: string): ConversationListItem[] {
+    const words = query.split(/\s+/).filter(Boolean)
+    if (words.length === 0) return []
+    // Quoting each word keeps FTS5 operators in user input from being parsed.
+    const match = words.map((w) => `"${w.replaceAll('"', '""')}"*`).join(' ')
+    const like = `%${query.trim().replace(/[\\%_]/g, (c) => `\\${c}`)}%`
+    const rows = this.#db
+      .prepare(
+        // MATERIALIZED: snippet() only works in the FTS query itself, not
+        // after SQLite flattens the CTE into the outer query.
+        `WITH hits AS MATERIALIZED (
+           SELECT conversation_id,
+                  snippet(items_fts, 0, '', '', '…', 16) AS snippet,
+                  rank
+             FROM items_fts WHERE items_fts MATCH ?
+         ),
+         best AS (
+           SELECT conversation_id, snippet, min(rank) FROM hits
+            GROUP BY conversation_id
+         )
+         SELECT c.*, best.snippet FROM conversations c
+           LEFT JOIN best ON best.conversation_id = c.id
+          WHERE c.temporary = 0
+            AND (best.conversation_id IS NOT NULL OR c.title LIKE ? ESCAPE '\\')
+          ORDER BY c.pinned DESC, c.updated_at DESC
+          LIMIT ${SEARCH_LIMIT}`,
+      )
+      .all(match, like) as unknown as ConversationRow[]
+    return rows.map(toConversation)
+  }
+
+  /** Renames, pins or archives. Doesn't count as activity for sorting. */
+  updateConversation(
+    id: string,
+    patch: ConversationPatch,
+  ): Conversation | undefined {
+    const sets: string[] = []
+    const values: (string | number | null)[] = []
+    if (patch.title !== undefined) {
+      sets.push('title = ?')
+      values.push(patch.title)
+    }
+    if (patch.pinned !== undefined) {
+      sets.push('pinned = ?')
+      values.push(patch.pinned ? 1 : 0)
+    }
+    if (patch.archived !== undefined) {
+      sets.push('archived_at = ?')
+      values.push(patch.archived ? Date.now() : null)
+    }
+    if (sets.length > 0) {
+      this.#db
+        .prepare(`UPDATE conversations SET ${sets.join(', ')} WHERE id = ?`)
+        .run(...values, id)
+    }
+    return this.getConversation(id)
+  }
+
+  /** @returns whether the conversation existed. */
+  deleteConversation(id: string): boolean {
+    let changes = 0
+    this.#transaction(() => {
+      // The FTS table has no foreign key, so its rows go explicitly.
+      this.#db
+        .prepare('DELETE FROM items_fts WHERE conversation_id = ?')
+        .run(id)
+      changes = Number(
+        this.#db.prepare('DELETE FROM conversations WHERE id = ?').run(id)
+          .changes,
+      )
+    })
+    return changes > 0
+  }
+
+  /** Removes temporary chats left behind (e.g. by a closed browser). */
+  deleteTemporaryConversations(): number {
+    const ids = this.#db
+      .prepare('SELECT id FROM conversations WHERE temporary = 1')
+      .all() as { id: string }[]
+    ids.forEach(({ id }) => this.deleteConversation(id))
+    return ids.length
   }
 
   /**
@@ -85,10 +219,14 @@ export class ConversationStore {
     usage: ResponseUsage | null = null,
   ): StoredItem[] {
     if (items.length === 0) return []
+    const searchable = !this.getConversation(conversationId)?.temporary
     const now = Date.now()
     const insert = this.#db.prepare(
       `INSERT INTO items (conversation_id, parent_id, data, usage, created_at)
        VALUES (?, ?, ?, ?, ?)`,
+    )
+    const index = this.#db.prepare(
+      'INSERT INTO items_fts (rowid, text, conversation_id) VALUES (?, ?, ?)',
     )
     const stored: StoredItem[] = []
     this.#transaction(() => {
@@ -103,6 +241,8 @@ export class ConversationStore {
           now,
         )
         parent = Number(lastInsertRowid)
+        const message = searchable && messageText(data)
+        if (message) index.run(parent, message.text, conversationId)
         stored.push({
           id: parent,
           parentId: stored.at(-1)?.id ?? parentId,
@@ -143,9 +283,10 @@ export class ConversationStore {
     const { user_version: version } = this.#db
       .prepare('PRAGMA user_version')
       .get() as { user_version: number }
-    MIGRATIONS.slice(version).forEach((sql, i) => {
+    MIGRATIONS.slice(version).forEach((migration, i) => {
       this.#transaction(() => {
-        this.#db.exec(sql)
+        if (typeof migration === 'string') this.#db.exec(migration)
+        else migration(this.#db)
         // PRAGMA doesn't accept bound parameters.
         this.#db.exec(`PRAGMA user_version = ${version + i + 1}`)
       })
@@ -164,13 +305,17 @@ export class ConversationStore {
   }
 }
 
-function toConversation(row: ConversationRow): Conversation {
+function toConversation(row: ConversationRow): ConversationListItem {
   return {
     id: row.id,
     title: row.title,
     currentLeafId: row.current_leaf_id,
+    pinned: row.pinned === 1,
+    archived: row.archived_at !== null,
+    temporary: row.temporary === 1,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    ...(row.snippet ? { snippet: row.snippet } : {}),
   }
 }
 
