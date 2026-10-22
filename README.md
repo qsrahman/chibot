@@ -9,8 +9,8 @@ Responses API, such as [Ollama](https://docs.ollama.com/openai) and
 > **Status: Phase 4 (models & settings).** ChatGPT-style chat with a sidebar,
 > versions, a model picker, visible reasoning, custom instructions, long-chat
 > compaction, export/import, a theme setting and a Settings dialog.
-> Attachments and voice input arrive in Phase 5. See [PLAN.md](PLAN.md) for the
-> roadmap.
+> Tools, web search, memory, projects, and then attachments and voice input
+> follow. See [PLAN.md](PLAN.md) for the roadmap.
 
 ## Requirements
 

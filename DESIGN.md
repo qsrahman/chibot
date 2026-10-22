@@ -103,7 +103,7 @@ Code uses `"SF Mono", SFMono-Regular, ui-monospace, Consolas, "Liberation Mono",
 A round 36 px icon button on the right is **send** (blue `--accent`, arrow-up icon),
 dimmed while the input is empty, and becomes **stop** (square icon) while an
 answer streams. Later phases add a "+" button on the left (attachments,
-Phase 5) and a mic button (voice, Phase 5).
+Phase 9) and a mic button (voice, Phase 9).
 
 **Messages.**
 - *User:* right-aligned bubble with `--bubble-bg` and `--bubble-fg` text,
@@ -183,7 +183,7 @@ for the composer's "+". The lucide equivalents use a 1.5 px stroke:
 | Edit message | `Pencil` |
 | Regenerate | `RefreshCw` |
 | Versions | `ChevronLeft` / `ChevronRight` |
-| Attach (Phase 5) / voice (Phase 5) | `Plus` / `Mic` |
+| Attach (Phase 9) / voice (Phase 9) | `Plus` / `Mic` |
 | Sidebar toggle (Phase 2) | `PanelLeft` |
 | Settings | `Settings` |
 | Model picker | `ChevronDown`, `Check` |

@@ -33,7 +33,7 @@ LM Studio).
 - Dollar cost estimates. The SDK has no pricing data and a hand-kept price
   table would go stale, so usage is shown in tokens only.
 - Read-aloud (text-to-speech), realtime voice conversations, mobile apps.
-  Dictation is in scope (Phase 5).
+  Dictation is in scope (Phase 9).
 
 ## 3. Key decisions
 
@@ -110,7 +110,7 @@ Browser (React + Vite)                        Node server (Hono)
 │ Composer / Markdown      │ ◀───────────── │ ChatService     builds request,      │
 │ useChat (stream client)  │                │                 streams, tool loop   │
 └──────────────────────────┘                │ ConversationStore  node:sqlite tree  │
-                                            │ ToolRegistry + Tool (Phase 6/7)      │
+                                            │ ToolRegistry + Tool (Phase 5/6)      │
                                             │ Config          env → typed settings │
                                             └──────────────┬───────────────────────┘
                                                            ▼
@@ -152,14 +152,15 @@ items(id INTEGER PK AUTOINCREMENT,
       created_at INTEGER)
 settings(key TEXT PK, value TEXT)     -- Phase 4: JSON values over env defaults
 items_fts USING fts5(text, conversation_id UNINDEXED)  -- Phase 2: message text for search
-files(id TEXT PK, conversation_id FK NULL, name TEXT,  -- Phase 5: original at data/files/<id>
-      mime TEXT, size INTEGER, provider_file_id TEXT NULL, created_at INTEGER)
+files(id TEXT PK, conversation_id FK NULL, name TEXT,  -- Phase 6: original at data/files/<id>;
+      mime TEXT, size INTEGER, provider_file_id TEXT NULL,  -- Phase 9: conversation_id,
+      created_at INTEGER)                                   --   provider_file_id
 projects(id TEXT PK, name TEXT, instructions TEXT NULL,  -- Phase 8
          model TEXT NULL, reasoning_effort TEXT NULL, created_at INTEGER)
 project_files(project_id FK → projects, file_id FK → files)          -- Phase 8
 chunks(id INTEGER PK, file_id FK → files, text TEXT)                -- Phase 8
 chunk_vectors USING vec0(embedding float[N])  -- sqlite-vec, rowid = chunks.id
-memories(id INTEGER PK AUTOINCREMENT, text TEXT, created_at INTEGER)  -- Phase 9
+memories(id INTEGER PK AUTOINCREMENT, text TEXT, created_at INTEGER)  -- Phase 7
 ```
 
 Search indexes the plain text of user and assistant messages (no reasoning or
@@ -179,9 +180,10 @@ tool payloads), written in the same transaction as the item.
 | `GET /api/conversations/:id/export?format=md\|json` · `POST /api/conversations/import` | 4 | Export (download) / import (validated JSON, ≤ 20 MB) |
 | `GET/PATCH /api/settings` | 4 | User settings and their defaults (never secrets) |
 | `GET /api/models` | 4 | The chat endpoint's models, or `null` if it can't list them |
-| `POST /api/files` · `GET /api/files/:id` · `POST /api/transcriptions` | 5 | Upload an attachment (≤ 50 MB) / serve its original / transcribe a recording (≤ 25 MB). Phase 5 adds `fileIds` to turns and `features` to health. |
-| `/api/projects[/:id]` (CRUD + files) | 8 | Projects |
-| `GET /api/memories` · `DELETE /api/memories/:id` | 9 | View / delete memories |
+| `GET /api/files/:id` | 6 | Serve a stored file's original (generated images; Phase 9 attachments) |
+| `GET /api/memories` · `DELETE /api/memories/:id` | 7 | View / delete memories |
+| `/api/projects[/:id]` (CRUD + files) · `POST /api/files` | 8 | Projects; upload a file (project files; Phase 9 attachments, ≤ 50 MB) |
+| `POST /api/transcriptions` | 9 | Transcribe a recording (≤ 25 MB). Phase 9 adds `fileIds` to turns and `features` to health. |
 
 ## 5. Phases
 
@@ -287,7 +289,60 @@ compaction on at 64k tokens; math formatting via a built-in instruction.
   export/import and compaction (the fake server gains summary and compaction
   events).
 
-### Phase 5 — Attachments & voice input
+### Phase 5 — Custom function tools
+- Abstract `Tool` class (name, description, JSON-schema parameters,
+  `requiresApproval`, `run()`) and a `ToolRegistry` that holds the enabled
+  tools. The function-calling loop in `ChatService` streams tool activity to
+  the UI.
+- Approval flow: a call to a tool with `requiresApproval` pauses the turn and
+  shows Approve/Deny. A denial is returned to the model as the tool's output.
+- Sample tool: **calculator** (exact arithmetic with `mathjs`, no approval).
+  AGENTS.md documents how to add more.
+- **Done when:** the model calls the calculator mid-answer and uses its result.
+  The approval path is covered by tests with a test-only tool, since no
+  shipped tool needs approval yet.
+
+### Phase 6 — Web search & image generation
+Both are our own `Tool` subclasses, not OpenAI-hosted tools, with per-chat
+toggles in the composer.
+- **`web_search`** calls the Brave Search API with `fetch` and returns titles,
+  URLs and snippets. The model is instructed to cite sources as Markdown links,
+  and the UI lists the sources under the answer. It's disabled when
+  `BRAVE_API_KEY` is unset. No approval: it's read-only, though the query goes
+  to Brave.
+- **`generate_image`** calls `images.generate` (`OPENAI_IMAGE_MODEL`) with
+  streamed partial images. Results are saved by a new `FileStore` (`files`
+  table, original at `data/files/<id>`), served by `GET /api/files/:id` and
+  rendered in the chat. The model receives a reference, not the image bytes.
+- `Config` moves to zod as the first per-feature endpoint arrives
+  (`OPENAI_IMAGE_*`, §6).
+- **Done when:** a web-search answer shows clickable sources and a generated
+  image renders and persists.
+
+### Phase 7 — Memory
+- A `memory` tool (a `Tool` subclass, no approval) lets the model save facts
+  about you. Saved memories are added to the instructions of every chat
+  except temporary ones, and the chat shows a "Memory updated" notice.
+- A memory page to view and delete memories, plus a global on/off switch.
+- **Done when:** a fact told in one chat is used in a new chat and can be
+  deleted from the memory page.
+
+### Phase 8 — Projects
+- Group conversations into projects (sidebar section, `/projects/:id`).
+- Each project has:
+  - **files**, uploaded through a new `POST /api/files` into the `FileStore`
+    (Phase 6) and searched through local RAG: text is extracted (`unpdf` for
+    PDFs), chunked, embedded with `embeddings.create`
+    (`OPENAI_EMBEDDING_MODEL`) and stored in SQLite through `sqlite-vec`.
+    A `search_project_files` tool returns the best chunks with their file
+    names, and the answer cites them.
+  - **instructions**, added to every chat in the project on top of the global
+    custom instructions
+  - **default model and reasoning effort**, overriding the global settings
+- **Done when:** an answer in a project cites content from one of its files and
+  follows the project's instructions and model.
+
+### Phase 9 — Attachments & voice input
 Decisions (agreed after probing OpenAI and Ollama): images plus every
 document type OpenAI accepts as `input_file`; Files API where available,
 inline otherwise; uploads expire after 30 days; JSON export embeds
@@ -300,22 +355,22 @@ inline images on vision models (`gemma4:cloud`; `gpt-oss` returns 400), rejects
 `input_file` (400) and has no `audio.transcriptions` (404). OpenAI's
 `gpt-transcribe` transcribes m4a exactly.
 
-- **Config.** `Config` validates the environment with zod and gains the
-  transcription endpoint: `OPENAI_TRANSCRIBE_BASE_URL` / `_API_KEY` /
+- **Config.** `Config` gains the transcription endpoint: `OPENAI_TRANSCRIBE_BASE_URL` / `_API_KEY` /
   `_MODEL`, inheriting the chat endpoint. The model defaults to
   `gpt-transcribe` on OpenAI; on a compatible endpoint without a model,
   transcription is off. `GET /api/health` gains `features: { transcription }`.
-- **Storage.** Migration 5 adds `files` (§4); the original is kept at
-  `data/files/<id>`. A `FileStore` saves, reads, links and deletes them.
-  Messages keep the SDK's types: a user message's content is
+- **Storage.** Builds on `files` / `FileStore` (Phase 6): a migration adds
+  `conversation_id` and `provider_file_id` (§4), and `FileStore` gains linking
+  files to a conversation. Messages keep the SDK's types: a user message's content is
   `input_image { file_id: <chibot id>, detail: 'auto' }` /
   `input_file { file_id: <chibot id>, filename }` parts plus `input_text`, so
   no base64 lands in SQLite or the search index.
-- **Routes.** `POST /api/files` (multipart) checks the type against the accept
-  list (png/jpeg/webp/non-animated gif; pdf, txt/md/json/html/xml/code,
-  doc/docx/rtf/odt, ppt/pptx, csv/xls/xlsx) and size (≤ 50 MB), saves the file
-  and returns `{ id, name, mime, size }`. `GET /api/files/:id` serves the
-  original for thumbnails and opening. Turns take `fileIds`; the files are
+- **Routes.** `POST /api/files` (Phase 8) accepts attachments: it checks the
+  type against the accept list (png/jpeg/webp/non-animated gif; pdf,
+  txt/md/json/html/xml/code, doc/docx/rtf/odt, ppt/pptx, csv/xls/xlsx) and
+  size (≤ 50 MB), saves the file and returns `{ id, name, mime, size }`.
+  `GET /api/files/:id` (Phase 6) serves the original for thumbnails and
+  opening. Turns take `fileIds`; the files are
   linked to the conversation when the turn is stored.
 - **Sending.** For each request `ChatService` resolves chibot ids to the
   cached `provider_file_id`, or uploads (`purpose: 'user_data'`,
@@ -342,9 +397,9 @@ inline images on vision models (`gemma4:cloud`; `gpt-oss` returns 400), rejects
   `POST /api/transcriptions` (≤ 25 MB) returns the text, which is inserted at
   the cursor for review before sending. With transcription off, the button is
   disabled with a tooltip saying why.
-- **Commits.** Config on zod → attachment storage and routes → sending with
+- **Commits.** Transcription endpoint → attachment storage and routes → sending with
   turns (inline fallback, 404 re-upload) → deletion and sweep → composer and
-  message UI → export/import → dictation → e2e specs → docs → release v0.6.0.
+  message UI → export/import → dictation → e2e specs → docs → release v0.10.0.
 - **Done when:** on OpenAI the model answers about an attached image and an
   attached PDF, including after the uploaded copy was deleted at OpenAI; on
   Ollama `gemma4:cloud` answers about an inline image and a PDF shows a
@@ -353,55 +408,6 @@ inline images on vision models (`gemma4:cloud`; `gpt-oss` returns 400), rejects
   picker, paste and drop, removing, rendering after reload, export/import and
   the mic (the fake server gains `/v1/files`, file deletion, a lost-upload
   switch and `/v1/audio/transcriptions`; Chromium uses a fake microphone).
-
-### Phase 6 — Custom function tools
-- Abstract `Tool` class (name, description, JSON-schema parameters,
-  `requiresApproval`, `run()`) and a `ToolRegistry` that holds the enabled
-  tools. The function-calling loop in `ChatService` streams tool activity to
-  the UI.
-- Approval flow: a call to a tool with `requiresApproval` pauses the turn and
-  shows Approve/Deny. A denial is returned to the model as the tool's output.
-- Sample tool: **calculator** (exact arithmetic with `mathjs`, no approval).
-  AGENTS.md documents how to add more.
-- **Done when:** the model calls the calculator mid-answer and uses its result.
-  The approval path is covered by tests with a test-only tool, since no
-  shipped tool needs approval yet.
-
-### Phase 7 — Web search & image generation
-Both are our own `Tool` subclasses, not OpenAI-hosted tools, with per-chat
-toggles in the composer.
-- **`web_search`** calls the Brave Search API with `fetch` and returns titles,
-  URLs and snippets. The model is instructed to cite sources as Markdown links,
-  and the UI lists the sources under the answer. It's disabled when
-  `BRAVE_API_KEY` is unset. No approval: it's read-only, though the query goes
-  to Brave.
-- **`generate_image`** calls `images.generate` (`OPENAI_IMAGE_MODEL`) with
-  streamed partial images. Results are saved to `data/files/` and rendered in
-  the chat. The model receives a reference, not the image bytes.
-- **Done when:** a web-search answer shows clickable sources and a generated
-  image renders and persists.
-
-### Phase 8 — Projects
-- Group conversations into projects (sidebar section, `/projects/:id`).
-- Each project has:
-  - **files**, searched through local RAG: text is extracted (`unpdf` for
-    PDFs), chunked, embedded with `embeddings.create`
-    (`OPENAI_EMBEDDING_MODEL`) and stored in SQLite through `sqlite-vec`.
-    A `search_project_files` tool returns the best chunks with their file
-    names, and the answer cites them.
-  - **instructions**, added to every chat in the project on top of the global
-    custom instructions
-  - **default model and reasoning effort**, overriding the global settings
-- **Done when:** an answer in a project cites content from one of its files and
-  follows the project's instructions and model.
-
-### Phase 9 — Memory
-- A `memory` tool (a `Tool` subclass, no approval) lets the model save facts
-  about you. Saved memories are added to the instructions of every chat
-  except temporary ones, and the chat shows a "Memory updated" notice.
-- A memory page to view and delete memories, plus a global on/off switch.
-- **Done when:** a fact told in one chat is used in a new chat and can be
-  deleted from the memory page.
 
 ## 6. Configuration
 
@@ -420,7 +426,7 @@ Configuration lives in three layers, split by who changes it and how often:
 - **`.env` lookup:** real environment variables win, then `.env` in the current
   folder, then `<repo>/.env`, so `chibot` works from any folder.
 - **Validation:** zod from Phase 4 (settings, imports, route bodies). `Config`
-  moves to it in Phase 5, when the first per-feature endpoint (transcription)
+  moves to it in Phase 6, when the first per-feature endpoint (images)
   arrives.
 
 Environment variables:
@@ -430,14 +436,14 @@ Environment variables:
 | `OPENAI_BASE_URL` | SDK default (OpenAI) | Chat endpoint; any Responses-API server, e.g. `http://localhost:11434/v1` for Ollama |
 | `OPENAI_API_KEY` | — | Required for OpenAI; optional with `OPENAI_BASE_URL` |
 | `OPENAI_MODEL` | `gpt-6-astra` | Chat model; required with `OPENAI_BASE_URL` |
-| `OPENAI_<FEATURE>_BASE_URL` / `_API_KEY` / `_MODEL` | inherit chat endpoint | Per-feature override, `<FEATURE>` ∈ `TRANSCRIBE` (Phase 5), `IMAGE` (Phase 7), `EMBEDDING` (Phase 8) |
-| `OPENAI_TRANSCRIBE_MODEL` | `gpt-transcribe` on OpenAI | Voice input transcription (Phase 5) |
-| `OPENAI_IMAGE_MODEL` | `gpt-image-2` on OpenAI | Image generation tool (Phase 7) |
+| `OPENAI_<FEATURE>_BASE_URL` / `_API_KEY` / `_MODEL` | inherit chat endpoint | Per-feature override, `<FEATURE>` ∈ `IMAGE` (Phase 6), `EMBEDDING` (Phase 8), `TRANSCRIBE` (Phase 9) |
+| `OPENAI_TRANSCRIBE_MODEL` | `gpt-transcribe` on OpenAI | Voice input transcription (Phase 9) |
+| `OPENAI_IMAGE_MODEL` | `gpt-image-2` on OpenAI | Image generation tool (Phase 6) |
 | `OPENAI_EMBEDDING_MODEL` | `text-embedding-3-small` on OpenAI | Project file embeddings (Phase 8) |
-| `BRAVE_API_KEY` | — (optional) | Enables the web search tool (Phase 7) |
+| `BRAVE_API_KEY` | — (optional) | Enables the web search tool (Phase 6) |
 | `HOST` | `127.0.0.1` | Interface to listen on; `0.0.0.0` exposes it on the LAN with no auth |
 | `PORT` | `3000` | API server port |
-| `CHIBOT_DATA_DIR` | `<repo>/data` | Holds `chibot.db` (Phase 1) and `files/` (Phase 5). The default is resolved from the package location, not the current directory. |
+| `CHIBOT_DATA_DIR` | `<repo>/data` | Holds `chibot.db` (Phase 1) and `files/` (Phase 6). The default is resolved from the package location, not the current directory. |
 
 ## 7. Risks & open items
 

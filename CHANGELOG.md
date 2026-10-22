@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- Roadmap: phases reordered to tools (5), web search & image generation (6), memory (7), projects (8), then attachments & voice input (9). Generated images now introduce file storage (`FileStore`, `GET /api/files/:id`) and project files introduce `POST /api/files`, which attachments build on; `Config` moves to zod with the image endpoint in Phase 6.
+
 ## [0.5.0] - 2026-10-22
 
 ### Added
