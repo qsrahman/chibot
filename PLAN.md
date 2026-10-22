@@ -40,7 +40,7 @@ LM Studio).
 | Decision | Choice | Why |
 |---|---|---|
 | Frontend | React 19 + Vite | Mature Markdown/highlighting/streaming ecosystem; Vite gives fast dev + a static build. Next.js was considered and rejected: its server/client split, caching and router add concepts a local, client-interactive app doesn't use. |
-| Styling | Plain CSS + CSS variables, ChatGPT-like aesthetics per [DESIGN.md](DESIGN.md); `lucide-react` icons | A familiar look, measured from chatgpt.com and applied through tokens. Menus and dialogs build on native `<dialog>` and the Popover API. Themes follow `prefers-color-scheme` until a Light / Dark / System toggle arrives in Phase 4. |
+| Styling | Plain CSS + CSS variables, ChatGPT-like aesthetics per [DESIGN.md](DESIGN.md); `lucide-react` icons | A familiar look, measured from chatgpt.com and applied through tokens. Menus and dialogs build on native `<dialog>` and the Popover API. Colours are `light-dark()` tokens following `color-scheme`: the system, or the Light / Dark / System setting (Phase 4). |
 | Temporary chat | An ordinary conversation row flagged `temporary` | It reuses every code path, is hidden from the list and search, is deleted when you leave it, and any leftovers are swept at server start. |
 | Server | Hono on `@hono/node-server` | Small, Web-standard `Request`/`Response`, built-in `streamSSE` and static serving, trivially testable with `app.request()`. |
 | Network | Listens on `127.0.0.1` by default; `HOST` opts into LAN access | There's no auth and the server spends the owner's API key. A non-loopback `HOST` prints a warning. |
@@ -56,6 +56,7 @@ LM Studio).
 | History shape | **Tree** of items (`parent_id`) | Supports ChatGPT-style message versions. Chosen from Phase 1 so no migration is needed later. |
 | Storage | `node:sqlite` (built-in) | Zero dependencies, synchronous, transactional, recursive CTEs for tree paths, FTS5 for search. |
 | Streaming call | `responses.create({ stream: true })`, not `responses.stream()` | `stream()` adds an accumulator and `finalResponse()`, but `finalResponse()` rejects on abort (chibot saves partial answers itself anyway) and the accumulator rejects streams from some compatible servers (tested: Ollama `gpt-oss` fails with "missing content at index 0"; `gemma4` and OpenAI pass). Persisting before relaying `response.completed` needs the raw events anyway. |
+| Validation | zod schemas in `src/shared` (`@hono/zod-validator` on routes) | One definition per rule; types are inferred from them, and the web imports types only (no zod in the bundle). |
 | Wire protocol | Server relays the SDK's own `ResponseStreamEvent`s over SSE | The browser reuses the SDK's types (type-only import), so there are no hand-written mirror types. |
 | SSE parsing in browser | `eventsource-parser` | `EventSource` can't `POST`. |
 | Markdown | `react-markdown` + `remark-gfm` + `rehype-highlight` + `remark-math`/`rehype-katex` | Standard, safe by default (no raw HTML). Math rendering matches ChatGPT, since models often answer in LaTeX. |
@@ -147,7 +148,9 @@ items(id INTEGER PK AUTOINCREMENT,
       parent_id INTEGER NULL FK → items,  -- NULL for the first message
       data TEXT,                          -- JSON ResponseInputItem
       usage TEXT NULL,                    -- JSON ResponseUsage, last item of a response
+      model TEXT NULL,                    -- Phase 4: model that wrote it, set like usage
       created_at INTEGER)
+settings(key TEXT PK, value TEXT)     -- Phase 4: JSON values over env defaults
 items_fts USING fts5(text, conversation_id UNINDEXED)  -- Phase 2: message text for search
 files(id TEXT PK, name TEXT, mime TEXT, path TEXT,     -- Phase 5: local copy under data/files/
       openai_file_id TEXT NULL, created_at INTEGER)
@@ -173,7 +176,9 @@ tool payloads), written in the same transaction as the item.
 | `GET /api/conversations?q=&archived=1` | 2 | List (pinned first, newest first), archived view, or search (titles + message text, with snippets) |
 | `PATCH/DELETE /api/conversations/:id` | 2 | Rename, pin, archive/restore / delete |
 | `PUT /api/conversations/:id/leaf` | 3 | Switch to a message version |
-| `GET /api/conversations/:id/export` · `POST /api/conversations/import` | 4 | Export / import |
+| `GET /api/conversations/:id/export?format=md\|json` · `POST /api/conversations/import` | 4 | Export (download) / import (validated JSON, ≤ 20 MB) |
+| `GET/PATCH /api/settings` | 4 | User settings and their defaults (never secrets) |
+| `GET /api/models` | 4 | The chat endpoint's models, or `null` if it can't list them |
 | `POST /api/files` · `POST /api/transcriptions` | 5 | Upload an attachment / transcribe a recording |
 | `/api/projects[/:id]` (CRUD + files) | 8 | Projects |
 | `GET /api/memories` · `DELETE /api/memories/:id` | 9 | View / delete memories |
@@ -232,7 +237,7 @@ bumps the minor version. Work stops after each phase for review.
 - **Done when:** editing and regenerating create versions you can switch
   between, each keeping its own follow-ups, and the e2e test passes.
 
-### Phase 4 — Models & settings
+### Phase 4 — Models & settings ✅
 Decisions (agreed after probing OpenAI and Ollama): one global model chosen
 in the header, answers labelled with their model; one phase; zod adopted now;
 compaction on at 64k tokens; math formatting via a built-in instruction.

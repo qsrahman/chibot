@@ -15,9 +15,11 @@ phase roadmap live in [PLAN.md](PLAN.md). Usage lives in [README.md](README.md).
 ## Layout
 
 ```
-src/server/   main.ts (wiring + listen), app.ts (Hono routes), one class per file
+src/server/   main.ts (wiring + listen), app.ts (Hono routes), database.ts (one
+              SQLite connection + migrations), one class per file
 src/shared/   used by both server and web: API record types, chibot's own SSE events,
-              message text extraction
+              message text extraction, zod schemas (requests, settings, export)
+              and reasoning efforts (zod-free, so the web can import it)
 src/web/      Vite root: index.html, main.tsx, components, api.ts (fetch + SSE), hooks
 tests/        mirrors src/ (tests/server/*.test.ts, tests/web/*.test.ts)
 tests/e2e/    Playwright specs (*.spec.ts) and fake-openai.ts
@@ -126,9 +128,13 @@ invariants, API quirks. No line-by-line narration.
   get vitest tests. UI behaviour is covered by Playwright specs in
   `tests/e2e/`, which drive a production build with the real SDK pointed at
   `tests/e2e/fake-openai.ts` via `OPENAI_BASE_URL`. The fake answers
-  `Answer #n to: <question>`, and streams slowly when the question contains
-  "slow". Wait for the app (e.g. a focused composer, or the empty new-chat
-  page) before typing or pressing shortcuts. First run:
+  `Answer #n to: <question>`; a question containing "slow" streams slowly,
+  "think" adds a reasoning summary, "compact" a compaction item. Its
+  `/debug/last-request` shows what chibot sent. Shared steps live in
+  `tests/e2e/helpers.ts` (`send`, `answered`, `appReady`, `lastRequest`,
+  `resetSettings`, …). Wait for the app (e.g. a focused composer, or the empty
+  new-chat page) before typing or pressing shortcuts, and for `answered` before
+  copying. Specs that change settings reset them afterwards. First run:
   `pnpm exec playwright install chromium`.
 
 ## Workflow

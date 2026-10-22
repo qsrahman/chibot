@@ -6,10 +6,11 @@ It works with OpenAI and with OpenAI-compatible servers that implement the
 Responses API, such as [Ollama](https://docs.ollama.com/openai) and
 [LM Studio](https://lmstudio.ai/).
 
-> **Status: Phase 3 (edit & versions).** Streamed chat with a ChatGPT-style
-> sidebar, editing, regenerating and message versions, copy buttons, token
-> usage and keyboard shortcuts. Model settings arrive in Phase 4. See
-> [PLAN.md](PLAN.md) for the roadmap.
+> **Status: Phase 4 (models & settings).** ChatGPT-style chat with a sidebar,
+> versions, a model picker, visible reasoning, custom instructions, long-chat
+> compaction, export/import, a theme setting and a Settings dialog.
+> Attachments and voice input arrive in Phase 5. See [PLAN.md](PLAN.md) for the
+> roadmap.
 
 ## Requirements
 
@@ -26,6 +27,10 @@ cp .env.example .env   # then set OPENAI_API_KEY
 ```
 
 ## Configuration
+
+Startup settings and keys go in `.env` or the environment; everything you can
+change while chatting (model, instructions, reasoning, compaction, theme) lives
+in **Settings**. `OPENAI_MODEL` is the model chibot starts with.
 
 Set these in `.env` or the environment. chibot reads the real environment
 first, then a `.env` in the folder you start it from, then the `.env` in the
@@ -92,8 +97,22 @@ Then open http://127.0.0.1:3000.
   remembered.
 - **Search chats** finds chats by title or message text, including archived
   ones. Press Enter to open the top result.
-- **Archived chats** (bottom of the sidebar) lists archived chats to restore or
-  delete.
+- **Model:** click the model name at the top to pick another model (searchable;
+  type a name if your server can't list its models). Each answer shows the
+  model that wrote it, so switching models and regenerating compares them.
+- **Thinking:** reasoning models show "Thinking…" while they think; afterwards
+  the answer keeps a collapsed **Thoughts** section with their summary.
+- **Settings** (sidebar gear, or ⌘/Ctrl+,):
+  - *General:* theme (System, Light or Dark).
+  - *Personalization:* what chibot should know about you, and how it should
+    respond. Sent with every message.
+  - *Model:* reasoning effort, and compaction for long chats (on by default at
+    64,000 tokens; earlier messages are summarized and a divider marks the
+    spot).
+  - *Data:* import a chat from a JSON export, and archived chats to restore or
+    delete.
+- **Export** a chat from its **…** menu as Markdown (what's shown) or JSON
+  (every version, for importing later).
 - **Temporary chat:** on a new chat, turn on the dashed-bubble toggle (top
   right). That chat isn't listed, titled or searchable, and it's deleted as
   soon as you leave it.

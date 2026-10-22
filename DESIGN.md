@@ -92,8 +92,9 @@ Code uses `"SF Mono", SFMono-Regular, ui-monospace, Consolas, "Liberation Mono",
   tall, 8×10 px padding, 10 px radius, 6 px icon gap. The hover/active fill is
   `--surface-muted`. Groups have 12 px muted headings (Today, Yesterday, …).
   It collapses to a 56 px icon rail, and the collapsed state is remembered.
-- **Header.** Model name with a chevron on the left (the model picker,
-  Phase 4). Page actions sit on the right.
+- **Header.** Model name with a chevron on the left: the model picker, a
+  popover with a search box over the model list (a name field when the
+  server can't list models). Page actions sit on the right.
 
 ## 4. Components
 
@@ -143,14 +144,27 @@ title (18 px, 500), body (14 px muted), then right-aligned buttons. Buttons are
 pill-shaped: primary is `--button`, secondary is outlined, destructive is
 `--danger`. Used for confirmations such as "Delete chat?".
 
-**Settings (Phase 4).** A large dialog with a vertical tab list on the left
-(General, Personalization, Data, …) and content on the right. Content is
+**Settings (built).** A large dialog (max 760 px) with a vertical tab list on
+the left (General, Personalization, Model, Data; the current tab uses
+`--chip`) and content on the right. Content is
 grouped as section heading (16 px, 500) + card (`--surface`, 16 px radius,
 hairline border). A card holds rows: 52 px tall, 0×16 px padding, a 14 px/500
 label (with an optional 12 px muted description) on the left, and the control
 on the right: a select showing its value and a chevron, or a 32×20 px switch
 (`--accent` when on).
 Hairline dividers separate rows.
+
+**Thinking.** Above an answer, a native `<details>` in 14 px muted text:
+"Thinking…" with a shimmer while the summary streams, "Thoughts" once the
+answer starts. Opened, the summary sits behind a 2 px `--border` rule.
+
+**Compaction note.** A 12 px muted line between hairlines: "Earlier messages
+were summarized to save context."
+
+**Theme.** Every colour token is `light-dark(light, dark)`. `color-scheme`
+follows the system unless `<meta name="color-scheme">` is set to `light` or
+`dark` (the Theme setting, applied before first paint). Code highlighting
+uses `--code-*` tokens with GitHub's light and dark palettes.
 
 **Footer.** 12 px muted line under the composer: "chibot can make mistakes.
 Check important info."
@@ -171,7 +185,10 @@ for the composer's "+". The lucide equivalents use a 1.5 px stroke:
 | Versions | `ChevronLeft` / `ChevronRight` |
 | Attach (Phase 5) / voice (Phase 5) | `Plus` / `Mic` |
 | Sidebar toggle (Phase 2) | `PanelLeft` |
-| Settings (Phase 4) | `Settings` |
+| Settings | `Settings` |
+| Model picker | `ChevronDown`, `Check` |
+| Export as Markdown / JSON | `FileText` / `FileJson` |
+| Temporary chat / shortcuts | `MessageCircleDashed` / `Keyboard` |
 
 ## 6. Interaction
 
