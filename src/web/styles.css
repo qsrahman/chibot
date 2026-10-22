@@ -1,36 +1,57 @@
 @import 'highlight.js/styles/github.css' (prefers-color-scheme: light);
 @import 'highlight.js/styles/github-dark.css' (prefers-color-scheme: dark);
 
+/* Tokens: see DESIGN.md §2. Components use these, never raw colours. */
 :root {
   color-scheme: light dark;
-  --bg: #ffffff;
+  --bg: #fcfcfc;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-muted: #f4f4f4;
+  --chip: #ececec;
   --fg: #0d0d0d;
-  --muted: #6b6b6b;
-  --surface: #f4f4f4;
-  --border: #e3e3e3;
+  --fg-muted: #5d5d5d;
+  --border: rgb(0 0 0 / 10%);
   --accent: #0d0d0d;
   --accent-fg: #ffffff;
-  --danger: #c62828;
+  --danger: #d93025;
+  --composer-shadow:
+    0 0 0 1px rgb(0 0 0 / 4%), 0 2px 8px rgb(0 0 0 / 4%),
+    0 4px 80px 8px rgb(0 0 0 / 2.4%);
+
   --column: 48rem;
-  --radius: 1.5rem;
+  --radius-composer: 28px;
+  --radius-card: 16px;
+  --radius-bubble: 18px;
+  --radius-row: 10px;
+
   font-family:
-    system-ui,
+    ui-sans-serif,
     -apple-system,
+    system-ui,
     'Segoe UI',
+    Helvetica,
+    'Apple Color Emoji',
+    Arial,
     sans-serif;
-  line-height: 1.6;
+  font-size: 16px;
+  line-height: 24px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #212121;
-    --fg: #ececec;
-    --muted: #a0a0a0;
-    --surface: #303030;
-    --border: #3a3a3a;
-    --accent: #ececec;
+    --bg: #000000;
+    --surface: #212121;
+    --surface-raised: #303030;
+    --surface-muted: #303030;
+    --chip: #414141;
+    --fg: #ffffff;
+    --fg-muted: #cdcdcd;
+    --border: rgb(255 255 255 / 15%);
+    --accent: #ffffff;
     --accent-fg: #0d0d0d;
-    --danger: #ef6f6f;
+    --danger: #ff6b6b;
+    --composer-shadow: inset 0 0 1px rgb(255 255 255 / 20%);
   }
 }
 
@@ -44,30 +65,68 @@ body {
   color: var(--fg);
 }
 
+:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
 .app {
   display: flex;
   flex-direction: column;
   height: 100dvh;
 }
 
-header {
+/* Header */
+
+.topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 0.75rem 1rem;
-}
-
-.new-chat {
-  color: inherit;
-  text-decoration: none;
-  font-weight: 600;
+  height: 52px;
+  padding: 0 8px 0 16px;
 }
 
 .model {
-  color: var(--muted);
-  font-size: 0.875rem;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 18px;
 }
+
+.model-name {
+  color: var(--fg-muted);
+  font-size: 14px;
+}
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.icon-button:hover {
+  background: var(--surface-muted);
+}
+
+.icon-button.primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+.icon-button.primary:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* Chat layout */
 
 .chat {
   flex: 1;
@@ -76,23 +135,33 @@ header {
   min-height: 0;
 }
 
+.chat.empty {
+  justify-content: center;
+  padding-bottom: 10vh;
+}
+
+.greeting {
+  margin: 0 0 28px;
+  text-align: center;
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 34px;
+}
+
+/* Full-width scroller, so the scrollbar sits at the window edge. */
 .messages {
   flex: 1;
   overflow-y: auto;
-  width: 100%;
-  max-width: var(--column);
-  margin: 0 auto;
-  padding: 1rem;
 }
 
-.placeholder {
-  margin-top: 30vh;
-  text-align: center;
-  font-size: 1.75rem;
+.thread {
+  max-width: var(--column);
+  margin: 0 auto;
+  padding: 16px 16px 24px;
 }
 
 .message {
-  margin: 1.25rem 0;
+  margin: 24px 0;
   overflow-wrap: anywhere;
 }
 
@@ -104,38 +173,58 @@ header {
 .message.user p {
   max-width: 70%;
   margin: 0;
-  padding: 0.6rem 1.1rem;
-  border-radius: var(--radius);
-  background: var(--surface);
+  padding: 10px 16px;
+  border-radius: var(--radius-bubble);
+  background: var(--surface-muted);
   white-space: pre-wrap;
+}
+
+/* Markdown */
+
+.markdown > :first-child {
+  margin-top: 0;
+}
+
+.markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown h1,
+.markdown h2,
+.markdown h3 {
+  font-weight: 600;
+  line-height: 1.3;
 }
 
 .markdown pre {
   overflow-x: auto;
   border: 1px solid var(--border);
-  border-radius: 0.75rem;
-  font-size: 0.875rem;
+  border-radius: var(--radius-card);
+  font-size: 14px;
+  line-height: 20px;
 }
 
 .markdown pre code.hljs {
-  padding: 1rem;
+  padding: 16px;
 }
 
 .markdown :not(pre) > code {
-  padding: 0.1rem 0.35rem;
-  border-radius: 0.35rem;
-  background: var(--surface);
-  font-size: 0.9em;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--surface-muted);
+  font-size: 0.875em;
 }
 
 .markdown table {
   border-collapse: collapse;
+  font-size: 14px;
 }
 
 .markdown th,
 .markdown td {
-  padding: 0.35rem 0.75rem;
-  border: 1px solid var(--border);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
 }
 
 .markdown .katex-display {
@@ -144,9 +233,9 @@ header {
 }
 
 .thinking {
-  width: 0.75rem;
-  height: 0.75rem;
-  margin: 1.5rem 0;
+  width: 12px;
+  height: 12px;
+  margin: 24px 0;
   border-radius: 50%;
   background: var(--fg);
   animation: pulse 1s ease-in-out infinite;
@@ -160,52 +249,67 @@ header {
 }
 
 .error {
-  padding: 0.75rem 1rem;
+  padding: 12px 16px;
   border: 1px solid var(--danger);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-card);
   color: var(--danger);
+  font-size: 14px;
 }
+
+/* Composer */
 
 .composer {
   display: flex;
   align-items: flex-end;
-  gap: 0.5rem;
-  width: calc(100% - 2rem);
-  max-width: var(--column);
-  margin: 0 auto 1rem;
-  padding: 0.5rem 0.5rem 0.5rem 1.25rem;
+  gap: 8px;
+  width: calc(100% - 32px);
+  max-width: calc(var(--column) - 32px);
+  min-height: 52px;
+  margin: 0 auto;
+  padding: 7px 7px 7px 20px;
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-composer);
   background: var(--surface);
+  box-shadow: var(--composer-shadow);
 }
 
 .composer textarea {
   flex: 1;
+  align-self: center;
   max-height: 40vh;
-  padding: 0.5rem 0;
+  padding: 6px 0;
   border: none;
   outline: none;
   resize: none;
   background: transparent;
   color: inherit;
   font: inherit;
+  font-size: 17px;
+  line-height: 24px;
   /* Grows with its content; supported in Chromium and Safari. */
   field-sizing: content;
 }
 
-.composer button {
-  flex: none;
-  width: 2.25rem;
-  height: 2.25rem;
-  border: none;
-  border-radius: 50%;
-  background: var(--accent);
-  color: var(--accent-fg);
-  font-size: 1rem;
-  cursor: pointer;
+.composer textarea::placeholder {
+  color: var(--fg-muted);
 }
 
-.composer button:disabled {
-  opacity: 0.3;
-  cursor: default;
+.disclaimer {
+  margin: 0;
+  padding: 8px 16px;
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 16px;
+  text-align: center;
+}
+
+.chat.empty .disclaimer {
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
 }

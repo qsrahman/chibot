@@ -1,4 +1,5 @@
-import { useState, type KeyboardEvent } from 'react'
+import { useRef, useState, type KeyboardEvent } from 'react'
+import { ArrowUp, Square } from 'lucide-react'
 
 interface Props {
   busy: boolean
@@ -8,12 +9,14 @@ interface Props {
 
 export function Composer({ busy, onSend, onStop }: Props) {
   const [text, setText] = useState('')
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const canSend = !busy && text.trim() !== ''
 
   function submit() {
     if (!canSend) return
     onSend(text)
     setText('')
+    inputRef.current?.focus()
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -33,8 +36,9 @@ export function Composer({ busy, onSend, onStop }: Props) {
       }}
     >
       <textarea
+        ref={inputRef}
         aria-label="Message"
-        placeholder="Message chibot"
+        placeholder="Ask anything"
         rows={1}
         autoFocus
         value={text}
@@ -42,12 +46,25 @@ export function Composer({ busy, onSend, onStop }: Props) {
         onKeyDown={onKeyDown}
       />
       {busy ? (
-        <button type="button" onClick={onStop} aria-label="Stop">
-          ■
+        <button
+          type="button"
+          className="icon-button primary"
+          aria-label="Stop"
+          onClick={() => {
+            onStop()
+            inputRef.current?.focus()
+          }}
+        >
+          <Square size={14} fill="currentColor" />
         </button>
       ) : (
-        <button type="submit" disabled={!canSend} aria-label="Send">
-          ↑
+        <button
+          type="submit"
+          className="icon-button primary"
+          aria-label="Send"
+          disabled={!canSend}
+        >
+          <ArrowUp size={20} strokeWidth={2} />
         </button>
       )}
     </form>

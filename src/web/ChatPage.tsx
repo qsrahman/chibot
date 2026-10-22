@@ -17,39 +17,52 @@ export function ChatPage() {
     endRef.current?.scrollIntoView({ block: 'end' })
   }, [messages, pending])
 
-  const empty = messages.length === 0 && !pending
+  // An empty chat centres the composer under a greeting, as ChatGPT does.
+  // The composer stays the second child either way, so it keeps its focus
+  // and text when the first message moves it to the bottom.
+  const empty = messages.length === 0 && !pending && !error
 
   return (
-    <main className="chat">
-      <div className="messages">
-        {empty && <p className="placeholder">What can I help with?</p>}
-        {messages.map((m) => (
-          <Message key={m.key} message={m} />
-        ))}
-        {pending && (
-          <>
-            <Message message={{ key: 'u', role: 'user', text: pending.user }} />
-            {pending.assistant ? (
-              <Message
-                message={{
-                  key: 'a',
-                  role: 'assistant',
-                  text: pending.assistant,
-                }}
-              />
-            ) : (
-              <div className="thinking" aria-label="Waiting for answer" />
+    <main className={empty ? 'chat empty' : 'chat'}>
+      {empty ? (
+        <h1 className="greeting">What’s on your mind?</h1>
+      ) : (
+        <div className="messages">
+          <div className="thread">
+            {messages.map((m) => (
+              <Message key={m.key} message={m} />
+            ))}
+            {pending && (
+              <>
+                <Message
+                  message={{ key: 'u', role: 'user', text: pending.user }}
+                />
+                {pending.assistant ? (
+                  <Message
+                    message={{
+                      key: 'a',
+                      role: 'assistant',
+                      text: pending.assistant,
+                    }}
+                  />
+                ) : (
+                  <div className="thinking" aria-label="Waiting for answer" />
+                )}
+              </>
             )}
-          </>
-        )}
-        {error && (
-          <p className="error" role="alert">
-            {error}
-          </p>
-        )}
-        <div ref={endRef} />
-      </div>
+            {error && (
+              <p className="error" role="alert">
+                {error}
+              </p>
+            )}
+            <div ref={endRef} />
+          </div>
+        </div>
+      )}
       <Composer busy={busy} onSend={send} onStop={stop} />
+      <p className="disclaimer">
+        chibot can make mistakes. Check important info.
+      </p>
     </main>
   )
 }
