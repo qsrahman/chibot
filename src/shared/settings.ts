@@ -1,17 +1,7 @@
 // User preferences (PLAN.md §6, layer 2). The web imports these as types only,
 // so zod stays out of the browser bundle.
 import { z } from 'zod'
-
-/** The SDK's reasoning efforts (`ReasoningEffort`, minus `null`). */
-export const REASONING_EFFORTS = [
-  'none',
-  'minimal',
-  'low',
-  'medium',
-  'high',
-  'xhigh',
-  'max',
-] as const
+import { REASONING_EFFORTS } from './reasoning.ts'
 
 export const settingsSchema = z.object({
   /** Chat model for new turns. Defaults to `OPENAI_MODEL`. */

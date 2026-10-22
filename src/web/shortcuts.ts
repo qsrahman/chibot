@@ -9,6 +9,7 @@ export const SHORTCUTS = {
   focusComposer: { keys: 'Shift+Escape', label: 'Focus the message box' },
   copyLastAnswer: { keys: '$mod+Shift+C', label: 'Copy the last answer' },
   stop: { keys: 'Escape', label: 'Stop the answer' },
+  settings: { keys: '$mod+,', label: 'Open settings' },
   showShortcuts: { keys: '$mod+/', label: 'Show keyboard shortcuts' },
 } as const
 

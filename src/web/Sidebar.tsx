@@ -11,6 +11,7 @@ import {
   Pin,
   PinOff,
   Search,
+  Settings,
   SquarePen,
   Trash2,
 } from 'lucide-react'
@@ -21,21 +22,30 @@ import { groupConversations } from './dates.ts'
 import { DeleteChatDialog } from './Dialog.tsx'
 import { useAnchoredPopover } from './popover.ts'
 import { SearchDialog } from './SearchDialog.tsx'
+import { SettingsDialog } from './SettingsDialog.tsx'
 import { ShortcutsDialog } from './ShortcutsDialog.tsx'
 import { SHORTCUTS, useShortcuts } from './shortcuts.ts'
 import { UNTITLED, type ConversationsApi } from './useConversations.ts'
+import type { SettingsApi } from './useSettings.ts'
 
 interface Props {
   collapsed: boolean
   onToggle: () => void
   conversations: ConversationsApi
+  settings: SettingsApi
 }
 
-export function Sidebar({ collapsed, onToggle, conversations }: Props) {
+export function Sidebar({
+  collapsed,
+  onToggle,
+  conversations,
+  settings,
+}: Props) {
   const navigate = useNavigate()
   const openId = useMatch('/c/:id')?.params.id
   const [searchOpen, setSearchOpen] = useState(false)
   const [archivedOpen, setArchivedOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
 
   useShortcuts({
@@ -50,6 +60,10 @@ export function Sidebar({ collapsed, onToggle, conversations }: Props) {
     [SHORTCUTS.toggleSidebar.keys]: (e) => {
       e.preventDefault()
       onToggle()
+    },
+    [SHORTCUTS.settings.keys]: (e) => {
+      e.preventDefault()
+      setSettingsOpen(true)
     },
     [SHORTCUTS.showShortcuts.keys]: (e) => {
       e.preventDefault()
@@ -120,9 +134,9 @@ export function Sidebar({ collapsed, onToggle, conversations }: Props) {
 
       <div className="sidebar-bottom">
         <SidebarButton
-          icon={<Archive />}
-          label="Archived chats"
-          onClick={() => setArchivedOpen(true)}
+          icon={<Settings />}
+          label="Settings"
+          onClick={() => setSettingsOpen(true)}
         />
         <SidebarButton
           icon={<Keyboard />}
@@ -135,6 +149,13 @@ export function Sidebar({ collapsed, onToggle, conversations }: Props) {
         open={searchOpen}
         onClose={() => setSearchOpen(false)}
         recent={conversations.conversations}
+      />
+      <SettingsDialog
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        settings={settings}
+        onImported={conversations.refresh}
+        onShowArchived={() => setArchivedOpen(true)}
       />
       <ShortcutsDialog
         open={shortcutsOpen}

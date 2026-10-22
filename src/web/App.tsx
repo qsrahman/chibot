@@ -58,6 +58,7 @@ export function App() {
           collapsed={collapsed}
           onToggle={toggleSidebar}
           conversations={conversations}
+          settings={settings}
         />
         {/* Both routes render ChatPage at the same tree position, so moving
             from / to /c/:id after the first message keeps its state. */}

@@ -16,6 +16,7 @@
   --surface: light-dark(#ffffff, #212121);
   --surface-raised: light-dark(#ffffff, #303030);
   --surface-muted: light-dark(#f4f4f4, #303030);
+  --chip: light-dark(#ececec, #414141);
   --fg: light-dark(#0d0d0d, #ffffff);
   --fg-muted: light-dark(#5d5d5d, #cdcdcd);
   --border: light-dark(rgb(0 0 0 / 10%), rgb(255 255 255 / 15%));
@@ -1068,6 +1069,165 @@ kbd {
   font: inherit;
   font-size: 12px;
   text-align: center;
+}
+
+/* Settings (DESIGN.md §4) */
+
+.dialog.settings {
+  width: min(100% - 32px, 760px);
+}
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 16px;
+  height: min(70vh, 560px);
+}
+
+.settings-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-tabs [aria-current='page'] {
+  background: var(--surface-muted);
+}
+
+.settings-panel {
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.settings-section + .settings-section {
+  margin-top: 24px;
+}
+
+.settings-section h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.settings-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 52px;
+  padding: 8px 16px;
+}
+
+.settings-row + .settings-row,
+.settings-field + .settings-field {
+  border-top: 1px solid var(--border);
+}
+
+.settings-label label,
+.settings-field label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.settings-label p {
+  margin: 2px 0 0;
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.settings-panel select,
+.settings-number,
+.settings-field textarea {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-row);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+}
+
+.settings-panel select {
+  height: 32px;
+  padding: 0 8px;
+}
+
+.settings-number {
+  width: 120px;
+  height: 32px;
+  padding: 0 8px;
+  text-align: right;
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px;
+}
+
+.settings-field textarea {
+  min-height: 96px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.settings-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 0 16px 12px;
+}
+
+.settings-saved {
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+label.button {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* A 32×20 switch on a native checkbox (role="switch"). */
+.switch {
+  position: relative;
+  flex: none;
+  width: 32px;
+  height: 20px;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--chip);
+  appearance: none;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform 150ms ease;
+}
+
+.switch:checked {
+  background: var(--accent);
+}
+
+.switch:checked::after {
+  transform: translateX(12px);
 }
 
 .dialog.archived {
