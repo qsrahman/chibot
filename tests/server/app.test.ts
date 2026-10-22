@@ -98,8 +98,14 @@ describe('API', () => {
     const res = await postTurn(app, id, { text: 'Hello' })
     expect(res.headers.get('content-type')).toContain('text/event-stream')
     const received = await readEvents(res)
-    expect(received.map((e) => e.event)).toEqual(events.map((e) => e.type))
-    expect(received.map((e) => JSON.parse(e.data))).toEqual(events)
+    expect(received.map((e) => e.event)).toEqual([
+      ...events.map((e) => e.type),
+      'chibot.title',
+    ])
+    expect(received.map((e) => JSON.parse(e.data))).toEqual([
+      ...events,
+      { type: 'chibot.title', title: 'Test Title' },
+    ])
 
     const body = (await (
       await app.request(`/api/conversations/${id}`)

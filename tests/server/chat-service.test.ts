@@ -24,7 +24,10 @@ describe('ChatService', () => {
     const events = answerEvents('Hel', 'lo')
     const chat = new ChatService(fakeClient(events, calls), store, 'model-x')
 
-    expect(await drain(chat.sendMessage(conversationId, 'Hi'))).toEqual(events)
+    expect(await drain(chat.sendMessage(conversationId, 'Hi'))).toEqual([
+      ...events,
+      { type: 'chibot.title', title: 'Test Title' },
+    ])
 
     expect(calls[0]!.params).toMatchObject({
       model: 'model-x',

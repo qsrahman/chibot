@@ -1,5 +1,6 @@
 import OpenAI from 'openai'
 import type {
+  ResponseCreateParams,
   ResponseCreateParamsStreaming,
   ResponseInputItem,
   ResponseStreamEvent,
@@ -35,19 +36,36 @@ export interface FakeCall {
   signal: AbortSignal | undefined
 }
 
+export interface TitleOptions {
+  /** What the title request returns as `output_text`, or throws. */
+  title?: string | Error | ((params: ResponseCreateParams) => string | Error)
+  titleCalls?: ResponseCreateParams[]
+}
+
 /**
- * An OpenAI client whose `responses.create` streams the given events, or
- * rejects with `error`. It honours the abort signal between events.
+ * An OpenAI client whose streaming `responses.create` yields the given
+ * events (or rejects with an error), honouring the abort signal between
+ * events. Non-streaming calls are title requests: see `TitleOptions`.
  */
 export function fakeClient(
   events: ResponseStreamEvent[] | Error,
   calls: FakeCall[] = [],
+  { title = 'Test Title', titleCalls = [] }: TitleOptions = {},
 ): OpenAI {
   const create = async (
-    params: ResponseCreateParamsStreaming,
+    params: ResponseCreateParams,
     options?: { signal?: AbortSignal },
   ) => {
-    calls.push({ params: structuredClone(params), signal: options?.signal })
+    if (!params.stream) {
+      titleCalls.push(structuredClone(params))
+      const result = typeof title === 'function' ? title(params) : title
+      if (result instanceof Error) throw result
+      return { output_text: result }
+    }
+    calls.push({
+      params: structuredClone(params) as ResponseCreateParamsStreaming,
+      signal: options?.signal,
+    })
     if (events instanceof Error) throw events
     return (async function* () {
       for (const event of events) {
