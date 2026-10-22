@@ -21,7 +21,7 @@ import {
 import type { ConversationListItem } from '../shared/types.ts'
 import { ArchivedDialog } from './ArchivedDialog.tsx'
 import { groupConversations } from './dates.ts'
-import { ConfirmDialog } from './Dialog.tsx'
+import { DeleteChatDialog } from './Dialog.tsx'
 import { SearchDialog } from './SearchDialog.tsx'
 import { UNTITLED, type ConversationsApi } from './useConversations.ts'
 
@@ -117,17 +117,9 @@ export function Sidebar({ collapsed, onToggle, conversations }: Props) {
         onChanged={conversations.refresh}
         onDeleted={(id) => id === openId && navigate('/')}
       />
-      <ConfirmDialog
-        open={toDelete !== null}
-        title="Delete chat?"
-        message={
-          <>
-            This will delete <strong>{toDelete?.title ?? UNTITLED}</strong> and
-            all its messages. This can't be undone.
-          </>
-        }
-        confirmLabel="Delete"
-        onConfirm={() => toDelete && void remove(toDelete.id)}
+      <DeleteChatDialog
+        chat={toDelete}
+        onDelete={(id) => void remove(id)}
         onClose={() => setToDelete(null)}
       />
     </nav>

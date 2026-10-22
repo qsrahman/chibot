@@ -7,7 +7,7 @@ import {
   listConversations,
   updateConversation,
 } from './api.ts'
-import { ConfirmDialog, Dialog } from './Dialog.tsx'
+import { DeleteChatDialog, Dialog } from './Dialog.tsx'
 import { UNTITLED } from './useConversations.ts'
 
 interface Props {
@@ -102,17 +102,9 @@ export function ArchivedDialog({ open, onClose, onChanged, onDeleted }: Props) {
           </li>
         ))}
       </ul>
-      <ConfirmDialog
-        open={toDelete !== null}
-        title="Delete chat?"
-        message={
-          <>
-            This will delete <strong>{toDelete?.title ?? UNTITLED}</strong> and
-            all its messages. This can't be undone.
-          </>
-        }
-        confirmLabel="Delete"
-        onConfirm={() => toDelete && void remove(toDelete.id)}
+      <DeleteChatDialog
+        chat={toDelete}
+        onDelete={(id) => void remove(id)}
         onClose={() => setToDelete(null)}
       />
     </Dialog>
