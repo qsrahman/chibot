@@ -1,9 +1,9 @@
 # chibot — Design Guide
 
 chibot's UI follows the look and feel of ChatGPT's web app: a calm,
-monochrome, content-first chat with one rounded composer. This guide records
-what was measured on chatgpt.com (22 Oct 2026, logged out, 1024×768) and how
-chibot applies it. It borrows **aesthetics only**: no ChatGPT name, logo,
+near-monochrome, content-first chat with one rounded composer and a single blue
+accent. This guide records what was measured on chatgpt.com (22 Oct 2026,
+logged out, 1024×768, one test conversation) and how chibot applies it. It borrows **aesthetics only**: no ChatGPT name, logo,
 icons or copy.
 
 All values live as CSS variables in [`src/web/styles.css`](src/web/styles.css).
@@ -13,8 +13,9 @@ Components use the variables, never raw colours.
 
 - **Content first.** No chrome around assistant answers: they're plain text on
   the page. Only the user's messages sit in a bubble.
-- **Monochrome.** Greys plus one accent (black in light mode, white in dark).
-  Colour is reserved for state: errors, toggles, focus.
+- **Near-monochrome.** Greys, plus one blue accent for what's *yours* or
+  *actionable*: your message bubbles, the send button, switches. Primary
+  buttons in dialogs stay black/white. Red is only for errors.
 - **Soft geometry.** Large radii everywhere: composer pill 28 px, cards 16 px,
   dialogs 20 px, rows and menu items 10 px.
 - **One column.** The thread and composer share a centred column of at most
@@ -24,9 +25,10 @@ Components use the variables, never raw colours.
 
 ## 2. Tokens
 
-Measured on chatgpt.com: page, surfaces, text, borders, the switch colour,
-shadows, radii and sizes. Chosen by chibot to fit: light-mode `--fg-muted`,
-`--surface-muted` and `--chip`, and `--danger` in both themes. The logged-out
+Measured on chatgpt.com: page, surfaces, text, muted text, borders, the blue
+accent, bubble and inline-code colours, shadows, radii and sizes. Chosen by
+chibot to fit: light-mode `--surface-muted` and `--chip`, and `--danger` in both
+themes. The logged-out
 dark theme uses a pure black page, which chibot follows. Changing `--bg` is
 enough to switch to a dark-grey page.
 
@@ -36,13 +38,15 @@ enough to switch to a dark-grey page.
 | `--sidebar-bg` | `#fcfcfc` | `#000000` | Sidebar (Phase 2), separated by `--border` |
 | `--surface` | `#ffffff` | `#212121` | Composer, cards |
 | `--surface-raised` | `#ffffff` | `#303030` | Dialogs, menus, popovers |
-| `--surface-muted` | `#f4f4f4` | `#303030` | User bubble, inline code, hover rows |
+| `--surface-muted` | `#f4f4f4` | `#303030` | Hover rows |
+| `--bubble-bg` / `--bubble-fg` | `#edf3ff` / `#2451da` | `#020562` / `#d9e6ff` | User message bubble |
+| `--code-chip` | `rgb(238 238 238 / 82%)` | `rgb(42 42 42 / 82%)` | Inline code |
 | `--chip` | `#ececec` | `#414141` | Chips and pills (suggestions, icon buttons) |
 | `--fg` | `#0d0d0d` | `#ffffff` | Text |
-| `--fg-muted` | `#5d5d5d` | `#cdcdcd` | Descriptions, captions, footer |
+| `--fg-muted` | `#5d5d5d` | `#cdcdcd` | Descriptions, captions, footer, action icons, code labels |
 | `--border` | `rgb(0 0 0 / 10%)` | `rgb(255 255 255 / 15%)` | Hairlines, composer outline |
-| `--accent` / `--accent-fg` | `#0d0d0d` / `#fff` | `#fff` / `#0d0d0d` | Send button, primary buttons |
-| `--toggle-on` | `#3f6ae0` | `#3f6ae0` | Switches (measured `oklch(0.56 0.21 265)`) |
+| `--accent` / `--accent-fg` | `#3566f0` / `#fff` | `#3566f0` / `#fff` | Send button, switches (measured `oklch(0.56 0.21 265)`) |
+| `--button` / `--button-fg` | `#0d0d0d` / `#fff` | `#fff` / `#0d0d0d` | Primary buttons in dialogs |
 | `--danger` | `#d93025` | `#ff6b6b` | Errors, destructive buttons |
 
 **Shadows.** In light mode the composer floats on a layered shadow:
@@ -52,10 +56,14 @@ Dialogs use `0 24px 64px rgb(0 0 0/22%), 0 4px 16px rgb(0 0 0/12%)`.
 
 **Typography.** The system stack,
 `ui-sans-serif, -apple-system, system-ui, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif`.
+Code uses `"SF Mono", SFMono-Regular, ui-monospace, Consolas, "Liberation Mono", Menlo, monospace`.
 
 | Role | Size / line height | Weight |
 |---|---|---|
-| Body, messages | 16 / 24 px | 400 |
+| Body, user messages | 16 / 24 px | 400 |
+| Assistant answers | 16 / 26 px, 16 px between blocks | 400 (bold 600) |
+| Code (blocks and inline) | 16 / 26 px blocks; inline 0.93 em | 400; inline 500 |
+| Code language label | 12 px, `--fg-muted` | 400 |
 | Composer input | 17 / 24 px | 400 |
 | Sidebar rows, settings labels | 14 / 20 px | 400 (labels 500) |
 | Section headings | 16 px | 500 |
@@ -91,21 +99,36 @@ Dialogs use `0 24px 64px rgb(0 0 0/22%), 0 4px 16px rgb(0 0 0/12%)`.
 
 **Composer.** A 28 px-radius pill on `--surface` with a `--border` outline,
 7×10 px padding and 52 px tall when one line. The textarea grows up to 40 vh.
-A round 36 px icon button on the right is **send** (`--accent`, arrow-up icon),
+A round 36 px icon button on the right is **send** (blue `--accent`, arrow-up icon),
 dimmed while the input is empty, and becomes **stop** (square icon) while an
 answer streams. Later phases add a "+" button on the left (attachments,
 Phase 5) and a mic button (voice, Phase 5).
 
 **Messages.**
-- *User:* right-aligned bubble, `--surface-muted`, 18 px radius, 10×16 px
-  padding, max 70 % width, `white-space: pre-wrap`.
-- *Assistant:* full-width Markdown with no background.
-- *Action row (Phase 3):* 32 px icon buttons (copy, regenerate, versions
-  `< 2/3 >`), muted, shown on hover and always on the last answer.
+- *User:* right-aligned bubble with `--bubble-bg` and `--bubble-fg` text,
+  22 px radius, 10×16 px padding, max 70 % width, `white-space: pre-wrap`.
+  On hover, a **Copy** icon appears below it, right-aligned. Phase 3 adds
+  **Edit** beside it.
+- *Assistant:* full-width Markdown with no background, 16/26 px text, 16 px
+  between blocks.
+- *Action rows (Phase 3).* Icon buttons with a 44 px hit area, muted
+  (`--fg-muted`) 20 px icons, 4 px apart, 8 px radius hover fill, directly
+  under the answer:
+  - Assistant: **Copy**, then **Regenerate**, version switcher `< 2/3 >` and
+    token usage. These show on hover and always on the latest answer.
+  - Measured logged out: Copy and Share. chibot has no sharing, so it omits
+    Share.
 - *Thinking:* a pulsing dot before the first token arrives.
 
-**Code blocks.** 16 px radius with a hairline border. Phase 3 adds a header
-strip with the language name on the left and Copy on the right.
+**Code blocks.** No box: no background, border or radius, just like the text
+around them.
+- The language name sits above the code in a 12 px muted label.
+- Code is 16/26 px monospace.
+- Phase 3 adds a round **Copy code** button (16 px icon, 44 px hit area) that
+  floats at the block's top right.
+
+**Inline code.** `--code-chip` background, 4 px radius, 1×4 px padding,
+0.93 em monospace, weight 500.
 
 **Menus and popovers** (native Popover API). `--surface-raised`, 16 px radius,
 6 px padding and the dialog shadow. Items are 36 px rows with an icon and a
@@ -115,7 +138,7 @@ hairlines, with optional 12 px muted section labels.
 **Dialogs** (native `<dialog>`). `--surface-raised`, 20 px radius, width
 `min(100% - 32px, 448px)`, dialog shadow and a dimmed backdrop. Layout:
 title (18 px, 500), body (14 px muted), then right-aligned buttons. Buttons are
-pill-shaped: primary is `--accent`, secondary is outlined, destructive is
+pill-shaped: primary is `--button`, secondary is outlined, destructive is
 `--danger`. Used for confirmations such as "Delete chat?".
 
 **Settings (Phase 4).** A large dialog with a vertical tab list on the left
@@ -123,7 +146,8 @@ pill-shaped: primary is `--accent`, secondary is outlined, destructive is
 grouped as section heading (16 px, 500) + card (`--surface`, 16 px radius,
 hairline border). A card holds rows: 52 px tall, 0×16 px padding, a 14 px/500
 label (with an optional 12 px muted description) on the left, and the control
-on the right: a select showing its value and a chevron, or a 32×20 px switch.
+on the right: a select showing its value and a chevron, or a 32×20 px switch
+(`--accent` when on).
 Hairline dividers separate rows.
 
 **Footer.** 12 px muted line under the composer: "chibot can make mistakes.
@@ -131,8 +155,21 @@ Check important info."
 
 ## 5. Icons
 
-[`lucide-react`](https://lucide.dev): 1.5 px strokes and 18–20 px size, close
-to ChatGPT's line icons. Never hand-drawn SVG.
+[`lucide-react`](https://lucide.dev), never hand-drawn SVG. ChatGPT uses thin
+line icons: 20 px in action rows and the header, 16 px on code blocks, 24 px
+for the composer's "+". The lucide equivalents use a 1.5 px stroke:
+
+| Action | lucide icon |
+|---|---|
+| Send / Stop | `ArrowUp` / `Square` (filled) |
+| New chat | `SquarePen` |
+| Copy / copied | `Copy` / `Check` |
+| Edit message | `Pencil` |
+| Regenerate | `RefreshCw` |
+| Versions | `ChevronLeft` / `ChevronRight` |
+| Attach (Phase 5) / voice (Phase 5) | `Plus` / `Mic` |
+| Sidebar toggle (Phase 2) | `PanelLeft` |
+| Settings (Phase 4) | `Settings` |
 
 ## 6. Interaction
 
