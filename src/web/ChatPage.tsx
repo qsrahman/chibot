@@ -6,6 +6,7 @@ import { Composer } from './Composer.tsx'
 import { Markdown } from './Markdown.tsx'
 import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
 import type { Turn } from './turns.ts'
+import { describeUsage } from './usage.ts'
 import { useChat } from './useChat.ts'
 
 interface Props {
@@ -24,6 +25,7 @@ export function ChatPage({ health, onListChanged }: Props) {
     temporary: temporaryMode,
   })
   const { turns, pending, error, isTemporary, busy } = chat
+  const chatUsage = describeUsage(chat.usage)
   const endRef = useRef<HTMLDivElement>(null)
   // Follow the answer only while the user is at the bottom, so scrolling up
   // to read isn't undone by every new token.
@@ -60,7 +62,17 @@ export function ChatPage({ health, onListChanged }: Props) {
           {health ? health.model : 'Server unreachable'}
         </span>
         {id ? (
-          temporary && <span className="badge">Temporary chat</span>
+          <span className="topbar-info">
+            {chatUsage && (
+              <span
+                className="usage"
+                title={`This chat, all versions: ${chatUsage.detail}`}
+              >
+                {chatUsage.short}
+              </span>
+            )}
+            {temporary && <span className="badge">Temporary chat</span>}
+          </span>
         ) : (
           <button
             type="button"
@@ -163,6 +175,7 @@ function TurnView({
   const [editing, setEditing] = useState(false)
   // Shown after a Stop before the server's ids are known: no edit/regenerate.
   const saved = question.itemId !== null
+  const answerUsage = describeUsage(answer?.usage)
 
   return (
     <div className={latest ? 'turn latest' : 'turn'}>
@@ -227,6 +240,11 @@ function TurnView({
               disabled={busy}
               onSwitch={onSwitch}
             />
+          )}
+          {answerUsage && (
+            <span className="usage" title={answerUsage.detail}>
+              {answerUsage.short}
+            </span>
           )}
         </div>
       )}

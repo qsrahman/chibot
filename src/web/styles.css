@@ -265,6 +265,20 @@ body {
   cursor: default;
 }
 
+.usage {
+  margin-left: 8px;
+  color: var(--fg-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  cursor: default;
+}
+
+.topbar-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .versions {
   display: inline-flex;
   align-items: center;
