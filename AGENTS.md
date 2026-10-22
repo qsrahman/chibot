@@ -70,6 +70,10 @@ transpiles it.
   client, store, config). Only `main.ts` constructs real ones. Tests pass
   fakes.
 - **Private state** uses `#fields`.
+- **Validation** uses zod schemas in `src/shared` (`requests.ts`, `settings.ts`),
+  applied to routes with `json(schema)` (`@hono/zod-validator`). Shared types
+  are inferred from them; the web imports them as types only, which keeps zod
+  out of the browser bundle.
 - **Use the SDK's types.** Persisted items are `ResponseInputItem`. Streamed
   events are `ResponseStreamEvent`. The web imports them with
   `import type … from 'openai/resources/responses/responses'`. Never write

@@ -4,6 +4,8 @@ import type {
   ResponseInputItem,
   ResponseUsage,
 } from 'openai/resources/responses/responses'
+import type { z } from 'zod'
+import type { conversationPatchSchema, turnRequestSchema } from './requests.ts'
 
 export interface Conversation {
   id: string
@@ -24,11 +26,7 @@ export interface ConversationListItem extends Conversation {
 }
 
 /** Fields `PATCH /api/conversations/:id` accepts. */
-export interface ConversationPatch {
-  title?: string
-  pinned?: boolean
-  archived?: boolean
-}
+export type ConversationPatch = z.output<typeof conversationPatchSchema>
 
 /** One node of a conversation's history tree. */
 export interface StoredItem {
@@ -53,17 +51,8 @@ export interface ConversationWithItems {
   usage: ResponseUsage
 }
 
-/**
- * Body of `POST /api/conversations/:id/turns`:
- * - `{ text }` sends a message after the current leaf;
- * - `{ text, parentId }` sends it under `parentId` (`null` = the root), i.e.
- *   an edit of the message currently there;
- * - `{ parentId }` regenerates the answer to the user message `parentId`.
- */
-export interface TurnRequest {
-  text?: string
-  parentId?: number | null
-}
+/** Body of `POST /api/conversations/:id/turns` (see `turnRequestSchema`). */
+export type TurnRequest = z.output<typeof turnRequestSchema>
 
 /** SSE event chibot sends when a turn fails, alongside the SDK's own events. */
 export interface TurnErrorEvent {
