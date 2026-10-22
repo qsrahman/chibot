@@ -337,6 +337,9 @@ support (`qwen2.5-coder:1.5b`) ignores tools rather than failing.
   Approve / Deny. A turn ends at a final answer, stop, error or pending
   approval, not at the first `response.completed`; `turns.ts` groups every item
   after the question into one answer.
+- **Current date.** Not a tool: `chatInstructions` gains a line with the
+  current date, time and timezone (the server's, which is the user's for a
+  local app), so relative dates ("next Friday") work without a round trip.
 - **Export, search, titles.** Markdown export quotes each tool call with its
   result; the JSON export schema accepts call and output items. Search and
   titles keep ignoring tool payloads.
@@ -351,7 +354,8 @@ support (`qwen2.5-coder:1.5b`) ignores tools rather than failing.
 - **Done when:** on OpenAI, `gemma4:cloud` and `gpt-oss:120b-cloud` the model
   calls the calculator mid-answer and uses its exact result; activity shows
   live and after a reload; Approve and Deny both continue the answer (also
-  after a reload); stopping during a tool leaves a chat that keeps working.
+  after a reload); stopping during a tool leaves a chat that keeps working;
+  the model knows today's date.
 
 ### Phase 6 — Web search & image generation
 Both are our own `Tool` subclasses, not OpenAI-hosted tools, with per-chat
@@ -361,22 +365,34 @@ toggles in the composer.
   and the UI lists the sources under the answer. It's disabled when
   `BRAVE_API_KEY` is unset. No approval: it's read-only, though the query goes
   to Brave.
+- **`fetch_url`** reads a page the model found or the user pasted and returns
+  its main text (converted with a small, well-known library, not our own
+  parser), truncated to a size limit. No approval: it's read-only. It refuses
+  loopback, private-network and link-local addresses (checked after DNS
+  resolution and on every redirect), so a page can't make chibot read the
+  router or `localhost`.
 - **`generate_image`** calls `images.generate` (`OPENAI_IMAGE_MODEL`) with
   streamed partial images. Results are saved by a new `FileStore` (`files`
   table, original at `data/files/<id>`), served by `GET /api/files/:id` and
   rendered in the chat. The model receives a reference, not the image bytes.
 - `Config` moves to zod as the first per-feature endpoint arrives
   (`OPENAI_IMAGE_*`, §6).
-- **Done when:** a web-search answer shows clickable sources and a generated
-  image renders and persists.
+- **Done when:** a web-search answer shows clickable sources, the model can
+  read a pasted URL (and is refused a private address), and a generated image
+  renders and persists.
 
 ### Phase 7 — Memory
 - A `memory` tool (a `Tool` subclass, no approval) lets the model save facts
   about you. Saved memories are added to the instructions of every chat
   except temporary ones, and the chat shows a "Memory updated" notice.
 - A memory page to view and delete memories, plus a global on/off switch.
+- A `search_chats` tool (no approval) searches past chats through the existing
+  FTS index (titles and message text, temporary chats excluded) and returns
+  matching snippets with their chat titles and dates, so "what did we decide
+  about X?" works across chats. Everything stays local.
 - **Done when:** a fact told in one chat is used in a new chat and can be
-  deleted from the memory page.
+  deleted from the memory page, and the model answers from a past chat found
+  with `search_chats`.
 
 ### Phase 8 — Projects
 - Group conversations into projects (sidebar section, `/projects/:id`).
@@ -533,6 +549,14 @@ Environment variables:
   to `position-area` once it is.
 - **Bundle size:** the web bundle is ~860 kB (highlight.js grammars, KaTeX).
   That's acceptable for a local app; code-split if it starts to matter.
+- **Future tools (not yet scheduled):** a sandboxed code runner
+  (`run_python` on Pyodide in a worker: data analysis and charts over
+  attachments; a large dependency, so after Phase 9), and an MCP client that
+  exposes local MCP servers' tools as chibot function tools (approval required
+  by default, since their side effects are unknown). Deliberately out:
+  shell/filesystem tools (too costly when mis-approved on an unauthenticated
+  server) and narrow APIs like weather, which web search plus `fetch_url`
+  cover.
 - **Citations from our own web search** depend on the model following the
   instructions, since there are no hosted `url_citation` annotations. The UI's
   sources list comes from the tool result, so sources are always shown.
