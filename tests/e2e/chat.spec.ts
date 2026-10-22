@@ -37,7 +37,9 @@ test('chats, titles the conversation, shows usage and copies', async ({
   await expect(
     page.locator('.conversation-row .sidebar-row.active'),
   ).toHaveText('E2E Title')
-  await expect(turns(page).first().locator('.usage')).toHaveText('52 tokens')
+  await expect(
+    turns(page).first().locator('.usage', { hasText: 'tokens' }),
+  ).toHaveText('52 tokens')
 
   await turns(page).first().hover()
   await turns(page)
