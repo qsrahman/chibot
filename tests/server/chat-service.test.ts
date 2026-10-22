@@ -24,7 +24,7 @@ describe('ChatService', () => {
     const events = answerEvents('Hel', 'lo')
     const chat = new ChatService(fakeClient(events, calls), store, 'model-x')
 
-    expect(await drain(chat.sendMessage(conversationId, 'Hi'))).toEqual([
+    expect(await drain(chat.runTurn(conversationId, { text: 'Hi' }))).toEqual([
       ...events,
       { type: 'chibot.title', title: 'Test Title' },
     ])
@@ -46,7 +46,7 @@ describe('ChatService', () => {
 
   it('persists the answer before yielding response.completed', async () => {
     const chat = new ChatService(fakeClient(answerEvents('ok')), store, 'm')
-    for await (const event of chat.sendMessage(conversationId, 'Hi')) {
+    for await (const event of chat.runTurn(conversationId, { text: 'Hi' })) {
       if (event.type === 'response.completed') {
         expect(store.getPath(conversationId)).toHaveLength(2)
       }
@@ -60,8 +60,8 @@ describe('ChatService', () => {
       store,
       'm',
     )
-    await drain(chat.sendMessage(conversationId, 'one'))
-    await drain(chat.sendMessage(conversationId, 'two'))
+    await drain(chat.runTurn(conversationId, { text: 'one' }))
+    await drain(chat.runTurn(conversationId, { text: 'two' }))
 
     expect(calls[1]!.params.input).toEqual([
       { role: 'user', content: 'one' },
@@ -77,7 +77,7 @@ describe('ChatService', () => {
       'm',
     )
     let n = 0
-    for await (const _ of chat.sendMessage(conversationId, 'Hi')) {
+    for await (const _ of chat.runTurn(conversationId, { text: 'Hi' })) {
       if (++n === 2) break
     }
     expect(store.getPath(conversationId).map((i) => i.data)).toEqual([
@@ -94,9 +94,9 @@ describe('ChatService', () => {
       'm',
     )
     const run = async () => {
-      for await (const event of chat.sendMessage(
+      for await (const event of chat.runTurn(
         conversationId,
-        'Hi',
+        { text: 'Hi' },
         controller.signal,
       )) {
         if ('delta' in event && event.delta === 'tial') controller.abort()
@@ -117,9 +117,9 @@ describe('ChatService', () => {
       new Headers(),
     )
     const chat = new ChatService(fakeClient(error), store, 'm')
-    await expect(drain(chat.sendMessage(conversationId, 'Hi'))).rejects.toBe(
-      error,
-    )
+    await expect(
+      drain(chat.runTurn(conversationId, { text: 'Hi' })),
+    ).rejects.toBe(error)
     expect(store.getPath(conversationId).map((i) => i.data)).toEqual([
       { role: 'user', content: 'Hi' },
     ])

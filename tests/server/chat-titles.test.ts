@@ -37,7 +37,7 @@ describe('ChatService titles', () => {
     const { id } = store.createConversation()
 
     expect(
-      await eventTypes(chat.sendMessage(id, 'Tell me about pangolins')),
+      await eventTypes(chat.runTurn(id, { text: 'Tell me about pangolins' })),
     ).toContain('chibot.title')
     expect(store.getConversation(id)!.title).toBe('Pangolin Facts')
     expect(titleCalls[0]).toMatchObject({
@@ -47,7 +47,7 @@ describe('ChatService titles', () => {
     })
     expect(titleCalls[0]!.input).toContain('user: Tell me about pangolins')
 
-    expect(await eventTypes(chat.sendMessage(id, 'More?'))).not.toContain(
+    expect(await eventTypes(chat.runTurn(id, { text: 'More?' }))).not.toContain(
       'chibot.title',
     )
     expect(titleCalls).toHaveLength(1)
@@ -60,7 +60,7 @@ describe('ChatService titles', () => {
       title: (params) => (params.reasoning ? badRequest() : 'Plain Title'),
     })
     const { id } = store.createConversation()
-    await eventTypes(chat.sendMessage(id, 'Hi'))
+    await eventTypes(chat.runTurn(id, { text: 'Hi' }))
 
     expect(titleCalls.map((p) => p.reasoning)).toEqual([
       { effort: 'low' },
@@ -72,7 +72,7 @@ describe('ChatService titles', () => {
   it('cleans quotes, Markdown and a trailing full stop', async () => {
     const chat = service({ title: '**"Trip to Lisbon."**\nextra line' })
     const { id } = store.createConversation()
-    await eventTypes(chat.sendMessage(id, 'Hi'))
+    await eventTypes(chat.runTurn(id, { text: 'Hi' }))
     expect(store.getConversation(id)!.title).toBe('Trip to Lisbon')
   })
 
@@ -81,7 +81,7 @@ describe('ChatService titles', () => {
     const chat = service({ title: new Error('boom') })
     const { id } = store.createConversation()
 
-    expect(await eventTypes(chat.sendMessage(id, 'Hi'))).not.toContain(
+    expect(await eventTypes(chat.runTurn(id, { text: 'Hi' }))).not.toContain(
       'chibot.title',
     )
     expect(store.getConversation(id)!.title).toBeNull()
@@ -92,7 +92,7 @@ describe('ChatService titles', () => {
     const titleCalls: ResponseCreateParams[] = []
     const chat = service({ titleCalls })
     const { id } = store.createConversation({ temporary: true })
-    await eventTypes(chat.sendMessage(id, 'Hi'))
+    await eventTypes(chat.runTurn(id, { text: 'Hi' }))
     expect(titleCalls).toEqual([])
   })
 })

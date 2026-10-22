@@ -53,6 +53,18 @@ export interface ConversationWithItems {
   usage: ResponseUsage
 }
 
+/**
+ * Body of `POST /api/conversations/:id/turns`:
+ * - `{ text }` sends a message after the current leaf;
+ * - `{ text, parentId }` sends it under `parentId` (`null` = the root), i.e.
+ *   an edit of the message currently there;
+ * - `{ parentId }` regenerates the answer to the user message `parentId`.
+ */
+export interface TurnRequest {
+  text?: string
+  parentId?: number | null
+}
+
 /** SSE event chibot sends when a turn fails, alongside the SDK's own events. */
 export interface TurnErrorEvent {
   type: 'chibot.error'

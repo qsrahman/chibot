@@ -5,7 +5,7 @@ import type {
   ResponseStreamEvent,
 } from 'openai/resources/responses/responses'
 import { messageText } from '../shared/messages.ts'
-import type { TurnTitleEvent } from '../shared/types.ts'
+import type { TurnRequest, TurnTitleEvent } from '../shared/types.ts'
 import type { ConversationStore } from './conversation-store.ts'
 
 const TITLE_INSTRUCTIONS =
@@ -25,7 +25,8 @@ export class ChatService {
   }
 
   /**
-   * Appends the user's message and streams the model's answer.
+   * Runs one turn (see `TurnRequest`): appends the user's message unless it's
+   * a regenerate, then streams the model's answer to it.
    *
    * The answer is persisted *before* `response.completed` is yielded, so a
    * client can re-read the conversation as soon as it sees that event. If the
@@ -35,16 +36,27 @@ export class ChatService {
    * After a completed answer in a saved conversation that has no title yet,
    * a title is generated and yielded as a `chibot.title` event.
    */
-  async *sendMessage(
+  async *runTurn(
     conversationId: string,
-    text: string,
+    { text, parentId }: TurnRequest,
     signal?: AbortSignal,
   ): AsyncGenerator<ResponseStreamEvent | TurnTitleEvent> {
-    const leaf = this.#store.getConversation(conversationId)!.currentLeafId
-    const [userItem] = this.#store.appendItems(conversationId, leaf, [
-      { role: 'user', content: text },
-    ])
-    const input = this.#store.getPath(conversationId).map((item) => item.data)
+    // The user message the answer goes under. Callers validate `parentId`.
+    let questionId: number
+    if (text === undefined) {
+      questionId = parentId!
+    } else {
+      const parent =
+        parentId === undefined
+          ? this.#store.getConversation(conversationId)!.currentLeafId
+          : parentId
+      questionId = this.#store.appendItems(conversationId, parent, [
+        { role: 'user', content: text },
+      ])[0]!.id
+    }
+    const input = this.#store
+      .getPath(conversationId, questionId)
+      .map((item) => item.data)
 
     let partial = ''
     let saved = false
@@ -74,7 +86,7 @@ export class ChatService {
           const { output, usage } = event.response
           this.#store.appendItems(
             conversationId,
-            userItem!.id,
+            questionId,
             // Output items are valid input for the next turn. The SDK's types
             // only disagree for item kinds chibot never requests.
             output as ResponseInputItem[],
@@ -87,7 +99,7 @@ export class ChatService {
     } finally {
       // `finally` also runs when the consumer stops iterating (client gone).
       if (!saved && partial) {
-        this.#store.appendItems(conversationId, userItem!.id, [
+        this.#store.appendItems(conversationId, questionId, [
           { role: 'assistant', content: partial },
         ])
       }
