@@ -2,7 +2,6 @@
   "name": "chibot",
   "version": "0.3.0",
   "description": "Local ChatGPT-style chatbot on the OpenAI Responses API",
-  "main": "src/server/main.ts",
   "private": true,
   "bin": {
     "chibot": "src/server/main.ts"
@@ -20,13 +19,6 @@
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
-  "files": [
-    "src",
-    "README.md",
-    "CLAUDE.md",
-    "AGENTS.md",
-    "LICENSE"
-  ],
   "keywords": [],
   "author": "Qazi Sami ur Rahman <qsrahmans@gmail.com>",
   "license": "MIT",
