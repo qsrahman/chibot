@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- Settings stored in SQLite with `GET`/`PATCH /api/settings` (validated with zod; secrets are never included). The chat model is now a setting that defaults to `OPENAI_MODEL`.
+
 ## [0.4.0] - 2026-10-22
 
 ### Added

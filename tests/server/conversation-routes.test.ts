@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { createApp } from '../../src/server/app.ts'
 import { ChatService } from '../../src/server/chat-service.ts'
 import { Config } from '../../src/server/config.ts'
@@ -7,7 +7,7 @@ import type {
   Conversation,
   ConversationListItem,
 } from '../../src/shared/types.ts'
-import { fakeClient } from './fakes.ts'
+import { fakeClient, memoryStore, testSettings } from './fakes.ts'
 
 const config = new Config({ OPENAI_API_KEY: 'k' })
 
@@ -15,14 +15,15 @@ describe('conversation routes', () => {
   let store: ConversationStore
   let app: ReturnType<typeof createApp>
   beforeEach(() => {
-    store = new ConversationStore(':memory:')
+    store = memoryStore()
+    const settings = testSettings('m')
     app = createApp({
       config,
       store,
-      chat: new ChatService(fakeClient([]), store, 'm'),
+      settings,
+      chat: new ChatService(fakeClient([]), store, settings),
     })
   })
-  afterEach(() => store.close())
 
   const json = (method: string, body?: unknown) => ({
     method,

@@ -1,9 +1,16 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import OpenAI from 'openai'
 import type { ResponseCreateParams } from 'openai/resources/responses/responses'
 import { ChatService } from '../../src/server/chat-service.ts'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
-import { answerEvents, drain, fakeClient, type TitleOptions } from './fakes.ts'
+import {
+  answerEvents,
+  drain,
+  fakeClient,
+  type TitleOptions,
+  memoryStore,
+  testSettings,
+} from './fakes.ts'
 
 const eventTypes = async (stream: AsyncIterable<{ type: string }>) =>
   (await drain(stream)).map((event) => event.type)
@@ -19,15 +26,14 @@ const badRequest = () =>
 describe('ChatService titles', () => {
   let store: ConversationStore
   beforeEach(() => {
-    store = new ConversationStore(':memory:')
+    store = memoryStore()
   })
-  afterEach(() => store.close())
 
   function service(options: TitleOptions) {
     return new ChatService(
       fakeClient(answerEvents('A'), [], options),
       store,
-      'm',
+      testSettings('m'),
     )
   }
 

@@ -1,55 +1,16 @@
-import { DatabaseSync } from 'node:sqlite'
+import type { DatabaseSync } from 'node:sqlite'
 import type {
   ResponseInputItem,
   ResponseUsage,
 } from 'openai/resources/responses/responses'
 import { messageText } from '../shared/messages.ts'
+import { transaction } from './database.ts'
 import type {
   Conversation,
   ConversationListItem,
   ConversationPatch,
   StoredItem,
 } from '../shared/types.ts'
-
-// Applied in order; PRAGMA user_version records how many have run. A function
-// migration is for steps SQL alone can't do.
-const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
-  `CREATE TABLE conversations (
-     id TEXT PRIMARY KEY,
-     title TEXT,
-     current_leaf_id INTEGER,
-     created_at INTEGER NOT NULL,
-     updated_at INTEGER NOT NULL
-   );
-   CREATE TABLE items (
-     id INTEGER PRIMARY KEY AUTOINCREMENT,
-     conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-     parent_id INTEGER REFERENCES items(id),
-     data TEXT NOT NULL,
-     usage TEXT,
-     created_at INTEGER NOT NULL
-   );
-   CREATE INDEX items_parent ON items(parent_id);`,
-  (db) => {
-    db.exec(
-      `ALTER TABLE conversations ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0;
-       ALTER TABLE conversations ADD COLUMN archived_at INTEGER;
-       ALTER TABLE conversations ADD COLUMN temporary INTEGER NOT NULL DEFAULT 0;
-       -- rowid = items.id, so an item's text can be found or removed by id.
-       CREATE VIRTUAL TABLE items_fts USING fts5(text, conversation_id UNINDEXED);`,
-    )
-    const index = db.prepare(
-      'INSERT INTO items_fts (rowid, text, conversation_id) VALUES (?, ?, ?)',
-    )
-    const rows = db
-      .prepare('SELECT id, conversation_id, data FROM items')
-      .all() as { id: number; conversation_id: string; data: string }[]
-    for (const row of rows) {
-      const message = messageText(JSON.parse(row.data))
-      if (message) index.run(row.id, message.text, row.conversation_id)
-    }
-  },
-]
 
 interface ConversationRow {
   id: string
@@ -89,14 +50,9 @@ const SEARCH_LIMIT = 50
 export class ConversationStore {
   readonly #db: DatabaseSync
 
-  /** @param path SQLite file, or `':memory:'` for tests. */
-  constructor(path: string) {
-    this.#db = new DatabaseSync(path)
-    this.#migrate()
-  }
-
-  close(): void {
-    this.#db.close()
+  /** @param db from `openDatabase()` */
+  constructor(db: DatabaseSync) {
+    this.#db = db
   }
 
   createConversation({ temporary = false } = {}): Conversation {
@@ -196,7 +152,7 @@ export class ConversationStore {
   /** @returns whether the conversation existed. */
   deleteConversation(id: string): boolean {
     let changes = 0
-    this.#transaction(() => {
+    transaction(this.#db, () => {
       // The FTS table has no foreign key, so its rows go explicitly.
       this.#db
         .prepare('DELETE FROM items_fts WHERE conversation_id = ?')
@@ -240,7 +196,7 @@ export class ConversationStore {
       'INSERT INTO items_fts (rowid, text, conversation_id) VALUES (?, ?, ?)',
     )
     const stored: StoredItem[] = []
-    this.#transaction(() => {
+    transaction(this.#db, () => {
       let parent = parentId
       items.forEach((data, i) => {
         const itemUsage = i === items.length - 1 ? usage : null
@@ -376,31 +332,6 @@ export class ConversationStore {
       )
       .all(conversationId, parentId) as { id: number }[]
     return rows.map((r) => r.id)
-  }
-
-  #migrate(): void {
-    const { user_version: version } = this.#db
-      .prepare('PRAGMA user_version')
-      .get() as { user_version: number }
-    MIGRATIONS.slice(version).forEach((migration, i) => {
-      this.#transaction(() => {
-        if (typeof migration === 'string') this.#db.exec(migration)
-        else migration(this.#db)
-        // PRAGMA doesn't accept bound parameters.
-        this.#db.exec(`PRAGMA user_version = ${version + i + 1}`)
-      })
-    })
-  }
-
-  #transaction(fn: () => void): void {
-    this.#db.exec('BEGIN')
-    try {
-      fn()
-      this.#db.exec('COMMIT')
-    } catch (err) {
-      this.#db.exec('ROLLBACK')
-      throw err
-    }
   }
 }
 

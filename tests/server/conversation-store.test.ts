@@ -1,13 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
-import { usage } from './fakes.ts'
+import { openDatabase } from '../../src/server/database.ts'
+import { usage, memoryStore } from './fakes.ts'
 
 describe('ConversationStore', () => {
   let store: ConversationStore
   beforeEach(() => {
-    store = new ConversationStore(':memory:')
+    store = memoryStore()
   })
-  afterEach(() => store.close())
 
   it('creates and fetches a conversation', () => {
     const created = store.createConversation()
@@ -75,16 +75,18 @@ describe('ConversationStore', () => {
     const dir = mkdtempSync(join(tmpdir(), 'chibot-'))
     try {
       const file = join(dir, 'test.db')
-      const first = new ConversationStore(file)
+      const firstDb = openDatabase(file)
+      const first = new ConversationStore(firstDb)
       const { id } = first.createConversation()
       first.appendItems(id, null, [{ role: 'user', content: 'kept' }])
-      first.close()
+      firstDb.close()
 
-      const second = new ConversationStore(file)
+      const secondDb = openDatabase(file)
+      const second = new ConversationStore(secondDb)
       expect(second.getPath(id).map((i) => i.data)).toEqual([
         { role: 'user', content: 'kept' },
       ])
-      second.close()
+      secondDb.close()
     } finally {
       rmSync(dir, { recursive: true })
     }

@@ -1,23 +1,36 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { createApp } from '../../src/server/app.ts'
 import { ChatService } from '../../src/server/chat-service.ts'
 import { Config } from '../../src/server/config.ts'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
+import type { SettingsStore } from '../../src/server/settings-store.ts'
 import { messageText } from '../../src/shared/messages.ts'
-import { answerEvents, drain, fakeClient, type FakeCall } from './fakes.ts'
+import {
+  answerEvents,
+  drain,
+  fakeClient,
+  type FakeCall,
+  memoryStore,
+  testSettings,
+} from './fakes.ts'
 
 describe('edit, regenerate and switch versions', () => {
   let store: ConversationStore
   let calls: FakeCall[]
   let chat: ChatService
+  let settings: SettingsStore
   let id: string
   beforeEach(() => {
-    store = new ConversationStore(':memory:')
+    store = memoryStore()
     calls = []
-    chat = new ChatService(fakeClient(answerEvents('ans'), calls), store, 'm')
+    settings = testSettings('m')
+    chat = new ChatService(
+      fakeClient(answerEvents('ans'), calls),
+      store,
+      settings,
+    )
     id = store.createConversation().id
   })
-  afterEach(() => store.close())
 
   const texts = () =>
     store.getPath(id).map((i) => messageText(i.data)?.text ?? i.data.type)
@@ -59,7 +72,7 @@ describe('edit, regenerate and switch versions', () => {
 
   describe('routes', () => {
     const config = new Config({ OPENAI_API_KEY: 'k' })
-    const app = () => createApp({ config, store, chat })
+    const app = () => createApp({ config, store, settings, chat })
     const send = (body: unknown) =>
       app().request(`/api/conversations/${id}/turns`, {
         method: 'POST',

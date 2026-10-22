@@ -1,16 +1,17 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
+import { openDatabase } from '../../src/server/database.ts'
+import { memoryStore } from './fakes.ts'
 
 describe('ConversationStore lists, search and lifecycle', () => {
   let store: ConversationStore
   beforeEach(() => {
-    store = new ConversationStore(':memory:')
+    store = memoryStore()
   })
-  afterEach(() => store.close())
 
   /** A saved conversation with one exchange, so it has a recent update. */
   function chat(question: string, answer = 'ok', title?: string) {
@@ -122,14 +123,15 @@ describe('ConversationStore lists, search and lifecycle', () => {
         PRAGMA user_version = 1;`)
       v1.close()
 
-      const migrated = new ConversationStore(file)
+      const migratedDb = openDatabase(file)
+      const migrated = new ConversationStore(migratedDb)
       expect(migrated.getConversation('old')).toMatchObject({
         pinned: false,
         archived: false,
         temporary: false,
       })
       expect(ids(migrated.searchConversations('axolotl'))).toEqual(['old'])
-      migrated.close()
+      migratedDb.close()
     } finally {
       rmSync(dir, { recursive: true })
     }

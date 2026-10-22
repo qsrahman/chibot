@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import OpenAI from 'openai'
 import type { ResponseStreamEvent } from 'openai/resources/responses/responses'
 import {
@@ -13,7 +13,7 @@ import type {
   Conversation,
   ConversationWithItems,
 } from '../../src/shared/types.ts'
-import { answerEvents, fakeClient } from './fakes.ts'
+import { answerEvents, fakeClient, memoryStore, testSettings } from './fakes.ts'
 
 const config = new Config({
   OPENAI_API_KEY: 'secret',
@@ -33,13 +33,13 @@ async function readEvents(res: Response): Promise<EventSourceMessage[]> {
 describe('API', () => {
   let store: ConversationStore
   beforeEach(() => {
-    store = new ConversationStore(':memory:')
+    store = memoryStore()
   })
-  afterEach(() => store.close())
 
   function appWith(events: ResponseStreamEvent[] | Error) {
-    const chat = new ChatService(fakeClient(events), store, 'm-1')
-    return createApp({ config, store, chat })
+    const settings = testSettings('m-1')
+    const chat = new ChatService(fakeClient(events), store, settings)
+    return createApp({ config, store, settings, chat })
   }
 
   async function createConversation(app: ReturnType<typeof appWith>) {

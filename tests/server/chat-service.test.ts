@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import OpenAI from 'openai'
 import { ChatService } from '../../src/server/chat-service.ts'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
@@ -8,21 +8,26 @@ import {
   fakeClient,
   usage,
   type FakeCall,
+  memoryStore,
+  testSettings,
 } from './fakes.ts'
 
 describe('ChatService', () => {
   let store: ConversationStore
   let conversationId: string
   beforeEach(() => {
-    store = new ConversationStore(':memory:')
+    store = memoryStore()
     conversationId = store.createConversation().id
   })
-  afterEach(() => store.close())
 
   it('streams events and persists the turn statelessly', async () => {
     const calls: FakeCall[] = []
     const events = answerEvents('Hel', 'lo')
-    const chat = new ChatService(fakeClient(events, calls), store, 'model-x')
+    const chat = new ChatService(
+      fakeClient(events, calls),
+      store,
+      testSettings('model-x'),
+    )
 
     expect(await drain(chat.runTurn(conversationId, { text: 'Hi' }))).toEqual([
       ...events,
@@ -45,7 +50,11 @@ describe('ChatService', () => {
   })
 
   it('persists the answer before yielding response.completed', async () => {
-    const chat = new ChatService(fakeClient(answerEvents('ok')), store, 'm')
+    const chat = new ChatService(
+      fakeClient(answerEvents('ok')),
+      store,
+      testSettings('m'),
+    )
     for await (const event of chat.runTurn(conversationId, { text: 'Hi' })) {
       if (event.type === 'response.completed') {
         expect(store.getPath(conversationId)).toHaveLength(2)
@@ -58,7 +67,7 @@ describe('ChatService', () => {
     const chat = new ChatService(
       fakeClient(answerEvents('A'), calls),
       store,
-      'm',
+      testSettings('m'),
     )
     await drain(chat.runTurn(conversationId, { text: 'one' }))
     await drain(chat.runTurn(conversationId, { text: 'two' }))
@@ -74,7 +83,7 @@ describe('ChatService', () => {
     const chat = new ChatService(
       fakeClient(answerEvents('Par', 'tial', ' rest')),
       store,
-      'm',
+      testSettings('m'),
     )
     let n = 0
     for await (const _ of chat.runTurn(conversationId, { text: 'Hi' })) {
@@ -91,7 +100,7 @@ describe('ChatService', () => {
     const chat = new ChatService(
       fakeClient(answerEvents('Par', 'tial', ' rest')),
       store,
-      'm',
+      testSettings('m'),
     )
     const run = async () => {
       for await (const event of chat.runTurn(
@@ -116,7 +125,7 @@ describe('ChatService', () => {
       'bad key',
       new Headers(),
     )
-    const chat = new ChatService(fakeClient(error), store, 'm')
+    const chat = new ChatService(fakeClient(error), store, testSettings('m'))
     await expect(
       drain(chat.runTurn(conversationId, { text: 'Hi' })),
     ).rejects.toBe(error)

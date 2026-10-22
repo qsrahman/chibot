@@ -1,8 +1,14 @@
 import { Hono, type Context } from 'hono'
 import { streamSSE } from 'hono/streaming'
 import { validator } from 'hono/validator'
+import { zValidator } from '@hono/zod-validator'
+import { z } from 'zod'
 import OpenAI from 'openai'
 import { messageText } from '../shared/messages.ts'
+import {
+  settingsPatchSchema,
+  type SettingsResponse,
+} from '../shared/settings.ts'
 import type {
   ConversationPatch,
   ConversationWithItems,
@@ -12,15 +18,17 @@ import type {
 import type { ChatService } from './chat-service.ts'
 import type { Config } from './config.ts'
 import type { ConversationStore } from './conversation-store.ts'
+import type { SettingsStore } from './settings-store.ts'
 
 export interface AppDeps {
   config: Config
   store: ConversationStore
+  settings: SettingsStore
   chat: ChatService
 }
 
 /** Builds the HTTP app. A factory so tests can inject fakes. */
-export function createApp({ config, store, chat }: AppDeps) {
+export function createApp({ config, store, settings, chat }: AppDeps) {
   const app = new Hono()
 
   app.get('/api/health', (c) =>
@@ -30,6 +38,17 @@ export function createApp({ config, store, chat }: AppDeps) {
       // null = OpenAI. Never expose the key.
       baseURL: config.chat.baseURL ?? null,
     }),
+  )
+
+  app.get('/api/settings', (c) =>
+    c.json({
+      settings: settings.get(),
+      defaults: settings.defaults,
+    } satisfies SettingsResponse),
+  )
+
+  app.patch('/api/settings', json(settingsPatchSchema), (c) =>
+    c.json(settings.update(c.req.valid('json'))),
   )
 
   app.get('/api/conversations', (c) => {
@@ -182,6 +201,14 @@ export function createApp({ config, store, chat }: AppDeps) {
 
   return app
 }
+
+/** Validates a JSON body against `schema`; failures are `{ error }` 400s. */
+const json = <T extends z.ZodType>(schema: T) =>
+  zValidator('json', schema, (result, c) => {
+    if (!result.success) {
+      return c.json({ error: z.prettifyError(result.error) }, 400)
+    }
+  })
 
 const notFound = (c: Context) =>
   c.json({ error: 'Conversation not found' }, 404)

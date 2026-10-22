@@ -1,15 +1,14 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
-import { usage } from './fakes.ts'
+import { usage, memoryStore } from './fakes.ts'
 
 describe('ConversationStore versions', () => {
   let store: ConversationStore
   let id: string
   beforeEach(() => {
-    store = new ConversationStore(':memory:')
+    store = memoryStore()
     id = store.createConversation().id
   })
-  afterEach(() => store.close())
 
   const user = (parent: number | null, content: string) =>
     store.appendItems(id, parent, [{ role: 'user', content }])[0]!

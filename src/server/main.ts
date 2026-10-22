@@ -8,20 +8,24 @@ import { createApp } from './app.ts'
 import { ChatService } from './chat-service.ts'
 import { Config, loadEnvFiles } from './config.ts'
 import { ConversationStore } from './conversation-store.ts'
+import { openDatabase } from './database.ts'
+import { settingsDefaults, SettingsStore } from './settings-store.ts'
 
 loadEnvFiles()
 
 const config = new Config(process.env)
 mkdirSync(config.dataDir, { recursive: true })
-const store = new ConversationStore(config.databasePath)
+const db = openDatabase(config.databasePath)
+const store = new ConversationStore(db)
+const settings = new SettingsStore(db, settingsDefaults(config.chat.model))
 // Temporary chats whose tab closed before it could delete them.
 store.deleteTemporaryConversations()
 const client = new OpenAI({
   baseURL: config.chat.baseURL,
   apiKey: config.chat.apiKey,
 })
-const chat = new ChatService(client, store, config.chat.model)
-const app = createApp({ config, store, chat })
+const chat = new ChatService(client, store, settings)
+const app = createApp({ config, store, settings, chat })
 
 // In dev, Vite serves the web app. The production build only exists after `pnpm build`.
 const webRoot = join(import.meta.dirname, '../../dist/web')

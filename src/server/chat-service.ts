@@ -7,6 +7,7 @@ import type {
 import { messageText } from '../shared/messages.ts'
 import type { TurnRequest, TurnTitleEvent } from '../shared/types.ts'
 import type { ConversationStore } from './conversation-store.ts'
+import type { SettingsStore } from './settings-store.ts'
 
 const TITLE_INSTRUCTIONS =
   'Write a short title (3 to 6 words) for the conversation below, in its ' +
@@ -16,12 +17,16 @@ const TITLE_INSTRUCTIONS =
 export class ChatService {
   readonly #client: OpenAI
   readonly #store: ConversationStore
-  readonly #model: string
+  readonly #settings: SettingsStore
 
-  constructor(client: OpenAI, store: ConversationStore, model: string) {
+  constructor(
+    client: OpenAI,
+    store: ConversationStore,
+    settings: SettingsStore,
+  ) {
     this.#client = client
     this.#store = store
-    this.#model = model
+    this.#settings = settings
   }
 
   /**
@@ -66,7 +71,7 @@ export class ChatService {
       // chibot must save the answer before relaying `response.completed`.
       const stream = await this.#client.responses.create(
         {
-          model: this.#model,
+          model: this.#settings.get().model,
           input,
           stream: true,
           store: false,
@@ -124,7 +129,7 @@ export class ChatService {
       .map(({ role, text }) => `${role}: ${text.slice(0, 1000)}`)
       .join('\n\n')
     const params: ResponseCreateParamsNonStreaming = {
-      model: this.#model,
+      model: this.#settings.get().model,
       instructions: TITLE_INSTRUCTIONS,
       input: transcript,
       store: false,

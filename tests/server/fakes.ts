@@ -1,4 +1,11 @@
 import OpenAI from 'openai'
+import { ConversationStore } from '../../src/server/conversation-store.ts'
+import { openDatabase } from '../../src/server/database.ts'
+import {
+  settingsDefaults,
+  SettingsStore,
+} from '../../src/server/settings-store.ts'
+import type { Settings } from '../../src/shared/settings.ts'
 import type {
   ResponseCreateParams,
   ResponseCreateParamsStreaming,
@@ -83,4 +90,17 @@ export function fakeClient(
     })()
   }
   return { responses: { create } } as unknown as OpenAI
+}
+
+/** A conversation store on a fresh in-memory database. */
+export const memoryStore = () => new ConversationStore(openDatabase(':memory:'))
+
+/** Settings with `model` (and any overrides), on their own in-memory database. */
+export function testSettings(model = 'm', overrides: Partial<Settings> = {}) {
+  const settings = new SettingsStore(
+    openDatabase(':memory:'),
+    settingsDefaults(model),
+  )
+  settings.update(overrides)
+  return settings
 }
