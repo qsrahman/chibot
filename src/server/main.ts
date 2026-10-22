@@ -19,6 +19,8 @@ try {
 const config = new Config(process.env)
 mkdirSync(config.dataDir, { recursive: true })
 const store = new ConversationStore(config.databasePath)
+// Temporary chats whose tab closed before it could delete them.
+store.deleteTemporaryConversations()
 const client = new OpenAI({
   baseURL: config.chat.baseURL,
   apiKey: config.chat.apiKey,
