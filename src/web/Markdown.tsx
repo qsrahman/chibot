@@ -1,10 +1,12 @@
 import type { ComponentProps } from 'react'
 import ReactMarkdown, { type Components, type ExtraProps } from 'react-markdown'
+import { toText } from 'hast-util-to-text'
 import rehypeHighlight from 'rehype-highlight'
 import rehypeKatex from 'rehype-katex'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import 'katex/dist/katex.min.css'
+import { CopyButton } from './MessageActions.tsx'
 
 const remarkPlugins = [remarkGfm, remarkMath]
 const rehypePlugins = [rehypeKatex, rehypeHighlight]
@@ -37,7 +39,10 @@ function CodeBlock({ node, ...props }: ComponentProps<'pre'> & ExtraProps) {
     : undefined
   return (
     <div className="code-block">
-      {language && <div className="code-label">{language}</div>}
+      <div className="code-header">
+        <span className="code-label">{language}</span>
+        {node && <CopyButton text={toText(node)} label="Copy code" />}
+      </div>
       <pre {...props} />
     </div>
   )

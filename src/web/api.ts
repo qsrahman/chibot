@@ -6,6 +6,7 @@ import type {
   ConversationPatch,
   ConversationWithItems,
   TurnErrorEvent,
+  TurnRequest,
   TurnTitleEvent,
 } from '../shared/types.ts'
 
@@ -61,16 +62,26 @@ export async function deleteConversation(
   if (!res.ok && res.status !== 404) throw new Error(await errorMessage(res))
 }
 
-/** Sends a message and yields the streamed events until the turn ends. */
+/** Shows another version of a message or answer (see `Versions`). */
+export async function switchVersion(conversationId: string, itemId: number) {
+  const res = await fetch(`/api/conversations/${conversationId}/leaf`, {
+    method: 'PUT',
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ itemId }),
+  })
+  if (!res.ok) throw new Error(await errorMessage(res))
+}
+
+/** Runs a turn and yields the streamed events until it ends. */
 export async function* streamTurn(
   conversationId: string,
-  text: string,
+  request: TurnRequest,
   signal: AbortSignal,
 ): AsyncGenerator<TurnEvent> {
   const res = await fetch(`/api/conversations/${conversationId}/turns`, {
     method: 'POST',
     headers: JSON_HEADERS,
-    body: JSON.stringify({ text }),
+    body: JSON.stringify(request),
     signal,
   })
   if (!res.ok) throw new Error(await errorMessage(res))

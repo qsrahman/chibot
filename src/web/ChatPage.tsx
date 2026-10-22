@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { useNavigate, useParams } from 'react-router'
-import { MessageCircleDashed } from 'lucide-react'
+import { MessageCircleDashed, Pencil, RefreshCw } from 'lucide-react'
 import type { Health } from './api.ts'
 import { Composer } from './Composer.tsx'
 import { Markdown } from './Markdown.tsx'
-import type { ChatMessage } from './messages.ts'
+import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
+import type { Turn } from './turns.ts'
 import { useChat } from './useChat.ts'
 
 interface Props {
@@ -17,14 +18,12 @@ export function ChatPage({ health, onListChanged }: Props) {
   const navigate = useNavigate()
   // Chosen on a new chat before the first message; applies to that chat.
   const [temporaryMode, setTemporaryMode] = useState(false)
-  const { messages, pending, error, isTemporary, busy, send, stop } = useChat(
-    id,
-    {
-      onCreated: (newId) => navigate(`/c/${newId}`),
-      onListChanged,
-      temporary: temporaryMode,
-    },
-  )
+  const chat = useChat(id, {
+    onCreated: (newId) => navigate(`/c/${newId}`),
+    onListChanged,
+    temporary: temporaryMode,
+  })
+  const { turns, pending, error, isTemporary, busy } = chat
   const endRef = useRef<HTMLDivElement>(null)
   // Follow the answer only while the user is at the bottom, so scrolling up
   // to read isn't undone by every new token.
@@ -38,17 +37,20 @@ export function ChatPage({ health, onListChanged }: Props) {
 
   useEffect(() => {
     if (followRef.current) endRef.current?.scrollIntoView({ block: 'end' })
-  }, [messages, pending])
+  }, [turns, pending])
 
-  function sendAndFollow(text: string) {
-    followRef.current = true
-    void send(text)
+  /** Wraps an action that starts a turn: the view follows its answer. */
+  function following<A extends unknown[]>(action: (...args: A) => unknown) {
+    return (...args: A) => {
+      followRef.current = true
+      void action(...args)
+    }
   }
 
   // An empty chat centres the composer under a greeting, as ChatGPT does.
   // The composer stays the third child either way, so it keeps its focus
   // and text when the first message moves it to the bottom.
-  const empty = messages.length === 0 && !pending && !error
+  const empty = turns.length === 0 && !pending && !error
   const temporary = id ? isTemporary : temporaryMode
 
   return (
@@ -92,26 +94,33 @@ export function ChatPage({ health, onListChanged }: Props) {
           }}
         >
           <div className="thread">
-            {messages.map((m) => (
-              <Message key={m.key} message={m} />
+            {turns.map((turn, i) => (
+              <TurnView
+                key={turn.key}
+                turn={turn}
+                latest={!pending && i === turns.length - 1}
+                busy={busy}
+                onEdit={following((text: string) => chat.edit(i, text))}
+                onRegenerate={following(() => chat.regenerate(i))}
+                onSwitch={(itemId) => void chat.switchVersion(itemId)}
+              />
             ))}
             {pending && (
-              <>
-                <Message
-                  message={{ key: 'u', role: 'user', text: pending.user }}
-                />
-                {pending.assistant ? (
-                  <Message
-                    message={{
-                      key: 'a',
-                      role: 'assistant',
-                      text: pending.assistant,
-                    }}
-                  />
-                ) : (
-                  <div className="thinking" aria-label="Waiting for answer" />
-                )}
-              </>
+              <TurnView
+                turn={{
+                  key: 'pending',
+                  question: pending.question,
+                  answer: pending.answer
+                    ? {
+                        itemId: null,
+                        text: pending.answer,
+                        usage: null,
+                        versions: null,
+                      }
+                    : null,
+                }}
+                pending
+              />
             )}
             {error && (
               <p className="error" role="alert">
@@ -122,7 +131,7 @@ export function ChatPage({ health, onListChanged }: Props) {
           </div>
         </div>
       )}
-      <Composer busy={busy} onSend={sendAndFollow} onStop={stop} />
+      <Composer busy={busy} onSend={following(chat.send)} onStop={chat.stop} />
       <p className="disclaimer">
         chibot can make mistakes. Check important info.
       </p>
@@ -130,14 +139,147 @@ export function ChatPage({ health, onListChanged }: Props) {
   )
 }
 
-function Message({ message }: { message: ChatMessage }) {
+interface TurnViewProps {
+  turn: Turn
+  /** Still streaming: shown without actions. */
+  pending?: boolean
+  /** The last turn: its actions stay visible, as on ChatGPT. */
+  latest?: boolean
+  busy?: boolean
+  onEdit?: (text: string) => void
+  onRegenerate?: () => void
+  onSwitch?: (itemId: number) => void
+}
+
+function TurnView({
+  turn: { question, answer },
+  pending,
+  latest,
+  busy,
+  onEdit,
+  onRegenerate,
+  onSwitch,
+}: TurnViewProps) {
+  const [editing, setEditing] = useState(false)
+  // Shown after a Stop before the server's ids are known: no edit/regenerate.
+  const saved = question.itemId !== null
+
   return (
-    <div className={`message ${message.role}`}>
-      {message.role === 'user' ? (
-        <p>{message.text}</p>
+    <div className={latest ? 'turn latest' : 'turn'}>
+      {editing ? (
+        <EditBox
+          initial={question.text}
+          onCancel={() => setEditing(false)}
+          onSend={(text) => {
+            setEditing(false)
+            onEdit?.(text)
+          }}
+        />
       ) : (
-        <Markdown text={message.text} />
+        <div className="message user">
+          <p>{question.text}</p>
+        </div>
       )}
+      {!pending && !editing && (
+        <div className="actions user-actions">
+          <CopyButton text={question.text} />
+          {saved && (
+            <IconAction
+              label="Edit message"
+              disabled={busy}
+              onClick={() => setEditing(true)}
+            >
+              <Pencil />
+            </IconAction>
+          )}
+          {question.versions && onSwitch && (
+            <VersionSwitcher
+              versions={question.versions}
+              disabled={busy}
+              onSwitch={onSwitch}
+            />
+          )}
+        </div>
+      )}
+
+      {answer ? (
+        <div className="message assistant">
+          <Markdown text={answer.text} />
+        </div>
+      ) : (
+        pending && <div className="thinking" aria-label="Waiting for answer" />
+      )}
+      {!pending && (
+        <div className="actions answer-actions">
+          {answer && <CopyButton text={answer.text} />}
+          {saved && (
+            <IconAction
+              label={answer ? 'Regenerate' : 'Retry'}
+              disabled={busy}
+              onClick={() => onRegenerate?.()}
+            >
+              <RefreshCw />
+            </IconAction>
+          )}
+          {answer?.versions && onSwitch && (
+            <VersionSwitcher
+              versions={answer.versions}
+              disabled={busy}
+              onSwitch={onSwitch}
+            />
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** Inline editor for a sent message. Enter sends, Esc cancels. */
+function EditBox({
+  initial,
+  onCancel,
+  onSend,
+}: {
+  initial: string
+  onCancel: () => void
+  onSend: (text: string) => void
+}) {
+  const [text, setText] = useState(initial)
+  const canSend = text.trim() !== '' && text !== initial
+
+  function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Escape') onCancel()
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault()
+      if (canSend) onSend(text)
+    }
+  }
+
+  return (
+    <div className="edit-box">
+      <textarea
+        aria-label="Edit message"
+        autoFocus
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={onKeyDown}
+        onFocus={(e) =>
+          e.currentTarget.setSelectionRange(text.length, text.length)
+        }
+      />
+      <div className="edit-actions">
+        <button type="button" className="button" onClick={onCancel}>
+          Cancel
+        </button>
+        <button
+          type="button"
+          className="button primary"
+          disabled={!canSend}
+          onClick={() => onSend(text)}
+        >
+          Send
+        </button>
+      </div>
     </div>
   )
 }

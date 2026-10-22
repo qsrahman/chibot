@@ -4,6 +4,12 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- Edit a sent message (inline, Enter to send, Esc to cancel) and regenerate an answer, each creating a new version. `< 2/3 >` switches between versions, and each version keeps its own follow-up messages. A failed answer shows Retry.
+- Copy buttons on messages, answers and code blocks. Code blocks get a header with the language and Copy code.
+- API: `POST /api/conversations/:id/turns` accepts `parentId` (edit or regenerate), `PUT /api/conversations/:id/leaf` switches versions, and `GET /api/conversations/:id` reports each item's `siblingIds` and the chat's token totals.
+
 ### Fixed
 
 - Starting chibot from another folder ignored its `.env` (it was read from the current folder only), so it failed with "OPENAI_API_KEY is not set". It now reads the real environment, then `.env` in the current folder, then the chibot folder's `.env`.

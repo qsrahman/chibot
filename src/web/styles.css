@@ -13,6 +13,8 @@
   --border: rgb(0 0 0 / 10%);
   --accent: #3566f0;
   --accent-fg: #ffffff;
+  --button: #0d0d0d;
+  --button-fg: #ffffff;
   --bubble-bg: #edf3ff;
   --bubble-fg: #2451da;
   --code-chip: rgb(238 238 238 / 82%);
@@ -55,6 +57,8 @@
     --fg: #ffffff;
     --fg-muted: #cdcdcd;
     --border: rgb(255 255 255 / 15%);
+    --button: #ffffff;
+    --button-fg: #0d0d0d;
     --bubble-bg: #020562;
     --bubble-fg: #d9e6ff;
     --code-chip: rgb(42 42 42 / 82%);
@@ -199,9 +203,104 @@ body {
   padding: 16px 16px 24px;
 }
 
-.message {
+/* A question, its answer and their action rows. */
+.turn {
   margin: 24px 0;
+}
+
+.message {
   overflow-wrap: anywhere;
+}
+
+.message.assistant {
+  margin-top: 16px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 32px;
+  margin-top: 4px;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.turn:hover .actions,
+.turn.latest .answer-actions,
+.actions:focus-within {
+  opacity: 1;
+}
+
+.user-actions {
+  justify-content: flex-end;
+}
+
+.action {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.action svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.5;
+}
+
+.action:hover:not(:disabled) {
+  background: var(--surface-muted);
+  color: var(--fg);
+}
+
+.action:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.versions {
+  display: inline-flex;
+  align-items: center;
+  color: var(--fg-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.versions .action {
+  width: 24px;
+}
+
+.edit-box {
+  padding: 12px 16px;
+  border-radius: var(--radius-bubble);
+  background: var(--surface-muted);
+}
+
+.edit-box textarea {
+  width: 100%;
+  max-height: 40vh;
+  padding: 0;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  field-sizing: content;
+}
+
+.edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .message.user {
@@ -253,6 +352,12 @@ body {
 }
 
 /* Code blocks have no box, as on ChatGPT: a label, then the code. */
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .code-label {
   color: var(--fg-muted);
   font-size: 12px;
@@ -260,7 +365,7 @@ body {
 }
 
 .markdown pre {
-  margin: 8px 0 0;
+  margin: 0;
   overflow-x: auto;
 }
 
@@ -620,6 +725,17 @@ body {
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
+}
+
+.button.primary {
+  border-color: transparent;
+  background: var(--button);
+  color: var(--button-fg);
+}
+
+.button:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .button.danger {
