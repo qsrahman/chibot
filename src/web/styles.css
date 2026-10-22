@@ -880,7 +880,9 @@ body {
 
 .menu-item:hover,
 .menu-item:focus-visible {
-  background: var(--surface-muted);
+  /* --chip, not --surface-muted: in dark mode that equals the menu's own
+     --surface-raised background, so the highlight would be invisible. */
+  background: var(--chip);
 }
 
 a.menu-item {
@@ -1013,7 +1015,7 @@ a.menu-item {
 
 .search-result:hover,
 .search-result:focus-visible {
-  background: var(--surface-muted);
+  background: var(--chip);
 }
 
 .search-text {
@@ -1090,8 +1092,9 @@ kbd {
   gap: 2px;
 }
 
+.settings-tabs .sidebar-row:hover,
 .settings-tabs [aria-current='page'] {
-  background: var(--surface-muted);
+  background: var(--chip);
 }
 
 .settings-panel {

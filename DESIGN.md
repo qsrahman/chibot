@@ -40,7 +40,7 @@ enough to switch to a dark-grey page.
 | `--surface-muted` | `#f4f4f4` | `#303030` | Hover rows |
 | `--bubble-bg` / `--bubble-fg` | `#edf3ff` / `#2451da` | `#020562` / `#d9e6ff` | User message bubble |
 | `--code-chip` | `rgb(238 238 238 / 82%)` | `rgb(42 42 42 / 82%)` | Inline code |
-| `--chip` | `#ececec` | `#414141` | Chips and pills (suggestions, icon buttons) |
+| `--chip` | `#ececec` | `#414141` | Chips, switch track, and hover/selected rows inside menus and dialogs (where `--surface-muted` would match the raised background) |
 | `--fg` | `#0d0d0d` | `#ffffff` | Text |
 | `--fg-muted` | `#5d5d5d` | `#cdcdcd` | Descriptions, captions, footer, action icons, code labels |
 | `--border` | `rgb(0 0 0 / 10%)` | `rgb(255 255 255 / 15%)` | Hairlines, composer outline |
