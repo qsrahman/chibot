@@ -2,11 +2,14 @@ import { EventSourceParserStream } from 'eventsource-parser/stream'
 import type { ResponseStreamEvent } from 'openai/resources/responses/responses'
 import type {
   Conversation,
+  ConversationListItem,
+  ConversationPatch,
   ConversationWithItems,
   TurnErrorEvent,
+  TurnTitleEvent,
 } from '../shared/types.ts'
 
-export type TurnEvent = ResponseStreamEvent | TurnErrorEvent
+export type TurnEvent = ResponseStreamEvent | TurnErrorEvent | TurnTitleEvent
 
 export interface Health {
   status: string
@@ -14,13 +17,49 @@ export interface Health {
   baseURL: string | null
 }
 
+const JSON_HEADERS = { 'Content-Type': 'application/json' }
+
 export const getHealth = () => request<Health>('/api/health')
 
-export const createConversation = () =>
-  request<Conversation>('/api/conversations', { method: 'POST' })
+export const listConversations = ({ archived = false } = {}) =>
+  request<ConversationListItem[]>(
+    `/api/conversations${archived ? '?archived=1' : ''}`,
+  )
+
+export const searchConversations = (q: string, signal?: AbortSignal) =>
+  request<ConversationListItem[]>(
+    `/api/conversations?${new URLSearchParams({ q })}`,
+    { signal },
+  )
+
+export const createConversation = ({ temporary = false } = {}) =>
+  request<Conversation>('/api/conversations', {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ temporary }),
+  })
 
 export const getConversation = (id: string) =>
   request<ConversationWithItems>(`/api/conversations/${id}`)
+
+export const updateConversation = (id: string, patch: ConversationPatch) =>
+  request<Conversation>(`/api/conversations/${id}`, {
+    method: 'PATCH',
+    headers: JSON_HEADERS,
+    body: JSON.stringify(patch),
+  })
+
+/** `keepalive` lets the request finish while the page is unloading. */
+export async function deleteConversation(
+  id: string,
+  { keepalive = false } = {},
+) {
+  const res = await fetch(`/api/conversations/${id}`, {
+    method: 'DELETE',
+    keepalive,
+  })
+  if (!res.ok && res.status !== 404) throw new Error(await errorMessage(res))
+}
 
 /** Sends a message and yields the streamed events until the turn ends. */
 export async function* streamTurn(
@@ -30,7 +69,7 @@ export async function* streamTurn(
 ): AsyncGenerator<TurnEvent> {
   const res = await fetch(`/api/conversations/${conversationId}/turns`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: JSON_HEADERS,
     body: JSON.stringify({ text }),
     signal,
   })

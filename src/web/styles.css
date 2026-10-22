@@ -23,6 +23,9 @@
   --composer-shadow:
     0 0 0 1px rgb(0 0 0 / 4%), 0 2px 8px rgb(0 0 0 / 4%),
     0 4px 80px 8px rgb(0 0 0 / 2.4%);
+  --dialog-shadow: 0 24px 64px rgb(0 0 0 / 22%), 0 4px 16px rgb(0 0 0 / 12%);
+  --sidebar-width: 260px;
+  --rail-width: 56px;
 
   --column: 48rem;
   --radius-composer: 28px;
@@ -83,7 +86,6 @@ body {
 
 .app {
   display: flex;
-  flex-direction: column;
   height: 100dvh;
 }
 
@@ -98,15 +100,16 @@ body {
 }
 
 .model {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
   font-size: 18px;
 }
 
-.model-name {
+.badge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--surface-muted);
   color: var(--fg-muted);
-  font-size: 14px;
+  font-size: 12px;
+  line-height: 20px;
 }
 
 .icon-button {
@@ -127,6 +130,14 @@ body {
   background: var(--surface-muted);
 }
 
+.icon-button.active {
+  background: var(--surface-muted);
+}
+
+.icon-button.danger {
+  color: var(--danger);
+}
+
 .icon-button.primary {
   background: var(--accent);
   color: var(--accent-fg);
@@ -143,20 +154,43 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
   min-height: 0;
 }
 
+/* Empty chat: the greeting and composer sit in the middle, the header stays
+   on top. */
 .chat.empty {
-  justify-content: center;
   padding-bottom: 10vh;
 }
 
+.chat.empty .greeting {
+  margin-top: auto;
+}
+
+.chat.empty .disclaimer {
+  margin-bottom: auto;
+}
+
 .greeting {
-  margin: 0 0 28px;
+  margin-bottom: 28px;
+  padding: 0 16px;
   text-align: center;
+}
+
+.greeting h1 {
+  margin: 0;
   font-size: 28px;
   font-weight: 400;
   line-height: 34px;
+}
+
+.greeting p {
+  max-width: 28rem;
+  margin: 8px auto 0;
+  color: var(--fg-muted);
+  font-size: 14px;
+  line-height: 20px;
 }
 
 /* Full-width scroller, so the scrollbar sits at the window edge. */
@@ -344,6 +378,372 @@ body {
 
 .chat.empty .disclaimer {
   visibility: hidden;
+}
+
+/* Sidebar (DESIGN.md §3) */
+
+.sidebar {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: var(--sidebar-width);
+  padding: 6px;
+  border-right: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.sidebar.collapsed {
+  width: var(--rail-width);
+  align-items: center;
+}
+
+.sidebar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 46px;
+  padding-left: 10px;
+}
+
+.sidebar.collapsed .sidebar-top {
+  padding: 0;
+}
+
+.brand {
+  font-size: 18px;
+}
+
+.sidebar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 36px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: var(--radius-row);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.sidebar-row:hover,
+.sidebar-row.active {
+  background: var(--surface-muted);
+}
+
+.sidebar.collapsed .sidebar-row {
+  justify-content: center;
+  width: 36px;
+  padding: 0;
+}
+
+.sidebar.collapsed .row-label {
+  display: none;
+}
+
+.row-icon {
+  display: inline-grid;
+  flex: none;
+}
+
+.row-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.5;
+}
+
+.row-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-list {
+  flex: 1;
+  margin: 8px 0;
+  overflow-y: auto;
+}
+
+.sidebar-heading {
+  margin: 16px 10px 4px;
+  color: var(--fg-muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.sidebar-note {
+  padding: 0 10px;
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.sidebar-bottom {
+  margin-top: auto;
+}
+
+.conversation-row {
+  position: relative;
+}
+
+.conversation-row:hover .sidebar-row,
+.conversation-row:has(.menu:popover-open) .sidebar-row {
+  padding-right: 36px;
+}
+
+.row-menu-button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg-muted);
+  opacity: 0;
+  cursor: pointer;
+}
+
+.conversation-row:hover .row-menu-button,
+.conversation-row:has(.menu:popover-open) .row-menu-button,
+.row-menu-button:focus-visible {
+  opacity: 1;
+}
+
+.sidebar-rename {
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-row);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+}
+
+/* Menus (Popover API; placed by script, see Sidebar.tsx) */
+
+.menu {
+  position: fixed;
+  inset: auto;
+  min-width: 200px;
+  margin: 0;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+  color: var(--fg);
+  box-shadow: var(--dialog-shadow);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--radius-row);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-item:hover,
+.menu-item:focus-visible {
+  background: var(--surface-muted);
+}
+
+.menu-item.danger {
+  color: var(--danger);
+}
+
+.menu-divider {
+  margin: 4px 6px;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+/* Dialogs (DESIGN.md §4) */
+
+.dialog {
+  width: min(100% - 32px, 448px);
+  padding: 20px 24px;
+  border: none;
+  border-radius: 20px;
+  background: var(--surface-raised);
+  color: var(--fg);
+  box-shadow: var(--dialog-shadow);
+}
+
+.dialog::backdrop {
+  background: rgb(0 0 0 / 50%);
+}
+
+.dialog-title {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 24px;
+}
+
+.dialog-body {
+  margin: 0 0 20px;
+  color: var(--fg-muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.button {
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.button.danger {
+  border-color: transparent;
+  background: var(--danger);
+  color: #ffffff;
+}
+
+.dialog.search {
+  width: min(100% - 32px, 640px);
+  padding: 0;
+}
+
+/* The search dialog keeps its title for screen readers only. */
+.dialog.search .dialog-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.search-input {
+  width: 100%;
+  height: 56px;
+  padding: 0 20px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.search-results {
+  max-height: 60vh;
+  padding: 8px;
+  overflow-y: auto;
+}
+
+.search-result {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: var(--radius-row);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.search-result:hover,
+.search-result:focus-visible {
+  background: var(--surface-muted);
+}
+
+.search-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.search-title,
+.search-snippet {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-title {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.search-snippet {
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.dialog.archived {
+  width: min(100% - 32px, 560px);
+}
+
+.archived-list {
+  max-height: 60vh;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.archived-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.archived-title {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 0;
+  overflow: hidden;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
 @media (prefers-reduced-motion: reduce) {
