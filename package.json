@@ -1,17 +1,20 @@
 {
   "name": "chibot",
   "version": "0.1.0",
-  "description": "",
-  "main": "src/index.ts",
+  "description": "Local ChatGPT-style chatbot on the OpenAI Responses API",
+  "main": "src/server/main.ts",
   "private": true,
   "bin": {
-    "chibot": "src/index.ts"
+    "chibot": "src/server/main.ts"
   },
   "type": "module",
   "scripts": {
-    "start": "node src/index.ts",
-    "dev": "node --watch src/index.ts",
-    "typecheck": "tsc --noEmit",
+    "dev": "pnpm run --parallel \"/^dev:/\"",
+    "dev:server": "node --watch src/server/main.ts",
+    "dev:web": "vite",
+    "build": "vite build",
+    "start": "node src/server/main.ts",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p src/web",
     "test": "vitest run",
     "test:watch": "vitest",
     "format": "prettier --write .",
