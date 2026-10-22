@@ -10,7 +10,8 @@ export default defineConfig(({ mode }) => {
     build: { outDir: '../../dist/web', emptyOutDir: true },
     server: {
       host: env.HOST || '127.0.0.1',
-      proxy: { '/api': `http://127.0.0.1:${env.PORT || 3000}` },
+      // Trailing slash, or the module /api.ts would be proxied too.
+      proxy: { '/api/': `http://127.0.0.1:${env.PORT || 3000}` },
     },
   }
 })

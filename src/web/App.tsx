@@ -1,29 +1,33 @@
 import { useEffect, useState } from 'react'
-
-type Health = { status: string; model: string; baseURL: string | null }
+import { BrowserRouter, Link, Route, Routes } from 'react-router'
+import { getHealth, type Health } from './api.ts'
+import { ChatPage } from './ChatPage.tsx'
 
 export function App() {
   const [health, setHealth] = useState<Health>()
-  const [error, setError] = useState<string>()
 
   useEffect(() => {
-    fetch('/api/health')
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.json() as Promise<Health>
-      })
-      .then(setHealth, (err: Error) => setError(err.message))
+    getHealth().then(setHealth, () => setHealth(undefined))
   }, [])
 
   return (
-    <main className="shell">
-      <h1>chibot</h1>
-      {health && (
-        <p>
-          Connected · model {health.model} · {health.baseURL ?? 'OpenAI'}
-        </p>
-      )}
-      {error && <p className="error">Server unreachable: {error}</p>}
-    </main>
+    <BrowserRouter>
+      <div className="app">
+        <header>
+          <Link to="/" className="new-chat">
+            New chat
+          </Link>
+          <span className="model" title={health?.baseURL ?? 'OpenAI'}>
+            {health ? health.model : 'Server unreachable'}
+          </span>
+        </header>
+        {/* Both routes render ChatPage at the same tree position, so moving
+            from / to /c/:id after the first message keeps its state. */}
+        <Routes>
+          <Route path="/" element={<ChatPage />} />
+          <Route path="/c/:id" element={<ChatPage />} />
+        </Routes>
+      </div>
+    </BrowserRouter>
   )
 }
