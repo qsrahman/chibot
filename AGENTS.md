@@ -79,6 +79,9 @@ transpiles it.
   of truth. History is a tree (`parent_id`). A turn's input is the root→leaf
   path (see PLAN.md §3).
 - **Models come from config**, never string literals in logic.
+- **Tools are our own function tools** (`Tool` subclasses). Don't put
+  OpenAI-hosted tools (`web_search`, `file_search`, `image_generation`,
+  `code_interpreter`, remote MCP) in a request's `tools`.
 - **Styling** is plain CSS with CSS variables for colours and spacing. Build
   menus and dialogs on native `<dialog>` and the Popover API, not a UI library.
 
