@@ -1,5 +1,31 @@
 import { join, resolve } from 'node:path'
 
+/** The repo root, found from this file, so `chibot` works from any folder. */
+const ROOT = join(import.meta.dirname, '../..')
+
+/**
+ * Loads `.env` from the current folder, then from the repo. Neither
+ * overrides a variable that's already set, so the real environment wins,
+ * then the current folder's file, then the repo's.
+ *
+ * @returns the files that were found and loaded
+ */
+export function loadEnvFiles(
+  paths = [resolve('.env'), join(ROOT, '.env')],
+): string[] {
+  const loaded: string[] = []
+  for (const path of new Set(paths)) {
+    try {
+      process.loadEnvFile(path)
+      loaded.push(path)
+    } catch (err) {
+      // A missing file is fine: variables may come from elsewhere.
+      if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err
+    }
+  }
+  return loaded
+}
+
 /** Connection to an OpenAI or OpenAI-compatible (Responses API) server. */
 export interface Endpoint {
   /** `undefined` means the SDK's default (OpenAI). */
@@ -39,11 +65,8 @@ export class Config {
     // Loopback by default: the app has no auth and spends the owner's API key.
     this.host = env.HOST?.trim() || '127.0.0.1'
     this.port = port
-    // Resolved from this file, not the cwd, so `chibot` works from any folder.
     const dataDir = env.CHIBOT_DATA_DIR?.trim()
-    this.dataDir = dataDir
-      ? resolve(dataDir)
-      : join(import.meta.dirname, '../../data')
+    this.dataDir = dataDir ? resolve(dataDir) : join(ROOT, 'data')
   }
 
   get databasePath(): string {

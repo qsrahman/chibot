@@ -26,7 +26,9 @@ cp .env.example .env   # then set OPENAI_API_KEY
 
 ## Configuration
 
-Set these in `.env` or the environment.
+Set these in `.env` or the environment. chibot reads the real environment
+first, then a `.env` in the folder you start it from, then the `.env` in the
+chibot folder, so it finds its settings wherever you run it.
 
 | Variable | Default | Purpose |
 |---|---|---|

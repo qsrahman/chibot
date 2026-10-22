@@ -6,15 +6,10 @@ import { serveStatic } from '@hono/node-server/serve-static'
 import OpenAI from 'openai'
 import { createApp } from './app.ts'
 import { ChatService } from './chat-service.ts'
-import { Config } from './config.ts'
+import { Config, loadEnvFiles } from './config.ts'
 import { ConversationStore } from './conversation-store.ts'
 
-try {
-  process.loadEnvFile()
-} catch (err) {
-  // A missing .env is fine: variables may come from the real environment.
-  if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err
-}
+loadEnvFiles()
 
 const config = new Config(process.env)
 mkdirSync(config.dataDir, { recursive: true })

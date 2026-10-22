@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- Starting chibot from another folder ignored its `.env` (it was read from the current folder only), so it failed with "OPENAI_API_KEY is not set". It now reads the real environment, then `.env` in the current folder, then the chibot folder's `.env`.
+
 ## [0.3.1] - 2026-10-22
 
 ### Changed
