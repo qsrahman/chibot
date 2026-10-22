@@ -68,8 +68,19 @@ interface ItemRow {
   parent_id: number | null
   data: string
   usage: string | null
+  sibling_ids: string
   created_at: number
 }
+
+// This item and the others under the same parent, oldest first, as JSON.
+const SIBLING_IDS = `(
+  SELECT json_group_array(id) FROM (
+    SELECT s.id FROM items s
+     WHERE s.conversation_id = items.conversation_id
+       AND s.parent_id IS items.parent_id
+     ORDER BY s.id
+  )
+) AS sibling_ids`
 
 const LIST_LIMIT = 200
 const SEARCH_LIMIT = 50
@@ -248,9 +259,12 @@ export class ConversationStore {
           parentId: stored.at(-1)?.id ?? parentId,
           data,
           usage: itemUsage,
+          siblingIds: [parent],
           createdAt: now,
         })
       })
+      // Only the first item can have siblings: the rest of the chain is new.
+      stored[0]!.siblingIds = this.#siblingIds(conversationId, parentId)
       this.#db
         .prepare(
           'UPDATE conversations SET current_leaf_id = ?, updated_at = ? WHERE id = ?',
@@ -260,23 +274,108 @@ export class ConversationStore {
     return stored
   }
 
-  /** Items from the root to the conversation's current leaf. */
-  getPath(conversationId: string): StoredItem[] {
+  /**
+   * Items from the root to the conversation's current leaf, or to `itemId`
+   * when given (empty if that item isn't in the conversation).
+   */
+  getPath(conversationId: string, itemId?: number): StoredItem[] {
+    const start =
+      itemId === undefined
+        ? `SELECT current_leaf_id, 0 FROM conversations
+            WHERE id = ?1 AND current_leaf_id IS NOT NULL`
+        : `SELECT id, 0 FROM items WHERE conversation_id = ?1 AND id = ?2`
     const rows = this.#db
       .prepare(
         `WITH RECURSIVE path(id, depth) AS (
-           SELECT current_leaf_id, 0 FROM conversations
-            WHERE id = ? AND current_leaf_id IS NOT NULL
+           ${start}
            UNION ALL
            SELECT items.parent_id, path.depth + 1 FROM items
              JOIN path ON items.id = path.id
             WHERE items.parent_id IS NOT NULL
          )
-         SELECT items.* FROM path JOIN items ON items.id = path.id
+         SELECT items.*, ${SIBLING_IDS}
+           FROM path JOIN items ON items.id = path.id
           ORDER BY path.depth DESC`,
       )
-      .all(conversationId) as unknown as ItemRow[]
+      .all(
+        ...(itemId === undefined ? [conversationId] : [conversationId, itemId]),
+      ) as unknown as ItemRow[]
     return rows.map(toStoredItem)
+  }
+
+  getItem(conversationId: string, itemId: number): StoredItem | undefined {
+    const row = this.#db
+      .prepare(
+        `SELECT items.*, ${SIBLING_IDS} FROM items
+          WHERE conversation_id = ? AND id = ?`,
+      )
+      .get(conversationId, itemId) as ItemRow | undefined
+    return row && toStoredItem(row)
+  }
+
+  /**
+   * Shows another version: makes the newest item at or below `itemId` the
+   * current leaf, so each version keeps its own follow-up messages.
+   * (The newest item in a subtree is always a leaf: any child would be newer.)
+   *
+   * @returns whether `itemId` is in the conversation
+   */
+  switchToVersion(conversationId: string, itemId: number): boolean {
+    const { leaf } = this.#db
+      .prepare(
+        `WITH RECURSIVE below(id) AS (
+           SELECT id FROM items WHERE conversation_id = ? AND id = ?
+           UNION ALL
+           SELECT items.id FROM items JOIN below ON items.parent_id = below.id
+         )
+         SELECT max(id) AS leaf FROM below`,
+      )
+      .get(conversationId, itemId) as { leaf: number | null }
+    if (leaf === null) return false
+    this.#db
+      .prepare('UPDATE conversations SET current_leaf_id = ? WHERE id = ?')
+      .run(leaf, conversationId)
+    return true
+  }
+
+  /** Tokens used by all responses in the conversation, all versions included. */
+  getUsageTotals(conversationId: string): ResponseUsage {
+    const sum = (path: string) =>
+      `coalesce(sum(json_extract(usage, '$.${path}')), 0)`
+    const row = this.#db
+      .prepare(
+        `SELECT ${sum('input_tokens')} AS input,
+                ${sum('input_tokens_details.cached_tokens')} AS cached,
+                ${sum('input_tokens_details.cache_write_tokens')} AS cacheWrite,
+                ${sum('output_tokens')} AS output,
+                ${sum('output_tokens_details.reasoning_tokens')} AS reasoning,
+                ${sum('total_tokens')} AS total
+           FROM items WHERE conversation_id = ? AND usage IS NOT NULL`,
+      )
+      .get(conversationId) as Record<
+      'input' | 'cached' | 'cacheWrite' | 'output' | 'reasoning' | 'total',
+      number
+    >
+    return {
+      input_tokens: row.input,
+      input_tokens_details: {
+        cached_tokens: row.cached,
+        cache_write_tokens: row.cacheWrite,
+      },
+      output_tokens: row.output,
+      output_tokens_details: { reasoning_tokens: row.reasoning },
+      total_tokens: row.total,
+    }
+  }
+
+  #siblingIds(conversationId: string, parentId: number | null): number[] {
+    const rows = this.#db
+      .prepare(
+        `SELECT id FROM items
+          WHERE conversation_id = ? AND parent_id IS ? ORDER BY id`,
+      )
+      .all(conversationId, parentId) as { id: number }[]
+    return rows.map((r) => r.id)
   }
 
   #migrate(): void {
@@ -325,6 +424,7 @@ function toStoredItem(row: ItemRow): StoredItem {
     parentId: row.parent_id,
     data: JSON.parse(row.data),
     usage: row.usage && JSON.parse(row.usage),
+    siblingIds: JSON.parse(row.sibling_ids),
     createdAt: row.created_at,
   }
 }

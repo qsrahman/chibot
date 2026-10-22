@@ -37,6 +37,11 @@ export interface StoredItem {
   data: ResponseInputItem
   /** Set on the last item of each model response. */
   usage: ResponseUsage | null
+  /**
+   * This item and its alternative versions (same parent: edits of a message,
+   * or regenerated answers), oldest first. Just `[id]` when there are none.
+   */
+  siblingIds: number[]
   createdAt: number
 }
 
@@ -44,6 +49,8 @@ export interface ConversationWithItems {
   conversation: Conversation
   /** Path from the root to the current leaf. */
   items: StoredItem[]
+  /** Tokens used by every response in the conversation, all versions included. */
+  usage: ResponseUsage
 }
 
 /** SSE event chibot sends when a turn fails, alongside the SDK's own events. */

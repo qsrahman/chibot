@@ -97,6 +97,7 @@ export function createApp({ config, store, chat }: AppDeps) {
     return c.json({
       conversation,
       items: store.getPath(id),
+      usage: store.getUsageTotals(id),
     } satisfies ConversationWithItems)
   })
 

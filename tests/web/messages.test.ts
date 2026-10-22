@@ -8,6 +8,7 @@ const stored = (id: number, data: unknown): StoredItem => ({
   parentId: id - 1 || null,
   data: data as ResponseInputItem,
   usage: null,
+  siblingIds: [id],
   createdAt: 0,
 })
 

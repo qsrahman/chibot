@@ -73,7 +73,17 @@ describe('API', () => {
     const app = appWith([])
     const created = await createConversation(app)
     const res = await app.request(`/api/conversations/${created.id}`)
-    expect(await res.json()).toEqual({ conversation: created, items: [] })
+    expect(await res.json()).toEqual({
+      conversation: created,
+      items: [],
+      usage: {
+        input_tokens: 0,
+        input_tokens_details: { cached_tokens: 0, cache_write_tokens: 0 },
+        output_tokens: 0,
+        output_tokens_details: { reasoning_tokens: 0 },
+        total_tokens: 0,
+      },
+    })
   })
 
   it('returns 404 for unknown conversations and API routes', async () => {
