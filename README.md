@@ -6,9 +6,9 @@ It works with OpenAI and with OpenAI-compatible servers that implement the
 Responses API, such as [Ollama](https://docs.ollama.com/openai) and
 [LM Studio](https://lmstudio.ai/).
 
-> **Status: Phase 1 (minimal chatbot).** A single conversation with streamed
-> answers. Conversation history and a sidebar arrive in Phase 2. See
-> [PLAN.md](PLAN.md) for the roadmap.
+> **Status: Phase 2 (conversations).** Streamed chat with a ChatGPT-style
+> sidebar of saved conversations. Editing and message versions arrive in
+> Phase 3. See [PLAN.md](PLAN.md) for the roadmap.
 
 ## Requirements
 
@@ -82,7 +82,18 @@ Then open http://127.0.0.1:3000.
 - **Stop** (■) ends an answer early. What arrived so far is kept, and the same
   happens if you close the tab mid-answer.
 - The first message gives the chat its own URL (`/c/…`). Reloading reopens it.
-  **New chat** starts over. A list of past chats comes in Phase 2.
+- **Sidebar:** chats are grouped as Pinned, Today, Yesterday, Previous 7 days,
+  Previous 30 days, then by month. Each gets a short title once its first
+  answer arrives. Hover a chat and click **…** to rename, pin, archive or
+  delete it. The panel button collapses the sidebar to an icon rail, which is
+  remembered.
+- **Search chats** finds chats by title or message text, including archived
+  ones. Press Enter to open the top result.
+- **Archived chats** (bottom of the sidebar) lists archived chats to restore or
+  delete.
+- **Temporary chat:** on a new chat, turn on the dashed-bubble toggle (top
+  right). That chat isn't listed, titled or searchable, and it's deleted as
+  soon as you leave it.
 - If the model server reports an error (e.g. a bad API key), it's shown with
   its status and request id. Your message is kept.
 

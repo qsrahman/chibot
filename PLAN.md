@@ -165,10 +165,10 @@ tool payloads), written in the same transaction as the item.
 | Method & path | Phase | Purpose |
 |---|---|---|
 | `GET /api/health` | 0 | Liveness + chat model and base URL (never the key) |
-| `POST /api/conversations` | 1 | Create a conversation |
+| `POST /api/conversations` | 1 | Create a conversation. Phase 2: `{ temporary: true }` |
 | `GET /api/conversations/:id` | 1 | Conversation with its current path. Phase 3 adds sibling info. |
-| `POST /api/conversations/:id/turns` | 1 | Send a message; SSE stream of `ResponseStreamEvent`s. Phase 3 adds `parentId` for edit/regenerate. |
-| `GET /api/conversations?q=&archived=` | 2 | List (pinned first, newest first), search, archived view |
+| `POST /api/conversations/:id/turns` | 1 | Send a message; SSE stream of `ResponseStreamEvent`s plus `chibot.error`, and (Phase 2) `chibot.title` after `response.completed`. Phase 3 adds `parentId` for edit/regenerate. |
+| `GET /api/conversations?q=&archived=1` | 2 | List (pinned first, newest first), archived view, or search (titles + message text, with snippets) |
 | `PATCH/DELETE /api/conversations/:id` | 2 | Rename, pin, archive/restore / delete |
 | `PUT /api/conversations/:id/leaf` | 3 | Switch to a message version |
 | `GET /api/conversations/:id/export` · `POST /api/conversations/import` | 4 | Export / import |
@@ -204,7 +204,7 @@ bumps the minor version. Work stops after each phase for review.
   Ollama (`gemma4:cloud`); unit tests cover the store, the service (fake client) and the
   routes.
 
-### Phase 2 — Conversations
+### Phase 2 — Conversations ✅
 - Sidebar: list, new chat, select, rename, delete.
 - Date groups (Today / Yesterday / Previous 7 days / Previous 30 days / Older).
 - Pin to top; archive with an archived view to restore from.
@@ -339,6 +339,9 @@ toggles in the composer.
 - **Math delimiters:** `remark-math` renders `$…$` and `$$…$$` only. Models
   that answer with `\(…\)` / `\[…\]` show raw LaTeX. Revisit in Phase 4
   (instructions or a remark plugin).
+- **Menu placement:** CSS anchor positioning isn't widely supported yet, so
+  popover menus are placed from the trigger's bounding rect when opened. Switch
+  to `position-area` once it is.
 - **Bundle size:** the web bundle is ~860 kB (highlight.js grammars, KaTeX).
   That's acceptable for a local app; code-split if it starts to matter.
 - **Citations from our own web search** depend on the model following the

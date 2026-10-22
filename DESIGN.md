@@ -88,7 +88,7 @@ Code uses `"SF Mono", SFMono-Regular, ui-monospace, Consolas, "Liberation Mono",
 - **Empty state.** A heading ("What's on your mind?") with the composer
   directly below it, both vertically centred. After the first message the
   composer docks to the bottom and the thread scrolls above it.
-- **Sidebar (Phase 2).** 260 px, with a hairline right border. Rows are 36 px
+- **Sidebar (Phase 2, built).** 260 px, with a hairline right border. Rows are 36 px
   tall, 8×10 px padding, 10 px radius, 6 px icon gap. The hover/active fill is
   `--surface-muted`. Groups have 12 px muted headings (Today, Yesterday, …).
   It collapses to a 56 px icon rail, and the collapsed state is remembered.

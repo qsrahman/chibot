@@ -16,7 +16,8 @@ phase roadmap live in [PLAN.md](PLAN.md). Usage lives in [README.md](README.md).
 
 ```
 src/server/   main.ts (wiring + listen), app.ts (Hono routes), one class per file
-src/shared/   types used by both server and web (API records, chibot's SSE error event)
+src/shared/   used by both server and web: API record types, chibot's own SSE events,
+              message text extraction
 src/web/      Vite root: index.html, main.tsx, components, api.ts (fetch + SSE), hooks
 tests/        mirrors src/ (tests/server/*.test.ts, tests/web/*.test.ts)
               tests/server/fakes.ts: fake OpenAI client + stream events
@@ -86,6 +87,11 @@ transpiles it.
   (`config.chat`, …), never `new OpenAI()` with implicit env. Don't assume
   OpenAI-only extras (Files API, `models.list()`, reasoning items, usage
   details) exist: degrade gracefully when they're missing.
+- **Browser support:** current versions of Chrome, Edge, Firefox and Safari.
+  Baseline features (Popover API, `<dialog>`) are used without polyfills.
+  Anything not yet Baseline gets a small fallback rather than a polyfill
+  (e.g. menus placed by script instead of anchor positioning, scripted
+  light-dismiss where `closedby` is missing).
 - **Tools are our own function tools** (`Tool` subclasses). Don't put
   OpenAI-hosted tools (`web_search`, `file_search`, `image_generation`,
   `code_interpreter`, remote MCP) in a request's `tools`.
