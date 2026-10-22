@@ -110,12 +110,15 @@ invariants, API quirks. No line-by-line narration.
 
 1. Work in small, self-contained changes. **Commit after every change**, using
    [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`,
-   `fix:`, `docs:`, `test:`, `refactor:`, `chore:`).
+   `fix:`, `docs:`, `test:`, `refactor:`, `chore:`). Within a phase, commit
+   each step (e.g. store → service → route → UI) with its own tests and docs.
 2. Before each commit: `pnpm typecheck && pnpm test && pnpm format:check`.
 3. After any change that affects features, architecture or conventions, update
    **PLAN.md**, **README.md** and this guide as needed, and add an entry under
    `[Unreleased]` in **CHANGELOG.md**
    ([Keep a Changelog](https://keepachangelog.com/en/1.1.0/)).
-4. Each completed phase bumps the minor version
-   ([SemVer](https://semver.org/)) and moves its CHANGELOG entries under that
-   version.
+4. Each completed phase ends with a release commit (`chore: release vX.Y.0`).
+   It bumps the minor version in `package.json` ([SemVer](https://semver.org/))
+   and moves the phase's CHANGELOG entries under that version.
+5. **Stop after each phase.** Report what works and how it was verified, then
+   wait for the owner's go-ahead before starting the next phase.

@@ -39,10 +39,10 @@ For example, to chat with a local Ollama model, put this in `.env`:
 
 ```bash
 OPENAI_BASE_URL=http://localhost:11434/v1
-OPENAI_MODEL=llama4
+OPENAI_MODEL=gemma4:cloud
 ```
 
-Use whichever model you've pulled.
+Use any model Ollama can serve. `:cloud` models need `ollama signin` first.
 
 chibot has no login, and anyone who can reach it spends your API key. It
 therefore listens only on this machine by default. To use it from another

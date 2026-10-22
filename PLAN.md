@@ -83,7 +83,7 @@ LM Studio).
   fallback is `responses.compact`.
 - **Compatible providers** may not support every request option above
   (`store`, `include`, `context_management`). Phase 1 verifies chat against a
-  local Ollama. An option a provider rejects gets a per-endpoint switch, added
+  local Ollama with `gemma4:cloud`. An option a provider rejects gets a per-endpoint switch, added
   only once a real provider needs it.
 
 ### Message versions
@@ -178,8 +178,9 @@ tool payloads), written in the same transaction as the item.
 
 ## 5. Phases
 
-Every phase ends with: tests green, `pnpm typecheck` clean, docs + CHANGELOG
-updated, and a commit.
+Each phase is built as small commits, one per step, and ends with tests green,
+`pnpm typecheck` clean, docs + CHANGELOG updated, and a release commit that
+bumps the minor version. Work stops after each phase for review.
 
 ### Phase 0 — Foundations ✅
 - Dependencies, `Config` (OpenAI or compatible endpoint), Hono app with
@@ -199,8 +200,8 @@ updated, and a commit.
 - Readable errors that surface `APIError` status and request id.
 - **Done when:** a multi-turn chat streams and remembers earlier turns; Stop
   and closing the tab both keep the partial answer; a reload reopens the chat;
-  a bad API key shows a readable error; it works against both OpenAI and a
-  local Ollama; unit tests cover the store, the service (fake client) and the
+  a bad API key shows a readable error; it works against both OpenAI and
+  Ollama (`gemma4:cloud`); unit tests cover the store, the service (fake client) and the
   routes.
 
 ### Phase 2 — Conversations
