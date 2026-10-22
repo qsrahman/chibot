@@ -27,7 +27,8 @@ export function useShortcuts(bindings: KeybindingsMap) {
   )
 }
 
-const isMac = /Mac|iPhone|iPad/.test(navigator.userAgent)
+// The same check tinykeys uses for `$mod`, so labels match the bindings.
+const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform)
 const KEY_NAMES: Record<string, string> = isMac
   ? { $mod: '⌘', Shift: '⇧', Escape: 'Esc' }
   : { $mod: 'Ctrl', Escape: 'Esc' }
