@@ -108,13 +108,15 @@ Phase 5) and a mic button (voice, Phase 5).
 **Messages.**
 - *User:* right-aligned bubble with `--bubble-bg` and `--bubble-fg` text,
   22 px radius, 10×16 px padding, max 70 % width, `white-space: pre-wrap`.
-  On hover, a **Copy** icon appears below it, right-aligned. Phase 3 adds
-  **Edit** beside it.
+  On hover, **Copy**, **Edit** and (when edited) `< 2/3 >` appear below it,
+  right-aligned. Edit opens an inline box (`--surface-muted`, bubble radius)
+  with Cancel and a primary Send.
 - *Assistant:* full-width Markdown with no background, 16/26 px text, 16 px
   between blocks.
-- *Action rows (Phase 3).* Icon buttons with a 44 px hit area, muted
-  (`--fg-muted`) 20 px icons, 4 px apart, 8 px radius hover fill, directly
-  under the answer:
+- *Action rows (built).* 32 px icon buttons with 18 px icons, muted
+  (`--fg-muted`), 2 px apart, 8 px radius hover fill, directly under the
+  answer (ChatGPT uses a 44 px hit area and 20 px icons; chibot is a little
+  denser):
   - Assistant: **Copy**, then **Regenerate**, version switcher `< 2/3 >` and
     token usage. These show on hover and always on the latest answer.
   - Measured logged out: Copy and Share. chibot has no sharing, so it omits
@@ -125,8 +127,8 @@ Phase 5) and a mic button (voice, Phase 5).
 around them.
 - The language name sits above the code in a 12 px muted label.
 - Code is 16/26 px monospace.
-- Phase 3 adds a round **Copy code** button (16 px icon, 44 px hit area) that
-  floats at the block's top right.
+- **Copy code** sits at the right of the label row (ChatGPT floats it at the
+  block's top right).
 
 **Inline code.** `--code-chip` background, 4 px radius, 1×4 px padding,
 0.93 em monospace, weight 500.

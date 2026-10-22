@@ -20,6 +20,7 @@ src/shared/   used by both server and web: API record types, chibot's own SSE ev
               message text extraction
 src/web/      Vite root: index.html, main.tsx, components, api.ts (fetch + SSE), hooks
 tests/        mirrors src/ (tests/server/*.test.ts, tests/web/*.test.ts)
+tests/e2e/    Playwright specs (*.spec.ts) and fake-openai.ts
               tests/server/fakes.ts: fake OpenAI client + stream events
 data/         local SQLite database (git-ignored)
 ```
@@ -29,7 +30,8 @@ data/         local SQLite database (git-ignored)
 ```bash
 pnpm dev          # API server (watch) + Vite dev server, in parallel
 pnpm test         # vitest run
-pnpm typecheck    # server/tests and web tsconfigs
+pnpm test:e2e     # Playwright: builds, starts a fake OpenAI server + chibot
+pnpm typecheck    # server/tests, web and e2e tsconfigs
 pnpm format       # prettier --write
 pnpm build        # build the web app into dist/web
 pnpm start        # production: serves the API and dist/web
@@ -116,9 +118,14 @@ invariants, API quirks. No line-by-line narration.
 - OpenAI: pass a fake client whose `responses.create` returns an async
   generator of `ResponseStreamEvent`s. Tests never hit the network.
 - SQLite: use `':memory:'` databases.
-- Web: no component unit tests. From Phase 3, a Playwright smoke test drives
-  the real app with the real SDK pointed at a local fake server through
-  `OPENAI_BASE_URL`.
+- Web: no component unit tests; pure helpers (e.g. `turns.ts`, `usage.ts`)
+  get vitest tests. UI behaviour is covered by Playwright specs in
+  `tests/e2e/`, which drive a production build with the real SDK pointed at
+  `tests/e2e/fake-openai.ts` via `OPENAI_BASE_URL`. The fake answers
+  `Answer #n to: <question>`, and streams slowly when the question contains
+  "slow". Wait for the app (e.g. a focused composer, or the empty new-chat
+  page) before typing or pressing shortcuts. First run:
+  `pnpm exec playwright install chromium`.
 
 ## Workflow
 
@@ -126,7 +133,8 @@ invariants, API quirks. No line-by-line narration.
    [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`,
    `fix:`, `docs:`, `test:`, `refactor:`, `chore:`). Within a phase, commit
    each step (e.g. store → service → route → UI) with its own tests and docs.
-2. Before each commit: `pnpm typecheck && pnpm test && pnpm format:check`.
+2. Before each commit: `pnpm typecheck && pnpm test && pnpm format:check`,
+   plus `pnpm test:e2e` when the web app changes.
 3. After any change that affects features, architecture or conventions, update
    **PLAN.md**, **README.md** and this guide as needed, and add an entry under
    `[Unreleased]` in **CHANGELOG.md**

@@ -59,7 +59,7 @@ LM Studio).
 | Wire protocol | Server relays the SDK's own `ResponseStreamEvent`s over SSE | The browser reuses the SDK's types (type-only import), so there are no hand-written mirror types. |
 | SSE parsing in browser | `eventsource-parser` | `EventSource` can't `POST`. |
 | Markdown | `react-markdown` + `remark-gfm` + `rehype-highlight` + `remark-math`/`rehype-katex` | Standard, safe by default (no raw HTML). Math rendering matches ChatGPT, since models often answer in LaTeX. |
-| Testing | vitest units throughout; Playwright smoke test from Phase 3 | The UI has little logic worth unit-testing; one e2e test against a fake OpenAI backend covers the integration. |
+| Testing | vitest units throughout; Playwright e2e from Phase 3 | The UI has little logic worth unit-testing; e2e specs against a fake OpenAI-compatible server (`tests/e2e/fake-openai.ts`) cover the integration and UI regressions. |
 
 ### Stateless details
 
@@ -217,12 +217,12 @@ bumps the minor version. Work stops after each phase for review.
   renamed, pinned, archived/restored, deleted and found by search; a temporary
   chat leaves nothing behind.
 
-### Phase 3 — Edit & versions
+### Phase 3 — Edit & versions ✅
 - Regenerate an answer, edit a user message, `< 2/3 >` version switching.
 - Copy buttons for messages and code blocks.
 - Keyboard shortcuts (ChatGPT's core set): new chat, focus the composer, copy
-  the last answer, toggle the sidebar, Esc to stop, and a `?` overlay that
-  lists them.
+  the last answer, toggle the sidebar, search (⌘/Ctrl+K), Esc to stop, and a
+  ⌘/Ctrl+/ overlay that lists them (bound with `tinykeys`).
 - Token usage for each answer (input, cached, output, reasoning) and a running
   total for the conversation.
 - Playwright smoke test against a fake OpenAI backend, including regressions

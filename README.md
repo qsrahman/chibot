@@ -6,9 +6,10 @@ It works with OpenAI and with OpenAI-compatible servers that implement the
 Responses API, such as [Ollama](https://docs.ollama.com/openai) and
 [LM Studio](https://lmstudio.ai/).
 
-> **Status: Phase 2 (conversations).** Streamed chat with a ChatGPT-style
-> sidebar of saved conversations. Editing and message versions arrive in
-> Phase 3. See [PLAN.md](PLAN.md) for the roadmap.
+> **Status: Phase 3 (edit & versions).** Streamed chat with a ChatGPT-style
+> sidebar, editing, regenerating and message versions, copy buttons, token
+> usage and keyboard shortcuts. Model settings arrive in Phase 4. See
+> [PLAN.md](PLAN.md) for the roadmap.
 
 ## Requirements
 
@@ -96,6 +97,15 @@ Then open http://127.0.0.1:3000.
 - **Temporary chat:** on a new chat, turn on the dashed-bubble toggle (top
   right). That chat isn't listed, titled or searchable, and it's deleted as
   soon as you leave it.
+- **Edit** a message (hover it, then the pencil) or **regenerate** an answer
+  (the circular arrow). Either makes a new version; `< 2/3 >` switches
+  between them, and each version keeps its own follow-up messages.
+- **Copy** buttons sit under messages and answers, and on code blocks.
+- **Token usage:** each answer shows its tokens; the top right shows the
+  chat's total across all versions. Hover for the input/output breakdown.
+- **Keyboard shortcuts:** ⌘/Ctrl+/ (or **Keyboard shortcuts** in the sidebar)
+  lists them: new chat, search, toggle sidebar, focus the message box, copy
+  the last answer, and Esc to stop.
 - If the model server reports an error (e.g. a bad API key), it's shown with
   its status and request id. Your message is kept.
 
@@ -103,7 +113,8 @@ Then open http://127.0.0.1:3000.
 
 | Script | Does |
 |---|---|
-| `pnpm test` | Run the test suite |
+| `pnpm test` | Run the unit tests |
+| `pnpm test:e2e` | Run the browser tests (first run: `pnpm exec playwright install chromium`) |
 | `pnpm typecheck` | Type-check server, tests and web |
 | `pnpm format` | Format with prettier |
 
