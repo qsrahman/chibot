@@ -82,6 +82,10 @@ transpiles it.
   of truth. History is a tree (`parent_id`). A turn's input is the root→leaf
   path (see PLAN.md §3).
 - **Models come from config**, never string literals in logic.
+- **Configuration layers** (PLAN.md §6): secrets and startup settings in the
+  environment / `.env` (via `Config`), user preferences in SQLite
+  (`SettingsStore`, Phase 4), and browser preferences in `localStorage`. Never
+  put secrets in the other two layers or in API responses.
 - **Provider-agnostic.** chibot talks to OpenAI or any OpenAI-compatible
   Responses API server. Build clients from `Config` endpoints
   (`config.chat`, …), never `new OpenAI()` with implicit env. Don't assume

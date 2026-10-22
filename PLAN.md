@@ -235,6 +235,9 @@ bumps the minor version. Work stops after each phase for review.
 - Model picker (from the chat endpoint's `models.list()`), custom instructions (`instructions`),
   reasoning effort, collapsible "Thinking…" view of the reasoning summary.
 - Context-growth strategy (compaction, see §3).
+- `SettingsStore` (SQLite `settings` table) with a settings API that never
+  returns secrets. The model picker, custom instructions and reasoning effort
+  are stored there (§6), with the environment as defaults.
 - Export a conversation as Markdown (current path) or JSON (full tree), and
   import JSON.
 - Theme toggle: Light / Dark / System, remembered in `localStorage`.
@@ -242,6 +245,8 @@ bumps the minor version. Work stops after each phase for review.
   context window; an exported JSON round-trips through import unchanged.
 
 ### Phase 5 — Attachments & voice input
+- `Config` moves to a zod schema as the per-feature endpoint variables
+  arrive (§6).
 - Images and PDFs added by paste, drag-drop or picker. The original is saved in
   `data/files/`, then sent as `input_image` / `input_file`: by `file_id` after
   a Files API upload where the endpoint supports it, otherwise inline as
@@ -306,6 +311,26 @@ toggles in the composer.
   deleted from the memory page.
 
 ## 6. Configuration
+
+Configuration lives in three layers, split by who changes it and how often:
+
+| Layer | Holds | Where | Changed by |
+|---|---|---|---|
+| Startup & secrets | API keys, base URLs, `HOST`/`PORT`, data dir | Environment / `.env` | Owner, then restart |
+| User preferences | Chat model, custom instructions, reasoning effort, memory on/off, tool toggles | SQLite `settings` table (`SettingsStore`, Phase 4) | Settings dialog, live |
+| Browser preferences | Theme, sidebar collapsed | `localStorage` | The UI, per browser |
+
+- **Precedence:** conversation or project override (Phase 8) → user setting →
+  environment default.
+- **Secrets never leave layer 1:** no keys in SQLite, exports or API
+  responses. Settings shows only whether a key is configured.
+- **`.env` lookup:** real environment variables win, then `.env` in the current
+  folder, then `<repo>/.env`, so `chibot` works from any folder.
+- **Validation:** `Config` validates by hand while it's small. It moves to a
+  schema library (zod) in Phase 5, when the per-feature endpoint variables
+  arrive.
+
+Environment variables:
 
 | Variable | Default | Purpose |
 |---|---|---|
