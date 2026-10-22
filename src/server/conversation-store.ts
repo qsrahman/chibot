@@ -29,6 +29,7 @@ interface ItemRow {
   parent_id: number | null
   data: string
   usage: string | null
+  model: string | null
   sibling_ids: string
   created_at: number
 }
@@ -177,20 +178,21 @@ export class ConversationStore {
   /**
    * Appends `items` as a chain below `parentId` (each item the parent of the
    * next) and makes the last one the conversation's current leaf.
-   * `usage` is stored on the last item.
+   * `usage` and `model` (of the response) are stored on the last item.
    */
   appendItems(
     conversationId: string,
     parentId: number | null,
     items: ResponseInputItem[],
     usage: ResponseUsage | null = null,
+    model: string | null = null,
   ): StoredItem[] {
     if (items.length === 0) return []
     const searchable = !this.getConversation(conversationId)?.temporary
     const now = Date.now()
     const insert = this.#db.prepare(
-      `INSERT INTO items (conversation_id, parent_id, data, usage, created_at)
-       VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO items (conversation_id, parent_id, data, usage, model, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
     )
     const index = this.#db.prepare(
       'INSERT INTO items_fts (rowid, text, conversation_id) VALUES (?, ?, ?)',
@@ -199,12 +201,15 @@ export class ConversationStore {
     transaction(this.#db, () => {
       let parent = parentId
       items.forEach((data, i) => {
-        const itemUsage = i === items.length - 1 ? usage : null
+        const last = i === items.length - 1
+        const itemUsage = last ? usage : null
+        const itemModel = last ? model : null
         const { lastInsertRowid } = insert.run(
           conversationId,
           parent,
           JSON.stringify(data),
           itemUsage && JSON.stringify(itemUsage),
+          itemModel,
           now,
         )
         parent = Number(lastInsertRowid)
@@ -215,6 +220,7 @@ export class ConversationStore {
           parentId: stored.at(-1)?.id ?? parentId,
           data,
           usage: itemUsage,
+          model: itemModel,
           siblingIds: [parent],
           createdAt: now,
         })
@@ -355,6 +361,7 @@ function toStoredItem(row: ItemRow): StoredItem {
     parentId: row.parent_id,
     data: JSON.parse(row.data),
     usage: row.usage && JSON.parse(row.usage),
+    model: row.model,
     siblingIds: JSON.parse(row.sibling_ids),
     createdAt: row.created_at,
   }

@@ -35,6 +35,8 @@ export interface StoredItem {
   data: ResponseInputItem
   /** Set on the last item of each model response. */
   usage: ResponseUsage | null
+  /** The model that wrote the response; set like `usage`. */
+  model: string | null
   /**
    * This item and its alternative versions (same parent: edits of a message,
    * or regenerated answers), oldest first. Just `[id]` when there are none.
@@ -66,4 +68,9 @@ export interface TurnErrorEvent {
 export interface TurnTitleEvent {
   type: 'chibot.title'
   title: string
+}
+
+/** `GET /api/models`: the chat endpoint's models, or `null` if it can't list them. */
+export interface ModelsResponse {
+  models: string[] | null
 }

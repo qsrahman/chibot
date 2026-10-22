@@ -4,18 +4,21 @@ import { MessageCircleDashed, Pencil, RefreshCw } from 'lucide-react'
 import type { Health } from './api.ts'
 import { Composer } from './Composer.tsx'
 import { Markdown } from './Markdown.tsx'
+import { ModelPicker } from './ModelPicker.tsx'
 import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
 import { SHORTCUTS, useShortcuts } from './shortcuts.ts'
 import type { Turn } from './turns.ts'
 import { describeUsage } from './usage.ts'
 import { useChat } from './useChat.ts'
+import type { SettingsApi } from './useSettings.ts'
 
 interface Props {
   health: Health | undefined
+  settings: SettingsApi
   onListChanged: () => void
 }
 
-export function ChatPage({ health, onListChanged }: Props) {
+export function ChatPage({ health, settings, onListChanged }: Props) {
   const { id } = useParams()
   const navigate = useNavigate()
   // Chosen on a new chat before the first message; applies to that chat.
@@ -77,9 +80,17 @@ export function ChatPage({ health, onListChanged }: Props) {
   return (
     <main className={empty ? 'chat empty' : 'chat'}>
       <header className="topbar">
-        <span className="model" title={health?.baseURL ?? 'OpenAI'}>
-          {health ? health.model : 'Server unreachable'}
-        </span>
+        {!health ? (
+          <span className="model">Server unreachable</span>
+        ) : settings.settings && settings.defaults ? (
+          <span title={health.baseURL ?? 'OpenAI'}>
+            <ModelPicker
+              model={settings.settings.model}
+              defaultModel={settings.defaults.model}
+              onSelect={(model) => void settings.update({ model })}
+            />
+          </span>
+        ) : null}
         {id ? (
           <span className="topbar-info">
             {chatUsage && (
@@ -146,6 +157,7 @@ export function ChatPage({ health, onListChanged }: Props) {
                         itemId: null,
                         text: pending.answer,
                         usage: null,
+                        model: null,
                         versions: null,
                       }
                     : null,
@@ -264,6 +276,11 @@ function TurnView({
               disabled={busy}
               onSwitch={onSwitch}
             />
+          )}
+          {answer?.model && (
+            <span className="usage" title="Model that wrote this answer">
+              {answer.model}
+            </span>
           )}
           {answerUsage && (
             <span className="usage" title={answerUsage.detail}>

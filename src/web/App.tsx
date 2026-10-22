@@ -4,6 +4,7 @@ import { getHealth, type Health } from './api.ts'
 import { ChatPage } from './ChatPage.tsx'
 import { Sidebar } from './Sidebar.tsx'
 import { useConversations } from './useConversations.ts'
+import { useSettings } from './useSettings.ts'
 
 const COLLAPSED_KEY = 'chibot.sidebarCollapsed'
 
@@ -29,6 +30,7 @@ export function App() {
   const [health, setHealth] = useState<Health>()
   const [collapsed, setCollapsed] = useState(loadCollapsed)
   const conversations = useConversations()
+  const settings = useSettings()
 
   useEffect(() => {
     getHealth().then(setHealth, () => setHealth(undefined))
@@ -42,7 +44,11 @@ export function App() {
   }
 
   const page = (
-    <ChatPage health={health} onListChanged={conversations.refresh} />
+    <ChatPage
+      health={health}
+      settings={settings}
+      onListChanged={conversations.refresh}
+    />
   )
 
   return (

@@ -54,6 +54,8 @@ export interface TitleOptions {
   /** What the title request returns as `output_text`, or throws. */
   title?: string | Error | ((params: ResponseCreateParams) => string | Error)
   titleCalls?: ResponseCreateParams[]
+  /** What `models.list()` yields, or the error it throws. */
+  models?: string[] | Error
 }
 
 /**
@@ -64,7 +66,11 @@ export interface TitleOptions {
 export function fakeClient(
   events: ResponseStreamEvent[] | Error,
   calls: FakeCall[] = [],
-  { title = 'Test Title', titleCalls = [] }: TitleOptions = {},
+  {
+    title = 'Test Title',
+    titleCalls = [],
+    models = ['m-2', 'm-1'],
+  }: TitleOptions = {},
 ): OpenAI {
   const create = async (
     params: ResponseCreateParams,
@@ -89,7 +95,11 @@ export function fakeClient(
       }
     })()
   }
-  return { responses: { create } } as unknown as OpenAI
+  async function* list() {
+    if (models instanceof Error) throw models
+    for (const id of models) yield { id }
+  }
+  return { responses: { create }, models: { list } } as unknown as OpenAI
 }
 
 /** A conversation store on a fresh in-memory database. */

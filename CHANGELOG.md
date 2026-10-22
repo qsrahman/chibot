@@ -7,6 +7,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 ### Added
 
 - Settings stored in SQLite with `GET`/`PATCH /api/settings` (validated with zod; secrets are never included). The chat model is now a setting that defaults to `OPENAI_MODEL`.
+- Model picker in the header: searches the server's model list (`GET /api/models`), or takes a typed name when the server can't list models. The choice applies to new turns, edits and regenerations, and each answer shows the model that wrote it.
 
 ## [0.4.0] - 2026-10-22
 

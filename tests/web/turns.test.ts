@@ -13,6 +13,7 @@ const item = (
   parentId: id - 1 || null,
   data: data as ResponseInputItem,
   usage: null,
+  model: null,
   siblingIds: [id],
   createdAt: 0,
   ...extra,
@@ -28,7 +29,7 @@ describe('toTurns', () => {
         role: 'assistant',
         content: [{ type: 'output_text', text: 'Hello ', annotations: [] }],
       }),
-      item(4, { role: 'assistant', content: 'there' }, { usage }),
+      item(4, { role: 'assistant', content: 'there' }, { usage, model: 'm-1' }),
       item(5, { role: 'user', content: 'Bye' }),
     ])
     expect(turns).toEqual([
@@ -37,7 +38,13 @@ describe('toTurns', () => {
         question: { itemId: 1, parentId: null, text: 'Hi', versions: null },
         // The answer is identified by its first item (where regenerations
         // branch off), and its text joins the message items.
-        answer: { itemId: 2, text: 'Hello \n\nthere', usage, versions: null },
+        answer: {
+          itemId: 2,
+          text: 'Hello \n\nthere',
+          usage,
+          model: 'm-1',
+          versions: null,
+        },
       },
       {
         key: '5',

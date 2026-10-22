@@ -1,11 +1,4 @@
-import {
-  useId,
-  useRef,
-  useState,
-  type CSSProperties,
-  type ReactElement,
-  type ReactNode,
-} from 'react'
+import { useState, type ReactElement, type ReactNode } from 'react'
 import { Link, NavLink, useMatch, useNavigate } from 'react-router'
 import {
   Archive,
@@ -23,6 +16,7 @@ import type { ConversationListItem } from '../shared/types.ts'
 import { ArchivedDialog } from './ArchivedDialog.tsx'
 import { groupConversations } from './dates.ts'
 import { DeleteChatDialog } from './Dialog.tsx'
+import { useAnchoredPopover } from './popover.ts'
 import { SearchDialog } from './SearchDialog.tsx'
 import { ShortcutsDialog } from './ShortcutsDialog.tsx'
 import { SHORTCUTS, useShortcuts } from './shortcuts.ts'
@@ -210,9 +204,7 @@ function ConversationRow({
   onDelete,
 }: RowProps) {
   const [editing, setEditing] = useState(false)
-  const menuId = useId()
-  const menuRef = useRef<HTMLDivElement>(null)
-  const [menuPos, setMenuPos] = useState<CSSProperties>()
+  const menu = useAnchoredPopover()
   const title = item.title ?? UNTITLED
 
   if (editing) {
@@ -238,15 +230,8 @@ function ConversationRow({
     )
   }
 
-  // Runs before the popover opens. Anchor positioning isn't in every
-  // browser yet, so the menu is placed from the trigger's position.
-  function placeMenu(trigger: HTMLElement) {
-    const r = trigger.getBoundingClientRect()
-    setMenuPos({ top: r.bottom + 4, left: r.left })
-  }
-
   function act(action: () => void) {
-    menuRef.current?.hidePopover()
+    menu.hide()
     action()
   }
 
@@ -259,17 +244,17 @@ function ConversationRow({
         type="button"
         className="row-menu-button"
         aria-label={`Options for ${title}`}
-        popoverTarget={menuId}
-        onClick={(e) => placeMenu(e.currentTarget)}
+        popoverTarget={menu.id}
+        onClick={(e) => menu.place(e.currentTarget)}
       >
         <Ellipsis size={18} strokeWidth={1.5} />
       </button>
       <div
-        id={menuId}
-        ref={menuRef}
+        id={menu.id}
+        ref={menu.ref}
         popover="auto"
         className="menu"
-        style={menuPos}
+        style={menu.style}
       >
         <MenuItem icon={<Pencil />} onClick={() => act(() => setEditing(true))}>
           Rename

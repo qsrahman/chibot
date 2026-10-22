@@ -1,10 +1,16 @@
 import { EventSourceParserStream } from 'eventsource-parser/stream'
 import type { ResponseStreamEvent } from 'openai/resources/responses/responses'
 import type {
+  Settings,
+  SettingsPatch,
+  SettingsResponse,
+} from '../shared/settings.ts'
+import type {
   Conversation,
   ConversationListItem,
   ConversationPatch,
   ConversationWithItems,
+  ModelsResponse,
   TurnErrorEvent,
   TurnRequest,
   TurnTitleEvent,
@@ -21,6 +27,17 @@ export interface Health {
 const JSON_HEADERS = { 'Content-Type': 'application/json' }
 
 export const getHealth = () => request<Health>('/api/health')
+
+export const getSettings = () => request<SettingsResponse>('/api/settings')
+
+export const updateSettings = (patch: SettingsPatch) =>
+  request<Settings>('/api/settings', {
+    method: 'PATCH',
+    headers: JSON_HEADERS,
+    body: JSON.stringify(patch),
+  })
+
+export const listModels = () => request<ModelsResponse>('/api/models')
 
 export const listConversations = ({ archived = false } = {}) =>
   request<ConversationListItem[]>(

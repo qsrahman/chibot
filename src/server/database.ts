@@ -43,6 +43,8 @@ const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
      key TEXT PRIMARY KEY,
      value TEXT NOT NULL -- JSON
    );`,
+  // The model that wrote a response, stored with its usage on the last item.
+  `ALTER TABLE items ADD COLUMN model TEXT;`,
 ]
 
 /**

@@ -62,6 +62,7 @@ export class ChatService {
     const input = this.#store
       .getPath(conversationId, questionId)
       .map((item) => item.data)
+    const { model } = this.#settings.get()
 
     let partial = ''
     let saved = false
@@ -71,7 +72,7 @@ export class ChatService {
       // chibot must save the answer before relaying `response.completed`.
       const stream = await this.#client.responses.create(
         {
-          model: this.#settings.get().model,
+          model,
           input,
           stream: true,
           store: false,
@@ -96,6 +97,8 @@ export class ChatService {
             // only disagree for item kinds chibot never requests.
             output as ResponseInputItem[],
             usage ?? null,
+            // The server may name a dated snapshot of the model requested.
+            event.response.model || model,
           )
           saved = true
         }
@@ -104,9 +107,13 @@ export class ChatService {
     } finally {
       // `finally` also runs when the consumer stops iterating (client gone).
       if (!saved && partial) {
-        this.#store.appendItems(conversationId, questionId, [
-          { role: 'assistant', content: partial },
-        ])
+        this.#store.appendItems(
+          conversationId,
+          questionId,
+          [{ role: 'assistant', content: partial }],
+          null,
+          model,
+        )
       }
     }
 
@@ -114,6 +121,22 @@ export class ChatService {
     if (saved && conversation.title === null && !conversation.temporary) {
       const title = await this.#generateTitle(conversationId, signal)
       if (title) yield { type: 'chibot.title', title }
+    }
+  }
+
+  /**
+   * Model ids the chat endpoint offers, sorted, or `null` when it can't list
+   * them. The list isn't filtered: it mixes chat, embedding, image and audio
+   * models, and their ids don't reliably say which is which.
+   */
+  async listModels(): Promise<string[] | null> {
+    try {
+      const ids: string[] = []
+      for await (const model of this.#client.models.list()) ids.push(model.id)
+      return ids.sort()
+    } catch (err) {
+      console.error('Listing models failed:', err)
+      return null
     }
   }
 

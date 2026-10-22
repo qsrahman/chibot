@@ -21,6 +21,8 @@ export interface Answer {
   itemId: number | null
   text: string
   usage: ResponseUsage | null
+  /** The model that wrote it, if known. */
+  model: string | null
   /** Regenerations of this answer, or `null` if there are none. */
   versions: Versions | null
 }
@@ -36,7 +38,7 @@ export interface Turn {
 /**
  * Groups a path into turns: each user message, then the output items that
  * answer it (reasoning, messages, …) as one answer. Only message text is
- * shown; the last usage in the group is the answer's.
+ * shown; the last usage and model in the group are the answer's.
  */
 export function toTurns(items: StoredItem[]): Turn[] {
   const turns: Turn[] = []
@@ -61,12 +63,14 @@ export function toTurns(items: StoredItem[]): Turn[] {
       itemId: item.id,
       text: '',
       usage: null,
+      model: null,
       versions: versionsOf(item),
     }
     if (message) {
       turn.answer.text += (turn.answer.text ? '\n\n' : '') + message.text
     }
     if (item.usage) turn.answer.usage = item.usage
+    if (item.model) turn.answer.model = item.model
   }
   return turns
 }

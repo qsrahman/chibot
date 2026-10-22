@@ -14,6 +14,7 @@ import {
   settingsPatchSchema,
   type SettingsResponse,
 } from '../shared/settings.ts'
+import type { ModelsResponse } from '../shared/types.ts'
 import type { ConversationWithItems, TurnErrorEvent } from '../shared/types.ts'
 import type { ChatService } from './chat-service.ts'
 import type { Config } from './config.ts'
@@ -49,6 +50,10 @@ export function createApp({ config, store, settings, chat }: AppDeps) {
 
   app.patch('/api/settings', json(settingsPatchSchema), (c) =>
     c.json(settings.update(c.req.valid('json'))),
+  )
+
+  app.get('/api/models', async (c) =>
+    c.json({ models: await chat.listModels() } satisfies ModelsResponse),
   )
 
   app.get('/api/conversations', (c) => {
