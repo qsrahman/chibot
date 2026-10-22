@@ -20,6 +20,13 @@ async function newChat(page: Page) {
   await expect(page.locator('.greeting')).toBeVisible()
 }
 
+/**
+ * The answer is complete: streamed text is visible before the turn is
+ * saved, and copy actions only see saved answers.
+ */
+const answered = (page: Page) =>
+  expect(page.getByRole('button', { name: 'Stop' })).toHaveCount(0)
+
 /** Shortcut listeners attach after the first render; wait for the app. */
 const appReady = (page: Page) =>
   expect(page.getByRole('textbox', { name: 'Message' })).toBeFocused()
@@ -41,6 +48,7 @@ test('chats, titles the conversation, shows usage and copies', async ({
     turns(page).first().locator('.usage', { hasText: 'tokens' }),
   ).toHaveText('52 tokens')
 
+  await answered(page)
   await turns(page).first().hover()
   await turns(page)
     .first()
@@ -157,6 +165,7 @@ test('keyboard shortcuts', async ({ page }) => {
 
   await send(page, 'Shortcut chat')
   await expect(answer(page, 0)).toContainText('to: Shortcut chat')
+  await answered(page)
   await page.keyboard.press('ControlOrMeta+Shift+C')
   await expect.poll(() => clipboard(page)).toContain('to: Shortcut chat')
 
