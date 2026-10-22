@@ -4,6 +4,12 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-22
+
+### Changed
+
+- `POST /api/conversations` now answers malformed JSON with a 400 instead of ignoring it. An empty body still creates a normal chat.
+
 ### Fixed
 
 - Switching to another chat while an answer was streaming kept writing the old answer into the new chat and, once done, showed the old conversation under the new chat's URL. Leaving a chat mid-answer now stops it (the partial answer is kept), as closing the tab does.

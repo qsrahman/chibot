@@ -130,5 +130,7 @@ invariants, API quirks. No line-by-line narration.
 4. Each completed phase ends with a release commit (`chore: release vX.Y.0`).
    It bumps the minor version in `package.json` ([SemVer](https://semver.org/))
    and moves the phase's CHANGELOG entries under that version.
+   Fixes released between phases bump the patch version instead
+   (`chore: release vX.Y.Z`).
 5. **Stop after each phase.** Report what works and how it was verified, then
    wait for the owner's go-ahead before starting the next phase.
