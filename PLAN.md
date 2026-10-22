@@ -25,14 +25,16 @@ via the official `openai` Node SDK.
 - A git remote or CI. Commits stay local; checks run before each commit.
 - Dollar cost estimates. The SDK has no pricing data and a hand-kept price
   table would go stale, so usage is shown in tokens only.
-- Voice, realtime audio, mobile apps.
+- Read-aloud (text-to-speech), realtime voice conversations, mobile apps.
+  Dictation is in scope (Phase 5).
 
 ## 3. Key decisions
 
 | Decision | Choice | Why |
 |---|---|---|
 | Frontend | React 19 + Vite | Mature Markdown/highlighting/streaming ecosystem; Vite gives fast dev + a static build. Next.js was considered and rejected: its server/client split, caching and router add concepts a local, client-interactive app doesn't use. |
-| Styling | Plain CSS + CSS variables | No dependencies. Menus and dialogs build on native `<dialog>` and the Popover API. Themes follow `prefers-color-scheme`. |
+| Styling | Plain CSS + CSS variables | No dependencies. Menus and dialogs build on native `<dialog>` and the Popover API. Themes follow `prefers-color-scheme` until a Light / Dark / System toggle arrives in Phase 4. |
+| Temporary chat | An ordinary conversation row flagged `temporary` | It reuses every code path, is hidden from the list and search, is deleted when you leave it, and any leftovers are swept at server start. |
 | Server | Hono on `@hono/node-server` | Small, Web-standard `Request`/`Response`, built-in `streamSSE` and static serving, trivially testable with `app.request()`. |
 | Network | Listens on `127.0.0.1` by default; `HOST` opts into LAN access | There's no auth and the server spends the owner's API key. A non-loopback `HOST` prints a warning. |
 | Routing | React Router (declarative mode); URL `/c/:id` from Phase 1 | A reload reopens the same chat. It handles the sidebar + chat layout and later routes like `/projects/:id` without custom routing code. |
@@ -118,6 +120,8 @@ built-in `OPENAI_BASE_URL` support.
 ```sql
 conversations(id TEXT PK, title TEXT, current_leaf_id INTEGER NULL,
               pinned INTEGER DEFAULT 0, archived_at INTEGER NULL,   -- Phase 2
+              temporary INTEGER DEFAULT 0,                         -- Phase 2
+              project_id TEXT NULL FK → projects,                  -- Phase 8
               created_at INTEGER, updated_at INTEGER)
 items(id INTEGER PK AUTOINCREMENT,
       conversation_id TEXT FK → conversations ON DELETE CASCADE,
@@ -128,6 +132,10 @@ items(id INTEGER PK AUTOINCREMENT,
 items_fts USING fts5(text, conversation_id UNINDEXED)  -- Phase 2: message text for search
 files(id TEXT PK, name TEXT, mime TEXT, path TEXT,     -- Phase 5: local copy under data/files/
       openai_file_id TEXT NULL, created_at INTEGER)
+projects(id TEXT PK, name TEXT, instructions TEXT NULL,  -- Phase 8
+         model TEXT NULL, reasoning_effort TEXT NULL,
+         vector_store_id TEXT NULL, created_at INTEGER)
+memories(id INTEGER PK AUTOINCREMENT, text TEXT, created_at INTEGER)  -- Phase 9
 ```
 
 Search indexes the plain text of user and assistant messages (no reasoning or
@@ -145,6 +153,9 @@ tool payloads), written in the same transaction as the item.
 | `PATCH/DELETE /api/conversations/:id` | 2 | Rename, pin, archive/restore / delete |
 | `PUT /api/conversations/:id/leaf` | 3 | Switch to a message version |
 | `GET /api/conversations/:id/export` · `POST /api/conversations/import` | 4 | Export / import |
+| `POST /api/files` · `POST /api/transcriptions` | 5 | Upload an attachment / transcribe a recording |
+| `/api/projects[/:id]` (CRUD + files) | 8 | Projects |
+| `GET /api/memories` · `DELETE /api/memories/:id` | 9 | View / delete memories |
 
 ## 5. Phases
 
@@ -176,14 +187,19 @@ updated, and a commit.
 - Date groups (Today / Yesterday / Previous 7 days / Previous 30 days / Older).
 - Pin to top; archive with an archived view to restore from.
 - Search over titles and message text (FTS5).
+- Temporary chat: a toggle on a new chat; see §3.
 - Automatic title after the first exchange from the chat model, in the
   background, using low reasoning effort if the model supports it.
 - **Done when:** conversations survive a server restart and can be reopened,
-  renamed, pinned, archived/restored, deleted and found by search.
+  renamed, pinned, archived/restored, deleted and found by search; a temporary
+  chat leaves nothing behind.
 
 ### Phase 3 — Edit & versions
 - Regenerate an answer, edit a user message, `< 2/3 >` version switching.
 - Copy buttons for messages and code blocks.
+- Keyboard shortcuts (ChatGPT's core set): new chat, focus the composer, copy
+  the last answer, toggle the sidebar, Esc to stop, and a `?` overlay that
+  lists them.
 - Token usage for each answer (input, cached, output, reasoning) and a running
   total for the conversation.
 - Playwright smoke test against a fake OpenAI backend.
@@ -196,18 +212,23 @@ updated, and a commit.
 - Context-growth strategy (compaction, see §3).
 - Export a conversation as Markdown (current path) or JSON (full tree), and
   import JSON.
+- Theme toggle: Light / Dark / System, remembered in `localStorage`.
 - **Done when:** settings apply to new turns; a long chat keeps working past the
   context window; an exported JSON round-trips through import unchanged.
 
-### Phase 5 — Attachments
+### Phase 5 — Attachments & voice input
 - Images and PDFs added by paste, drag-drop or picker. The original is saved in
   `data/files/`, uploaded through the Files API, and sent as `input_image` /
   `input_file` by `file_id`.
 - If OpenAI no longer has a file (404), it's re-uploaded from the local copy
   and the request is retried.
 - Deleting a conversation deletes its files locally and at OpenAI.
+- Voice input: a mic button records with `MediaRecorder`, and the recording is
+  transcribed through `audio.transcriptions` (`OPENAI_TRANSCRIBE_MODEL`) into
+  the composer for review before sending.
 - **Done when:** the model can answer questions about an attached image and an
-  attached PDF, including after the remote file has been deleted.
+  attached PDF, including after the remote file has been deleted; dictation
+  fills the composer.
 
 ### Phase 6 — Built-in tools
 - `ToolRegistry`; toggles for `web_search` (inline citations from
@@ -229,9 +250,22 @@ updated, and a commit.
   shipped tool needs approval yet.
 
 ### Phase 8 — Projects
-- Group conversations into projects. Each project has its own files, indexed in
-  a vector store and searched with `file_search`.
-- **Done when:** an answer in a project cites content from one of its files.
+- Group conversations into projects (sidebar section, `/projects/:id`).
+- Each project has:
+  - **files**, indexed in its own vector store and searched with `file_search`
+  - **instructions**, added to every chat in the project on top of the global
+    custom instructions
+  - **default model and reasoning effort**, overriding the global settings
+- **Done when:** an answer in a project cites content from one of its files and
+  follows the project's instructions and model.
+
+### Phase 9 — Memory
+- A `memory` tool (a `Tool` subclass, no approval) lets the model save facts
+  about you. Saved memories are added to the instructions of every chat
+  except temporary ones, and the chat shows a "Memory updated" notice.
+- A memory page to view and delete memories, plus a global on/off switch.
+- **Done when:** a fact told in one chat is used in a new chat and can be
+  deleted from the memory page.
 
 ## 6. Configuration
 
@@ -240,6 +274,7 @@ updated, and a commit.
 | `OPENAI_API_KEY` | — (required) | API key |
 | `OPENAI_MODEL` | `gpt-6-astra` | Chat model |
 | `OPENAI_BASE_URL` | SDK default | Read by the SDK itself; tests point it at a fake server |
+| `OPENAI_TRANSCRIBE_MODEL` | `gpt-transcribe` | Voice input transcription (Phase 5) |
 | `HOST` | `127.0.0.1` | Interface to listen on; `0.0.0.0` exposes it on the LAN with no auth |
 | `PORT` | `3000` | API server port |
 | `CHIBOT_DATA_DIR` | `<repo>/data` | Holds `chibot.db` (Phase 1) and `files/` (Phase 5). The default is resolved from the package location, not the current directory. |

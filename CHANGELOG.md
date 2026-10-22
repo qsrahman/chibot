@@ -13,6 +13,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 - Roadmap: browser disconnects are handled like Stop; LaTeX math rendering and `/c/:id` URLs move into Phase 1.
 - Roadmap: React Router for routing; titles come from the chat model (the separate title model is dropped); Phase 2 adds date grouping, FTS5 search, pin and archive; Phase 5 keeps a local copy of each attachment and re-uploads it if OpenAI no longer has it.
 - Roadmap: `CHIBOT_DATA_DIR` (default `<repo>/data`) replaces `CHIBOT_DB_PATH`; Phase 7 adds per-tool approval and ships a calculator sample tool; no git remote or CI.
+- Roadmap: temporary chat (Phase 2), keyboard shortcuts (Phase 3), theme toggle (Phase 4), voice input (Phase 5), project instructions and default model/settings (Phase 8), and a new Phase 9 for memory.
 
 - Roadmap revised after review: history is stored as a tree from Phase 1 to support ChatGPT-style message versions; the old Phase 3 is split into "Edit & versions" (with token usage) and "Models & settings" (with export/import); Phase 8 projects is kept. Styling is plain CSS, and Playwright tests start in Phase 3.
 
