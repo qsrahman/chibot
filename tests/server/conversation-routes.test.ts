@@ -53,6 +53,15 @@ describe('conversation routes', () => {
     expect((await list()).map((c) => c.id)).toEqual([plain.id])
   })
 
+  it('rejects a malformed create body', async () => {
+    const res = await app.request('/api/conversations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{not json',
+    })
+    expect(res.status).toBe(400)
+  })
+
   it('lists, searches and shows the archive', async () => {
     const a = saved('walrus facts')
     const b = saved('otter facts')

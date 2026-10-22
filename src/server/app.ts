@@ -38,16 +38,14 @@ export function createApp({ config, store, chat }: AppDeps) {
     )
   })
 
-  app.post('/api/conversations', async (c) => {
+  app.post(
+    '/api/conversations',
     // The body is optional: `{ temporary: true }` starts a temporary chat.
-    const body = (await c.req.json().catch(() => null)) as {
-      temporary?: unknown
-    } | null
-    return c.json(
-      store.createConversation({ temporary: body?.temporary === true }),
-      201,
-    )
-  })
+    validator('json', (body) => ({
+      temporary: (body as { temporary?: unknown }).temporary === true,
+    })),
+    (c) => c.json(store.createConversation(c.req.valid('json')), 201),
+  )
 
   app.patch(
     '/api/conversations/:id',
