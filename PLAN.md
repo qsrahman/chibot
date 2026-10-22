@@ -40,7 +40,7 @@ LM Studio).
 | Decision | Choice | Why |
 |---|---|---|
 | Frontend | React 19 + Vite | Mature Markdown/highlighting/streaming ecosystem; Vite gives fast dev + a static build. Next.js was considered and rejected: its server/client split, caching and router add concepts a local, client-interactive app doesn't use. |
-| Styling | Plain CSS + CSS variables | No dependencies. Menus and dialogs build on native `<dialog>` and the Popover API. Themes follow `prefers-color-scheme` until a Light / Dark / System toggle arrives in Phase 4. |
+| Styling | Plain CSS + CSS variables, ChatGPT-like aesthetics per [DESIGN.md](DESIGN.md); `lucide-react` icons | A familiar look, measured from chatgpt.com and applied through tokens. Menus and dialogs build on native `<dialog>` and the Popover API. Themes follow `prefers-color-scheme` until a Light / Dark / System toggle arrives in Phase 4. |
 | Temporary chat | An ordinary conversation row flagged `temporary` | It reuses every code path, is hidden from the list and search, is deleted when you leave it, and any leftovers are swept at server start. |
 | Server | Hono on `@hono/node-server` | Small, Web-standard `Request`/`Response`, built-in `streamSSE` and static serving, trivially testable with `app.request()`. |
 | Network | Listens on `127.0.0.1` by default; `HOST` opts into LAN access | There's no auth and the server spends the owner's API key. A non-loopback `HOST` prints a warning. |

@@ -89,8 +89,10 @@ transpiles it.
 - **Tools are our own function tools** (`Tool` subclasses). Don't put
   OpenAI-hosted tools (`web_search`, `file_search`, `image_generation`,
   `code_interpreter`, remote MCP) in a request's `tools`.
-- **Styling** is plain CSS with CSS variables for colours and spacing. Build
-  menus and dialogs on native `<dialog>` and the Popover API, not a UI library.
+- **Styling** is plain CSS following [DESIGN.md](DESIGN.md), which sets out
+  ChatGPT-like aesthetics, tokens and component specs. Use its CSS variables,
+  never raw colours. Build menus and dialogs on native `<dialog>` and the
+  Popover API, not a UI library. Icons come from `lucide-react`.
 
 ## Comments
 
