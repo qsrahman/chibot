@@ -1,28 +1,54 @@
-@import 'highlight.js/styles/github.css' (prefers-color-scheme: light);
-@import 'highlight.js/styles/github-dark.css' (prefers-color-scheme: dark);
-
-/* Tokens: see DESIGN.md §2. Components use these, never raw colours. */
+/* Tokens: see DESIGN.md §2. Components use these, never raw colours. Each
+   colour is light-dark(light, dark), so it follows `color-scheme`: the system
+   preference, or the user's override (below). */
 :root {
   color-scheme: light dark;
-  --bg: #fcfcfc;
-  --surface: #ffffff;
-  --surface-raised: #ffffff;
-  --surface-muted: #f4f4f4;
-  --fg: #0d0d0d;
-  --fg-muted: #5d5d5d;
-  --border: rgb(0 0 0 / 10%);
+  /* The theme setting writes the <meta name="color-scheme"> (index.html,
+     theme.ts); without JS it stays "light dark" and follows the system. */
+  &:has(> head > meta[name='color-scheme'][content='light']) {
+    color-scheme: light;
+  }
+  &:has(> head > meta[name='color-scheme'][content='dark']) {
+    color-scheme: dark;
+  }
+
+  --bg: light-dark(#fcfcfc, #000000);
+  --surface: light-dark(#ffffff, #212121);
+  --surface-raised: light-dark(#ffffff, #303030);
+  --surface-muted: light-dark(#f4f4f4, #303030);
+  --fg: light-dark(#0d0d0d, #ffffff);
+  --fg-muted: light-dark(#5d5d5d, #cdcdcd);
+  --border: light-dark(rgb(0 0 0 / 10%), rgb(255 255 255 / 15%));
   --accent: #3566f0;
   --accent-fg: #ffffff;
-  --button: #0d0d0d;
-  --button-fg: #ffffff;
-  --bubble-bg: #edf3ff;
-  --bubble-fg: #2451da;
-  --code-chip: rgb(238 238 238 / 82%);
-  --danger: #d93025;
+  --button: light-dark(#0d0d0d, #ffffff);
+  --button-fg: light-dark(#ffffff, #0d0d0d);
+  --bubble-bg: light-dark(#edf3ff, #020562);
+  --bubble-fg: light-dark(#2451da, #d9e6ff);
+  --code-chip: light-dark(rgb(238 238 238 / 82%), rgb(42 42 42 / 82%));
+  --danger: light-dark(#d93025, #ff6b6b);
+  /* Light: a soft layered drop shadow. Dark: an inset hairline instead. */
   --composer-shadow:
-    0 0 0 1px rgb(0 0 0 / 4%), 0 2px 8px rgb(0 0 0 / 4%),
-    0 4px 80px 8px rgb(0 0 0 / 2.4%);
+    0 0 0 1px light-dark(rgb(0 0 0 / 4%), transparent),
+    0 2px 8px light-dark(rgb(0 0 0 / 4%), transparent),
+    0 4px 80px 8px light-dark(rgb(0 0 0 / 2.4%), transparent),
+    inset 0 0 1px light-dark(transparent, rgb(255 255 255 / 20%));
   --dialog-shadow: 0 24px 64px rgb(0 0 0 / 22%), 0 4px 16px rgb(0 0 0 / 12%);
+
+  /* Code highlighting, GitHub's palettes (highlight.js's theme files are
+     media-query based and can't follow the theme setting). */
+  --code-keyword: light-dark(#d73a49, #ff7b72);
+  --code-title: light-dark(#6f42c1, #d2a8ff);
+  --code-number: light-dark(#005cc5, #79c0ff);
+  --code-string: light-dark(#032f62, #a5d6ff);
+  --code-builtin: light-dark(#e36209, #ffa657);
+  --code-comment: light-dark(#6a737d, #8b949e);
+  --code-name: light-dark(#22863a, #7ee787);
+  --code-added: light-dark(#22863a, #aff5b4);
+  --code-added-bg: light-dark(#f0fff4, #033a16);
+  --code-removed: light-dark(#b31d28, #ffdcd7);
+  --code-removed-bg: light-dark(#ffeef0, #67060c);
+
   --sidebar-width: 260px;
   --rail-width: 56px;
 
@@ -46,25 +72,6 @@
     sans-serif;
   font-size: 16px;
   line-height: 24px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #000000;
-    --surface: #212121;
-    --surface-raised: #303030;
-    --surface-muted: #303030;
-    --fg: #ffffff;
-    --fg-muted: #cdcdcd;
-    --border: rgb(255 255 255 / 15%);
-    --button: #ffffff;
-    --button-fg: #0d0d0d;
-    --bubble-bg: #020562;
-    --bubble-fg: #d9e6ff;
-    --code-chip: rgb(42 42 42 / 82%);
-    --danger: #ff6b6b;
-    --composer-shadow: inset 0 0 1px rgb(255 255 255 / 20%);
-  }
 }
 
 * {
@@ -505,6 +512,84 @@ body {
   font-family: var(--font-mono);
   font-size: 16px;
   line-height: 26px;
+}
+
+/* highlight.js token classes */
+.hljs {
+  color: var(--fg);
+}
+
+.hljs-keyword,
+.hljs-doctag,
+.hljs-template-tag,
+.hljs-template-variable,
+.hljs-type,
+.hljs-variable.language_ {
+  color: var(--code-keyword);
+}
+
+.hljs-title,
+.hljs-title.class_,
+.hljs-title.function_ {
+  color: var(--code-title);
+}
+
+.hljs-attr,
+.hljs-attribute,
+.hljs-literal,
+.hljs-meta,
+.hljs-number,
+.hljs-operator,
+.hljs-variable,
+.hljs-selector-attr,
+.hljs-selector-class,
+.hljs-selector-id,
+.hljs-section {
+  color: var(--code-number);
+}
+
+.hljs-regexp,
+.hljs-string,
+.hljs-meta .hljs-string {
+  color: var(--code-string);
+}
+
+.hljs-built_in,
+.hljs-symbol,
+.hljs-bullet {
+  color: var(--code-builtin);
+}
+
+.hljs-comment,
+.hljs-code,
+.hljs-formula {
+  color: var(--code-comment);
+}
+
+.hljs-name,
+.hljs-quote,
+.hljs-selector-tag,
+.hljs-selector-pseudo {
+  color: var(--code-name);
+}
+
+.hljs-section,
+.hljs-strong {
+  font-weight: 600;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-addition {
+  background: var(--code-added-bg);
+  color: var(--code-added);
+}
+
+.hljs-deletion {
+  background: var(--code-removed-bg);
+  color: var(--code-removed);
 }
 
 .markdown :not(pre) > code {

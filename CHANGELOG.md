@@ -13,6 +13,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 - Long chats: requests ask the server to compact the context past `compactThreshold` tokens (default 64,000; `null` turns it off). Compaction items are kept in the history, a turn's input starts at the last one, and the chat shows "Earlier messages were summarized to save context" where it happened. Servers that reject the option are retried without it.
 - Export a chat from its menu as Markdown (what's shown) or JSON (the whole tree: every version, usage and models; `{ version: 1 }`). `POST /api/conversations/import` adds an exported JSON chat back, validated, with new ids and the same version shown (up to 20 MB).
 
+### Changed
+
+- Colours are defined once with `light-dark()` and follow `color-scheme`, so a theme setting can override the system (applied before first paint via `<meta name="color-scheme">`). Code highlighting uses chibot's own GitHub-style tokens instead of highlight.js's media-query theme files.
+
 ## [0.4.0] - 2026-10-22
 
 ### Added
