@@ -341,6 +341,9 @@ toggles in the composer.
 - **Math delimiters:** `remark-math` renders `$…$` and `$$…$$` only. Models
   that answer with `\(…\)` / `\[…\]` show raw LaTeX. Revisit in Phase 4
   (instructions or a remark plugin).
+- **Sidebar size:** the list shows the 200 most recent chats (pinned first)
+  and search returns 50 hits. Older chats are reachable through search. Add
+  paging or "show more" if that limit is ever hit.
 - **Menu placement:** CSS anchor positioning isn't widely supported yet, so
   popover menus are placed from the trigger's bounding rect when opened. Switch
   to `position-area` once it is.
