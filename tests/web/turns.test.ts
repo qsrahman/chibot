@@ -53,11 +53,13 @@ describe('toTurns', () => {
           model: 'm-1',
           versions: null,
         },
+        compacted: false,
       },
       {
         key: '5',
         question: { itemId: 5, parentId: 4, text: 'Bye', versions: null },
         answer: null,
+        compacted: false,
       },
     ])
   })
@@ -69,6 +71,16 @@ describe('toTurns', () => {
     ])
     expect(turn!.question.versions).toEqual({ index: 2, ids: [1, 7] })
     expect(turn!.answer!.versions).toEqual({ index: 2, ids: [8, 9, 10] })
+  })
+
+  it('marks answers that compacted the context', () => {
+    const [turn] = toTurns([
+      item(1, { role: 'user', content: 'q' }),
+      item(2, { type: 'compaction', id: 'c', encrypted_content: 'x' }),
+      item(3, { role: 'assistant', content: 'a' }),
+    ])
+    expect(turn!.compacted).toBe(true)
+    expect(turn!.answer!.text).toBe('a')
   })
 
   it('shows refusals as text', () => {

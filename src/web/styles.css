@@ -349,6 +349,22 @@ body {
   width: 24px;
 }
 
+.compaction-note {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 0;
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.compaction-note::before,
+.compaction-note::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--border);
+}
+
 .thoughts {
   margin-top: 16px;
   color: var(--fg-muted);

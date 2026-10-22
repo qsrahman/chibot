@@ -66,7 +66,9 @@ export interface TitleOptions {
  * events. Non-streaming calls are title requests: see `TitleOptions`.
  */
 export function fakeClient(
-  events: ResponseStreamEvent[] | Error,
+  /** Per streaming call: the events, an error, or a function picking them. */
+  events:
+    ResponseStreamEvent[] | Error | ((call: number) => ResponseStreamEvent[]),
   calls: FakeCall[] = [],
   {
     title = 'Test Title',
@@ -90,6 +92,8 @@ export function fakeClient(
       signal: options?.signal,
     })
     if (events instanceof Error) throw events
+    const streamed =
+      typeof events === 'function' ? events(calls.length - 1) : events
     if (rejectReasoning && params.reasoning) {
       throw new OpenAI.BadRequestError(
         400,
@@ -99,7 +103,7 @@ export function fakeClient(
       )
     }
     return (async function* () {
-      for (const event of events) {
+      for (const event of streamed) {
         await Promise.resolve()
         if (options?.signal?.aborted) throw new OpenAI.APIUserAbortError()
         yield event

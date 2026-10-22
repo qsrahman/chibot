@@ -1,6 +1,6 @@
 import OpenAI from 'openai'
-import type { Reasoning } from 'openai/resources/shared'
 import type {
+  ResponseCreateParams,
   ResponseCreateParamsNonStreaming,
   ResponseInputItem,
   ResponseStreamEvent,
@@ -24,9 +24,9 @@ export class ChatService {
   readonly #client: OpenAI
   readonly #store: ConversationStore
   readonly #settings: SettingsStore
-  // "model|effort" combinations whose `reasoning` the server rejected (400)
-  // while the same request without it worked. Kept until restart.
-  readonly #withoutReasoning = new Set<string>()
+  // Model + optional-feature combinations the server rejected (400) while
+  // the same request without them worked. Kept until restart.
+  readonly #unsupported = new Set<string>()
 
   constructor(
     client: OpenAI,
@@ -68,11 +68,11 @@ export class ChatService {
         { role: 'user', content: text },
       ])[0]!.id
     }
-    const input = this.#store
-      .getPath(conversationId, questionId)
-      .map((item) => item.data)
+    const input = fromLastCompaction(
+      this.#store.getPath(conversationId, questionId).map((item) => item.data),
+    )
     const settings = this.#settings.get()
-    const { model, reasoningEffort } = settings
+    const { model, reasoningEffort, compactThreshold } = settings
 
     let partial = ''
     let saved = false
@@ -80,13 +80,20 @@ export class ChatService {
       // Not `responses.stream()`: its accumulator rejects some compatible
       // servers' streams (Ollama gpt-oss: "missing content at index 0"), and
       // chibot must save the answer before relaying `response.completed`.
-      const stream = await this.#tryReasoning(
+      const stream = await this.#withOptional(
         model,
         {
-          summary: 'auto',
-          ...(reasoningEffort && { effort: reasoningEffort }),
+          reasoning: {
+            summary: 'auto',
+            ...(reasoningEffort && { effort: reasoningEffort }),
+          },
+          ...(compactThreshold !== null && {
+            context_management: [
+              { type: 'compaction', compact_threshold: compactThreshold },
+            ],
+          }),
         },
-        (reasoning) =>
+        (optional) =>
           this.#client.responses.create(
             {
               model,
@@ -97,7 +104,7 @@ export class ChatService {
               // Reasoning items can only be replayed without server-side
               // storage when they carry their encrypted content.
               include: ['reasoning.encrypted_content'],
-              ...(reasoning && { reasoning }),
+              ...optional,
             },
             { signal },
           ),
@@ -161,24 +168,25 @@ export class ChatService {
   }
 
   /**
-   * Calls `send` with `reasoning`, or without it for models that reject it:
-   * models without reasoning (or without that effort) answer 400. A 400 is
-   * retried once without `reasoning`; if that works, the combination is
-   * remembered so later requests skip the failing attempt.
+   * Calls `send` with `optional` request features, or without them where
+   * they're rejected: models without reasoning (or without that effort), or
+   * compatible servers without compaction, answer 400. A 400 is retried once
+   * without them; if that works, the combination is remembered so later
+   * requests skip the failing attempt.
    */
-  async #tryReasoning<T>(
+  async #withOptional<T>(
     model: string,
-    reasoning: Reasoning,
-    send: (reasoning?: Reasoning) => Promise<T>,
+    optional: OptionalParams,
+    send: (optional: OptionalParams) => Promise<T>,
   ): Promise<T> {
-    const key = `${model}|${reasoning.effort ?? ''}`
-    if (this.#withoutReasoning.has(key)) return send()
+    const key = JSON.stringify([model, optional])
+    if (this.#unsupported.has(key)) return send({})
     try {
-      return await send(reasoning)
+      return await send(optional)
     } catch (err) {
       if (!(err instanceof OpenAI.BadRequestError)) throw err
-      const result = await send()
-      this.#withoutReasoning.add(key)
+      const result = await send({})
+      this.#unsupported.add(key)
       return result
     }
   }
@@ -202,14 +210,11 @@ export class ChatService {
       store: false,
     }
     try {
-      const response = await this.#tryReasoning(
+      const response = await this.#withOptional(
         model,
-        { effort: 'low' },
-        (reasoning) =>
-          this.#client.responses.create(
-            { ...params, ...(reasoning && { reasoning }) },
-            { signal },
-          ),
+        { reasoning: { effort: 'low' } },
+        (optional) =>
+          this.#client.responses.create({ ...params, ...optional }, { signal }),
       )
       const title = cleanTitle(response.output_text)
       if (title) this.#store.updateConversation(conversationId, { title })
@@ -219,6 +224,23 @@ export class ChatService {
       return null
     }
   }
+}
+
+/** Request features some models or servers reject (see `#withOptional`). */
+type OptionalParams = Pick<
+  ResponseCreateParams,
+  'reasoning' | 'context_management'
+>
+
+/**
+ * The model input for a path: from the last compaction item on (it stands
+ * for everything before it), or the whole path if there's none.
+ */
+export function fromLastCompaction(
+  items: ResponseInputItem[],
+): ResponseInputItem[] {
+  const last = items.findLastIndex((item) => item.type === 'compaction')
+  return last === -1 ? items : items.slice(last)
 }
 
 /** The built-in formatting line plus the user's custom instructions. */

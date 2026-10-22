@@ -184,6 +184,7 @@ export function useChat(
           {
             key: crypto.randomUUID(),
             question: display.question,
+            compacted: false,
             answer: answer
               ? {
                   itemId: null,

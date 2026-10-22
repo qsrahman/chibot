@@ -10,6 +10,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 - Model picker in the header: searches the server's model list (`GET /api/models`), or takes a typed name when the server can't list models. The choice applies to new turns, edits and regenerations, and each answer shows the model that wrote it.
 - Reasoning: chat requests ask for a reasoning summary, plus the effort when set (the `reasoningEffort` setting). A collapsible "Thinking…" shows the summary while the model thinks, and answers keep it as "Thoughts". Models that reject reasoning parameters are retried without them, and remembered.
 - Custom instructions (`aboutUser`, `responseStyle` settings) are sent as `instructions` with every chat turn (not titles), after a built-in line asking for `$…$` / `$$…$$` math so formulas render.
+- Long chats: requests ask the server to compact the context past `compactThreshold` tokens (default 64,000; `null` turns it off). Compaction items are kept in the history, a turn's input starts at the last one, and the chat shows "Earlier messages were summarized to save context" where it happened. Servers that reject the option are retried without it.
 
 ## [0.4.0] - 2026-10-22
 

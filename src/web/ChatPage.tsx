@@ -152,6 +152,7 @@ export function ChatPage({ health, settings, onListChanged }: Props) {
                 turn={{
                   key: 'pending',
                   question: pending.question,
+                  compacted: false,
                   answer:
                     pending.answer || pending.thinking
                       ? {
@@ -202,7 +203,7 @@ interface TurnViewProps {
 }
 
 function TurnView({
-  turn: { question, answer },
+  turn: { question, answer, compacted },
   pending,
   latest,
   busy,
@@ -253,6 +254,11 @@ function TurnView({
         </div>
       )}
 
+      {compacted && (
+        <p className="compaction-note" role="note">
+          Earlier messages were summarized to save context.
+        </p>
+      )}
       {answer?.thinking && (
         <Thoughts text={answer.thinking} live={pending && !answer.text} />
       )}

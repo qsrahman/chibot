@@ -35,6 +35,8 @@ export interface Turn {
   question: Question
   /** `null` when the request failed or was stopped before any text. */
   answer: Answer | null
+  /** The context was compacted for this answer (earlier turns summarized). */
+  compacted: boolean
 }
 
 /**
@@ -56,6 +58,7 @@ export function toTurns(items: StoredItem[]): Turn[] {
           versions: versionsOf(item),
         },
         answer: null,
+        compacted: false,
       })
       continue
     }
@@ -72,6 +75,7 @@ export function toTurns(items: StoredItem[]): Turn[] {
     if (message) {
       turn.answer.text = join(turn.answer.text, message.text)
     }
+    if (item.data.type === 'compaction') turn.compacted = true
     if (item.data.type === 'reasoning') {
       for (const part of item.data.summary) {
         turn.answer.thinking = join(turn.answer.thinking, part.text)
