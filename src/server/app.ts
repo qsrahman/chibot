@@ -1,8 +1,10 @@
 import { Hono, type Context } from 'hono'
+import { bodyLimit } from 'hono/body-limit'
 import { streamSSE } from 'hono/streaming'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import OpenAI from 'openai'
+import { conversationExportSchema } from '../shared/export.ts'
 import { messageText } from '../shared/messages.ts'
 import {
   conversationPatchSchema,
@@ -19,6 +21,7 @@ import type { ConversationWithItems, TurnErrorEvent } from '../shared/types.ts'
 import type { ChatService } from './chat-service.ts'
 import type { Config } from './config.ts'
 import type { ConversationStore } from './conversation-store.ts'
+import { toMarkdown } from './markdown-export.ts'
 import type { SettingsStore } from './settings-store.ts'
 
 export interface AppDeps {
@@ -87,6 +90,34 @@ export function createApp({ config, store, settings, chat }: AppDeps) {
     return c.body(null, 204)
   })
 
+  app.get('/api/conversations/:id/export', (c) => {
+    const id = c.req.param('id')
+    const exported = store.exportConversation(id)
+    if (!exported) return notFound(c)
+    const markdown = c.req.query('format') === 'md'
+    const name = `${exported.conversation.title ?? 'chat'}.${markdown ? 'md' : 'json'}`
+    const body = markdown
+      ? toMarkdown(store.getConversation(id)!, store.getPath(id))
+      : JSON.stringify(exported, null, 2)
+    return c.body(body, 200, {
+      'Content-Type': markdown
+        ? 'text/markdown; charset=utf-8'
+        : 'application/json; charset=utf-8',
+      // RFC 6266: filename* carries non-ASCII titles.
+      'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(name)}`,
+    })
+  })
+
+  app.post(
+    '/api/conversations/import',
+    bodyLimit({
+      maxSize: IMPORT_LIMIT,
+      onError: (c) => c.json({ error: 'The file is larger than 20 MB' }, 413),
+    }),
+    json(conversationExportSchema),
+    (c) => c.json(store.importConversation(c.req.valid('json')), 201),
+  )
+
   app.get('/api/conversations/:id', (c) => {
     const id = c.req.param('id')
     const conversation = store.getConversation(id)
@@ -147,6 +178,8 @@ export function createApp({ config, store, settings, chat }: AppDeps) {
 
   return app
 }
+
+const IMPORT_LIMIT = 20 * 1024 * 1024
 
 /** Validates a JSON body against `schema`; failures are `{ error }` 400s. */
 const json = <T extends z.ZodType>(schema: T) =>

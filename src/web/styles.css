@@ -797,6 +797,10 @@ body {
   background: var(--surface-muted);
 }
 
+a.menu-item {
+  text-decoration: none;
+}
+
 .menu-item.danger {
   color: var(--danger);
 }

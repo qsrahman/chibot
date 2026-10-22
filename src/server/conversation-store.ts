@@ -4,6 +4,7 @@ import type {
   ResponseUsage,
 } from 'openai/resources/responses/responses'
 import { messageText } from '../shared/messages.ts'
+import type { ConversationExport } from '../shared/export.ts'
 import { transaction } from './database.ts'
 import type {
   Conversation,
@@ -188,15 +189,8 @@ export class ConversationStore {
     model: string | null = null,
   ): StoredItem[] {
     if (items.length === 0) return []
-    const searchable = !this.getConversation(conversationId)?.temporary
+    const insert = this.#inserter(conversationId)
     const now = Date.now()
-    const insert = this.#db.prepare(
-      `INSERT INTO items (conversation_id, parent_id, data, usage, model, created_at)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-    )
-    const index = this.#db.prepare(
-      'INSERT INTO items_fts (rowid, text, conversation_id) VALUES (?, ?, ?)',
-    )
     const stored: StoredItem[] = []
     transaction(this.#db, () => {
       let parent = parentId
@@ -204,17 +198,7 @@ export class ConversationStore {
         const last = i === items.length - 1
         const itemUsage = last ? usage : null
         const itemModel = last ? model : null
-        const { lastInsertRowid } = insert.run(
-          conversationId,
-          parent,
-          JSON.stringify(data),
-          itemUsage && JSON.stringify(itemUsage),
-          itemModel,
-          now,
-        )
-        parent = Number(lastInsertRowid)
-        const message = searchable && messageText(data)
-        if (message) index.run(parent, message.text, conversationId)
+        parent = insert(parent, data, itemUsage, itemModel, now)
         stored.push({
           id: parent,
           parentId: stored.at(-1)?.id ?? parentId,
@@ -327,6 +311,103 @@ export class ConversationStore {
       output_tokens: row.output,
       output_tokens_details: { reasoning_tokens: row.reasoning },
       total_tokens: row.total,
+    }
+  }
+
+  /** The whole tree in the JSON export format (see `ConversationExport`). */
+  exportConversation(id: string): ConversationExport | undefined {
+    const conversation = this.getConversation(id)
+    if (!conversation) return undefined
+    const rows = this.#db
+      .prepare('SELECT * FROM items WHERE conversation_id = ? ORDER BY id')
+      .all(id) as unknown as Omit<ItemRow, 'sibling_ids'>[]
+    return {
+      version: 1,
+      exportedAt: Date.now(),
+      conversation: {
+        title: conversation.title,
+        createdAt: conversation.createdAt,
+        updatedAt: conversation.updatedAt,
+      },
+      currentLeafId: conversation.currentLeafId,
+      items: rows.map((row) => ({
+        id: row.id,
+        parentId: row.parent_id,
+        data: JSON.parse(row.data),
+        usage: row.usage && JSON.parse(row.usage),
+        model: row.model,
+        createdAt: row.created_at,
+      })),
+    }
+  }
+
+  /**
+   * Adds an exported conversation as a new, saved chat (unpinned,
+   * unarchived) with new ids, showing the version that was on screen.
+   */
+  importConversation(data: ConversationExport): Conversation {
+    const { id } = this.createConversation()
+    const insert = this.#inserter(id)
+    transaction(this.#db, () => {
+      // Validation guarantees parents come before their children.
+      const newIds = new Map<number, number>()
+      for (const item of data.items) {
+        const parent =
+          item.parentId === null ? null : newIds.get(item.parentId)!
+        newIds.set(
+          item.id,
+          insert(parent, item.data, item.usage, item.model, item.createdAt),
+        )
+      }
+      const leaf =
+        data.currentLeafId === null ? null : newIds.get(data.currentLeafId)!
+      this.#db
+        .prepare(
+          `UPDATE conversations
+              SET title = ?, current_leaf_id = ?, created_at = ?, updated_at = ?
+            WHERE id = ?`,
+        )
+        .run(
+          data.conversation.title,
+          leaf,
+          data.conversation.createdAt,
+          data.conversation.updatedAt,
+          id,
+        )
+    })
+    return this.getConversation(id)!
+  }
+
+  /** Inserts one item (and indexes its text for search); returns its id. */
+  #inserter(conversationId: string) {
+    const searchable = !this.getConversation(conversationId)?.temporary
+    const insert = this.#db.prepare(
+      `INSERT INTO items (conversation_id, parent_id, data, usage, model, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    )
+    const index = this.#db.prepare(
+      'INSERT INTO items_fts (rowid, text, conversation_id) VALUES (?, ?, ?)',
+    )
+    return (
+      parentId: number | null,
+      data: ResponseInputItem,
+      usage: ResponseUsage | null,
+      model: string | null,
+      createdAt: number,
+    ): number => {
+      const id = Number(
+        insert.run(
+          conversationId,
+          parentId,
+          JSON.stringify(data),
+          usage && JSON.stringify(usage),
+          model,
+          createdAt,
+        ).lastInsertRowid,
+      )
+      const message = searchable && messageText(data)
+      if (message) index.run(id, message.text, conversationId)
+      return id
     }
   }
 

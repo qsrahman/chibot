@@ -11,6 +11,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 - Reasoning: chat requests ask for a reasoning summary, plus the effort when set (the `reasoningEffort` setting). A collapsible "Thinking…" shows the summary while the model thinks, and answers keep it as "Thoughts". Models that reject reasoning parameters are retried without them, and remembered.
 - Custom instructions (`aboutUser`, `responseStyle` settings) are sent as `instructions` with every chat turn (not titles), after a built-in line asking for `$…$` / `$$…$$` math so formulas render.
 - Long chats: requests ask the server to compact the context past `compactThreshold` tokens (default 64,000; `null` turns it off). Compaction items are kept in the history, a turn's input starts at the last one, and the chat shows "Earlier messages were summarized to save context" where it happened. Servers that reject the option are retried without it.
+- Export a chat from its menu as Markdown (what's shown) or JSON (the whole tree: every version, usage and models; `{ version: 1 }`). `POST /api/conversations/import` adds an exported JSON chat back, validated, with new ids and the same version shown (up to 20 MB).
 
 ## [0.4.0] - 2026-10-22
 

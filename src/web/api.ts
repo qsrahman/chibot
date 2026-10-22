@@ -79,6 +79,19 @@ export async function deleteConversation(
   if (!res.ok && res.status !== 404) throw new Error(await errorMessage(res))
 }
 
+/** Where to download a conversation as Markdown or JSON. */
+export const exportUrl = (id: string, format: 'md' | 'json') =>
+  `/api/conversations/${id}/export?format=${format}`
+
+/** Adds a chat from an exported JSON file; the server validates it. */
+export async function importConversation(file: File) {
+  return request<Conversation>('/api/conversations/import', {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: await file.text(),
+  })
+}
+
 /** Shows another version of a message or answer (see `Versions`). */
 export async function switchVersion(conversationId: string, itemId: number) {
   const res = await fetch(`/api/conversations/${conversationId}/leaf`, {

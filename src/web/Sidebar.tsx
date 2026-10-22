@@ -3,6 +3,8 @@ import { Link, NavLink, useMatch, useNavigate } from 'react-router'
 import {
   Archive,
   Ellipsis,
+  FileJson,
+  FileText,
   Keyboard,
   PanelLeft,
   Pencil,
@@ -13,6 +15,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import type { ConversationListItem } from '../shared/types.ts'
+import { exportUrl } from './api.ts'
 import { ArchivedDialog } from './ArchivedDialog.tsx'
 import { groupConversations } from './dates.ts'
 import { DeleteChatDialog } from './Dialog.tsx'
@@ -268,6 +271,20 @@ function ConversationRow({
         <MenuItem icon={<Archive />} onClick={() => act(onArchive)}>
           Archive
         </MenuItem>
+        <MenuItem
+          icon={<FileText />}
+          download={exportUrl(item.id, 'md')}
+          onClick={menu.hide}
+        >
+          Export as Markdown
+        </MenuItem>
+        <MenuItem
+          icon={<FileJson />}
+          download={exportUrl(item.id, 'json')}
+          onClick={menu.hide}
+        >
+          Export as JSON
+        </MenuItem>
         <hr className="menu-divider" />
         <MenuItem icon={<Trash2 />} danger onClick={() => act(onDelete)}>
           Delete
@@ -277,27 +294,37 @@ function ConversationRow({
   )
 }
 
+/** A menu row: a button, or a download link when `download` is set. */
 function MenuItem({
   icon,
   danger,
   onClick,
+  download,
   children,
 }: {
   icon: ReactElement
   danger?: boolean
   onClick: () => void
+  download?: string
   children: ReactNode
 }) {
-  return (
-    <button
-      type="button"
-      className={danger ? 'menu-item danger' : 'menu-item'}
-      onClick={onClick}
-    >
+  const content = (
+    <>
       <span className="row-icon" aria-hidden>
         {icon}
       </span>
       {children}
+    </>
+  )
+  const className = danger ? 'menu-item danger' : 'menu-item'
+  // The server names the file (Content-Disposition), so `download` is bare.
+  return download ? (
+    <a className={className} href={download} download onClick={onClick}>
+      {content}
+    </a>
+  ) : (
+    <button type="button" className={className} onClick={onClick}>
+      {content}
     </button>
   )
 }
