@@ -1,4 +1,4 @@
-import { Hono } from 'hono'
+import { Hono, type Context } from 'hono'
 import { streamSSE } from 'hono/streaming'
 import { validator } from 'hono/validator'
 import OpenAI from 'openai'
@@ -80,14 +80,14 @@ export function createApp({ config, store, chat }: AppDeps) {
         c.req.param('id'),
         c.req.valid('json'),
       )
-      if (!updated) return c.json({ error: 'Conversation not found' }, 404)
+      if (!updated) return notFound(c)
       return c.json(updated)
     },
   )
 
   app.delete('/api/conversations/:id', (c) => {
     if (!store.deleteConversation(c.req.param('id'))) {
-      return c.json({ error: 'Conversation not found' }, 404)
+      return notFound(c)
     }
     return c.body(null, 204)
   })
@@ -95,7 +95,7 @@ export function createApp({ config, store, chat }: AppDeps) {
   app.get('/api/conversations/:id', (c) => {
     const id = c.req.param('id')
     const conversation = store.getConversation(id)
-    if (!conversation) return c.json({ error: 'Conversation not found' }, 404)
+    if (!conversation) return notFound(c)
     return c.json({
       conversation,
       items: store.getPath(id),
@@ -114,7 +114,7 @@ export function createApp({ config, store, chat }: AppDeps) {
     (c) => {
       const id = c.req.param('id')
       if (!store.getConversation(id)) {
-        return c.json({ error: 'Conversation not found' }, 404)
+        return notFound(c)
       }
       const { text } = c.req.valid('json')
       // Aborted when the client disconnects or presses Stop. Passing it on
@@ -143,6 +143,9 @@ export function createApp({ config, store, chat }: AppDeps) {
 
   return app
 }
+
+const notFound = (c: Context) =>
+  c.json({ error: 'Conversation not found' }, 404)
 
 function toErrorEvent(err: unknown): TurnErrorEvent {
   if (err instanceof OpenAI.APIError) {
