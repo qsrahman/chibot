@@ -16,8 +16,10 @@ phase roadmap live in [PLAN.md](PLAN.md). Usage lives in [README.md](README.md).
 
 ```
 src/server/   main.ts (wiring + listen), app.ts (Hono routes), one class per file
-src/web/      Vite root: index.html, main.tsx, components
-tests/        mirrors src/ (tests/server/*.test.ts, …)
+src/shared/   types used by both server and web (API records, chibot's SSE error event)
+src/web/      Vite root: index.html, main.tsx, components, api.ts (fetch + SSE), hooks
+tests/        mirrors src/ (tests/server/*.test.ts, tests/web/*.test.ts)
+              tests/server/fakes.ts: fake OpenAI client + stream events
 data/         local SQLite database (git-ignored)
 ```
 

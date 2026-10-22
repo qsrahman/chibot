@@ -6,6 +6,12 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Added
 
+- Phase 1 minimal chatbot: streamed answers rendered as Markdown (GFM tables, syntax-highlighted code, KaTeX math), Enter to send, Shift+Enter for a newline, and a Stop button.
+- Stateless chat (`store: false`, encrypted reasoning replayed) with history kept as a tree of SDK items in SQLite (`node:sqlite`) under `CHIBOT_DATA_DIR`.
+- A stopped answer or a mid-answer disconnect keeps the partial text.
+- `/c/:id` URLs: a reload reopens the chat, and the production server serves client routes.
+- Errors from the model server are shown with their HTTP status and request id.
+- API: `POST /api/conversations`, `GET /api/conversations/:id`, `POST /api/conversations/:id/turns` (SSE of the SDK's `ResponseStreamEvent`s plus `chibot.error`).
 - OpenAI-compatible providers: `OPENAI_BASE_URL` points chat at any Responses API server (e.g. Ollama, LM Studio). `OPENAI_API_KEY` becomes optional there, and `OPENAI_MODEL` becomes required. `GET /api/health` reports the base URL.
 - `HOST` setting. The server and the Vite dev server now listen on `127.0.0.1` by default, and the server warns when `HOST` exposes it beyond this machine.
 

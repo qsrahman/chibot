@@ -6,8 +6,9 @@ It works with OpenAI and with OpenAI-compatible servers that implement the
 Responses API, such as [Ollama](https://docs.ollama.com/openai) and
 [LM Studio](https://lmstudio.ai/).
 
-> **Status: Phase 0 (foundations).** The server and web shell run, but chat
-> isn't wired up yet. See [PLAN.md](PLAN.md) for the roadmap.
+> **Status: Phase 1 (minimal chatbot).** A single conversation with streamed
+> answers. Conversation history and a sidebar arrive in Phase 2. See
+> [PLAN.md](PLAN.md) for the roadmap.
 
 ## Requirements
 
@@ -34,6 +35,7 @@ Set these in `.env` or the environment.
 | `OPENAI_MODEL` | `gpt-6-astra` | Chat model; required with `OPENAI_BASE_URL` |
 | `HOST` | `127.0.0.1` | Interface to listen on (see below) |
 | `PORT` | `3000` | API server port |
+| `CHIBOT_DATA_DIR` | `<repo>/data` | Where the conversation database is kept |
 
 For example, to chat with a local Ollama model, put this in `.env`:
 
@@ -71,6 +73,18 @@ pnpm start
 ```
 
 Then open http://127.0.0.1:3000.
+
+## Using it
+
+- Type a message and press **Enter** to send. **Shift+Enter** adds a new line.
+- Answers stream in as Markdown, with tables, syntax-highlighted code and
+  `$…$` / `$$…$$` math.
+- **Stop** (■) ends an answer early. What arrived so far is kept, and the same
+  happens if you close the tab mid-answer.
+- The first message gives the chat its own URL (`/c/…`). Reloading reopens it.
+  **New chat** starts over. A list of past chats comes in Phase 2.
+- If the model server reports an error (e.g. a bad API key), it's shown with
+  its status and request id. Your message is kept.
 
 ## Other scripts
 

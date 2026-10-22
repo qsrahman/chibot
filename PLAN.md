@@ -166,7 +166,7 @@ tool payloads), written in the same transaction as the item.
 |---|---|---|
 | `GET /api/health` | 0 | Liveness + chat model and base URL (never the key) |
 | `POST /api/conversations` | 1 | Create a conversation |
-| `GET /api/conversations/:id` | 1 | Conversation with its current path (items + sibling info) |
+| `GET /api/conversations/:id` | 1 | Conversation with its current path. Phase 3 adds sibling info. |
 | `POST /api/conversations/:id/turns` | 1 | Send a message; SSE stream of `ResponseStreamEvent`s. Phase 3 adds `parentId` for edit/regenerate. |
 | `GET /api/conversations?q=&archived=` | 2 | List (pinned first, newest first), search, archived view |
 | `PATCH/DELETE /api/conversations/:id` | 2 | Rename, pin, archive/restore / delete |
@@ -188,7 +188,7 @@ bumps the minor version. Work stops after each phase for review.
 - Vite + React shell served by Vite in dev and by Hono in production.
 - `pnpm dev` runs both servers; Vite proxies `/api`.
 
-### Phase 1 — Minimal chatbot
+### Phase 1 — Minimal chatbot ✅
 - `ConversationStore` (SQLite item tree) and `ChatService` (streaming,
   stateless).
 - Single-conversation UI: message list, composer (Enter to send, Shift+Enter
@@ -336,6 +336,11 @@ toggles in the composer.
 - **`sqlite-vec` is pre-1.0** (0.1.x) and needs `node:sqlite` extension loading
   (`allowExtension`). Both get verified at the start of Phase 8. The fallback
   is storing vectors as BLOBs and ranking in JS.
+- **Math delimiters:** `remark-math` renders `$…$` and `$$…$$` only. Models
+  that answer with `\(…\)` / `\[…\]` show raw LaTeX. Revisit in Phase 4
+  (instructions or a remark plugin).
+- **Bundle size:** the web bundle is ~860 kB (highlight.js grammars, KaTeX).
+  That's acceptable for a local app; code-split if it starts to matter.
 - **Citations from our own web search** depend on the model following the
   instructions, since there are no hosted `url_citation` annotations. The UI's
   sources list comes from the tool result, so sources are always shown.
