@@ -34,20 +34,21 @@ enough to switch to a dark-grey page.
 
 | Token | Light | Dark | Used for |
 |---|---|---|---|
-| `--bg` | `#fcfcfc` | `#000000` | Page |
-| `--sidebar-bg` | `#fcfcfc` | `#000000` | Sidebar (Phase 2), separated by `--border` |
+| `--bg` | `#fcfcfc` | `#000000` | Page and sidebar (separated by `--border`) |
 | `--surface` | `#ffffff` | `#212121` | Composer, cards |
 | `--surface-raised` | `#ffffff` | `#303030` | Dialogs, menus, popovers |
 | `--surface-muted` | `#f4f4f4` | `#303030` | Hover rows |
 | `--bubble-bg` / `--bubble-fg` | `#edf3ff` / `#2451da` | `#020562` / `#d9e6ff` | User message bubble |
 | `--code-chip` | `rgb(238 238 238 / 82%)` | `rgb(42 42 42 / 82%)` | Inline code |
-| `--chip` | `#ececec` | `#414141` | Chips and pills (suggestions, icon buttons) |
+| `--chip` † | `#ececec` | `#414141` | Chips and pills (suggestions, icon buttons) |
 | `--fg` | `#0d0d0d` | `#ffffff` | Text |
 | `--fg-muted` | `#5d5d5d` | `#cdcdcd` | Descriptions, captions, footer, action icons, code labels |
 | `--border` | `rgb(0 0 0 / 10%)` | `rgb(255 255 255 / 15%)` | Hairlines, composer outline |
 | `--accent` / `--accent-fg` | `#3566f0` / `#fff` | `#3566f0` / `#fff` | Send button, switches (measured `oklch(0.56 0.21 265)`) |
-| `--button` / `--button-fg` | `#0d0d0d` / `#fff` | `#fff` / `#0d0d0d` | Primary buttons in dialogs |
+| `--button` / `--button-fg` † | `#0d0d0d` / `#fff` | `#fff` / `#0d0d0d` | Primary buttons in dialogs |
 | `--danger` | `#d93025` | `#ff6b6b` | Errors, destructive buttons |
+
+† Specified but not in the CSS yet: added when the first component uses it.
 
 **Shadows.** In light mode the composer floats on a layered shadow:
 `0 0 0 1px rgb(0 0 0/4%), 0 2px 8px rgb(0 0 0/4%), 0 4px 80px 8px rgb(0 0 0/2.4%)`.
