@@ -79,9 +79,10 @@ LM Studio).
   (that's a regenerate from that message).
 - **Context growth:** long chats will eventually exceed the context window.
   The SDK marks `truncation` as deprecated in favour of
-  `context_management: [{ type: 'compaction', compact_threshold }]`. Whether
-  that works with `store: false` gets verified in Phase 4; if it doesn't, the
-  fallback is `responses.compact`.
+  `context_management: [{ type: 'compaction', compact_threshold }]`, which was
+  verified with `store: false`: the response carries compaction items, and a
+  follow-up sending only the compaction item and what came after it still
+  recalls the dropped history (Phase 4).
 - **Compatible providers** may not support every request option above
   (`store`, `include`, `context_management`). Phase 1 verifies chat against a
   local Ollama with `gemma4:cloud`. An option a provider rejects gets a per-endpoint switch, added
@@ -232,21 +233,58 @@ bumps the minor version. Work stops after each phase for review.
   between, each keeping its own follow-ups, and the e2e test passes.
 
 ### Phase 4 — Models & settings
-- Model picker (from the chat endpoint's `models.list()`), custom instructions (`instructions`),
-  reasoning effort, collapsible "Thinking…" view of the reasoning summary.
-- Context-growth strategy (compaction, see §3).
-- `SettingsStore` (SQLite `settings` table) with a settings API that never
-  returns secrets. The model picker, custom instructions and reasoning effort
-  are stored there (§6), with the environment as defaults.
-- Export a conversation as Markdown (current path) or JSON (full tree), and
-  import JSON.
-- Theme toggle: Light / Dark / System, remembered in `localStorage`.
-- **Done when:** settings apply to new turns; a long chat keeps working past the
-  context window; an exported JSON round-trips through import unchanged.
+Decisions (agreed after probing OpenAI and Ollama): one global model chosen
+in the header, answers labelled with their model; one phase; zod adopted now;
+compaction on at 64k tokens; math formatting via a built-in instruction.
+
+- **Settings foundation.** zod (schemas shared in `src/shared`, type-only on
+  the web). `openDatabase()` runs migrations for one SQLite connection shared
+  by `ConversationStore` and a new `SettingsStore` (`settings` table of JSON
+  values, environment as defaults). `GET`/`PATCH /api/settings`, never
+  returning secrets.
+- **Model picker.** The header's model name opens a popover with a search box
+  over the chat endpoint's `models.list()` (unfiltered: the lists mix chat,
+  embedding, image and audio models), falling back to a text field when
+  listing fails. The choice is the `model` setting and applies to new turns,
+  edits and regenerations. Each answer stores and shows the model that wrote
+  it, so regenerating after switching works like "Try again with…".
+- **Reasoning.** `reasoningEffort` setting: unset sends nothing, otherwise
+  the SDK's `none`…`max`. Chat requests ask for `summary: 'auto'`; models that
+  reject `reasoning` (400) are retried without it, in one helper shared with
+  titles. A collapsible "Thinking…" shows the summary while streaming; saved
+  answers get a collapsed "Thoughts" disclosure from the stored reasoning
+  items.
+- **Custom instructions.** *What should chibot know about you?* and *How should
+  chibot respond?*, sent as `instructions` with every chat turn (not titles),
+  joined with a built-in line asking for `$…$` / `$$…$$` math.
+- **Long chats.** `context_management: [{ type: 'compaction',
+  compact_threshold }]` with `compactThreshold` (default 64,000 tokens;
+  `null` turns it off). Compaction items are stored like other output; a
+  turn's input starts at the last compaction item on its path. Shown only as
+  a thin "Earlier messages were summarized" divider. Servers that reject the
+  option are retried without it.
+- **Export / import.** From a chat's menu: Markdown (current path) or JSON
+  (full tree, `{ version: 1, … }`, with versions, usage and models). Import a
+  JSON file from Settings → Data: validated, new ids, current version kept,
+  arrives unpinned and unarchived.
+- **Theme.** Light / Dark / System in Settings → General, remembered in
+  `localStorage`. Tokens move to `color-scheme` + `light-dark()` so each colour
+  is defined once; code highlighting uses our own tokens (the highlight.js
+  theme files are media-query based and can't follow a manual toggle).
+- **Settings dialog** (DESIGN.md §4): General (theme), Personalization
+  (instructions), Model (reasoning effort, compaction), Data (import, archived
+  chats). Opens from a sidebar gear and ⌘/Ctrl+,.
+- **Done when:** the model and settings apply to new turns and survive a
+  restart; reasoning summaries show live and after reload; a chat past the
+  compaction threshold keeps working and recalls early facts; exported JSON
+  imports back unchanged; the theme toggle works and is remembered. Unit tests
+  cover the server parts; Playwright covers picker, settings, thinking, theme,
+  export/import and compaction (the fake server gains summary and compaction
+  events).
 
 ### Phase 5 — Attachments & voice input
-- `Config` moves to a zod schema as the per-feature endpoint variables
-  arrive (§6).
+- `Config` moves to the zod schemas adopted in Phase 4 as the per-feature
+  endpoint variables arrive (§6).
 - Images and PDFs added by paste, drag-drop or picker. The original is saved in
   `data/files/`, then sent as `input_image` / `input_file`: by `file_id` after
   a Files API upload where the endpoint supports it, otherwise inline as
@@ -326,9 +364,8 @@ Configuration lives in three layers, split by who changes it and how often:
   responses. Settings shows only whether a key is configured.
 - **`.env` lookup:** real environment variables win, then `.env` in the current
   folder, then `<repo>/.env`, so `chibot` works from any folder.
-- **Validation:** `Config` validates by hand while it's small. It moves to a
-  schema library (zod) in Phase 5, when the per-feature endpoint variables
-  arrive.
+- **Validation:** zod from Phase 4 (settings, imports, route bodies). `Config`
+  moves to it in Phase 5, when the per-feature endpoint variables arrive.
 
 Environment variables:
 
@@ -364,9 +401,12 @@ Environment variables:
 - **`sqlite-vec` is pre-1.0** (0.1.x) and needs `node:sqlite` extension loading
   (`allowExtension`). Both get verified at the start of Phase 8. The fallback
   is storing vectors as BLOBs and ranking in JS.
-- **Math delimiters:** `remark-math` renders `$…$` and `$$…$$` only. Models
-  that answer with `\(…\)` / `\[…\]` show raw LaTeX. Revisit in Phase 4
-  (instructions or a remark plugin).
+- **Math delimiters:** `remark-math` renders `$…$` and `$$…$$` only. Phase 4's
+  built-in instruction asks models for those delimiters; a model that ignores
+  it still shows `\(…\)` as raw LaTeX.
+- **Imported encrypted items:** reasoning and compaction items carry content
+  only the issuing provider/account can decrypt; an import used with another
+  provider may need them dropped.
 - **Sidebar size:** the list shows the 200 most recent chats (pinned first)
   and search returns 50 hits. Older chats are reachable through search. Add
   paging or "show more" if that limit is ever hit.
