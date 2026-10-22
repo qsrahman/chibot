@@ -1,7 +1,9 @@
 // A stand-in for an OpenAI-compatible Responses API, for the e2e tests.
-// Streams `Answer #n to: <last user message>` word by word; a message that
-// contains "slow" streams a long answer slowly, so tests can act mid-answer.
-// Non-streaming requests are title requests.
+// Streams `Answer #n to: <last user message>` word by word. A question that
+// contains "slow" streams a long answer slowly (to act mid-answer), "think"
+// first streams a reasoning summary, and "compact" returns a compaction item.
+// Non-streaming requests are title requests. GET /debug/last-request shows
+// the last chat request, so tests can check what chibot sent.
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { streamSSE } from 'hono/streaming'
@@ -15,13 +17,25 @@ const usage = {
   total_tokens: 52,
 }
 
+const MODELS = ['e2e-model', 'e2e-other']
+const THOUGHT = 'Considering the question carefully.'
+
 let answers = 0
+let lastRequest: unknown = null
 const app = new Hono()
 
 app.get('/health', (c) => c.text('ok'))
+app.get('/debug/last-request', (c) => c.json(lastRequest))
+app.get('/v1/models', (c) =>
+  c.json({
+    object: 'list',
+    data: MODELS.map((id) => ({ id, object: 'model', owned_by: 'e2e' })),
+  }),
+)
 
 app.post('/v1/responses', async (c) => {
   const body = (await c.req.json()) as {
+    model: string
     stream?: boolean
     input: string | { role?: string; content?: unknown }[]
   }
@@ -43,6 +57,7 @@ app.post('/v1/responses', async (c) => {
     })
   }
 
+  lastRequest = body
   const question =
     typeof body.input === 'string'
       ? body.input
@@ -53,11 +68,40 @@ app.post('/v1/responses', async (c) => {
     : `Answer #${++answers} to: ${question}`
   const words = text.split(' ')
   const id = `resp_${crypto.randomUUID()}`
+  const thinking = question.includes('think')
+  const reasoning = {
+    id: `rs_${crypto.randomUUID()}`,
+    type: 'reasoning',
+    summary: [{ type: 'summary_text', text: THOUGHT }],
+    encrypted_content: 'e2e',
+  }
+  const compaction = {
+    id: `cmp_${crypto.randomUUID()}`,
+    type: 'compaction',
+    encrypted_content: 'e2e',
+  }
+  const output = [
+    ...(question.includes('compact') ? [compaction] : []),
+    ...(thinking ? [reasoning] : []),
+    message(text),
+  ]
 
   return streamSSE(c, async (stream) => {
     const send = (event: Record<string, unknown> & { type: string }) =>
       stream.writeSSE({ event: event.type, data: JSON.stringify(event) })
     await send({ type: 'response.created', response: { id, output: [] } })
+    if (thinking) {
+      for (const word of THOUGHT.split(/(?= )/)) {
+        await send({
+          type: 'response.reasoning_summary_text.delta',
+          item_id: reasoning.id,
+          output_index: 0,
+          summary_index: 0,
+          delta: word,
+        })
+        await stream.sleep(50)
+      }
+    }
     for (const [i, word] of words.entries()) {
       if (stream.aborted) return
       await send({
@@ -71,7 +115,7 @@ app.post('/v1/responses', async (c) => {
     }
     await send({
       type: 'response.completed',
-      response: { id, status: 'completed', output: [message(text)], usage },
+      response: { id, status: 'completed', model: body.model, output, usage },
     })
   })
 })

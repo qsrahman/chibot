@@ -1,37 +1,17 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
+import {
+  answer,
+  answered,
+  appReady,
+  clipboard,
+  newChat,
+  openChat,
+  send,
+  turns,
+} from './helpers.ts'
 
 // Runs against tests/e2e/fake-openai.ts, which answers
 // "Answer #n to: <question>" and streams slowly when the question says "slow".
-
-async function send(page: Page, text: string) {
-  const box = page.getByRole('textbox', { name: 'Message' })
-  await box.fill(text)
-  await box.press('Enter')
-}
-
-const turns = (page: Page) => page.locator('.turn')
-const answer = (page: Page, index: number) =>
-  turns(page).nth(index).locator('.message.assistant')
-const clipboard = (page: Page) =>
-  page.evaluate(() => navigator.clipboard.readText())
-// The toolbar link; conversation rows can also be titled "New chat".
-async function newChat(page: Page) {
-  await page.locator('nav.sidebar > a[aria-label="New chat"]').click()
-  await expect(page.locator('.greeting')).toBeVisible()
-}
-
-/**
- * The answer is complete: streamed text is visible before the turn is
- * saved, and copy actions only see saved answers.
- */
-const answered = (page: Page) =>
-  expect(page.getByRole('button', { name: 'Stop' })).toHaveCount(0)
-
-/** Shortcut listeners attach after the first render; wait for the app. */
-const appReady = (page: Page) =>
-  expect(page.getByRole('textbox', { name: 'Message' })).toBeFocused()
-const openChat = (page: Page, url: string) =>
-  page.locator(`.conversation-row a[href="${new URL(url).pathname}"]`).click()
 
 test('chats, titles the conversation, shows usage and copies', async ({
   page,

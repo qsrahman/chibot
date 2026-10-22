@@ -12,6 +12,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 - Custom instructions (`aboutUser`, `responseStyle` settings) are sent as `instructions` with every chat turn (not titles), after a built-in line asking for `$…$` / `$$…$$` math so formulas render.
 - Long chats: requests ask the server to compact the context past `compactThreshold` tokens (default 64,000; `null` turns it off). Compaction items are kept in the history, a turn's input starts at the last one, and the chat shows "Earlier messages were summarized to save context" where it happened. Servers that reject the option are retried without it.
 - Export a chat from its menu as Markdown (what's shown) or JSON (the whole tree: every version, usage and models; `{ version: 1 }`). `POST /api/conversations/import` adds an exported JSON chat back, validated, with new ids and the same version shown (up to 20 MB).
+- End-to-end tests for the model picker, reasoning effort and custom instructions, thinking, theme, export/import and compaction. The fake server gained a model list, reasoning and compaction output, and `/debug/last-request`.
 - Settings dialog (sidebar gear or ⌘/Ctrl+,): theme (System / Light / Dark), custom instructions, reasoning effort, compaction on/off and threshold, importing a chat, and archived chats (moved here from the sidebar).
 
 ### Changed
