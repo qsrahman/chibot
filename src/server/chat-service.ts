@@ -6,9 +6,14 @@ import type {
   ResponseStreamEvent,
 } from 'openai/resources/responses/responses'
 import { messageText } from '../shared/messages.ts'
+import type { Settings } from '../shared/settings.ts'
 import type { TurnRequest, TurnTitleEvent } from '../shared/types.ts'
 import type { ConversationStore } from './conversation-store.ts'
 import type { SettingsStore } from './settings-store.ts'
+
+// remark-math renders only $…$ and $$…$$, so ask models for those.
+const FORMAT_INSTRUCTIONS =
+  'Write math with $…$ inline and $$…$$ for display, not \\(…\\) or \\[…\\].'
 
 const TITLE_INSTRUCTIONS =
   'Write a short title (3 to 6 words) for the conversation below, in its ' +
@@ -66,7 +71,8 @@ export class ChatService {
     const input = this.#store
       .getPath(conversationId, questionId)
       .map((item) => item.data)
-    const { model, reasoningEffort } = this.#settings.get()
+    const settings = this.#settings.get()
+    const { model, reasoningEffort } = settings
 
     let partial = ''
     let saved = false
@@ -84,6 +90,7 @@ export class ChatService {
           this.#client.responses.create(
             {
               model,
+              instructions: chatInstructions(settings),
               input,
               stream: true,
               store: false,
@@ -212,6 +219,22 @@ export class ChatService {
       return null
     }
   }
+}
+
+/** The built-in formatting line plus the user's custom instructions. */
+export function chatInstructions({
+  aboutUser,
+  responseStyle,
+}: Pick<Settings, 'aboutUser' | 'responseStyle'>): string {
+  return [
+    FORMAT_INSTRUCTIONS,
+    aboutUser.trim() &&
+      `What the user wants you to know about them:\n${aboutUser.trim()}`,
+    responseStyle.trim() &&
+      `How the user wants you to respond:\n${responseStyle.trim()}`,
+  ]
+    .filter(Boolean)
+    .join('\n\n')
 }
 
 /** First line, without quotes, Markdown emphasis or a trailing full stop. */
