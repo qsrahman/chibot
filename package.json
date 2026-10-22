@@ -49,6 +49,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^2.1.5",
+    "eventsource-parser": "^4.1.2",
     "hono": "^4.13.13",
     "openai": "^7.39.0",
     "react": "^19.3.1",

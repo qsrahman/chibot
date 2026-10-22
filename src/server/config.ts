@@ -1,3 +1,5 @@
+import { join, resolve } from 'node:path'
+
 /** Connection to an OpenAI or OpenAI-compatible (Responses API) server. */
 export interface Endpoint {
   /** `undefined` means the SDK's default (OpenAI). */
@@ -11,6 +13,8 @@ export class Config {
   readonly chat: Endpoint
   readonly host: string
   readonly port: number
+  /** Holds the database and, later, attachment files. */
+  readonly dataDir: string
 
   constructor(env: NodeJS.ProcessEnv) {
     const baseURL = env.OPENAI_BASE_URL?.trim() || undefined
@@ -35,6 +39,15 @@ export class Config {
     // Loopback by default: the app has no auth and spends the owner's API key.
     this.host = env.HOST?.trim() || '127.0.0.1'
     this.port = port
+    // Resolved from this file, not the cwd, so `chibot` works from any folder.
+    const dataDir = env.CHIBOT_DATA_DIR?.trim()
+    this.dataDir = dataDir
+      ? resolve(dataDir)
+      : join(import.meta.dirname, '../../data')
+  }
+
+  get databasePath(): string {
+    return join(this.dataDir, 'chibot.db')
   }
 
   get isLoopback(): boolean {
