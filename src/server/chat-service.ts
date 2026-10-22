@@ -49,6 +49,9 @@ export class ChatService {
     let partial = ''
     let saved = false
     try {
+      // Not `responses.stream()`: its accumulator rejects some compatible
+      // servers' streams (Ollama gpt-oss: "missing content at index 0"), and
+      // chibot must save the answer before relaying `response.completed`.
       const stream = await this.#client.responses.create(
         {
           model: this.#model,

@@ -55,6 +55,7 @@ LM Studio).
 | Conversation state | **Stateless**: `store: false`; full history kept in local SQLite and sent on every request | The app owns its data, so nothing depends on OpenAI-side retention, and editing, versions and export are local operations. |
 | History shape | **Tree** of items (`parent_id`) | Supports ChatGPT-style message versions. Chosen from Phase 1 so no migration is needed later. |
 | Storage | `node:sqlite` (built-in) | Zero dependencies, synchronous, transactional, recursive CTEs for tree paths, FTS5 for search. |
+| Streaming call | `responses.create({ stream: true })`, not `responses.stream()` | `stream()` adds an accumulator and `finalResponse()`, but `finalResponse()` rejects on abort (chibot saves partial answers itself anyway) and the accumulator rejects streams from some compatible servers (tested: Ollama `gpt-oss` fails with "missing content at index 0"; `gemma4` and OpenAI pass). Persisting before relaying `response.completed` needs the raw events anyway. |
 | Wire protocol | Server relays the SDK's own `ResponseStreamEvent`s over SSE | The browser reuses the SDK's types (type-only import), so there are no hand-written mirror types. |
 | SSE parsing in browser | `eventsource-parser` | `EventSource` can't `POST`. |
 | Markdown | `react-markdown` + `remark-gfm` + `rehype-highlight` + `remark-math`/`rehype-katex` | Standard, safe by default (no raw HTML). Math rendering matches ChatGPT, since models often answer in LaTeX. |
