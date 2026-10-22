@@ -4,8 +4,16 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-22
+
 ### Added
 
+- Phase 2 conversations sidebar: Pinned and date groups, inline rename, pin, archive and delete (with confirmation) from a per-chat menu, and collapse to an icon rail that's remembered.
+- Search chats: a dialog that searches titles and message text (SQLite FTS5, word prefixes) and shows matching snippets.
+- Archived chats dialog to restore or delete archived conversations.
+- Temporary chat: a toggle on a new chat. It's never listed, titled or indexed, and is deleted when you leave it. The server also sweeps leftovers at startup.
+- Automatic titles: after the first answer the chat model writes a 3-6 word title, which streams to the sidebar as a `chibot.title` event.
+- API: `GET /api/conversations` (`archived=1`, `q=`), `PATCH` and `DELETE /api/conversations/:id`, and `POST /api/conversations` with `{ temporary: true }`.
 - `DESIGN.md`: ChatGPT-inspired design guide with measured tokens, layout and component specs for current and upcoming UI.
 
 ### Changed
