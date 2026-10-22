@@ -4,19 +4,13 @@ import { Config } from '../../src/server/config.ts'
 describe('Config', () => {
   it('applies defaults', () => {
     const config = new Config({ OPENAI_API_KEY: 'sk-test' })
-    expect(config).toMatchObject({
+    expect(config.chat).toEqual({
+      baseURL: undefined,
       apiKey: 'sk-test',
       model: 'gpt-6-astra',
-      host: '127.0.0.1',
-      port: 3000,
     })
+    expect(config).toMatchObject({ host: '127.0.0.1', port: 3000 })
     expect(config.isLoopback).toBe(true)
-  })
-
-  it('flags a non-loopback HOST', () => {
-    const config = new Config({ OPENAI_API_KEY: 'k', HOST: '0.0.0.0' })
-    expect(config.host).toBe('0.0.0.0')
-    expect(config.isLoopback).toBe(false)
   })
 
   it('reads overrides', () => {
@@ -25,12 +19,36 @@ describe('Config', () => {
       OPENAI_MODEL: 'gpt-6.1-sol',
       PORT: '8080',
     })
-    expect(config.model).toBe('gpt-6.1-sol')
+    expect(config.chat.model).toBe('gpt-6.1-sol')
     expect(config.port).toBe(8080)
   })
 
-  it('requires an API key', () => {
+  it('accepts a compatible server without a key', () => {
+    const config = new Config({
+      OPENAI_BASE_URL: 'http://localhost:11434/v1',
+      OPENAI_MODEL: 'llama4',
+    })
+    expect(config.chat).toEqual({
+      baseURL: 'http://localhost:11434/v1',
+      apiKey: 'unused',
+      model: 'llama4',
+    })
+  })
+
+  it('requires a model for a compatible server', () => {
+    expect(
+      () => new Config({ OPENAI_BASE_URL: 'http://localhost:11434/v1' }),
+    ).toThrow(/OPENAI_MODEL/)
+  })
+
+  it('requires an API key for OpenAI', () => {
     expect(() => new Config({ OPENAI_API_KEY: '  ' })).toThrow(/OPENAI_API_KEY/)
+  })
+
+  it('flags a non-loopback HOST', () => {
+    const config = new Config({ OPENAI_API_KEY: 'k', HOST: '0.0.0.0' })
+    expect(config.host).toBe('0.0.0.0')
+    expect(config.isLoopback).toBe(false)
   })
 
   it.each(['abc', '0', '70000', '3.5'])('rejects PORT=%s', (port) => {

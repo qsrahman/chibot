@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-type Health = { status: string; model: string }
+type Health = { status: string; model: string; baseURL: string | null }
 
 export function App() {
   const [health, setHealth] = useState<Health>()
@@ -18,7 +18,11 @@ export function App() {
   return (
     <main className="shell">
       <h1>chibot</h1>
-      {health && <p>Connected · model {health.model}</p>}
+      {health && (
+        <p>
+          Connected · model {health.model} · {health.baseURL ?? 'OpenAI'}
+        </p>
+      )}
       {error && <p className="error">Server unreachable: {error}</p>}
     </main>
   )

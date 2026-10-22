@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Added
 
+- OpenAI-compatible providers: `OPENAI_BASE_URL` points chat at any Responses API server (e.g. Ollama, LM Studio). `OPENAI_API_KEY` becomes optional there, and `OPENAI_MODEL` becomes required. `GET /api/health` reports the base URL.
 - `HOST` setting. The server and the Vite dev server now listen on `127.0.0.1` by default, and the server warns when `HOST` exposes it beyond this machine.
 
 ### Changed
@@ -15,7 +16,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 - Roadmap: `CHIBOT_DATA_DIR` (default `<repo>/data`) replaces `CHIBOT_DB_PATH`; Phase 7 adds per-tool approval and ships a calculator sample tool; no git remote or CI.
 - Roadmap: temporary chat (Phase 2), keyboard shortcuts (Phase 3), theme toggle (Phase 4), voice input (Phase 5), project instructions and default model/settings (Phase 8), and a new Phase 9 for memory.
 - Roadmap: no OpenAI-hosted tools. Custom function tools move to Phase 6. Phase 7 rebuilds web search (Brave Search API) and image generation (`images.generate`) as our own tools. Phase 8 project files use local RAG (embeddings + `sqlite-vec`) instead of `file_search`.
-
+- Roadmap: one Responses-API chat provider at a time; transcription, image and embedding endpoints can each be overridden; attachments fall back to inline base64 where there's no Files API.
 - Roadmap revised after review: history is stored as a tree from Phase 1 to support ChatGPT-style message versions; the old Phase 3 is split into "Edit & versions" (with token usage) and "Models & settings" (with export/import); Phase 8 projects is kept. Styling is plain CSS, and Playwright tests start in Phase 3.
 
 ## [0.1.0] - 2026-10-22

@@ -9,7 +9,14 @@ export interface AppDeps {
 export function createApp({ config }: AppDeps) {
   const app = new Hono()
 
-  app.get('/api/health', (c) => c.json({ status: 'ok', model: config.model }))
+  app.get('/api/health', (c) =>
+    c.json({
+      status: 'ok',
+      model: config.chat.model,
+      // null = OpenAI. Never expose the key.
+      baseURL: config.chat.baseURL ?? null,
+    }),
+  )
 
   return app
 }

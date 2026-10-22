@@ -79,6 +79,11 @@ transpiles it.
   of truth. History is a tree (`parent_id`). A turn's input is the root→leaf
   path (see PLAN.md §3).
 - **Models come from config**, never string literals in logic.
+- **Provider-agnostic.** chibot talks to OpenAI or any OpenAI-compatible
+  Responses API server. Build clients from `Config` endpoints
+  (`config.chat`, …), never `new OpenAI()` with implicit env. Don't assume
+  OpenAI-only extras (Files API, `models.list()`, reasoning items, usage
+  details) exist: degrade gracefully when they're missing.
 - **Tools are our own function tools** (`Tool` subclasses). Don't put
   OpenAI-hosted tools (`web_search`, `file_search`, `image_generation`,
   `code_interpreter`, remote MCP) in a request's `tools`.

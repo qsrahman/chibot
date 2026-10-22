@@ -2,6 +2,9 @@
 
 A local, single-user, ChatGPT-style chatbot built on the
 [OpenAI Responses API](https://developers.openai.com/api/docs/guides/responses-vs-chat-completions).
+It works with OpenAI and with OpenAI-compatible servers that implement the
+Responses API, such as [Ollama](https://docs.ollama.com/openai) and
+[LM Studio](https://lmstudio.ai/).
 
 > **Status: Phase 0 (foundations).** The server and web shell run, but chat
 > isn't wired up yet. See [PLAN.md](PLAN.md) for the roadmap.
@@ -10,7 +13,8 @@ A local, single-user, ChatGPT-style chatbot built on the
 
 - Node.js ≥ 26
 - pnpm ≥ 12
-- An OpenAI API key
+- An OpenAI API key, or a local or hosted OpenAI-compatible server with a
+  `/v1/responses` endpoint
 
 ## Setup
 
@@ -25,10 +29,20 @@ Set these in `.env` or the environment.
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `OPENAI_API_KEY` | — (required) | Your API key |
-| `OPENAI_MODEL` | `gpt-6-astra` | Chat model |
+| `OPENAI_BASE_URL` | OpenAI | Any server with a Responses API |
+| `OPENAI_API_KEY` | — | Required for OpenAI; optional with `OPENAI_BASE_URL` |
+| `OPENAI_MODEL` | `gpt-6-astra` | Chat model; required with `OPENAI_BASE_URL` |
 | `HOST` | `127.0.0.1` | Interface to listen on (see below) |
 | `PORT` | `3000` | API server port |
+
+For example, to chat with a local Ollama model, put this in `.env`:
+
+```bash
+OPENAI_BASE_URL=http://localhost:11434/v1
+OPENAI_MODEL=llama4
+```
+
+Use whichever model you've pulled.
 
 chibot has no login, and anyone who can reach it spends your API key. It
 therefore listens only on this machine by default. To use it from another
