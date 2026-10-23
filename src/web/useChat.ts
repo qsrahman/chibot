@@ -17,14 +17,10 @@ import {
   type Turn,
 } from './turns.ts'
 
-/** A turn being answered, shown after the first `keep` turns. */
+/** The turn being answered, shown after the first `keep` turns. */
 interface Pending {
   keep: number
-  question: Question
-  answer: string
-  /** The reasoning summary streamed so far. */
-  thinking: string
-  tools: ToolActivity[]
+  turn: Turn
 }
 
 interface Options {
@@ -140,7 +136,26 @@ export function useChat(
     let tools = before?.tools ?? []
     let summaryIndex = 0
     let newThoughts = false
-    const show = () => setPending({ ...display, answer, thinking, tools })
+    /** The turn as streamed so far. */
+    const turnSoFar = (key: string): Turn => ({
+      key,
+      question: display.question,
+      compacted: false,
+      answer:
+        answer || thinking || tools.length > 0
+          ? {
+              itemId: null,
+              text: answer,
+              thinking,
+              tools,
+              usage: null,
+              model: null,
+              versions: null,
+            }
+          : null,
+    })
+    const show = () =>
+      setPending({ keep: display.keep, turn: turnSoFar('pending') })
     const updateTool = (callId: string, change: Partial<ToolActivity>) => {
       tools = tools.map((t) => (t.callId === callId ? { ...t, ...change } : t))
       show()
@@ -246,23 +261,7 @@ export function useChat(
         // actions stay hidden until the next reload.
         setTurns((prev) => [
           ...prev.slice(0, display.keep),
-          {
-            key: crypto.randomUUID(),
-            question: display.question,
-            compacted: false,
-            answer:
-              answer || tools.length > 0
-                ? {
-                    itemId: null,
-                    text: answer,
-                    thinking,
-                    tools,
-                    usage: null,
-                    model: null,
-                    versions: null,
-                  }
-                : null,
-          },
+          turnSoFar(crypto.randomUUID()),
         ])
       } else {
         setError((err as Error).message)
