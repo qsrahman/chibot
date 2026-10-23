@@ -107,7 +107,9 @@ test('the composer menu forces a tool for one message', async ({ page }) => {
   ).toHaveCount(0)
 })
 
-test('a tool switched off in Settings is not offered', async ({ page }) => {
+test('a tool switched off in Settings is greyed out and not sent', async ({
+  page,
+}) => {
   await page.goto('/')
   await appReady(page)
   await page.keyboard.press('ControlOrMeta+,')
@@ -120,9 +122,10 @@ test('a tool switched off in Settings is not offered', async ({ page }) => {
   await page.keyboard.press('Escape')
 
   await page.getByRole('button', { name: 'Add files and more' }).click()
-  await expect(
-    page.getByRole('menuitem', { name: 'Search the web' }),
-  ).toHaveCount(0)
+  // Still listed, so it can be found, but greyed out with the reason.
+  const item = page.getByRole('menuitem', { name: /Search the web/ })
+  await expect(item).toBeDisabled()
+  await expect(item).toContainText('Off in Settings → Tools')
   await page.keyboard.press('Escape')
 
   await send(page, 'Hello')

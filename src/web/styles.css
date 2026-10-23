@@ -1157,19 +1157,6 @@ body {
   background: var(--surface-muted);
 }
 
-/* Two lines (name and hint); .menu-item alone is one 36 px line. */
-.menu-item.mode-item {
-  height: auto;
-  min-height: 36px;
-  padding-block: 6px;
-}
-
-.mode-text {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-}
-
 /* The mic while recording. */
 .composer .icon-button.recording {
   color: var(--danger);
@@ -1514,6 +1501,25 @@ body {
 /* The composer's menu opens upward, over the chat. */
 .menu.above {
   position-area: block-start span-inline-end;
+}
+
+/* A name over a muted hint; .menu-item alone is one 36 px line. */
+.menu-item.has-hint {
+  height: auto;
+  min-height: 36px;
+  padding-block: 6px;
+}
+
+.menu-item-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.menu-item:disabled {
+  background: none;
+  color: var(--fg-muted);
+  cursor: default;
 }
 
 a.menu-item {

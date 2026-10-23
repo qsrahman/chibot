@@ -165,7 +165,8 @@ Then open http://127.0.0.1:3000.
     links the ones it used under **Sources**.
 
   The composer's **+** menu also makes the next message use **Search the web**
-  or **Create an image**. Tools with side effects (none ship yet) ask first:
+  or **Create an image**; one that isn't set up or is switched off shows
+  greyed out with the reason. Tools with side effects (none ship yet) ask first:
   **Approve** or **Deny**, or send a new message to deny. Models also know
   today's date and time.
 - **Projects** (sidebar → **New project**) group chats with their own files

@@ -32,6 +32,8 @@ export interface ToolOption {
   /** On the chip once picked, e.g. "Search". */
   chip: string
   icon: ReactNode
+  /** Why it can't be used (not set up, or switched off), or `null`. */
+  unavailable: string | null
 }
 
 interface Props {
@@ -92,7 +94,9 @@ export function Composer({
     !attachments.failed
   // A tool switched off meanwhile can't be used any more.
   const tool =
-    picked && tools.some((t) => t.name === picked.name) ? picked : null
+    picked && tools.some((t) => t.name === picked.name && !t.unavailable)
+      ? picked
+      : null
 
   function submit({ force = false } = {}) {
     if (!canSend && !force) return
@@ -177,21 +181,25 @@ export function Composer({
         <button
           type="button"
           role="menuitem"
-          className="menu-item"
+          className="menu-item has-hint"
           onClick={() => {
             menu.hide()
             pickerRef.current?.click()
           }}
         >
           <Paperclip size={18} strokeWidth={1.5} aria-hidden />
-          Add photos & files
+          <span className="menu-item-text">
+            Add photos & files
+            <span className="menu-hint">Images, PDF, Word, text and code</span>
+          </span>
         </button>
         {tools.map((option) => (
           <button
             key={option.name}
             type="button"
             role="menuitem"
-            className="menu-item"
+            className={option.unavailable ? 'menu-item has-hint' : 'menu-item'}
+            disabled={option.unavailable !== null}
             onClick={() => {
               setPicked(option)
               menu.hide()
@@ -199,7 +207,12 @@ export function Composer({
             }}
           >
             {option.icon}
-            {option.label}
+            <span className="menu-item-text">
+              {option.label}
+              {option.unavailable && (
+                <span className="menu-hint">{option.unavailable}</span>
+              )}
+            </span>
           </button>
         ))}
       </div>

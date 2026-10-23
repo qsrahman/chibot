@@ -52,13 +52,13 @@ export function ModeSwitch({
             type="button"
             role="menuitemradio"
             aria-checked={mode.effort === effort}
-            className="menu-item mode-item"
+            className="menu-item has-hint"
             onClick={() => {
               menu.hide()
               if (mode.effort !== effort) onChange(mode.effort)
             }}
           >
-            <span className="mode-text">
+            <span className="menu-item-text">
               {mode.label}
               <span className="menu-hint">{mode.hint}</span>
             </span>

@@ -203,7 +203,10 @@ a 13 px muted hint that a new message denies it, and Deny (secondary) /
 Approve (primary) at the bottom right.
 
 **Composer tools.** A 24 px `Plus` button at the composer's left opens a menu
-above it (Add photos & files, then Search the web and Create an image). The picked tool shows as a pill
+above it (Add photos & files, then Search the web and Create an image).
+"Add photos & files" has a muted hint line ("Images, PDF, Word, text and
+code"); a tool that isn't set up or is switched off stays listed, disabled in
+`--fg-muted`, with the reason as its hint line. The picked tool shows as a pill
 chip (`--bubble-bg` / `--bubble-fg`, 36 px tall, icon + "Search"/"Image" +
 `X`) before the text; it applies to one message.
 

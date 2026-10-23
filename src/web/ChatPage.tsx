@@ -20,21 +20,24 @@ import { useChat } from './useChat.ts'
 import type { ProjectsApi } from './useProjects.ts'
 import type { SettingsApi } from './useSettings.ts'
 
-/** Tools the composer's "+" menu offers, when the server has them. */
-const COMPOSER_TOOLS: ToolOption[] = [
-  {
-    name: 'web_search',
-    label: 'Search the web',
-    chip: 'Search',
-    icon: <Globe size={18} strokeWidth={1.5} aria-hidden />,
-  },
-  {
-    name: 'generate_image',
-    label: 'Create an image',
-    chip: 'Image',
-    icon: <ImagePlus size={18} strokeWidth={1.5} aria-hidden />,
-  },
-]
+/** Tools the composer's "+" menu offers, and what each needs set up. */
+const COMPOSER_TOOLS: (Omit<ToolOption, 'unavailable'> & { setup: string })[] =
+  [
+    {
+      name: 'web_search',
+      label: 'Search the web',
+      chip: 'Search',
+      icon: <Globe size={18} strokeWidth={1.5} aria-hidden />,
+      setup: 'Needs BRAVE_API_KEY in .env',
+    },
+    {
+      name: 'generate_image',
+      label: 'Create an image',
+      chip: 'Image',
+      icon: <ImagePlus size={18} strokeWidth={1.5} aria-hidden />,
+      setup: 'Needs an image model (OPENAI_IMAGE_MODEL)',
+    },
+  ]
 
 interface Props {
   health: Health | undefined
@@ -67,10 +70,16 @@ export function ChatPage({
   const attachments = useAttachments()
   const [dragging, setDragging] = useState(false)
   const waiting = pending ? [] : waitingCalls(turns)
-  const toolOptions = COMPOSER_TOOLS.filter(
-    ({ name }) =>
-      settings.tools.some((tool) => tool.name === name) &&
-      !settings.settings?.disabledTools.includes(name),
+  // Shown even when unavailable, saying why, so they can be found.
+  const toolOptions: ToolOption[] = COMPOSER_TOOLS.map(
+    ({ setup, ...option }) => ({
+      ...option,
+      unavailable: !settings.tools.some((tool) => tool.name === option.name)
+        ? setup
+        : settings.settings?.disabledTools.includes(option.name)
+          ? 'Off in Settings → Tools'
+          : null,
+    }),
   )
   const chatUsage = describeUsage(chat.usage)
   const endRef = useRef<HTMLDivElement>(null)
