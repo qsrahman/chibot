@@ -10,6 +10,8 @@ import { Config, loadEnvFiles } from './config.ts'
 import { ConversationStore } from './conversation-store.ts'
 import { openDatabase } from './database.ts'
 import { settingsDefaults, SettingsStore } from './settings-store.ts'
+import { ToolRegistry } from './tool-registry.ts'
+import { CalculatorTool } from './tools/calculator.ts'
 
 loadEnvFiles()
 
@@ -24,7 +26,8 @@ const client = new OpenAI({
   baseURL: config.chat.baseURL,
   apiKey: config.chat.apiKey,
 })
-const chat = new ChatService(client, store, settings)
+const tools = new ToolRegistry([new CalculatorTool()])
+const chat = new ChatService(client, store, settings, tools)
 const app = createApp({ config, store, settings, chat })
 
 // In dev, Vite serves the web app. The production build only exists after `pnpm build`.
