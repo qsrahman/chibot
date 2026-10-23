@@ -8,6 +8,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 - Roadmap: Phase 10 planned, a sandboxed Python code runner (`run_python` on Pyodide in a locked-down child process, files in `/mnt/data/` kept with the chat, a fixed package set cached locally, `.xlsx` attachments). The MCP client becomes Phase 11.
 
+### Fixed
+
+- A turn refused after its attachments were checked (e.g. an unknown `parentId`) no longer links them to the chat; they stay unsent uploads and are swept as usual.
+
 ## [0.10.0] - 2026-10-23
 
 ### Added

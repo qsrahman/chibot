@@ -373,7 +373,6 @@ export function createApp({
         return c.json({ error: `File ${fileId} can't be attached here` }, 400)
       }
     }
-    files.link(request.fileIds ?? [], id)
     if (request.approvals && chat.waitingCalls(id).length === 0) {
       return c.json({ error: 'No tool calls are waiting for approval' }, 409)
     }
@@ -388,6 +387,8 @@ export function createApp({
         return c.json({ error: 'Only a user message can be answered' }, 400)
       }
     }
+    // Only once the turn is accepted: a refused one leaves its uploads unsent.
+    files.link(request.fileIds ?? [], id)
     // Aborted when the client disconnects or presses Stop. Passing it on
     // cancels the upstream request too.
     const { signal } = c.req.raw

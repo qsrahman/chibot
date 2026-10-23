@@ -175,14 +175,16 @@ describe('attachments', () => {
     const other = store.createConversation().id
     const elsewhere = files.save(other, 'b.png', 'image/png', PNG).id
     const app = testApp({ store, files })
-    const turn = (fileIds: string[]) =>
+    const turn = (fileIds: string[], parentId?: number) =>
       app.request(`/api/conversations/${conversationId}/turns`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: 'hi', fileIds }),
+        body: JSON.stringify({ text: 'hi', fileIds, parentId }),
       })
     expect((await turn([elsewhere])).status).toBe(400)
     expect((await turn(['nope'])).status).toBe(400)
+    // A turn refused for another reason leaves its uploads unattached.
+    expect((await turn([ids.image], 999)).status).toBe(404)
     expect(files.get(ids.image)!.conversationId).toBeNull()
   })
 
