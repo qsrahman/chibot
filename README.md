@@ -142,6 +142,11 @@ Then open http://127.0.0.1:3000.
   - **Past chats:** ask about something you discussed before ("what did we
     decide about…?"). chibot searches your other chats (on this machine) and
     links the ones it used under **Sources**.
+
+  The composer's **+** menu also makes the next message use **Search the web**
+  or **Create an image**. Tools with side effects (none ship yet) ask first:
+  **Approve** or **Deny**, or send a new message to deny. Models also know
+  today's date and time.
 - **Projects** (sidebar → **New project**) group chats with their own files
   and instructions. On a project's page, add files (PDF, Word, text, notes,
   code, data; pick or drop them) and write instructions; chats started there
@@ -149,18 +154,12 @@ Then open http://127.0.0.1:3000.
   them under **Sources**, and follow the instructions. Project chats are listed
   on their project's page; a chat's **…** menu moves it into a project or out.
   Deleting a project deletes its chats and files.
-
 - **Voice input:** click the mic, speak, click again: the text appears at the
   cursor to check before sending. It needs a transcription model (see
   `OPENAI_TRANSCRIBE_*`); without one the mic is greyed out and says so.
 - **Attachments:** **+** → **Add photos & files**, or paste or drop them onto
   the chat: images (PNG, JPEG, WebP, GIF) and the document types projects
   take. Send waits until they're uploaded; editing a message keeps them.
-
-  The composer's **+** menu also makes the next message use **Search the web**
-  or **Create an image**. Tools with side effects (none ship yet) ask first:
-  **Approve** or **Deny**, or send a new message to deny. Models also know
-  today's date and time.
 - **Thinking:** reasoning models show "Thinking…" while they think; afterwards
   the answer keeps a collapsed **Thoughts** section with their summary.
 - **Settings** (sidebar gear, or ⌘/Ctrl+,):
