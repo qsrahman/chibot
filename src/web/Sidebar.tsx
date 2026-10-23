@@ -10,7 +10,6 @@ import {
   SquarePen,
 } from 'lucide-react'
 import type { ConversationListItem } from '../shared/types.ts'
-import { createProject } from './api.ts'
 import { ArchivedDialog } from './ArchivedDialog.tsx'
 import { ConversationRow } from './ConversationRow.tsx'
 import { MemoriesDialog } from './MemoriesDialog.tsx'
@@ -73,16 +72,10 @@ export function Sidebar({
   const [toDelete, setToDelete] = useState<ConversationListItem | null>(null)
   const [toMove, setToMove] = useState<ConversationListItem | null>(null)
   const [newProjectOpen, setNewProjectOpen] = useState(false)
-  const [projectError, setProjectError] = useState<string | null>(null)
 
   async function addProject(name: string) {
-    try {
-      const project = await createProject(name)
-      await projects.refresh()
-      navigate(`/projects/${project.id}`)
-    } catch (err) {
-      setProjectError((err as Error).message)
-    }
+    const id = await projects.create(name)
+    if (id) navigate(`/projects/${id}`)
   }
 
   async function remove(id: string) {
@@ -125,9 +118,7 @@ export function Sidebar({
               label="New project"
               onClick={() => setNewProjectOpen(true)}
             />
-            {(projectError ?? projects.error) && (
-              <p className="sidebar-note">{projectError ?? projects.error}</p>
-            )}
+            {projects.error && <p className="sidebar-note">{projects.error}</p>}
             {projects.projects.map((project) => (
               <NavLink
                 key={project.id}

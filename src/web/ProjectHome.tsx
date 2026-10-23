@@ -6,7 +6,6 @@ import type {
   ConversationPatch,
   Project,
   ProjectFile,
-  ProjectWithContents,
 } from '../shared/types.ts'
 import {
   addProjectFile,
@@ -19,6 +18,7 @@ import {
 import { ConversationRow } from './ConversationRow.tsx'
 import { ConfirmDialog, DeleteChatDialog } from './Dialog.tsx'
 import { ProjectNameDialog } from './ProjectDialogs.tsx'
+import { useLoad } from './useLoad.ts'
 
 /** The project page's heading: its name, rename and delete. */
 export function ProjectHeading({
@@ -88,38 +88,20 @@ export function ProjectDetails({
   projectId: string
   onChatsChanged: () => void
 }) {
-  const [contents, setContents] = useState<ProjectWithContents | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  const load = useCallback(async () => {
-    try {
-      setContents(await getProject(projectId))
-      setError(null)
-    } catch (err) {
-      setError((err as Error).message)
-    }
-  }, [projectId])
-
-  useEffect(() => {
-    void load()
-  }, [load])
+  const {
+    data: contents,
+    error,
+    reload,
+    act,
+  } = useLoad(useCallback(() => getProject(projectId), [projectId]))
 
   // Files are indexed in the background: check back until they're done.
   const indexing = contents?.files.some((f) => f.status === 'indexing')
   useEffect(() => {
     if (!indexing) return
-    const timer = setTimeout(() => void load(), 1500)
+    const timer = setTimeout(() => void reload(), 1500)
     return () => clearTimeout(timer)
-  }, [indexing, contents, load])
-
-  async function act(action: () => Promise<unknown>) {
-    try {
-      await action()
-    } catch (err) {
-      setError((err as Error).message)
-    }
-    await load()
-  }
+  }, [indexing, contents, reload])
 
   if (!contents) {
     return error ? (
@@ -151,7 +133,7 @@ export function ProjectDetails({
         key={contents.project.instructions}
         instructions={contents.project.instructions}
         onSave={(instructions) =>
-          act(() => updateProject(projectId, { instructions }))
+          void act(() => updateProject(projectId, { instructions }))
         }
       />
       <Chats
@@ -262,7 +244,7 @@ function Instructions({
   onSave,
 }: {
   instructions: string
-  onSave: (instructions: string) => Promise<void>
+  onSave: (instructions: string) => void
 }) {
   const [draft, setDraft] = useState(instructions)
   return (
@@ -273,7 +255,7 @@ function Instructions({
           type="button"
           className="button primary"
           disabled={draft === instructions}
-          onClick={() => void onSave(draft)}
+          onClick={() => onSave(draft)}
         >
           Save
         </button>

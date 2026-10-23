@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { Globe, ImagePlus, MessageCircleDashed } from 'lucide-react'
 import type { Health } from '../shared/types.ts'
-import { deleteProject, updateProject } from './api.ts'
 import { Composer, type ToolOption } from './Composer.tsx'
 import { ModelPicker } from './ModelPicker.tsx'
 import { ProjectDetails, ProjectHeading } from './ProjectHome.tsx'
@@ -165,13 +164,10 @@ export function ChatPage({ health, settings, projects, onListChanged }: Props) {
         project ? (
           <ProjectHeading
             project={project}
-            onRename={(name) =>
-              void updateProject(project.id, { name }).then(projects.refresh)
-            }
+            onRename={(name) => void projects.rename(project.id, name)}
             onDelete={() =>
-              void deleteProject(project.id).then(() => {
-                void projects.refresh()
-                navigate('/')
+              void projects.remove(project.id).then((gone) => {
+                if (gone) navigate('/')
               })
             }
           />

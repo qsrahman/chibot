@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { ArchiveRestore, Trash2 } from 'lucide-react'
 import type { ConversationListItem } from '../shared/types.ts'
@@ -9,6 +9,7 @@ import {
 } from './api.ts'
 import { DeleteChatDialog, Dialog } from './Dialog.tsx'
 import { UNTITLED } from './useConversations.ts'
+import { useLoad } from './useLoad.ts'
 
 interface Props {
   open: boolean
@@ -20,41 +21,24 @@ interface Props {
 
 export function ArchivedDialog({ open, onClose, onChanged, onDeleted }: Props) {
   const navigate = useNavigate()
-  const [archived, setArchived] = useState<ConversationListItem[]>([])
-  const [error, setError] = useState<string | null>(null)
   const [toDelete, setToDelete] = useState<ConversationListItem | null>(null)
-
-  const load = useCallback(async () => {
-    try {
-      setArchived(await listConversations({ archived: true }))
-      setError(null)
-    } catch (err) {
-      setError((err as Error).message)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (open) void load()
-  }, [open, load])
+  const {
+    data: archived = [],
+    error,
+    act,
+  } = useLoad(
+    useCallback(() => listConversations({ archived: true }), []),
+    open,
+  )
 
   async function restore(id: string) {
-    try {
-      await updateConversation(id, { archived: false })
-    } catch (err) {
-      return setError((err as Error).message)
+    if (await act(() => updateConversation(id, { archived: false }))) {
+      onChanged()
     }
-    await load()
-    onChanged()
   }
 
   async function remove(id: string) {
-    try {
-      await deleteConversation(id)
-    } catch (err) {
-      return setError((err as Error).message)
-    }
-    await load()
-    onDeleted(id)
+    if (await act(() => deleteConversation(id))) onDeleted(id)
   }
 
   return (

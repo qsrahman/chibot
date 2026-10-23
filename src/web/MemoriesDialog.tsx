@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
-import type { Memory } from '../shared/types.ts'
 import { deleteMemories, listMemories } from './api.ts'
 import { ConfirmDialog, Dialog } from './Dialog.tsx'
+import { useLoad } from './useLoad.ts'
 
 interface Props {
   open: boolean
@@ -11,31 +11,8 @@ interface Props {
 
 /** What chibot remembers, newest first, to delete one or all. */
 export function MemoriesDialog({ open, onClose }: Props) {
-  const [memories, setMemories] = useState<Memory[]>([])
-  const [error, setError] = useState<string | null>(null)
   const [confirmAll, setConfirmAll] = useState(false)
-
-  const load = useCallback(async () => {
-    try {
-      setMemories(await listMemories())
-      setError(null)
-    } catch (err) {
-      setError((err as Error).message)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (open) void load()
-  }, [open, load])
-
-  async function act(action: () => Promise<unknown>) {
-    try {
-      await action()
-    } catch (err) {
-      return setError((err as Error).message)
-    }
-    await load()
-  }
+  const { data: memories = [], error, act } = useLoad(listMemories, open)
 
   return (
     <Dialog open={open} onClose={onClose} title="Memories" className="archived">

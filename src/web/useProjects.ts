@@ -1,26 +1,45 @@
-import { useCallback, useEffect, useState } from 'react'
-import type { Project } from '../shared/types.ts'
-import { listProjects } from './api.ts'
+import { useCallback } from 'react'
+import {
+  createProject,
+  deleteProject,
+  listProjects,
+  updateProject,
+} from './api.ts'
+import { useLoad } from './useLoad.ts'
 
-/** The projects, for the sidebar and for "Move to project". */
+/** The projects (sidebar, "Move to project") and the actions that change them. */
 export function useProjects() {
-  const [projects, setProjects] = useState<Project[]>([])
-  const [error, setError] = useState<string | null>(null)
+  const { data, error, reload, act } = useLoad(listProjects)
 
-  const refresh = useCallback(async () => {
-    try {
-      setProjects(await listProjects())
-      setError(null)
-    } catch (err) {
-      setError((err as Error).message)
-    }
-  }, [])
+  /** Creates a project; resolves to it, or `null` if that failed. */
+  const create = useCallback(
+    async (name: string) => {
+      let id: string | null = null
+      await act(async () => (id = (await createProject(name)).id))
+      return id
+    },
+    [act],
+  )
 
-  useEffect(() => {
-    void refresh()
-  }, [refresh])
+  const rename = useCallback(
+    (id: string, name: string) => act(() => updateProject(id, { name })),
+    [act],
+  )
 
-  return { projects, error, refresh }
+  /** Deletes a project with its chats and files. */
+  const remove = useCallback(
+    (id: string) => act(() => deleteProject(id)),
+    [act],
+  )
+
+  return {
+    projects: data ?? [],
+    error,
+    refresh: reload,
+    create,
+    rename,
+    remove,
+  }
 }
 
 export type ProjectsApi = ReturnType<typeof useProjects>
