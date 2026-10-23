@@ -32,6 +32,7 @@ export default defineConfig({
         OPENAI_API_KEY: 'e2e',
         OPENAI_MODEL: 'e2e-model',
         OPENAI_IMAGE_MODEL: 'e2e-image',
+        OPENAI_EMBEDDING_MODEL: 'e2e-embed',
         // Blank means unset: tests/e2e/server.ts adds a fake web search.
         BRAVE_API_KEY: '',
         HOST: '127.0.0.1',

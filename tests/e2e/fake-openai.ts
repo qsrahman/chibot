@@ -5,10 +5,12 @@
 // "calculate" calls the calculator tool, "approve" the test-only e2e_note tool
 // (see server.ts), "earlier chats <words>" search_chats, "search" web_search,
 // "read <url>" fetch_url, "draw" generate_image, "bluer" edit_image (on the
-// chat's last image) and "remember <fact>" saves a memory; a forced
+// chat's last image), "remember <fact>" saves a memory and "in my files
+// <words>" searches project files; a forced
 // tool_choice is followed. Once the tool's output arrives, the answer quotes
 // it. It also fakes the Brave Search API (/brave/…), serves a test page
-// (/pages/robots) and makes 1×1 images (/v1/images/…).
+// (/pages/robots), makes 1×1 images (/v1/images/…) and embeds text as counts
+// of a few letters (/v1/embeddings).
 // Non-streaming requests are title requests. GET /debug/last-request shows
 // the last chat request, so tests can check what chibot sent.
 import { serve } from '@hono/node-server'
@@ -85,6 +87,21 @@ app.get('/v1/models', (c) =>
     data: MODELS.map((id) => ({ id, object: 'model', owned_by: 'e2e' })),
   }),
 )
+
+app.post('/v1/embeddings', async (c) => {
+  const { input } = (await c.req.json()) as { input: string[] }
+  return c.json({
+    object: 'list',
+    data: input.map((text, index) => ({
+      object: 'embedding',
+      index,
+      embedding: ['a', 'e', 'i', 'o', 'u'].map(
+        (letter) => text.split(letter).length,
+      ),
+    })),
+    usage: { prompt_tokens: 1, total_tokens: 1 },
+  })
+})
 
 app.post('/v1/responses', async (c) => {
   const body = (await c.req.json()) as {
@@ -218,6 +235,8 @@ function pickTool(
   if (remember) {
     return call('memory', { action: 'save', id: null, text: remember })
   }
+  const files = /in my files (.+)/.exec(question)?.[1]
+  if (files) return call('search_project_files', { query: files })
   const earlier = /earlier chats (.+)/.exec(question)?.[1]
   if (earlier) {
     return call('search_chats', { query: earlier, after: null, before: null })
