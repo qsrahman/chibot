@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { useNavigate, useParams } from 'react-router'
-import { MessageCircleDashed, Pencil, RefreshCw } from 'lucide-react'
+import { MessageCircleDashed, Pencil, RefreshCw, Wrench } from 'lucide-react'
 import type { Health } from './api.ts'
 import { Composer } from './Composer.tsx'
 import { Markdown } from './Markdown.tsx'
 import { ModelPicker } from './ModelPicker.tsx'
 import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
 import { SHORTCUTS, useShortcuts } from './shortcuts.ts'
-import type { Turn } from './turns.ts'
+import { waitingCalls, type ToolActivity, type Turn } from './turns.ts'
 import { describeUsage } from './usage.ts'
 import { useChat } from './useChat.ts'
 import type { SettingsApi } from './useSettings.ts'
@@ -29,6 +29,7 @@ export function ChatPage({ health, settings, onListChanged }: Props) {
     temporary: temporaryMode,
   })
   const { turns, pending, error, isTemporary, busy } = chat
+  const waiting = pending ? [] : waitingCalls(turns)
   const chatUsage = describeUsage(chat.usage)
   const endRef = useRef<HTMLDivElement>(null)
   const composerRef = useRef<HTMLTextAreaElement>(null)
@@ -154,11 +155,14 @@ export function ChatPage({ health, settings, onListChanged }: Props) {
                   question: pending.question,
                   compacted: false,
                   answer:
-                    pending.answer || pending.thinking
+                    pending.answer ||
+                    pending.thinking ||
+                    pending.tools.length > 0
                       ? {
                           itemId: null,
                           text: pending.answer,
                           thinking: pending.thinking,
+                          tools: pending.tools,
                           usage: null,
                           model: null,
                           versions: null,
@@ -166,6 +170,13 @@ export function ChatPage({ health, settings, onListChanged }: Props) {
                       : null,
                 }}
                 pending
+              />
+            )}
+            {waiting.length > 0 && (
+              <ApprovalCard
+                calls={waiting}
+                busy={busy}
+                onAnswer={following(chat.approve)}
               />
             )}
             {error && (
@@ -260,7 +271,17 @@ function TurnView({
         </p>
       )}
       {answer?.thinking && (
-        <Thoughts text={answer.thinking} live={pending && !answer.text} />
+        <Thoughts
+          text={answer.thinking}
+          live={pending && !answer.text && answer.tools.length === 0}
+        />
+      )}
+      {answer?.tools.map(
+        (tool) =>
+          // Waiting calls are shown by the approval card instead.
+          (pending || tool.output !== null) && (
+            <ToolCall key={tool.callId} tool={tool} />
+          ),
       )}
       {answer?.text ? (
         <div className="message assistant">
@@ -268,7 +289,8 @@ function TurnView({
         </div>
       ) : (
         pending &&
-        !answer?.thinking && (
+        !answer?.thinking &&
+        !answer?.tools.length && (
           <div className="thinking" aria-label="Waiting for answer" />
         )
       )}
@@ -319,6 +341,92 @@ function Thoughts({ text, live }: { text: string; live?: boolean }) {
       </div>
     </details>
   )
+}
+
+/** A tool call in an answer: running, or collapsed with its result. */
+function ToolCall({ tool }: { tool: ToolActivity }) {
+  const running = tool.output === null
+  return (
+    <details className="thoughts tool-call">
+      <summary className={running ? 'live' : undefined}>
+        {running ? `Running ${tool.name}…` : `Used ${tool.name}`}
+      </summary>
+      <div className="thoughts-body">
+        <ToolDetails tool={tool} />
+      </div>
+    </details>
+  )
+}
+
+function ToolDetails({ tool }: { tool: ToolActivity }) {
+  return (
+    <dl className="tool-details">
+      <dt>Arguments</dt>
+      <dd>
+        <pre>{prettyJson(tool.arguments)}</pre>
+      </dd>
+      {tool.output !== null && (
+        <>
+          <dt>Result</dt>
+          <dd>
+            <pre>{tool.output}</pre>
+          </dd>
+        </>
+      )}
+    </dl>
+  )
+}
+
+/** Tool calls that wait for the user's Approve / Deny. */
+function ApprovalCard({
+  calls,
+  busy,
+  onAnswer,
+}: {
+  calls: ToolActivity[]
+  busy: boolean
+  onAnswer: (approved: boolean) => void
+}) {
+  const names = [...new Set(calls.map((call) => call.name))].join(', ')
+  return (
+    <section className="approval" aria-label="Tool approval">
+      <h2>
+        <Wrench size={16} aria-hidden />
+        chibot wants to use {names}
+      </h2>
+      {calls.map((call) => (
+        <ToolDetails key={call.callId} tool={call} />
+      ))}
+      <p>Sending a new message instead denies it.</p>
+      <div className="approval-actions">
+        <button
+          type="button"
+          className="button"
+          disabled={busy}
+          onClick={() => onAnswer(false)}
+        >
+          Deny
+        </button>
+        <button
+          type="button"
+          className="button primary"
+          disabled={busy}
+          onClick={() => onAnswer(true)}
+        >
+          Approve
+        </button>
+      </div>
+    </section>
+  )
+}
+
+/** Indented JSON when `text` is JSON, else `text` as is. */
+function prettyJson(text: string): string {
+  try {
+    return JSON.stringify(JSON.parse(text), null, 2)
+  } catch {
+    return text
+  }
 }
 
 /** Inline editor for a sent message. Enter sends, Esc cancels. */

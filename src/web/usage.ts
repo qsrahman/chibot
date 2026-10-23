@@ -31,3 +31,32 @@ export function describeUsage(
     detail: `${input} · ${output}`,
   }
 }
+
+/**
+ * `a` plus `b`, for answers made of several responses (tool calls). Missing
+ * detail fields count as 0.
+ */
+export function addUsage(
+  a: ResponseUsage | null,
+  b: ResponseUsage,
+): ResponseUsage {
+  if (!a) return b
+  return {
+    input_tokens: a.input_tokens + b.input_tokens,
+    input_tokens_details: {
+      cached_tokens:
+        (a.input_tokens_details?.cached_tokens ?? 0) +
+        (b.input_tokens_details?.cached_tokens ?? 0),
+      cache_write_tokens:
+        (a.input_tokens_details?.cache_write_tokens ?? 0) +
+        (b.input_tokens_details?.cache_write_tokens ?? 0),
+    },
+    output_tokens: a.output_tokens + b.output_tokens,
+    output_tokens_details: {
+      reasoning_tokens:
+        (a.output_tokens_details?.reasoning_tokens ?? 0) +
+        (b.output_tokens_details?.reasoning_tokens ?? 0),
+    },
+    total_tokens: a.total_tokens + b.total_tokens,
+  }
+}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ResponseInputItem } from 'openai/resources/responses/responses'
 import type { StoredItem } from '../../src/shared/types.ts'
-import { toTurns } from '../../src/web/turns.ts'
+import { toTurns, waitingCalls } from '../../src/web/turns.ts'
 import { usage } from '../server/fakes.ts'
 
 const item = (
@@ -49,6 +49,7 @@ describe('toTurns', () => {
           itemId: 2,
           text: 'Hello \n\nthere',
           thinking: '**Plan**\n\nSay hello.',
+          tools: [],
           usage,
           model: 'm-1',
           versions: null,
@@ -93,5 +94,35 @@ describe('toTurns', () => {
       }),
     ])
     expect(turn!.answer!.text).toBe('I can’t help with that.')
+  })
+
+  it('collects tool calls with their outputs', () => {
+    const call = (id: string) => ({
+      type: 'function_call',
+      call_id: id,
+      name: 'calculator',
+      arguments: '{"expression":"1+1"}',
+    })
+    const turns = toTurns([
+      item(1, { role: 'user', content: 'q' }),
+      item(2, call('c1')),
+      item(3, { type: 'function_call_output', call_id: 'c1', output: '2' }),
+      item(4, { role: 'assistant', content: 'It is 2.' }),
+      item(5, { role: 'user', content: 'again' }),
+      item(6, call('c2')),
+    ])
+    expect(turns[0]!.answer!.tools).toEqual([
+      {
+        callId: 'c1',
+        name: 'calculator',
+        arguments: '{"expression":"1+1"}',
+        output: '2',
+      },
+    ])
+    expect(turns[0]!.answer!.text).toBe('It is 2.')
+    expect(waitingCalls(turns)).toEqual([
+      expect.objectContaining({ callId: 'c2', output: null }),
+    ])
+    expect(waitingCalls(turns.slice(0, 1))).toEqual([])
   })
 })

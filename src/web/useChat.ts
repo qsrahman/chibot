@@ -8,7 +8,14 @@ import {
   streamTurn,
   switchVersion as putVersion,
 } from './api.ts'
-import { toTurns, type Question, type Turn } from './turns.ts'
+import {
+  toTurns,
+  waitingCalls,
+  type Answer,
+  type Question,
+  type ToolActivity,
+  type Turn,
+} from './turns.ts'
 
 /** A turn being answered, shown after the first `keep` turns. */
 interface Pending {
@@ -17,6 +24,7 @@ interface Pending {
   answer: string
   /** The reasoning summary streamed so far. */
   thinking: string
+  tools: ToolActivity[]
 }
 
 interface Options {
@@ -101,10 +109,16 @@ export function useChat(
     }
   }, [conversationId, isTemporary])
 
-  /** Sends `request`, showing `question` after the first `keep` turns. */
+  /**
+   * Sends `request`, showing `question` after the first `keep` turns. When
+   * continuing an answer (after approval), `answer` is what it has so far.
+   */
   async function run(
     request: TurnRequest,
-    display: { keep: number; question: Question },
+    {
+      answer: before,
+      ...display
+    }: { keep: number; question: Question; answer?: Answer | null },
   ) {
     const run: Run = { controller: new AbortController(), answered: false }
     runRef.current = run
@@ -116,11 +130,25 @@ export function useChat(
       setUsage(usage)
     }
 
-    setError(null)
-    setPending({ ...display, answer: '', thinking: '' })
-    let answer = ''
-    let thinking = ''
+    let answer = before?.text ?? ''
+    let thinking = before?.thinking ?? ''
+    let tools = before?.tools ?? []
     let summaryIndex = 0
+    let newThoughts = false
+    const show = () => setPending({ ...display, answer, thinking, tools })
+    const updateTool = (callId: string, change: Partial<ToolActivity>) => {
+      tools = tools.map((t) => (t.callId === callId ? { ...t, ...change } : t))
+      show()
+    }
+    /** The answer is complete and saved (or waits for approval). */
+    const finish = async (id: string) => {
+      run.answered = true
+      await showHistory(id)
+      if (live()) setPending(null)
+    }
+
+    setError(null)
+    show()
     let id = conversationId
     try {
       if (!id) {
@@ -143,23 +171,51 @@ export function useChat(
         if (!live()) continue
         if (event.type === 'response.output_text.delta') {
           answer += event.delta
-          setPending({ ...display, answer, thinking })
+          show()
         } else if (event.type === 'response.reasoning_summary_text.delta') {
-          // Summaries can come in parts; a new part starts a new paragraph.
-          if (thinking && event.summary_index !== summaryIndex)
+          // Summaries can come in parts, and a turn with tool calls can
+          // think more than once; each new part starts a new paragraph.
+          if (thinking && (newThoughts || event.summary_index !== summaryIndex))
             thinking += '\n\n'
+          newThoughts = false
           summaryIndex = event.summary_index
           thinking += event.delta
-          setPending({ ...display, answer, thinking })
+          show()
+        } else if (event.type === 'response.output_item.added') {
+          const { item } = event
+          if (item.type === 'reasoning') newThoughts = true
+          // Messages after tool calls are paragraphs of the same answer.
+          if (item.type === 'message' && answer) answer += '\n\n'
+          if (item.type === 'function_call') {
+            tools = [
+              ...tools,
+              {
+                callId: item.call_id,
+                name: item.name,
+                arguments: item.arguments,
+                output: null,
+              },
+            ]
+            show()
+          }
+        } else if (
+          event.type === 'response.output_item.done' &&
+          event.item.type === 'function_call'
+        ) {
+          updateTool(event.item.call_id, { arguments: event.item.arguments })
+        } else if (event.type === 'chibot.tool_output') {
+          updateTool(event.call_id, { output: event.output })
         } else if (
           event.type === 'response.completed' ||
           event.type === 'response.incomplete'
         ) {
-          // Saved by now. The stream may stay open a little longer for the
-          // title, but the chat is free again.
-          run.answered = true
-          await showHistory(id)
-          if (live()) setPending(null)
+          // Saved by now. Tool calls mean another response follows; otherwise
+          // the stream may stay open a little longer for the title, but the
+          // chat is free again.
+          if (!event.response.output.some((i) => i.type === 'function_call'))
+            await finish(id)
+        } else if (event.type === 'chibot.approval') {
+          await finish(id)
         } else if (event.type === 'chibot.error') {
           setError(
             [event.message, event.requestId && `(request ${event.requestId})`]
@@ -185,16 +241,18 @@ export function useChat(
             key: crypto.randomUUID(),
             question: display.question,
             compacted: false,
-            answer: answer
-              ? {
-                  itemId: null,
-                  text: answer,
-                  thinking,
-                  usage: null,
-                  model: null,
-                  versions: null,
-                }
-              : null,
+            answer:
+              answer || tools.length > 0
+                ? {
+                    itemId: null,
+                    text: answer,
+                    thinking,
+                    tools,
+                    usage: null,
+                    model: null,
+                    versions: null,
+                  }
+                : null,
           },
         ])
       } else {
@@ -239,6 +297,18 @@ export function useChat(
     return run({ parentId: question.itemId! }, { keep: index, question })
   }
 
+  /** Approves or denies the tool calls waiting for approval, and continues. */
+  function approve(approved: boolean) {
+    const turn = turns.at(-1)!
+    const approvals = Object.fromEntries(
+      waitingCalls(turns).map((t) => [t.callId, approved]),
+    )
+    return run(
+      { approvals },
+      { keep: turns.length - 1, question: turn.question, answer: turn.answer },
+    )
+  }
+
   async function switchVersion(itemId: number) {
     if (!conversationId) return
     try {
@@ -269,6 +339,7 @@ export function useChat(
     send,
     edit,
     regenerate,
+    approve,
     switchVersion,
     stop,
   }

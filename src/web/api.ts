@@ -11,6 +11,7 @@ import type {
   ConversationPatch,
   ConversationWithItems,
   ModelsResponse,
+  TurnApprovalEvent,
   TurnErrorEvent,
   TurnRequest,
   TurnTitleEvent,
@@ -18,7 +19,11 @@ import type {
 } from '../shared/types.ts'
 
 export type TurnEvent =
-  ResponseStreamEvent | TurnErrorEvent | TurnTitleEvent | TurnToolOutputEvent
+  | ResponseStreamEvent
+  | TurnApprovalEvent
+  | TurnErrorEvent
+  | TurnTitleEvent
+  | TurnToolOutputEvent
 
 export interface Health {
   status: string
