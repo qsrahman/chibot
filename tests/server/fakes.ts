@@ -239,6 +239,7 @@ export function testApp(deps: Partial<AppDeps> = {}) {
     memories: new MemoryStore(db),
     index: new ProjectIndex(db, projects, files, null),
     attachments: new Attachments(fakeClient([]), files),
+    transcription: null,
     ...deps,
     projects,
     store,

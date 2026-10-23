@@ -17,6 +17,7 @@ import { ProjectStore } from './project-store.ts'
 import { settingsDefaults, SettingsStore } from './settings-store.ts'
 import type { Tool } from './tool.ts'
 import { ToolRegistry } from './tool-registry.ts'
+import { Transcription } from './transcription.ts'
 import { CalculatorTool } from './tools/calculator.ts'
 import { FetchUrlTool } from './tools/fetch-url.ts'
 import { EditImageTool, GenerateImageTool } from './tools/images.ts'
@@ -120,6 +121,8 @@ export function start({
     projects,
     index,
     attachments,
+    transcription:
+      config.transcription && Transcription.from(config.transcription),
   })
 
   // In dev, Vite serves the web app. The production build only exists after `pnpm build`.

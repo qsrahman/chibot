@@ -38,6 +38,7 @@ import type { ProjectIndex } from './project-index.ts'
 import type { ProjectStore } from './project-store.ts'
 import { toMarkdown } from './markdown-export.ts'
 import type { SettingsStore } from './settings-store.ts'
+import type { Transcription } from './transcription.ts'
 
 export interface AppDeps {
   config: Config
@@ -49,6 +50,8 @@ export interface AppDeps {
   projects: ProjectStore
   index: ProjectIndex
   attachments: Attachments
+  /** Voice input, or `null` without a transcription endpoint. */
+  transcription: Transcription | null
 }
 
 /** Builds the HTTP app. A factory so tests can inject fakes. */
@@ -62,6 +65,7 @@ export function createApp({
   projects,
   index,
   attachments,
+  transcription,
 }: AppDeps) {
   const app = new Hono()
 
@@ -71,7 +75,7 @@ export function createApp({
       model: config.chat.model,
       // Never expose the key.
       baseURL: config.chat.baseURL ?? null,
-      features: { transcription: config.transcription !== null },
+      features: { transcription: transcription !== null },
     } satisfies Health),
   )
 
@@ -171,6 +175,33 @@ export function createApp({
       }
       const bytes = new Uint8Array(await file.arrayBuffer())
       return c.json(files.save(null, file.name, kind.mime, bytes), 201)
+    },
+  )
+
+  app.post(
+    '/api/transcriptions',
+    bodyLimit({
+      maxSize: AUDIO_LIMIT,
+      onError: (c) =>
+        c.json({ error: 'The recording is larger than 25 MB' }, 413),
+    }),
+    async (c) => {
+      if (!transcription) {
+        return c.json({ error: 'No transcription endpoint is set up' }, 501)
+      }
+      const { file } = await c.req.parseBody()
+      if (!(file instanceof File)) {
+        return c.json(
+          { error: 'Send the recording as `file` (multipart)' },
+          400,
+        )
+      }
+      try {
+        const text = await transcription.transcribe(file, c.req.raw.signal)
+        return c.json({ text })
+      } catch (err) {
+        return c.json({ error: (err as Error).message }, 502)
+      }
     },
   )
 
@@ -356,6 +387,7 @@ export function createApp({
 
 const IMPORT_LIMIT = 20 * 1024 * 1024
 const FILE_LIMIT = 50 * 1024 * 1024
+const AUDIO_LIMIT = 25 * 1024 * 1024
 
 /** Validates a JSON body against `schema`; failures are `{ error }` 400s. */
 const json = <T extends z.ZodType>(schema: T) =>
