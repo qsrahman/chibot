@@ -417,6 +417,17 @@ export class ChatService {
   ): Promise<T> {
     const attachments = this.#attachments
     if (!attachments) return send(input)
+    // A refused request with images most likely means the model can't see
+    // them; the server's own message (often just "400") doesn't say what to do.
+    const explain = (err: unknown) =>
+      err instanceof OpenAI.BadRequestError && attachments.sendsImages(input)
+        ? new Error(
+            `${model} refused this chat's images (${err.message}). ` +
+              'If it can’t see images, pick a model that can (e.g. gemma4 ' +
+              'on Ollama, or OpenAI’s GPT models).',
+            { cause: err },
+          )
+        : err
     try {
       return await send(await attachments.resolve(input, model))
     } catch (err) {
@@ -431,9 +442,13 @@ export class ChatService {
       ) {
         attachments.forgetUploads(input)
       } else {
-        throw err
+        throw explain(err)
       }
-      return send(await attachments.resolve(input, model))
+    }
+    try {
+      return await send(await attachments.resolve(input, model))
+    } catch (err) {
+      throw explain(err)
     }
   }
 

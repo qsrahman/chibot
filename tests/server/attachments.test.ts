@@ -137,6 +137,20 @@ describe('attachments', () => {
     expect(calls).toHaveLength(4)
   })
 
+  it('says so when a model refuses the images', async () => {
+    const reject = () => badRequest('this model does not support image input')
+    const events = await drain(
+      chatWith({ reject }, []).runTurn(conversationId, {
+        text: 'What colour?',
+        fileIds: [ids.image],
+      }),
+    ).catch((err: Error) => err)
+    expect(events).toBeInstanceOf(Error)
+    expect((events as Error).message).toMatch(
+      /^m refused this chat's images \(400 this model does not support image input\)\. If it can’t see images, pick a model that can/,
+    )
+  })
+
   it('uploads again when the provider lost a file', async () => {
     const calls: FakeCall[] = []
     const uploads: string[] = []

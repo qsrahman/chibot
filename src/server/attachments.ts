@@ -68,6 +68,11 @@ export class Attachments {
     )
   }
 
+  /** Whether `input` attaches images (which some models can't see). */
+  sendsImages(input: ResponseInputItem[]): boolean {
+    return attached(input).some((part) => part.type === 'input_image')
+  }
+
   /** From now on, `model` gets documents as their text. */
   useText(model: string) {
     this.#textModels.add(model)
