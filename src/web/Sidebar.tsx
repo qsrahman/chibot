@@ -221,9 +221,13 @@ export function Sidebar({
       <MoveToProjectDialog
         open={toMove !== null}
         projects={projects.projects}
-        onMove={(projectId) =>
-          void conversations.update(toMove!.id, { projectId })
-        }
+        onMove={(projectId) => {
+          const id = toMove!.id
+          void conversations.update(id, { projectId }).then((moved) => {
+            // The open chat left the list: show where it went.
+            if (moved && id === openId) navigate(`/projects/${projectId}`)
+          })
+        }}
         onClose={() => setToMove(null)}
       />
       <DeleteChatDialog
