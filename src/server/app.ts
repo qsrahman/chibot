@@ -109,7 +109,7 @@ export function createApp({
     (c) => {
       const request = c.req.valid('json')
       if (request.projectId && !projects.get(request.projectId)) {
-        return c.json({ error: 'Project not found' }, 404)
+        return notFound(c, 'Project')
       }
       return c.json(store.createConversation(request), 201)
     },
@@ -118,7 +118,7 @@ export function createApp({
   app.patch('/api/conversations/:id', json(conversationPatchSchema), (c) => {
     const patch = c.req.valid('json')
     if (patch.projectId && !projects.get(patch.projectId)) {
-      return c.json({ error: 'Project not found' }, 404)
+      return notFound(c, 'Project')
     }
     const updated = store.updateConversation(c.req.param('id'), patch)
     if (!updated) return notFound(c)
@@ -141,7 +141,7 @@ export function createApp({
 
   app.get('/api/projects/:id', (c) => {
     const project = projects.get(c.req.param('id'))
-    if (!project) return notFound(c)
+    if (!project) return notFound(c, 'Project')
     const contents: ProjectWithContents = {
       project,
       files: projects.files(project.id),
@@ -177,7 +177,8 @@ export function createApp({
   app.post('/api/projects/:id/files', json(addProjectFileSchema), (c) => {
     const project = projects.get(c.req.param('id'))
     const file = files.get(c.req.valid('json').fileId)
-    if (!project || !file) return notFound(c)
+    if (!project) return notFound(c, 'Project')
+    if (!file) return notFound(c, 'File')
     if (file.conversationId !== null || projects.hasFile(file.id)) {
       return c.json({ error: 'The file is already in use' }, 409)
     }
@@ -191,18 +192,18 @@ export function createApp({
       c.req.param('id'),
       c.req.param('fileId'),
     )
-    return removed ? c.body(null, 204) : notFound(c)
+    return removed ? c.body(null, 204) : notFound(c, 'File')
   })
 
   app.patch('/api/projects/:id', json(projectPatchSchema), (c) => {
     const project = projects.update(c.req.param('id'), c.req.valid('json'))
-    return project ? c.json(project) : notFound(c)
+    return project ? c.json(project) : notFound(c, 'Project')
   })
 
   // Deletes the project's chats and files with it.
   app.delete('/api/projects/:id', (c) => {
     const id = c.req.param('id')
-    if (!projects.get(id)) return notFound(c)
+    if (!projects.get(id)) return notFound(c, 'Project')
     store
       .projectConversationIds(id)
       .forEach((chat) => store.deleteConversation(chat))
@@ -215,7 +216,9 @@ export function createApp({
 
   app.delete('/api/memories/:id', (c) => {
     const id = Number(c.req.param('id'))
-    if (!Number.isInteger(id) || !memories.delete(id)) return notFound(c)
+    if (!Number.isInteger(id) || !memories.delete(id)) {
+      return notFound(c, 'Memory')
+    }
     return c.body(null, 204)
   })
 
@@ -226,7 +229,7 @@ export function createApp({
 
   app.get('/api/files/:id', (c) => {
     const file = files.get(c.req.param('id'))
-    if (!file) return notFound(c)
+    if (!file) return notFound(c, 'File')
     return c.body(files.read(file.id), 200, {
       'Content-Type': file.mime,
       // A file never changes under its id.
@@ -286,7 +289,7 @@ export function createApp({
     }
     if (typeof request.parentId === 'number') {
       const parent = store.getItem(id, request.parentId)
-      if (!parent) return c.json({ error: 'Item not found' }, 404)
+      if (!parent) return notFound(c, 'Item')
       // A regenerate answers a user message; anything else has no question.
       if (
         request.text === undefined &&
@@ -320,12 +323,12 @@ export function createApp({
     const id = c.req.param('id')
     if (!store.getConversation(id)) return notFound(c)
     if (!store.switchToVersion(id, c.req.valid('json').itemId)) {
-      return c.json({ error: 'Item not found' }, 404)
+      return notFound(c, 'Item')
     }
     return c.body(null, 204)
   })
 
-  app.all('/api/*', (c) => c.json({ error: 'Not found' }, 404))
+  app.all('/api/*', (c) => notFound(c, 'Route'))
 
   return app
 }
@@ -341,8 +344,8 @@ const json = <T extends z.ZodType>(schema: T) =>
     }
   })
 
-const notFound = (c: Context) =>
-  c.json({ error: 'Conversation not found' }, 404)
+const notFound = (c: Context, what = 'Conversation') =>
+  c.json({ error: `${what} not found` }, 404)
 
 function toErrorEvent(err: unknown): TurnErrorEvent {
   if (err instanceof OpenAI.APIError) {

@@ -62,7 +62,10 @@ describe('projects', () => {
     expect((await call('POST', '/api/projects', { name: ' ' })).status).toBe(
       400,
     )
-    expect((await call('GET', '/api/projects/nope')).status).toBe(404)
+    expect(await call('GET', '/api/projects/nope')).toEqual({
+      status: 404,
+      body: { error: 'Project not found' },
+    })
   })
 
   it('keeps project chats out of the main list, and moves chats', async () => {
