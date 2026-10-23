@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { MessageCircleDashed, Pencil, RefreshCw, Wrench } from 'lucide-react'
 import type { Health } from './api.ts'
@@ -143,6 +149,15 @@ export function ChatPage({ health, settings, onListChanged }: Props) {
                 turn={turn}
                 latest={!pending && i === turns.length - 1}
                 busy={busy}
+                approval={
+                  i === turns.length - 1 && waiting.length > 0 ? (
+                    <ApprovalCard
+                      calls={waiting}
+                      busy={busy}
+                      onAnswer={following(chat.approve)}
+                    />
+                  ) : undefined
+                }
                 onEdit={following((text: string) => chat.edit(i, text))}
                 onRegenerate={following(() => chat.regenerate(i))}
                 onSwitch={(itemId) => void chat.switchVersion(itemId)}
@@ -170,13 +185,6 @@ export function ChatPage({ health, settings, onListChanged }: Props) {
                       : null,
                 }}
                 pending
-              />
-            )}
-            {waiting.length > 0 && (
-              <ApprovalCard
-                calls={waiting}
-                busy={busy}
-                onAnswer={following(chat.approve)}
               />
             )}
             {error && (
@@ -208,6 +216,8 @@ interface TurnViewProps {
   /** The last turn: its actions stay visible, as on ChatGPT. */
   latest?: boolean
   busy?: boolean
+  /** Shown instead of the answer's actions while tool calls wait for it. */
+  approval?: ReactNode
   onEdit?: (text: string) => void
   onRegenerate?: () => void
   onSwitch?: (itemId: number) => void
@@ -218,6 +228,7 @@ function TurnView({
   pending,
   latest,
   busy,
+  approval,
   onEdit,
   onRegenerate,
   onSwitch,
@@ -294,7 +305,8 @@ function TurnView({
           <div className="thinking" aria-label="Waiting for answer" />
         )
       )}
-      {!pending && (
+      {approval}
+      {!pending && !approval && (
         <div className="actions answer-actions">
           {answer && <CopyButton text={answer.text} />}
           {saved && (
