@@ -45,12 +45,18 @@ export class ChatService {
   // the same request without them worked. Kept until restart.
   readonly #unsupported = new Set<string>()
 
+  /**
+   * @param options.tools offered to the model (none by default)
+   * @param options.projects for project chats' instructions
+   */
   constructor(
     client: OpenAI,
     store: ConversationStore,
     settings: SettingsStore,
-    tools = new ToolRegistry([]),
-    projects: ProjectStore | null = null,
+    {
+      tools = new ToolRegistry([]),
+      projects = null,
+    }: { tools?: ToolRegistry; projects?: ProjectStore | null } = {},
   ) {
     this.#client = client
     this.#store = store

@@ -103,7 +103,10 @@ export function start({
   const registry = new ToolRegistry(
     tools({ config, store, files, memories, projects, index }),
   )
-  const chat = new ChatService(client, store, settings, registry, projects)
+  const chat = new ChatService(client, store, settings, {
+    tools: registry,
+    projects: projects,
+  })
   const app = createApp({
     config,
     store,

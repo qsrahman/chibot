@@ -85,12 +85,9 @@ describe('API', () => {
 
   it('GET /api/tools lists the tools with their labels', async () => {
     const settings = testSettings('m-1')
-    const chat = new ChatService(
-      fakeClient([]),
-      store,
-      settings,
-      new ToolRegistry([new EchoTool()]),
-    )
+    const chat = new ChatService(fakeClient([]), store, settings, {
+      tools: new ToolRegistry([new EchoTool()]),
+    })
     const app = testApp({
       config,
       store,

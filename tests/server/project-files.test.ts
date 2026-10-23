@@ -106,8 +106,10 @@ describe('project file search', () => {
       fakeClient(answerEvents('ok'), calls),
       store,
       testSettings(),
-      new ToolRegistry([new SearchProjectFilesTool(projects, index)]),
-      projects,
+      {
+        tools: new ToolRegistry([new SearchProjectFilesTool(projects, index)]),
+        projects: projects,
+      },
     )
     const { id } = store.createConversation({ projectId })
     await drain(chat.runTurn(id, { text: 'Hi' }))

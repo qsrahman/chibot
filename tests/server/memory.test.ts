@@ -71,7 +71,7 @@ describe('memory in chats', () => {
       fakeClient(answerEvents('ok'), calls),
       store,
       testSettings('m', { disabledTools }),
-      new ToolRegistry([new MemoryTool(memories)]),
+      { tools: new ToolRegistry([new MemoryTool(memories)]) },
     )
     const { id } = store.createConversation({ temporary })
     await drain(chat.runTurn(id, { text: 'Hi' }, undefined))
