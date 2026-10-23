@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.10.2] - 2026-10-23
+
 ### Added
 
 - `CHIBOT_TOKEN`: an optional access token, for using chibot from other devices (`HOST=0.0.0.0`). Open it once per browser with `?token=…`; an HttpOnly, SameSite=Strict cookie remembers it, and requests without it get a 401. The startup warning for an exposed server now suggests it.
