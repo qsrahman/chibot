@@ -5,7 +5,10 @@ import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import OpenAI from 'openai'
 import { documentKind, fileKind } from '../shared/documents.ts'
-import { conversationExportSchema } from '../shared/export.ts'
+import {
+  conversationExportSchema,
+  type ConversationExport,
+} from '../shared/export.ts'
 import { messageText } from '../shared/messages.ts'
 import {
   conversationPatchSchema,
@@ -287,9 +290,25 @@ export function createApp({
     if (!exported) return notFound(c)
     const markdown = c.req.query('format') === 'md'
     const name = `${exported.conversation.title ?? 'chat'}.${markdown ? 'md' : 'json'}`
+    const chatFiles = files.ofConversation(id)
     const body = markdown
-      ? toMarkdown(store.getConversation(id)!, store.getPath(id))
-      : JSON.stringify(exported, null, 2)
+      ? toMarkdown(
+          store.getConversation(id)!,
+          store.getPath(id),
+          new Map(chatFiles.map((file) => [file.id, file.name])),
+        )
+      : JSON.stringify(
+          {
+            ...exported,
+            files: chatFiles.map(({ id, name }) => ({
+              id,
+              name,
+              data: files.read(id).toString('base64'),
+            })),
+          } satisfies ConversationExport,
+          null,
+          2,
+        )
     return c.body(body, 200, {
       'Content-Type': markdown
         ? 'text/markdown; charset=utf-8'
@@ -302,10 +321,29 @@ export function createApp({
     '/api/conversations/import',
     bodyLimit({
       maxSize: IMPORT_LIMIT,
-      onError: (c) => c.json({ error: 'The file is larger than 20 MB' }, 413),
+      onError: (c) => c.json({ error: 'The file is larger than 200 MB' }, 413),
     }),
     json(conversationExportSchema),
-    (c) => c.json(store.importConversation(c.req.valid('json')), 201),
+    (c) => {
+      const { files: embedded, ...data } = c.req.valid('json')
+      // Items mention files by id (attachments, generated images). The ids
+      // are UUIDs, so replacing them in the JSON touches nothing else.
+      let items = JSON.stringify(data.items)
+      const saved = embedded.map(({ id, name, data: base64 }) => {
+        // The type follows the name, as for uploads: an export can't choose
+        // how a file is served.
+        const mime = fileKind(name)?.mime ?? 'application/octet-stream'
+        const file = files.save(null, name, mime, Buffer.from(base64, 'base64'))
+        items = items.replaceAll(id, file.id)
+        return file.id
+      })
+      const conversation = store.importConversation({
+        ...data,
+        items: JSON.parse(items) as ConversationExport['items'],
+      })
+      files.link(saved, conversation.id)
+      return c.json(conversation, 201)
+    },
   )
 
   app.get('/api/conversations/:id', (c) => {
@@ -385,7 +423,8 @@ export function createApp({
   return app
 }
 
-const IMPORT_LIMIT = 20 * 1024 * 1024
+// Exports embed their files (base64).
+const IMPORT_LIMIT = 200 * 1024 * 1024
 const FILE_LIMIT = 50 * 1024 * 1024
 const AUDIO_LIMIT = 25 * 1024 * 1024
 

@@ -182,7 +182,7 @@ tool payloads), written in the same transaction as the item.
 | `GET /api/conversations?q=&archived=1` | 2 | List (pinned first, newest first), archived view, or search (titles + message text, with snippets) |
 | `PATCH/DELETE /api/conversations/:id` | 2 | Rename, pin, archive/restore / delete |
 | `PUT /api/conversations/:id/leaf` | 3 | Switch to a message version |
-| `GET /api/conversations/:id/export?format=md\|json` · `POST /api/conversations/import` | 4 | Export (download) / import (validated JSON, ≤ 20 MB) |
+| `GET /api/conversations/:id/export?format=md\|json` · `POST /api/conversations/import` | 4 | Export (download) / import (validated JSON, ≤ 200 MB since Phase 9 embeds files) |
 | `GET/PATCH /api/settings` | 4 | User settings and their defaults (never secrets) |
 | `GET /api/models` | 4 | The chat endpoint's models, or `null` if it can't list them |
 | `GET /api/files/:id` · `GET /api/tools` | 6 | Serve a stored file's original (generated images; Phase 9 attachments) / list tools with availability and on/off state (never keys) |

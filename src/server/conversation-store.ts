@@ -427,15 +427,20 @@ export class ConversationStore {
     }
   }
 
-  /** The whole tree in the JSON export format (see `ConversationExport`). */
-  exportConversation(id: string): ConversationExport | undefined {
+  /**
+   * The whole tree in the JSON export format (see `ConversationExport`),
+   * without the files, which `FileStore` keeps.
+   */
+  exportConversation(
+    id: string,
+  ): Omit<ConversationExport, 'files'> | undefined {
     const conversation = this.getConversation(id)
     if (!conversation) return undefined
     const rows = this.#db
       .prepare('SELECT * FROM items WHERE conversation_id = ? ORDER BY id')
       .all(id) as unknown as Omit<ItemRow, 'sibling_ids'>[]
     return {
-      version: 1,
+      version: 2,
       exportedAt: Date.now(),
       conversation: {
         title: conversation.title,
@@ -458,7 +463,7 @@ export class ConversationStore {
    * Adds an exported conversation as a new, saved chat (unpinned,
    * unarchived) with new ids, showing the version that was on screen.
    */
-  importConversation(data: ConversationExport): Conversation {
+  importConversation(data: Omit<ConversationExport, 'files'>): Conversation {
     const { id } = this.createConversation()
     const insert = this.#inserter(id)
     transaction(this.#db, () => {

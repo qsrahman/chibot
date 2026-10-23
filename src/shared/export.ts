@@ -22,9 +22,16 @@ const exportedItemSchema = z.object({
   createdAt: z.number(),
 })
 
+const exportedFileSchema = z.object({
+  /** Import gives the file a new id, wherever the items mention it. */
+  id: z.uuid(),
+  name: z.string().min(1),
+  data: z.base64(),
+})
+
 export const conversationExportSchema = z
   .object({
-    version: z.literal(1),
+    version: z.union([z.literal(1), z.literal(2)]),
     exportedAt: z.number().optional(),
     conversation: z.object({
       title: z.string().nullable(),
@@ -35,6 +42,8 @@ export const conversationExportSchema = z
     currentLeafId: z.number().int().nullable(),
     /** The whole tree, every version included, parents before children. */
     items: z.array(exportedItemSchema),
+    /** Version 2: the chat's attachments and generated images. */
+    files: z.array(exportedFileSchema).default([]),
   })
   .superRefine(({ items, currentLeafId }, ctx) => {
     const seen = new Set<number>()

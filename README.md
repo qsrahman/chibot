@@ -171,8 +171,9 @@ Then open http://127.0.0.1:3000.
     queries to Brave).
   - *Data:* import a chat from a JSON export, and archived chats to restore or
     delete.
-- **Export** a chat from its **…** menu as Markdown (what's shown) or JSON
-  (every version, for importing later).
+- **Export** a chat from its **…** menu as Markdown (what's shown, with
+  attachment names) or JSON (every version, with its attachments and images,
+  for importing later; up to 200 MB).
 - **Temporary chat:** on a new chat, turn on the dashed-bubble toggle (top
   right). That chat isn't listed, titled or searchable, doesn't use memory or
   past chats, and it's deleted as soon as you leave it.

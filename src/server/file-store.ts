@@ -52,6 +52,15 @@ export class FileStore {
     )
   }
 
+  /** A conversation's files (attachments, generated images), oldest first. */
+  ofConversation(conversationId: string): StoredFile[] {
+    return this.#db
+      .prepare(
+        `SELECT ${FILE} FROM files WHERE conversation_id = ? ORDER BY rowid`,
+      )
+      .all(conversationId) as unknown as StoredFile[]
+  }
+
   /** Makes uploads attached to a message part of its conversation. */
   link(ids: string[], conversationId: string): void {
     const update = this.#db.prepare(
