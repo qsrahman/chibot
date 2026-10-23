@@ -15,6 +15,7 @@ import type { Tool } from './tool.ts'
 import { ToolRegistry } from './tool-registry.ts'
 import { CalculatorTool } from './tools/calculator.ts'
 import { FetchUrlTool } from './tools/fetch-url.ts'
+import { EditImageTool, GenerateImageTool } from './tools/images.ts'
 import { WebSearchTool } from './tools/web-search.ts'
 
 /** What tools may need to be built. */
@@ -24,11 +25,20 @@ export interface ToolDeps {
 }
 
 /** The shipped tools whose setup exists (e.g. a Brave key for web search). */
-export function defaultTools({ config }: ToolDeps): Tool[] {
+export function defaultTools({ config, files }: ToolDeps): Tool[] {
+  const image = config.image && {
+    client: new OpenAI({
+      baseURL: config.image.baseURL,
+      apiKey: config.image.apiKey,
+    }),
+    model: config.image.model,
+    files,
+  }
   return [
     new CalculatorTool(),
     new FetchUrlTool(),
     ...(config.braveApiKey ? [new WebSearchTool(config.braveApiKey)] : []),
+    ...(image ? [new GenerateImageTool(image), new EditImageTool(image)] : []),
   ]
 }
 
