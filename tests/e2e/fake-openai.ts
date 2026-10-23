@@ -3,8 +3,9 @@
 // contains "slow" streams a long answer slowly (to act mid-answer), "think"
 // first streams a reasoning summary, and "compact" returns a compaction item.
 // "calculate" calls the calculator tool, "approve" the test-only e2e_note tool
-// (see server.ts), "search" web_search, "read <url>" fetch_url, "draw"
-// generate_image and "bluer" edit_image (on the chat's last image); a forced
+// (see server.ts), "earlier chats <words>" search_chats, "search" web_search,
+// "read <url>" fetch_url, "draw" generate_image, "bluer" edit_image (on the
+// chat's last image) and "remember <fact>" saves a memory; a forced
 // tool_choice is followed. Once the tool's output arrives, the answer quotes
 // it. It also fakes the Brave Search API (/brave/…), serves a test page
 // (/pages/robots) and makes 1×1 images (/v1/images/…).
@@ -213,6 +214,14 @@ function pickTool(
     arguments: JSON.stringify(args),
   })
   const url = /https?:\/\/\S+/.exec(question)?.[0]
+  const remember = /remember (.+)/.exec(question)?.[1]
+  if (remember) {
+    return call('memory', { action: 'save', id: null, text: remember })
+  }
+  const earlier = /earlier chats (.+)/.exec(question)?.[1]
+  if (earlier) {
+    return call('search_chats', { query: earlier, after: null, before: null })
+  }
   if (forced === 'web_search' || question.includes('search')) {
     return call('web_search', { query: question, freshness: null })
   }
