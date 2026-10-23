@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { tinykeys, type KeybindingsMap } from 'tinykeys'
 
 /** ChatGPT's core shortcuts. `$mod` is ⌘ on macOS and Ctrl elsewhere. */
@@ -19,13 +19,20 @@ export const SHORTCUTS = {
  * key repeats and IME composition are ignored.
  */
 export function useShortcuts(bindings: KeybindingsMap) {
-  useEffect(
-    () =>
-      tinykeys(window, bindings, {
-        ignore: (event) => event.repeat || event.isComposing,
-      }),
-    [bindings],
-  )
+  // Handlers change every render (e.g. while an answer streams); only the
+  // set of keys should cause a new binding.
+  const latest = useRef(bindings)
+  latest.current = bindings
+  const keys = Object.keys(bindings).sort().join('\0')
+  useEffect(() => {
+    const handlers: KeybindingsMap = {}
+    for (const key of keys ? keys.split('\0') : []) {
+      handlers[key] = (event) => latest.current[key]?.(event)
+    }
+    return tinykeys(window, handlers, {
+      ignore: (event) => event.repeat || event.isComposing,
+    })
+  }, [keys])
 }
 
 // The same check tinykeys uses for `$mod`, so labels match the bindings.

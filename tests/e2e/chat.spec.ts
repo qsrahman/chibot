@@ -118,6 +118,98 @@ test('switching chats mid-answer stops it and keeps the partial', async ({
   await expect(answer(page, 0)).not.toContainText('word199')
 })
 
+// Regression: leaving a temporary chat deleted the chat navigated to next.
+test('leaving a temporary chat does not delete the next chat', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await send(page, 'Normal chat')
+  await expect(answer(page, 0)).toContainText('to: Normal chat')
+  await answered(page)
+  await expect(page).toHaveURL(/\/c\//)
+  const normalUrl = page.url()
+
+  await newChat(page)
+  await page.getByRole('button', { name: 'Temporary chat' }).click()
+  await send(page, 'Temporary chat')
+  await expect(answer(page, 0)).toContainText('to: Temporary chat')
+  await answered(page)
+  await expect(page).toHaveURL(/\/c\//)
+  const temporaryUrl = page.url()
+
+  await openChat(page, normalUrl)
+  await expect(page).toHaveURL(normalUrl)
+  await page.waitForTimeout(500)
+
+  const normal = await page.request.get(
+    `/api/conversations/${new URL(normalUrl).pathname.slice('/c/'.length)}`,
+  )
+  expect(normal.status()).toBe(200)
+  const temporary = await page.request.get(
+    `/api/conversations/${new URL(temporaryUrl).pathname.slice('/c/'.length)}`,
+  )
+  expect(temporary.status()).toBe(404)
+
+  await page.reload()
+  await expect(answer(page, 0)).toContainText('to: Normal chat')
+})
+
+// Regression: a failed load of the next chat used to leave the old chat's
+// messages on screen.
+test('a failed chat load clears the previous chat', async ({ page }) => {
+  await page.goto('/')
+  await send(page, 'Alpha chat')
+  await expect(answer(page, 0)).toContainText('to: Alpha chat')
+  await answered(page)
+  await expect(page).toHaveURL(/\/c\//)
+  const alphaUrl = page.url()
+
+  await newChat(page)
+  await send(page, 'Beta chat')
+  await expect(answer(page, 0)).toContainText('to: Beta chat')
+  await answered(page)
+  await expect(page).toHaveURL(/\/c\//)
+  const betaUrl = page.url()
+
+  await openChat(page, alphaUrl)
+  await expect(answer(page, 0)).toContainText('to: Alpha chat')
+
+  const betaId = new URL(betaUrl).pathname.slice('/c/'.length)
+  await page.route(`**/api/conversations/${betaId}`, (route) =>
+    route.request().method() === 'GET'
+      ? route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'load failed' }),
+        })
+      : route.continue(),
+  )
+  await openChat(page, betaUrl)
+
+  await expect(page.getByRole('alert')).toContainText('load failed')
+  await expect(page.locator('.thread')).not.toContainText('to: Alpha chat')
+})
+
+// Regression: a history reload failure after an answer was silently ignored,
+// dropping the answer from the screen.
+test('keeps the answer when the history reload fails', async ({ page }) => {
+  let fail = true
+  await page.route('**/api/conversations/*', (route) => {
+    if (route.request().method() !== 'GET' || !fail) return route.continue()
+    fail = false
+    return route.fulfill({
+      status: 500,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'history unavailable' }),
+    })
+  })
+  await page.goto('/')
+  await send(page, 'Keep this answer')
+
+  await expect(page.getByRole('alert')).toContainText('history unavailable')
+  await expect(answer(page, 0)).toContainText('to: Keep this answer')
+})
+
 // Regression: revisiting the chat created by the first message showed it
 // empty.
 test('a just-created chat shows its messages when revisited', async ({

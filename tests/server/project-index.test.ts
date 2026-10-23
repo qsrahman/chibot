@@ -170,6 +170,34 @@ describe('ProjectIndex', () => {
     expect(count('SELECT count(*) n FROM chunk_vectors')).toBe(2)
   })
 
+  it('re-embeds files indexed before embeddings were configured', async () => {
+    await new ProjectIndex(db, projects, files, null).index(
+      add('a.md', 'Alpha.'),
+    )
+    expect(projects.files(projectId)[0]).toMatchObject({
+      status: 'ready',
+      error: null,
+    })
+    expect(
+      count(
+        "SELECT count(*) n FROM sqlite_master WHERE name = 'chunk_vectors'",
+      ),
+    ).toBe(0)
+
+    const calls: string[][] = []
+    await new ProjectIndex(db, projects, files, {
+      client: fakeEmbeddings(calls),
+      model: 'emb',
+    }).resume()
+
+    expect(calls).toEqual([['Alpha.']])
+    expect(count('SELECT count(*) n FROM chunk_vectors')).toBe(1)
+    expect(db.prepare('SELECT * FROM embedding_model').get()).toEqual({
+      model: 'emb',
+      dimensions: 3,
+    })
+  })
+
   it('removes chunks and vectors with the file', async () => {
     const index = new ProjectIndex(db, projects, files, {
       client: fakeEmbeddings([]),

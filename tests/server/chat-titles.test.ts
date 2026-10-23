@@ -94,6 +94,21 @@ describe('ChatService titles', () => {
     vi.restoreAllMocks()
   })
 
+  it('does not overwrite a rename made while generating', async () => {
+    const { id } = store.createConversation()
+    const chat = service({
+      title: () => {
+        store.updateConversation(id, { title: 'My title' })
+        return 'Generated title'
+      },
+    })
+
+    expect(await eventTypes(chat.runTurn(id, { text: 'Hi' }))).not.toContain(
+      'chibot.title',
+    )
+    expect(store.getConversation(id)!.title).toBe('My title')
+  })
+
   it('never titles temporary chats', async () => {
     const titleCalls: ResponseCreateParams[] = []
     const chat = service({ titleCalls })

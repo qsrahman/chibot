@@ -57,7 +57,8 @@ export class Attachments {
   /** The stored parts for files attached to a message. */
   parts(fileIds: string[]): ResponseInputContent[] {
     return fileIds.map((id) => {
-      const file = this.#files.get(id)!
+      const file = this.#files.get(id)
+      if (!file) throw new Error(`File ${id} is missing`)
       return fileKind(file.name)?.kind === 'image'
         ? { type: 'input_image', file_id: id, detail: 'auto' }
         : { type: 'input_file', file_id: id, filename: file.name }
@@ -167,7 +168,8 @@ export class Attachments {
   async #text(file: StoredFile): Promise<string> {
     let text = this.#texts.get(file.id)
     if (text === undefined) {
-      const kind = documentKind(file.name)!.kind
+      const kind = documentKind(file.name)?.kind
+      if (!kind) throw new Error(`Can’t read ${file.name} as text`)
       text = await documentText(kind, this.#files.read(file.id))
       if (text.length > MAX_TEXT)
         text = `${text.slice(0, MAX_TEXT)}\n\n[truncated]`

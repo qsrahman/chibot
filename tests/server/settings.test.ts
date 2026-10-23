@@ -58,6 +58,15 @@ describe('SettingsStore', () => {
     ).run()
     expect(settings.get().reasoningEffort).toBeNull()
   })
+
+  it('ignores corrupt stored values', () => {
+    db.prepare("INSERT INTO settings VALUES ('aboutUser', 'not json')").run()
+    db.prepare("INSERT INTO settings VALUES ('model', '\"other\"')").run()
+    expect(settings.get()).toMatchObject({
+      model: 'other',
+      aboutUser: '',
+    })
+  })
 })
 
 describe('settings routes and use', () => {

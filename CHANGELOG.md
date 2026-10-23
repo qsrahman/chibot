@@ -7,6 +7,20 @@ All notable changes to the codebase are documented in this file. Format follows 
 ### Fixed
 
 - An image request answered 404 (a server without an images endpoint, such as Ollama, which removed image generation in 0.32.6) now says so and suggests pointing `OPENAI_IMAGE_BASE_URL` at OpenAI, instead of only asking to check the image model. README no longer suggests Ollama image models.
+- Import checks embedded files (no duplicate ids, every attachment present) and replaces only file and image ids, in items, tool output and call arguments, so a UUID inside message text is left alone.
+- A new or edited message can't start in the middle of an answer (e.g. under a reasoning item); it may follow a message or a tool output, so editing after a failed or stopped turn still works. Regenerating still needs a user message.
+- A rename made while the title was being generated is no longer overwritten.
+- A corrupt stored setting falls back to its default instead of breaking settings.
+- chibot refuses to open a database from a newer version, with a clear error.
+- A missing attachment or an unreadable document gives a clear error instead of crashing.
+- Composer: removing a queued upload before it finishes no longer sends an empty message; a send the server refused before saving it puts the draft and attachments back.
+- Dictation ignores a second start while the microphone is being opened, and leaving the page cancels a transcription in flight.
+- Keyboard shortcuts stay bound while handlers change (e.g. as an answer streams), instead of rebinding on every render.
+- Leaving a temporary chat could delete the chat opened next, and a failed load of another chat could leave the previous chat's messages on screen. Navigation now clears stale turns and guards temporary cleanup by the loaded chat id.
+- If reloading a chat's history failed after an answer, the answer disappeared from the screen; it now stays, with the error.
+- Switching versions quickly could show the answer of a version that was no longer selected, and overlapping list loads could show an older response. Late responses are now ignored.
+- Project files indexed before embedding settings existed were never embedded, so their contents weren't searchable. Indexing now resumes with the configured model, and retries failed embeddings on startup.
+- Stored tool sources with unsafe URLs (including `javascript:`) could reach link rendering; only `http:` and `https:` sources are now shown.
 
 ## [0.10.5] - 2026-10-23
 

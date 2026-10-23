@@ -4,6 +4,7 @@ import type {
   ResponseInputItem,
   ResponseUsage,
 } from 'openai/resources/responses/responses'
+import { fileParts } from './messages.ts'
 
 const exportedItemSchema = z.object({
   /** Only meaningful within the file: import assigns new ids. */
@@ -45,7 +46,7 @@ export const conversationExportSchema = z
     /** Version 2: the chat's attachments and generated images. */
     files: z.array(exportedFileSchema).default([]),
   })
-  .superRefine(({ items, currentLeafId }, ctx) => {
+  .superRefine(({ items, currentLeafId, files }, ctx) => {
     const seen = new Set<number>()
     for (const [i, item] of items.entries()) {
       if (seen.has(item.id)) {
@@ -72,6 +73,69 @@ export const conversationExportSchema = z
         path: ['currentLeafId'],
       })
     }
+    const fileIds = new Set<string>()
+    for (const [i, file] of files.entries()) {
+      if (fileIds.has(file.id)) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `duplicate file id ${file.id}`,
+          path: ['files', i, 'id'],
+        })
+      }
+      fileIds.add(file.id)
+    }
+    // Attachments travel with the export (version 2). Other ids in tool
+    // output (generated images in version 1, project files) may not.
+    for (const [i, item] of items.entries()) {
+      for (const { file_id: id } of fileParts(item.data)) {
+        if (id && !fileIds.has(id)) {
+          ctx.addIssue({
+            code: 'custom',
+            message: `file ${id} is not in files`,
+            path: ['items', i, 'data'],
+          })
+        }
+      }
+    }
   })
 
 export type ConversationExport = z.output<typeof conversationExportSchema>
+
+/**
+ * Gives every file id in `value` its replacement from `ids`, changing only
+ * file references: message text that happens to contain an id is left alone.
+ */
+export function replaceFileIds<T>(value: T, ids: Map<string, string>): T {
+  if (Array.isArray(value)) {
+    return value.map((entry) => replaceFileIds(entry, ids)) as T
+  }
+  if (!value || typeof value !== 'object') return value
+  const replaced: Record<string, unknown> = {}
+  for (const [key, entry] of Object.entries(value)) {
+    if (
+      (key === 'file_id' || key === 'image_id') &&
+      typeof entry === 'string' &&
+      ids.has(entry)
+    ) {
+      replaced[key] = ids.get(entry)
+    } else if (
+      (key === 'output' || key === 'arguments') &&
+      typeof entry === 'string'
+    ) {
+      // Tool output and call arguments can be JSON with ids inside
+      // (image_id). Anything else, e.g. a calculator's "0.10", stays as is.
+      replaced[key] = entry
+      try {
+        const parsed: unknown = JSON.parse(entry)
+        if (parsed && typeof parsed === 'object') {
+          replaced[key] = JSON.stringify(replaceFileIds(parsed, ids))
+        }
+      } catch {
+        // Not JSON.
+      }
+    } else {
+      replaced[key] = replaceFileIds(entry, ids)
+    }
+  }
+  return replaced as T
+}

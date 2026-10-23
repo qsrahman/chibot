@@ -167,6 +167,39 @@ describe('export and import', () => {
       { ...good, currentLeafId: 9999 },
       { ...good, items: [...good.items].reverse() }, // children before parents
       { ...good, items: [{ ...good.items[0]!, data: { nope: 1 } }] },
+      {
+        ...good,
+        files: [
+          {
+            id: '00000000-0000-4000-8000-000000000001',
+            name: 'a',
+            data: 'eA==',
+          },
+          {
+            id: '00000000-0000-4000-8000-000000000001',
+            name: 'b',
+            data: 'eA==',
+          },
+        ],
+      },
+      {
+        ...good,
+        items: [
+          {
+            ...good.items[0]!,
+            data: {
+              role: 'user',
+              content: [
+                {
+                  type: 'input_image',
+                  file_id: '00000000-0000-4000-8000-000000000002',
+                },
+              ],
+            },
+          },
+          ...good.items.slice(1),
+        ],
+      },
     ]
     for (const body of broken) {
       const res = await importJson(body)
@@ -239,6 +272,69 @@ describe('export and import', () => {
     const { files: _, ...v1 } = (await exportJson(sampleChat())).body
     const res = await importJson({ ...v1, version: 1 })
     expect(res.status).toBe(201)
+  })
+
+  it('replaces file ids without touching message text', async () => {
+    const { id } = store.createConversation()
+    const photo = files.save(id, 'cat.png', 'image/png', Buffer.from('PNG'))
+    store.appendItems(id, null, [
+      {
+        role: 'user',
+        content: [
+          { type: 'input_text', text: `The id is ${photo.id}` },
+          { type: 'input_image', file_id: photo.id, detail: 'auto' },
+        ],
+      },
+    ])
+    const original = (await exportJson(id)).body
+    const imported = (await (await importJson(original)).json()) as Conversation
+    const copy = files.ofConversation(imported.id)[0]!
+    expect(store.getPath(imported.id)[0]!.data).toMatchObject({
+      content: [
+        { type: 'input_text', text: `The id is ${photo.id}` },
+        { type: 'input_image', file_id: copy.id },
+      ],
+    })
+  })
+
+  it('imports version 1 chats with generated images (no files)', async () => {
+    const { files: _, ...v2 } = (await exportJson(chatWithFiles())).body
+    const v1 = {
+      ...v2,
+      version: 1,
+      // Version 1 had images (in tool output) but no attachments.
+      items: v2.items.map((item) =>
+        'role' in item.data
+          ? { ...item, data: { role: 'user' as const, content: 'Draw it' } }
+          : item,
+      ),
+    }
+    expect((await importJson(v1)).status).toBe(201)
+  })
+
+  it('points edit_image calls at the imported copy', async () => {
+    const { id } = store.createConversation()
+    const drawn = files.save(id, 'image.png', 'image/png', Buffer.from('P'))
+    const [q] = store.appendItems(id, null, [{ role: 'user', content: 'q' }])
+    store.appendItems(id, q!.id, [
+      {
+        type: 'function_call',
+        call_id: 'c1',
+        name: 'edit_image',
+        arguments: JSON.stringify({ image_id: drawn.id, prompt: 'bluer' }),
+      },
+      { type: 'function_call_output', call_id: 'c1', output: '0.10' },
+    ])
+    const imported = (await (
+      await importJson((await exportJson(id)).body)
+    ).json()) as Conversation
+    const copy = files.ofConversation(imported.id)[0]!
+    const [, call, output] = store.getPath(imported.id)
+    expect(call!.data).toMatchObject({
+      arguments: JSON.stringify({ image_id: copy.id, prompt: 'bluer' }),
+    })
+    // Plain output that happens to parse as JSON is left as written.
+    expect(output!.data).toMatchObject({ output: '0.10' })
   })
 
   it('lists attachments in Markdown', async () => {

@@ -115,6 +115,12 @@ export function openDatabase(path: string): DatabaseSync {
   const { user_version: version } = db.prepare('PRAGMA user_version').get() as {
     user_version: number
   }
+  if (version > MIGRATIONS.length) {
+    db.close()
+    throw new Error(
+      `Database schema ${version} is newer than this version of chibot supports (${MIGRATIONS.length})`,
+    )
+  }
   MIGRATIONS.slice(version).forEach((migration, i) => {
     transaction(db, () => {
       if (typeof migration === 'string') db.exec(migration)

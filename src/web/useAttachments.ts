@@ -79,11 +79,18 @@ export function useAttachments() {
     setDrafts([])
   }
 
+  /** Puts back drafts after a send the server refused before saving them. */
+  function restore(previous: Draft[]) {
+    // Their preview URLs were revoked by `clear`.
+    setDrafts(previous.map((draft) => ({ ...draft, preview: null })))
+  }
+
   return {
     drafts,
     add,
     remove,
     clear,
+    restore,
     /** Some files are still on their way. */
     uploading: drafts.some((d) => !d.attachment && !d.error),
     /** Some files were refused; they must be removed before sending. */

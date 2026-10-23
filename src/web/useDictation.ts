@@ -11,10 +11,19 @@ export function useDictation(onText: (text: string) => void) {
   )
   const [error, setError] = useState<string | null>(null)
   const recorder = useRef<MediaRecorder | null>(null)
+  const transcription = useRef<AbortController | null>(null)
+  // Covers the gap before the recorder exists (getUserMedia is pending).
+  const active = useRef(false)
+  const disposed = useRef(false)
+  const onTextRef = useRef(onText)
+  onTextRef.current = onText
 
-  // Leaving mid-recording discards it and frees the microphone.
+  // Leaving mid-recording discards it and frees the microphone; a transcription
+  // still in flight is cancelled.
   useEffect(
     () => () => {
+      disposed.current = true
+      transcription.current?.abort()
       const rec = recorder.current
       if (!rec) return
       rec.onstop = null
@@ -25,16 +34,24 @@ export function useDictation(onText: (text: string) => void) {
   )
 
   async function start() {
+    if (active.current) return
+    active.current = true
     setError(null)
     let stream: MediaStream
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true })
     } catch (err) {
+      active.current = false
       setError(
         (err as Error).name === 'NotAllowedError'
           ? 'Microphone access was denied'
           : `Can’t use the microphone: ${(err as Error).message}`,
       )
+      return
+    }
+    if (disposed.current) {
+      stream.getTracks().forEach((track) => track.stop())
+      active.current = false
       return
     }
     const chunks: Blob[] = []
@@ -43,13 +60,21 @@ export function useDictation(onText: (text: string) => void) {
     rec.onstop = () => {
       stream.getTracks().forEach((track) => track.stop())
       recorder.current = null
+      const controller = new AbortController()
+      transcription.current = controller
       setState('transcribing')
-      transcribe(new Blob(chunks, { type: rec.mimeType }))
+      transcribe(new Blob(chunks, { type: rec.mimeType }), controller.signal)
         .then((text) => {
-          if (text.trim()) onText(text.trim())
+          if (text.trim()) onTextRef.current(text.trim())
         })
-        .catch((err: Error) => setError(err.message))
-        .finally(() => setState('idle'))
+        .catch((err: Error) => {
+          if (!controller.signal.aborted) setError(err.message)
+        })
+        .finally(() => {
+          transcription.current = null
+          active.current = false
+          if (!disposed.current) setState('idle')
+        })
     }
     rec.start()
     recorder.current = rec

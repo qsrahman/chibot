@@ -479,8 +479,10 @@ export class ChatService {
           this.#client.responses.create({ ...params, ...optional }, { signal }),
       )
       const title = cleanTitle(response.output_text)
-      if (title) this.#store.updateConversation(conversationId, { title })
-      return title
+      if (title && this.#store.setTitleIfEmpty(conversationId, title)) {
+        return title
+      }
+      return null
     } catch (err) {
       if (!signal?.aborted) console.error('Title generation failed:', err)
       return null

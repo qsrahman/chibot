@@ -120,10 +120,10 @@ export function ChatPage({
   })
 
   /** Wraps an action that starts a turn: the view follows its answer. */
-  function following<A extends unknown[]>(action: (...args: A) => unknown) {
-    return (...args: A) => {
+  function following<A extends unknown[], R>(action: (...args: A) => R) {
+    return (...args: A): R => {
       followRef.current = true
-      void action(...args)
+      return action(...args)
     }
   }
 

@@ -75,6 +75,11 @@ describe('attachments', () => {
     })
   })
 
+  it('reports a missing file instead of crashing', () => {
+    const attachments = new Attachments(fakeClient([]), files)
+    expect(() => attachments.parts(['nope'])).toThrow('File nope is missing')
+  })
+
   it('sends files without text', async () => {
     await send(chatWith({}, []), ' ')
     expect(store.getPath(conversationId)[0]!.data).toMatchObject({

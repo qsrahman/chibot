@@ -43,3 +43,23 @@ test('says why voice input is off without transcription', async ({ page }) => {
     page.getByRole('button', { name: 'Stop recording' }),
   ).toHaveCount(0)
 })
+
+test('ignores a second dictation click while recording starts', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  const box = page.getByRole('textbox', { name: 'Message' })
+  const dictate = page.getByRole('button', { name: 'Dictate' })
+  // Both in one tick, before the first start has opened the microphone (a
+  // second Playwright click would wait for the button to read "Dictate").
+  await dictate.evaluate((button: HTMLElement) => {
+    button.click()
+    button.click()
+  })
+  const stop = page.getByRole('button', { name: 'Stop recording' })
+  await expect(stop).toBeVisible()
+  await page.waitForTimeout(500)
+  await stop.click()
+  await expect(box).toHaveValue('Hello from the microphone')
+})

@@ -11,6 +11,7 @@ import OpenAI from 'openai'
 import { documentKind, fileKind } from '../shared/documents.ts'
 import {
   conversationExportSchema,
+  replaceFileIds,
   type ConversationExport,
 } from '../shared/export.ts'
 import { messageText } from '../shared/messages.ts'
@@ -361,20 +362,18 @@ export function createApp({
     json(conversationExportSchema),
     (c) => {
       const { files: embedded, ...data } = c.req.valid('json')
-      // Items mention files by id (attachments, generated images). The ids
-      // are UUIDs, so replacing them in the JSON touches nothing else.
-      let items = JSON.stringify(data.items)
+      const savedIds = new Map<string, string>()
       const saved = embedded.map(({ id, name, data: base64 }) => {
         // The type follows the name, as for uploads: an export can't choose
         // how a file is served.
         const mime = fileKind(name)?.mime ?? 'application/octet-stream'
         const file = files.save(null, name, mime, Buffer.from(base64, 'base64'))
-        items = items.replaceAll(id, file.id)
+        savedIds.set(id, file.id)
         return file.id
       })
       const conversation = store.importConversation({
         ...data,
-        items: JSON.parse(items) as ConversationExport['items'],
+        items: replaceFileIds(data.items, savedIds),
       })
       files.link(saved, conversation.id)
       return c.json(conversation, 201)
@@ -414,12 +413,23 @@ export function createApp({
     if (typeof request.parentId === 'number') {
       const parent = store.getItem(id, request.parentId)
       if (!parent) return notFound(c, 'Item')
-      // A regenerate answers a user message; anything else has no question.
-      if (
-        request.text === undefined &&
-        messageText(parent.data)?.role !== 'user'
+      const role = messageText(parent.data)?.role
+      // A regenerate answers a user message. A new or edited message follows
+      // a message (another user message, after a turn that failed or was
+      // stopped early) or a tool output (a stopped or denied call), but not
+      // an item in the middle of an answer, such as reasoning.
+      if (request.text === undefined) {
+        if (role !== 'user') {
+          return c.json({ error: 'Only a user message can be answered' }, 400)
+        }
+      } else if (
+        !role &&
+        !('type' in parent.data && parent.data.type === 'function_call_output')
       ) {
-        return c.json({ error: 'Only a user message can be answered' }, 400)
+        return c.json(
+          { error: 'A message can only follow a message or a tool output' },
+          400,
+        )
       }
     }
     // Only once the turn is accepted: a refused one leaves its uploads unsent.

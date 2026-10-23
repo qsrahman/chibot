@@ -41,9 +41,14 @@ export class SettingsStore {
       key: string
       value: string
     }[]
-    const stored = Object.fromEntries(
-      rows.map(({ key, value }) => [key, JSON.parse(value)]),
-    )
+    const stored: Record<string, unknown> = {}
+    for (const { key, value } of rows) {
+      try {
+        stored[key] = JSON.parse(value)
+      } catch {
+        // A corrupt row falls back to its default below.
+      }
+    }
     // A stored value that no longer validates (e.g. after a schema change)
     // falls back to its default instead of breaking every request.
     const settings = { ...this.#defaults }

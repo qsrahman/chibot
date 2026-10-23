@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 /**
  * Data from `load` (a stable function: wrap it in `useCallback`), loaded
@@ -8,12 +8,27 @@ import { useCallback, useEffect, useState } from 'react'
 export function useLoad<T>(load: () => Promise<T>, active = true) {
   const [data, setData] = useState<T>()
   const [error, setError] = useState<string | null>(null)
+  const generation = useRef(0)
+  const currentLoad = useRef(load)
+  const loadedLoad = useRef(load)
+  currentLoad.current = load
+
+  // Ignore the previous loader's data while the new one is loading.
+  const current = loadedLoad.current === load
 
   const reload = useCallback(async () => {
+    if (load !== currentLoad.current) return
+    const request = ++generation.current
     try {
-      setData(await load())
+      const next = await load()
+      if (request !== generation.current || load !== currentLoad.current) return
+      loadedLoad.current = load
+      setData(next)
       setError(null)
     } catch (err) {
+      if (request !== generation.current || load !== currentLoad.current) return
+      if (loadedLoad.current !== load) setData(undefined)
+      loadedLoad.current = load
       setError((err as Error).message)
     }
   }, [load])
@@ -33,12 +48,17 @@ export function useLoad<T>(load: () => Promise<T>, active = true) {
         // Resync first (the data may be stale, e.g. deleted elsewhere), then
         // show the error, which a successful reload would clear.
         await reload()
-        setError((err as Error).message)
+        if (load === currentLoad.current) setError((err as Error).message)
         return false
       }
     },
-    [reload],
+    [load, reload],
   )
 
-  return { data, error, reload, act }
+  return {
+    data: current ? data : undefined,
+    error: current ? error : null,
+    reload,
+    act,
+  }
 }

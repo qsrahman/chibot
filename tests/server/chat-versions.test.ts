@@ -100,9 +100,20 @@ describe('edit, regenerate and switch versions', () => {
       expect((await send({ text: 'hi', parentId: 9999 })).status).toBe(404)
       // Only a user message can be regenerated.
       expect((await send({ parentId: a1!.id })).status).toBe(400)
+      // A new or edited message can't start in the middle of an answer.
+      const [thought] = store.appendItems(id, q1!.id, [
+        { type: 'reasoning', id: 'rs_1', summary: [] },
+      ])
+      expect((await send({ text: 'bad', parentId: thought!.id })).status).toBe(
+        400,
+      )
       const ok = await send({ parentId: q1!.id })
       expect(ok.status).toBe(200)
       await ok.text()
+      // After a turn that failed, a message follows the unanswered question.
+      const afterFailure = await send({ text: 'again', parentId: q1!.id })
+      expect(afterFailure.status).toBe(200)
+      await afterFailure.text()
       // Approvals come alone, and only when tool calls are waiting.
       expect((await send({ approvals: { c: true }, text: 'x' })).status).toBe(
         400,

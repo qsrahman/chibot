@@ -39,7 +39,11 @@ export interface ToolOption {
 interface Props {
   busy: boolean
   /** `tool` is the picked tool's name, if any. */
-  onSend: (text: string, tool?: string, attachments?: Attachment[]) => void
+  onSend: (
+    text: string,
+    tool?: string,
+    attachments?: Attachment[],
+  ) => void | Promise<boolean>
   onStop: () => void
   /** The textarea, so the page can focus it (e.g. from a shortcut). */
   inputRef: RefObject<HTMLTextAreaElement | null>
@@ -68,6 +72,10 @@ export function Composer({
   const [picked, setPicked] = useState<ToolOption | null>(null)
   // Sent while files were uploading: goes once they're all up.
   const [queued, setQueued] = useState(false)
+  const textRef = useRef(text)
+  textRef.current = text
+  const draftsRef = useRef(attachments.drafts)
+  draftsRef.current = attachments.drafts
   const menu = useAnchoredPopover()
   const pickerRef = useRef<HTMLInputElement>(null)
   const dictation = useDictation((spoken) => {
@@ -99,15 +107,41 @@ export function Composer({
       : null
 
   function submit({ force = false } = {}) {
-    if (!canSend && !force) return
+    // Files still uploading count (the send queues for them), but a queued
+    // send can't go if its files were removed meanwhile.
+    const sendable =
+      !attachments.failed &&
+      (text.trim() !== '' ||
+        (attachments.uploading
+          ? attachments.drafts.length > 0
+          : attachments.ready.length > 0))
+    if ((!force && !canSend) || !sendable) {
+      if (force) setQueued(false)
+      return
+    }
     if (attachments.uploading) {
       setQueued(true)
       return
     }
-    onSend(text, tool?.name, attachments.ready)
+    const draft = { text, picked, attachments: attachments.drafts }
+    const result = onSend(text, tool?.name, attachments.ready)
     setText('')
     setPicked(null)
     attachments.clear()
+    // Cleared immediately so the next message can be typed; if the server
+    // refused the send before saving it, put the draft back (unless the user
+    // started another one meanwhile).
+    textRef.current = ''
+    draftsRef.current = []
+    if (result && typeof result.then === 'function') {
+      void result.then((accepted) => {
+        if (accepted || textRef.current !== '' || draftsRef.current.length > 0)
+          return
+        setText(draft.text)
+        setPicked(draft.picked)
+        attachments.restore(draft.attachments)
+      })
+    }
     inputRef.current?.focus()
   }
 

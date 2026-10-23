@@ -255,6 +255,24 @@ export class ConversationStore {
     return this.getConversation(id)
   }
 
+  /**
+   * Sets the title only while the chat is still untitled, so a rename made
+   * while the title was being generated wins.
+   *
+   * @returns whether the title was set
+   */
+  setTitleIfEmpty(id: string, title: string): boolean {
+    return (
+      Number(
+        this.#db
+          .prepare(
+            'UPDATE conversations SET title = ? WHERE id = ? AND title IS NULL',
+          )
+          .run(title, id).changes,
+      ) > 0
+    )
+  }
+
   /** Every chat in the project: archived and temporary ones too. */
   projectConversationIds(projectId: string): string[] {
     return (

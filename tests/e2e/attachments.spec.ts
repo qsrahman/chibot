@@ -263,3 +263,65 @@ test('sends once the files are uploaded', async ({ page }) => {
     'input_text',
   ])
 })
+
+test('queues a message of only files while they upload', async ({ page }) => {
+  await page.route('/api/files', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 800))
+    await route.continue()
+  })
+  await page.goto('/')
+  await appReady(page)
+  await attach(page, [NOTES], { wait: false })
+  await page.getByRole('button', { name: 'Send' }).click()
+  await expect(
+    page.getByRole('button', { name: 'Sending when the files are uploaded' }),
+  ).toBeVisible()
+  // Not answered() alone: there's no Stop button while the send is queued.
+  await expect(answer(page, 0)).toBeVisible()
+  await answered(page)
+  expect((await userContent(page)).map((part) => part.type)).toEqual([
+    'input_file',
+  ])
+})
+
+test('does not send an empty message after removing a queued file', async ({
+  page,
+}) => {
+  await page.route('/api/files', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 800))
+    await route.continue()
+  })
+  await page.goto('/')
+  await appReady(page)
+  await attach(page, [NOTES], { wait: false })
+  await page.getByRole('button', { name: 'Send' }).click()
+  await expect(
+    page.getByRole('button', { name: 'Sending when the files are uploaded' }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Remove notes.md' }).click()
+
+  await expect(page.getByRole('button', { name: 'Send' })).toBeVisible()
+  await page.waitForTimeout(1000)
+  await expect(turns(page)).toHaveCount(0)
+  await expect(page).toHaveURL(/\/$/)
+})
+
+test('keeps the message when a send fails', async ({ page }) => {
+  await page.route('/api/conversations', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({ status: 500, json: { error: 'cannot start' } })
+    } else {
+      await route.continue()
+    }
+  })
+  await page.goto('/')
+  await appReady(page)
+  await attach(page, [NOTES])
+  const box = page.getByRole('textbox', { name: 'Message' })
+  await box.fill('Keep this')
+  await page.getByRole('button', { name: 'Send' }).click()
+
+  await expect(page.getByRole('alert')).toContainText('cannot start')
+  await expect(box).toHaveValue('Keep this')
+  await expect(page.getByText('notes.md')).toBeVisible()
+})

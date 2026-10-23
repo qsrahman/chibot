@@ -62,7 +62,9 @@ export class ProjectIndex {
     const fileIds = new Set(
       this.#projects.unfinishedFiles().map((f) => f.fileId),
     )
-    if (model && info && info.model !== model) {
+    // `info` is missing when files were indexed before embeddings were
+    // configured, so re-embed them too (and retry a failed first embedding).
+    if (model && (!info || info.model !== model)) {
       this.#dropVectors()
       this.#indexedFileIds().forEach((id) => fileIds.add(id))
     }

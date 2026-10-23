@@ -152,30 +152,69 @@ export function sourcesOf(answer: Answer): Source[] {
   for (const tool of answer.tools) {
     if (!tool.output || tool.output.startsWith('Error:')) continue
     if (tool.name === 'web_search') {
-      const { results = [] } = parseJson<{ results?: Source[] }>(tool.output)
-      for (const { url, title } of results) found.set(url, { url, title })
+      const { results } = parseJson<{ results?: unknown }>(tool.output)
+      for (const row of rows(results)) {
+        const url = webUrl(row.url)
+        if (!url) continue
+        found.set(url.href, {
+          url: url.href,
+          title: sourceTitle(row.title, url.href),
+        })
+      }
     } else if (tool.name === 'search_chats') {
-      const { results = [] } = parseJson<{
-        results?: { chat_id: string; title: string }[]
-      }>(tool.output)
-      for (const { chat_id, title } of results) {
-        const url = `/c/${chat_id}`
-        found.set(url, { url, title, kind: 'chat' })
+      const { results } = parseJson<{ results?: unknown }>(tool.output)
+      for (const row of rows(results)) {
+        if (typeof row.chat_id !== 'string' || !row.chat_id) continue
+        const url = `/c/${encodeURIComponent(row.chat_id)}`
+        found.set(url, {
+          url,
+          title: sourceTitle(row.title, 'Chat'),
+          kind: 'chat',
+        })
       }
     } else if (tool.name === 'search_project_files') {
-      const { results = [] } = parseJson<{
-        results?: { file: string; file_id: string }[]
-      }>(tool.output)
-      for (const { file, file_id } of results) {
-        const url = `/api/files/${file_id}`
-        found.set(url, { url, title: file, kind: 'file' })
+      const { results } = parseJson<{ results?: unknown }>(tool.output)
+      for (const row of rows(results)) {
+        if (typeof row.file_id !== 'string' || !row.file_id) continue
+        const url = `/api/files/${encodeURIComponent(row.file_id)}`
+        found.set(url, {
+          url,
+          title: sourceTitle(row.file, 'Project file'),
+          kind: 'file',
+        })
       }
     } else if (tool.name === 'fetch_url') {
-      const { url } = parseJson<{ url?: string }>(tool.arguments)
-      if (url && !found.has(url)) found.set(url, { url, title: url })
+      const { url } = parseJson<{ url?: unknown }>(tool.arguments)
+      const parsed = webUrl(url)
+      if (parsed && !found.has(parsed.href)) {
+        found.set(parsed.href, { url: parsed.href, title: parsed.href })
+      }
     }
   }
   return [...found.values()]
+}
+
+function rows(value: unknown): Record<string, unknown>[] {
+  return Array.isArray(value)
+    ? value.filter(
+        (row): row is Record<string, unknown> =>
+          typeof row === 'object' && row !== null,
+      )
+    : []
+}
+
+function webUrl(value: unknown): URL | null {
+  if (typeof value !== 'string') return null
+  try {
+    const url = new URL(value)
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url : null
+  } catch {
+    return null
+  }
+}
+
+function sourceTitle(value: unknown, fallback: string): string {
+  return typeof value === 'string' && value.trim() ? value : fallback
 }
 
 const IMAGE_TOOLS = ['generate_image', 'edit_image']

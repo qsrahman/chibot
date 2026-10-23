@@ -185,6 +185,54 @@ describe('sourcesOf and imageOf', () => {
     ])
   })
 
+  it('ignores malformed and unsafe tool output', () => {
+    const sources = sourcesOf({
+      itemId: 2,
+      text: '',
+      thinking: '',
+      usage: null,
+      model: null,
+      versions: null,
+      tools: [
+        tool('web_search', {}, JSON.stringify({ results: 'not an array' })),
+        tool(
+          'web_search',
+          {},
+          JSON.stringify({
+            results: [
+              { title: 'Unsafe', url: 'javascript:alert(1)' },
+              { title: 'Broken', url: 'not a url' },
+              { title: 42, url: 'https://ok.test/' },
+              'not an object',
+            ],
+          }),
+        ),
+        tool('fetch_url', { url: 'javascript:alert(1)' }, 'Content'),
+        tool('fetch_url', { url: 'https://fetch.test/x' }, 'Content'),
+        tool(
+          'search_chats',
+          {},
+          JSON.stringify({
+            results: [
+              { chat_id: 42, title: 'Bad id' },
+              { chat_id: 'a/b', title: 5 },
+            ],
+          }),
+        ),
+        tool(
+          'search_project_files',
+          {},
+          JSON.stringify({ results: { file: 'not an array' } }),
+        ),
+      ],
+    })
+    expect(sources).toEqual([
+      { url: 'https://ok.test/', title: 'https://ok.test/' },
+      { url: 'https://fetch.test/x', title: 'https://fetch.test/x' },
+      { url: '/c/a%2Fb', title: 'Chat', kind: 'chat' },
+    ])
+  })
+
   it('finds images made by image tools', () => {
     expect(imageOf(tool('generate_image', {}, null))).toBe('pending')
     expect(imageOf(tool('edit_image', {}, '{"image_id":"img-1"}'))).toBe(

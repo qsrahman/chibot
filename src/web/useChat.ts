@@ -51,7 +51,7 @@ export function useChat(
   const [usage, setUsage] = useState<ResponseUsage | null>(null)
   const [pending, setPending] = useState<Pending | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [isTemporary, setIsTemporary] = useState(false)
+  const [temporaryId, setTemporaryId] = useState<string | null>(null)
   const [projectId, setProjectId] = useState<string | null>(null)
   // The run whose updates belong on screen. Cleared when the user switches
   // chats, so a run still going for the old chat can't touch the new one.
@@ -59,6 +59,11 @@ export function useChat(
   // Set by `send` when it creates a conversation, so the navigation to its
   // URL keeps the run going and doesn't reload over the streaming answer.
   const createdIdRef = useRef<string | null>(null)
+  // Async loads and version switches check these before updating the screen.
+  const loadGeneration = useRef(0)
+  const versionRequest = useRef(0)
+  const conversationIdRef = useRef(conversationId)
+  conversationIdRef.current = conversationId
 
   const showItems = ({ items, usage }: ConversationWithItems) => {
     setTurns(toTurns(items))
@@ -70,27 +75,26 @@ export function useChat(
       createdIdRef.current = null
       return
     }
+    loadGeneration.current += 1
     // Leaving a chat mid-answer counts as Stop: the server keeps the partial
     // answer. After the answer, the run just stops updating the screen.
     const run = runRef.current
     if (run && !run.answered) run.controller.abort()
     runRef.current = null
+    setTurns([])
+    setUsage(null)
     setPending(null)
     setError(null)
-    if (!conversationId) {
-      setTurns([])
-      setUsage(null)
-      setIsTemporary(false)
-      setProjectId(null)
-      return
-    }
+    setTemporaryId(null)
+    setProjectId(null)
+    if (!conversationId) return
     let current = true
     getConversation(conversationId).then(
       (loaded) => {
         if (!current) return
         showItems(loaded)
         const { conversation } = loaded
-        setIsTemporary(conversation.temporary)
+        setTemporaryId(conversation.temporary ? conversationId : null)
         setProjectId(conversation.projectId)
       },
       (err: Error) => current && setError(err.message),
@@ -104,17 +108,17 @@ export function useChat(
   // a new chat, or closing/reloading the tab. The server also sweeps any
   // leftovers at startup.
   useEffect(() => {
-    if (!conversationId || !isTemporary) return
+    // The id loaded as temporary, not merely the current URL: those differ
+    // while the next chat is loading, and deleting the next chat would lose it.
+    if (!temporaryId || temporaryId !== conversationId) return
     const discard = () =>
-      void deleteConversation(conversationId, { keepalive: true }).catch(
-        () => {},
-      )
+      void deleteConversation(temporaryId, { keepalive: true }).catch(() => {})
     window.addEventListener('pagehide', discard)
     return () => {
       window.removeEventListener('pagehide', discard)
       discard()
     }
-  }, [conversationId, isTemporary])
+  }, [conversationId, temporaryId])
 
   /**
    * Sends `request`, showing `question` after the first `keep` turns. When
@@ -166,14 +170,31 @@ export function useChat(
     }
     /** The answer is complete and saved (or waits for approval). */
     const finish = async (id: string) => {
+      // Saved: from now on Stop or leaving mustn't abort the stream, which
+      // may still carry the title.
       run.answered = true
-      await showHistory(id)
-      if (live()) setPending(null)
+      try {
+        await showHistory(id)
+        if (live()) setPending(null)
+      } catch (err) {
+        if (!live()) return
+        // The answer is saved even if fetching the updated history failed.
+        // Keep what streamed; otherwise it would vanish with the pending turn.
+        setError((err as Error).message)
+        setTurns((prev) => [
+          ...prev.slice(0, display.keep),
+          turnSoFar(crypto.randomUUID()),
+        ])
+        setPending(null)
+      }
     }
 
     setError(null)
     show()
     let id = conversationId
+    // Whether the question reached the server (so the composer may drop the
+    // draft). Before that, a failed send should leave the draft in place.
+    let accepted = false
     try {
       if (!id) {
         const created = await createConversation({
@@ -182,9 +203,9 @@ export function useChat(
         })
         id = created.id
         if (!created.temporary) onListChanged()
-        if (!live()) return
+        if (!live()) return true
         createdIdRef.current = id
-        setIsTemporary(created.temporary)
+        setTemporaryId(created.temporary ? id : null)
         setProjectId(created.projectId)
         onCreated(id)
       }
@@ -193,6 +214,7 @@ export function useChat(
         request,
         run.controller.signal,
       )) {
+        accepted = true
         // The sidebar shows every chat, so a title is news even after the
         // user has moved on. Everything else only matters while on screen.
         if (event.type === 'chibot.title') onListChanged()
@@ -256,9 +278,10 @@ export function useChat(
           setError(event.message)
         }
       }
-      if (live() && !run.answered) await showHistory(id)
+      accepted = true
+      if (live() && !run.answered) await finish(id)
     } catch (err) {
-      if (!live() || run.answered) return
+      if (!live() || run.answered) return true
       if (run.controller.signal.aborted) {
         // The server keeps the partial answer. Show it without reloading,
         // because the save may not have landed yet. Without item ids its
@@ -267,6 +290,7 @@ export function useChat(
           ...prev.slice(0, display.keep),
           turnSoFar(crypto.randomUUID()),
         ])
+        accepted = true
       } else {
         setError((err as Error).message)
         if (id) await showHistory(id).catch(() => {})
@@ -277,6 +301,7 @@ export function useChat(
         setPending(null)
       }
     }
+    return accepted
   }
 
   const newQuestion = (
@@ -331,11 +356,19 @@ export function useChat(
 
   async function switchVersion(itemId: number) {
     if (!conversationId) return
+    const id = conversationId
+    const request = ++versionRequest.current
+    const generation = loadGeneration.current
+    const current = () =>
+      request === versionRequest.current &&
+      generation === loadGeneration.current &&
+      conversationIdRef.current === id
     try {
-      await putVersion(conversationId, itemId)
-      showItems(await getConversation(conversationId))
+      await putVersion(id, itemId)
+      const loaded = await getConversation(id)
+      if (current()) showItems(loaded)
     } catch (err) {
-      setError((err as Error).message)
+      if (current()) setError((err as Error).message)
     }
   }
 
@@ -352,7 +385,7 @@ export function useChat(
     pending,
     usage,
     error,
-    isTemporary,
+    isTemporary: temporaryId !== null && temporaryId === conversationId,
     /** The project of the conversation on screen, if any. */
     projectId,
     busy: pending !== null,
