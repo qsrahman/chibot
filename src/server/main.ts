@@ -14,15 +14,30 @@ import { settingsDefaults, SettingsStore } from './settings-store.ts'
 import type { Tool } from './tool.ts'
 import { ToolRegistry } from './tool-registry.ts'
 import { CalculatorTool } from './tools/calculator.ts'
+import { WebSearchTool } from './tools/web-search.ts'
+
+/** What tools may need to be built. */
+export interface ToolDeps {
+  config: Config
+  files: FileStore
+}
+
+/** The shipped tools whose setup exists (e.g. a Brave key for web search). */
+export function defaultTools({ config }: ToolDeps): Tool[] {
+  return [
+    new CalculatorTool(),
+    ...(config.braveApiKey ? [new WebSearchTool(config.braveApiKey)] : []),
+  ]
+}
 
 /**
  * Starts chibot: reads the configuration, opens the database and serves the
- * API (and the web app once built). `tools` are the tools offered to the
- * model; the e2e tests add a test-only one.
+ * API (and the web app once built). `tools` builds the tools offered to the
+ * model; the e2e tests add test-only ones.
  */
 export function start({
-  tools = [new CalculatorTool()],
-}: { tools?: Tool[] } = {}) {
+  tools = defaultTools,
+}: { tools?: (deps: ToolDeps) => Tool[] } = {}) {
   loadEnvFiles()
 
   const config = new Config(process.env)
@@ -38,7 +53,8 @@ export function start({
     baseURL: config.chat.baseURL,
     apiKey: config.chat.apiKey,
   })
-  const chat = new ChatService(client, store, settings, new ToolRegistry(tools))
+  const registry = new ToolRegistry(tools({ config, files }))
+  const chat = new ChatService(client, store, settings, registry)
   const app = createApp({ config, store, settings, chat, files })
 
   // In dev, Vite serves the web app. The production build only exists after `pnpm build`.

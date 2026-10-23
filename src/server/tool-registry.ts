@@ -3,7 +3,7 @@ import type {
   ResponseFunctionToolCall,
 } from 'openai/resources/responses/responses'
 import { z } from 'zod'
-import type { Tool } from './tool.ts'
+import type { Tool, ToolContext } from './tool.ts'
 
 export const TOOL_STOPPED = 'The user stopped this tool call.'
 export const TOOL_DENIED = 'The user denied this tool call.'
@@ -36,8 +36,9 @@ export class ToolRegistry {
    */
   async run(
     call: ResponseFunctionToolCall,
-    signal?: AbortSignal,
+    context: ToolContext,
   ): Promise<string> {
+    const { signal } = context
     if (signal?.aborted) return TOOL_STOPPED
     const tool = this.#tools.get(call.name)
     if (!tool) return `Error: there is no tool named "${call.name}".`
@@ -52,7 +53,7 @@ export class ToolRegistry {
       return `Error: invalid arguments: ${z.prettifyError(args.error)}`
     }
     try {
-      return await tool.run(args.data, { signal })
+      return await tool.run(args.data, context)
     } catch (err) {
       if (signal?.aborted) return TOOL_STOPPED
       return `Error: ${err instanceof Error ? err.message : String(err)}`

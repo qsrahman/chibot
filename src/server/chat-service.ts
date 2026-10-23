@@ -129,7 +129,7 @@ export class ChatService {
         leafId = yield* this.#answer(conversationId, leafId, calls, (call) =>
           !this.#tools.get(call.name)?.requiresApproval ||
           approvals?.[call.call_id]
-            ? this.#tools.run(call, signal)
+            ? this.#tools.run(call, { conversationId, signal })
             : Promise.resolve(TOOL_DENIED),
         )
         signal?.throwIfAborted()

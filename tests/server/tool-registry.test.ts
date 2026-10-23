@@ -10,6 +10,8 @@ const call = (name: string, args: string): ResponseFunctionToolCall => ({
   arguments: args,
 })
 
+const context = { conversationId: 'c' }
+
 describe('ToolRegistry', () => {
   it('declares tools as strict JSON-Schema functions', () => {
     expect(new ToolRegistry([new EchoTool()]).declarations).toEqual([
@@ -36,21 +38,23 @@ describe('ToolRegistry', () => {
 
   it('runs a call with validated arguments', async () => {
     const registry = new ToolRegistry([new EchoTool()])
-    expect(await registry.run(call('echo', '{"text":"hi"}'))).toBe('echo: hi')
+    expect(await registry.run(call('echo', '{"text":"hi"}'), context)).toBe(
+      'echo: hi',
+    )
   })
 
   it('reports problems to the model instead of throwing', async () => {
     const registry = new ToolRegistry([new EchoTool()])
-    expect(await registry.run(call('nope', '{}'))).toBe(
+    expect(await registry.run(call('nope', '{}'), context)).toBe(
       'Error: there is no tool named "nope".',
     )
-    expect(await registry.run(call('echo', '{'))).toBe(
+    expect(await registry.run(call('echo', '{'), context)).toBe(
       'Error: the arguments are not valid JSON.',
     )
-    expect(await registry.run(call('echo', '{"text":1}'))).toMatch(
+    expect(await registry.run(call('echo', '{"text":1}'), context)).toMatch(
       /^Error: invalid arguments: .*text/s,
     )
-    expect(await registry.run(call('echo', '{"text":"fail"}'))).toBe(
+    expect(await registry.run(call('echo', '{"text":"fail"}'), context)).toBe(
       'Error: it failed',
     )
   })
@@ -59,7 +63,10 @@ describe('ToolRegistry', () => {
     const tool = new EchoTool()
     const registry = new ToolRegistry([tool])
     expect(
-      await registry.run(call('echo', '{"text":"hi"}'), AbortSignal.abort()),
+      await registry.run(call('echo', '{"text":"hi"}'), {
+        conversationId: 'c',
+        signal: AbortSignal.abort(),
+      }),
     ).toBe(TOOL_STOPPED)
     expect(tool.runs).toEqual([])
   })
