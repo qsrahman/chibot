@@ -1,4 +1,5 @@
 import { join, resolve } from 'node:path'
+import { z } from 'zod'
 
 /** The repo root, found from this file, so `chibot` works from any folder. */
 const ROOT = join(import.meta.dirname, '../..')
@@ -34,39 +35,90 @@ export interface Endpoint {
   model: string
 }
 
+/** Unset and blank (`FOO=`) both mean "not set". */
+const optional = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value) => value || undefined)
+
+const envSchema = z
+  .object({
+    OPENAI_BASE_URL: optional,
+    OPENAI_API_KEY: optional,
+    OPENAI_MODEL: optional,
+    OPENAI_IMAGE_BASE_URL: optional,
+    OPENAI_IMAGE_API_KEY: optional,
+    OPENAI_IMAGE_MODEL: optional,
+    BRAVE_API_KEY: optional,
+    // Loopback by default: the app has no auth and spends the owner's API key.
+    HOST: optional.transform((host) => host ?? '127.0.0.1'),
+    PORT: optional.pipe(
+      z.coerce
+        .number()
+        .int('must be an integer')
+        .min(1, 'must be in 1-65535')
+        .max(65535, 'must be in 1-65535')
+        .default(3000),
+    ),
+    CHIBOT_DATA_DIR: optional,
+  })
+  .superRefine((env, ctx) => {
+    if (!env.OPENAI_API_KEY && !env.OPENAI_BASE_URL) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['OPENAI_API_KEY'],
+        message: 'is not set (add it to .env)',
+      })
+    }
+    if (!env.OPENAI_MODEL && env.OPENAI_BASE_URL) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['OPENAI_MODEL'],
+        message: 'is required when OPENAI_BASE_URL is set',
+      })
+    }
+  })
+
 /** Typed, validated settings read from environment variables. */
 export class Config {
   readonly chat: Endpoint
+  /** Image generation, or `null` when there's no image model to use. */
+  readonly image: Endpoint | null
+  /** Enables the web search tool. */
+  readonly braveApiKey: string | null
   readonly host: string
   readonly port: number
-  /** Holds the database and, later, attachment files. */
+  /** Holds the database and stored files. */
   readonly dataDir: string
 
   constructor(env: NodeJS.ProcessEnv) {
-    const baseURL = env.OPENAI_BASE_URL?.trim() || undefined
-    const apiKey = env.OPENAI_API_KEY?.trim()
-    const model = env.OPENAI_MODEL?.trim()
-    if (!apiKey && !baseURL) {
-      throw new Error('OPENAI_API_KEY is not set (add it to .env)')
+    const parsed = envSchema.safeParse(env)
+    if (!parsed.success) {
+      throw new Error(
+        `Invalid configuration:\n${z.prettifyError(parsed.error)}`,
+      )
     }
-    if (!model && baseURL) {
-      throw new Error('OPENAI_MODEL is required when OPENAI_BASE_URL is set')
-    }
-    const port = Number(env.PORT ?? 3000)
-    if (!Number.isInteger(port) || port < 1 || port > 65535) {
-      throw new Error(`PORT must be an integer in 1-65535, got "${env.PORT}"`)
-    }
-    this.chat = {
-      baseURL,
-      // Local servers (Ollama, LM Studio) ignore the key, but the SDK refuses an empty one.
-      apiKey: apiKey || 'unused',
-      model: model || 'gpt-6-astra',
-    }
-    // Loopback by default: the app has no auth and spends the owner's API key.
-    this.host = env.HOST?.trim() || '127.0.0.1'
-    this.port = port
-    const dataDir = env.CHIBOT_DATA_DIR?.trim()
-    this.dataDir = dataDir ? resolve(dataDir) : join(ROOT, 'data')
+    const e = parsed.data
+    // On OpenAI, models have defaults; a compatible server needs them named.
+    this.chat = endpoint(
+      e.OPENAI_BASE_URL,
+      e.OPENAI_API_KEY,
+      e.OPENAI_MODEL ?? (e.OPENAI_BASE_URL ? undefined : 'gpt-6-astra'),
+    )!
+    // Each part not set for images is inherited from the chat endpoint.
+    const imageBaseURL = e.OPENAI_IMAGE_BASE_URL ?? e.OPENAI_BASE_URL
+    this.image = endpoint(
+      imageBaseURL,
+      e.OPENAI_IMAGE_API_KEY ?? e.OPENAI_API_KEY,
+      e.OPENAI_IMAGE_MODEL ?? (imageBaseURL ? undefined : 'gpt-image-2'),
+    )
+    this.braveApiKey = e.BRAVE_API_KEY ?? null
+    this.host = e.HOST
+    this.port = e.PORT
+    this.dataDir = e.CHIBOT_DATA_DIR
+      ? resolve(e.CHIBOT_DATA_DIR)
+      : join(ROOT, 'data')
   }
 
   get databasePath(): string {
@@ -76,4 +128,15 @@ export class Config {
   get isLoopback(): boolean {
     return ['127.0.0.1', '::1', 'localhost'].includes(this.host)
   }
+}
+
+/** An endpoint, or `null` when it can't be used: no model, or OpenAI without a key. */
+function endpoint(
+  baseURL: string | undefined,
+  apiKey: string | undefined,
+  model: string | undefined,
+): Endpoint | null {
+  if (!model || (!baseURL && !apiKey)) return null
+  // Local servers (Ollama, LM Studio) ignore the key, but the SDK refuses an empty one.
+  return { baseURL, apiKey: apiKey ?? 'unused', model }
 }

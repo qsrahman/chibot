@@ -63,6 +63,43 @@ describe('Config', () => {
     expect(custom.dataDir).toBe(`${process.cwd()}/x/y`)
   })
 
+  it('inherits the chat endpoint for images', () => {
+    const openai = new Config({ OPENAI_API_KEY: 'k' })
+    expect(openai.image).toEqual({
+      baseURL: undefined,
+      apiKey: 'k',
+      model: 'gpt-image-2',
+    })
+    // A compatible chat server has no image model unless one is named.
+    const ollama = {
+      OPENAI_BASE_URL: 'http://localhost:11434/v1',
+      OPENAI_MODEL: 'gemma4',
+      OPENAI_API_KEY: 'sk-openai',
+    }
+    expect(new Config(ollama).image).toBeNull()
+    expect(
+      new Config({
+        ...ollama,
+        OPENAI_IMAGE_BASE_URL: 'https://api.openai.com/v1',
+        OPENAI_IMAGE_MODEL: 'gpt-image-2.5-flare',
+      }).image,
+    ).toEqual({
+      baseURL: 'https://api.openai.com/v1',
+      apiKey: 'sk-openai',
+      model: 'gpt-image-2.5-flare',
+    })
+  })
+
+  it('reads the Brave key, treating blank as unset', () => {
+    expect(new Config({ OPENAI_API_KEY: 'k' }).braveApiKey).toBeNull()
+    expect(
+      new Config({ OPENAI_API_KEY: 'k', BRAVE_API_KEY: ' ' }).braveApiKey,
+    ).toBeNull()
+    expect(
+      new Config({ OPENAI_API_KEY: 'k', BRAVE_API_KEY: 'b' }).braveApiKey,
+    ).toBe('b')
+  })
+
   it.each(['abc', '0', '70000', '3.5'])('rejects PORT=%s', (port) => {
     expect(() => new Config({ OPENAI_API_KEY: 'k', PORT: port })).toThrow(
       /PORT/,
