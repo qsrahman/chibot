@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ResponseUsage } from 'openai/resources/responses/responses'
-import type { TurnRequest } from '../shared/types.ts'
+import type { ConversationWithItems, TurnRequest } from '../shared/types.ts'
 import {
   createConversation,
   deleteConversation,
@@ -60,6 +60,11 @@ export function useChat(
   // URL keeps the run going and doesn't reload over the streaming answer.
   const createdIdRef = useRef<string | null>(null)
 
+  const showItems = ({ items, usage }: ConversationWithItems) => {
+    setTurns(toTurns(items))
+    setUsage(usage)
+  }
+
   useEffect(() => {
     if (conversationId && conversationId === createdIdRef.current) {
       createdIdRef.current = null
@@ -81,10 +86,10 @@ export function useChat(
     }
     let current = true
     getConversation(conversationId).then(
-      ({ conversation, items, usage }) => {
+      (loaded) => {
         if (!current) return
-        setTurns(toTurns(items))
-        setUsage(usage)
+        showItems(loaded)
+        const { conversation } = loaded
         setIsTemporary(conversation.temporary)
         setProjectId(conversation.projectId)
       },
@@ -126,10 +131,8 @@ export function useChat(
     runRef.current = run
     const live = () => runRef.current === run
     const showHistory = async (id: string) => {
-      const { items, usage } = await getConversation(id)
-      if (!live()) return
-      setTurns(toTurns(items))
-      setUsage(usage)
+      const loaded = await getConversation(id)
+      if (live()) showItems(loaded)
     }
 
     let answer = before?.text ?? ''
@@ -330,9 +333,7 @@ export function useChat(
     if (!conversationId) return
     try {
       await putVersion(conversationId, itemId)
-      const { items, usage } = await getConversation(conversationId)
-      setTurns(toTurns(items))
-      setUsage(usage)
+      showItems(await getConversation(conversationId))
     } catch (err) {
       setError((err as Error).message)
     }

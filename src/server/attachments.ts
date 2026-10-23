@@ -4,6 +4,7 @@ import type {
   ResponseInputItem,
 } from 'openai/resources/responses/responses'
 import { documentKind, fileKind } from '../shared/documents.ts'
+import { fileParts } from '../shared/messages.ts'
 import type { StoredFile } from '../shared/types.ts'
 import type { FileStore } from './file-store.ts'
 import { documentText } from './text.ts'
@@ -180,10 +181,4 @@ export class Attachments {
 }
 
 /** The file parts of `input`'s user messages. */
-function attached(input: ResponseInputItem[]) {
-  return input.flatMap((item) =>
-    'role' in item && item.role === 'user' && Array.isArray(item.content)
-      ? item.content.filter((part) => part.type !== 'input_text')
-      : [],
-  )
-}
+const attached = (input: ResponseInputItem[]) => input.flatMap(fileParts)

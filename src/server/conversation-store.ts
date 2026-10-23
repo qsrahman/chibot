@@ -437,8 +437,10 @@ export class ConversationStore {
     const conversation = this.getConversation(id)
     if (!conversation) return undefined
     const rows = this.#db
-      .prepare('SELECT * FROM items WHERE conversation_id = ? ORDER BY id')
-      .all(id) as unknown as Omit<ItemRow, 'sibling_ids'>[]
+      .prepare(
+        `SELECT *, ${SIBLING_IDS} FROM items WHERE conversation_id = ? ORDER BY id`,
+      )
+      .all(id) as unknown as ItemRow[]
     return {
       version: 2,
       exportedAt: Date.now(),
@@ -448,14 +450,10 @@ export class ConversationStore {
         updatedAt: conversation.updatedAt,
       },
       currentLeafId: conversation.currentLeafId,
-      items: rows.map((row) => ({
-        id: row.id,
-        parentId: row.parent_id,
-        data: JSON.parse(row.data),
-        usage: row.usage && JSON.parse(row.usage),
-        model: row.model,
-        createdAt: row.created_at,
-      })),
+      items: rows.map((row) => {
+        const { siblingIds: _, ...item } = toStoredItem(row)
+        return item
+      }),
     }
   }
 

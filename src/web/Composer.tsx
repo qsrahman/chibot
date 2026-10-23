@@ -7,7 +7,6 @@ import {
 } from 'react'
 import {
   ArrowUp,
-  FileText,
   LoaderCircle,
   Mic,
   Paperclip,
@@ -16,6 +15,7 @@ import {
   X,
 } from 'lucide-react'
 import { ATTACHMENT_ACCEPT } from '../shared/documents.ts'
+import { FileCard } from './FileCard.tsx'
 import { useAnchoredPopover } from './popover.ts'
 import type { Attachment } from './turns.ts'
 import type { AttachmentsApi, Draft } from './useAttachments.ts'
@@ -298,21 +298,5 @@ function DraftChip({
         <X size={12} strokeWidth={2.5} aria-hidden />
       </button>
     </li>
-  )
-}
-
-/** A document's icon, name and type ("PDF"); `detail` replaces the type. */
-export function FileCard({ name, detail }: { name: string; detail?: string }) {
-  const type = /\.([^.]+)$/.exec(name)?.[1]?.toUpperCase() ?? 'File'
-  return (
-    <span className="file-card">
-      <span className="file-card-icon">
-        <FileText size={20} strokeWidth={1.5} aria-hidden />
-      </span>
-      <span className="file-card-text">
-        <span className="file-card-name">{name}</span>
-        <span className="file-card-type">{detail ?? type}</span>
-      </span>
-    </span>
   )
 }

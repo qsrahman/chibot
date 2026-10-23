@@ -1,5 +1,5 @@
 import type { ResponseUsage } from 'openai/resources/responses/responses'
-import { messageText } from '../shared/messages.ts'
+import { fileParts, messageText } from '../shared/messages.ts'
 import type { StoredItem } from '../shared/types.ts'
 import { addUsage } from './usage.ts'
 
@@ -199,17 +199,21 @@ function parseJson<T extends object>(text: string): Partial<T> {
   }
 }
 
-/** The files a user message attaches (its `input_image` / `input_file`). */
-function attachmentsOf(data: StoredItem['data']): Attachment[] {
-  if (!('content' in data) || !Array.isArray(data.content)) return []
-  return data.content.flatMap((part): Attachment[] =>
-    part.type === 'input_image' && part.file_id
-      ? [{ fileId: part.file_id, image: true, name: null }]
-      : part.type === 'input_file' && part.file_id
-        ? [{ fileId: part.file_id, image: false, name: part.filename ?? null }]
-        : [],
+/** The files a user message attaches. */
+const attachmentsOf = (data: StoredItem['data']): Attachment[] =>
+  fileParts(data).flatMap((part) =>
+    part.file_id
+      ? [
+          part.type === 'input_image'
+            ? { fileId: part.file_id, image: true, name: null }
+            : {
+                fileId: part.file_id,
+                image: false,
+                name: part.filename ?? null,
+              },
+        ]
+      : [],
   )
-}
 
 /** Joins paragraphs with a blank line. */
 const join = (text: string, more: string) =>

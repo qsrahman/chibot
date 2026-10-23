@@ -3,7 +3,7 @@
 import { useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { Download, Pencil, RefreshCw, Wrench } from 'lucide-react'
-import { FileCard } from './Composer.tsx'
+import { FileCard } from './FileCard.tsx'
 import { Markdown } from './Markdown.tsx'
 import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
 import {

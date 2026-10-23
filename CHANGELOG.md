@@ -6,6 +6,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- Internal simplifications: one shared helper finds a message's attachments (web turns, Markdown export and sending used three); upload routes validate their multipart body with zod like every JSON route (`form()` beside `json()`); JSON export reuses the stored-item mapping; `FileCard` has its own module; `useChat` shows a loaded chat through one helper.
+
 - Roadmap: Phase 10 planned, a sandboxed Python code runner (`run_python` on Pyodide in a locked-down child process, files in `/mnt/data/` kept with the chat, a fixed package set cached locally, `.xlsx` attachments). The MCP client becomes Phase 11.
 
 ### Fixed

@@ -1,4 +1,4 @@
-import { messageText } from '../shared/messages.ts'
+import { fileParts, messageText } from '../shared/messages.ts'
 import type { Conversation, StoredItem } from '../shared/types.ts'
 
 /**
@@ -31,7 +31,9 @@ export function toMarkdown(
       message.role === 'user'
         ? 'You'
         : `Assistant${item.model ? ` (${item.model})` : ''}`
-    const attached = attachedIds(data).map((id) => fileNames.get(id) ?? id)
+    const attached = fileParts(data).flatMap(({ file_id: id }) =>
+      id ? [fileNames.get(id) ?? id] : [],
+    )
     return [
       `## ${who}\n\n` +
         (attached.length ? `*Attached: ${attached.join(', ')}*\n\n` : '') +
@@ -40,17 +42,6 @@ export function toMarkdown(
   })
   return `# ${conversation.title ?? 'Chat'}\n\n${sections.join('\n\n')}\n`
 }
-
-/** The chibot file ids a message attaches. */
-const attachedIds = (data: StoredItem['data']) =>
-  'content' in data && Array.isArray(data.content)
-    ? data.content.flatMap((part) =>
-        (part.type === 'input_image' || part.type === 'input_file') &&
-        part.file_id
-          ? [part.file_id]
-          : [],
-      )
-    : []
 
 /** Keeps a multi-line text inside a blockquote. */
 const quote = (text: string) => text.trim().replaceAll('\n', '\n> ')

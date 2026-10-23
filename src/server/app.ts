@@ -164,11 +164,13 @@ export function createApp({
       maxSize: FILE_LIMIT,
       onError: (c) => c.json({ error: 'The file is larger than 50 MB' }, 413),
     }),
+    form(
+      z.object({
+        file: z.instanceof(File, { error: 'send the file as `file`' }),
+      }),
+    ),
     async (c) => {
-      const { file } = await c.req.parseBody()
-      if (!(file instanceof File)) {
-        return c.json({ error: 'Send the file as `file` (multipart)' }, 400)
-      }
+      const { file } = c.req.valid('form')
       const kind = fileKind(file.name)
       if (!kind) {
         return c.json(
@@ -188,17 +190,16 @@ export function createApp({
       onError: (c) =>
         c.json({ error: 'The recording is larger than 25 MB' }, 413),
     }),
+    form(
+      z.object({
+        file: z.instanceof(File, { error: 'send the recording as `file`' }),
+      }),
+    ),
     async (c) => {
       if (!transcription) {
         return c.json({ error: 'No transcription endpoint is set up' }, 501)
       }
-      const { file } = await c.req.parseBody()
-      if (!(file instanceof File)) {
-        return c.json(
-          { error: 'Send the recording as `file` (multipart)' },
-          400,
-        )
-      }
+      const { file } = c.req.valid('form')
       try {
         const text = await transcription.transcribe(file, c.req.raw.signal)
         return c.json({ text })
@@ -429,13 +430,23 @@ const IMPORT_LIMIT = 200 * 1024 * 1024
 const FILE_LIMIT = 50 * 1024 * 1024
 const AUDIO_LIMIT = 25 * 1024 * 1024
 
-/** Validates a JSON body against `schema`; failures are `{ error }` 400s. */
+/** Answers a failed validation with a `{ error }` 400. */
+const invalid = (
+  result: { success: true } | { success: false; error: z.core.$ZodError },
+  c: Context,
+) => {
+  if (!result.success) {
+    return c.json({ error: z.prettifyError(result.error) }, 400)
+  }
+}
+
+/** Validates a JSON body against `schema`. */
 const json = <T extends z.ZodType>(schema: T) =>
-  zValidator('json', schema, (result, c) => {
-    if (!result.success) {
-      return c.json({ error: z.prettifyError(result.error) }, 400)
-    }
-  })
+  zValidator('json', schema, invalid)
+
+/** Validates a multipart form body against `schema`. */
+const form = <T extends z.ZodType>(schema: T) =>
+  zValidator('form', schema, invalid)
 
 /** RFC 6266: `filename*` carries non-ASCII names. */
 const disposition = (type: 'inline' | 'attachment', name: string) =>

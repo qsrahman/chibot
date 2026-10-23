@@ -1,4 +1,8 @@
-import type { ResponseInputItem } from 'openai/resources/responses/responses'
+import type {
+  ResponseInputFile,
+  ResponseInputImage,
+  ResponseInputItem,
+} from 'openai/resources/responses/responses'
 
 export interface MessageText {
   role: 'user' | 'assistant'
@@ -23,4 +27,16 @@ export function messageText(data: ResponseInputItem): MessageText | null {
           )
           .join('')
   return { role: data.role, text }
+}
+
+/** The attachments of a user message: its `input_image` / `input_file` parts. */
+export function fileParts(
+  data: ResponseInputItem,
+): (ResponseInputImage | ResponseInputFile)[] {
+  if (!('role' in data) || data.role !== 'user' || !Array.isArray(data.content))
+    return []
+  return data.content.filter(
+    (part): part is ResponseInputImage | ResponseInputFile =>
+      part.type === 'input_image' || part.type === 'input_file',
+  )
 }

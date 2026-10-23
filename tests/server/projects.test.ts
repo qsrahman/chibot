@@ -191,6 +191,14 @@ describe('projects', () => {
       return app.request('/api/files', { method: 'POST', body: form })
     }
     expect((await upload('archive.zip')).status).toBe(415)
+    const missing = await app.request('/api/files', {
+      method: 'POST',
+      body: new FormData(),
+    })
+    expect(missing.status).toBe(400)
+    expect(await missing.json()).toEqual({
+      error: expect.stringContaining('send the file as `file`'),
+    })
 
     const image = await upload('photo.png')
     expect(image.status).toBe(201)
