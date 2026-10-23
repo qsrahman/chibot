@@ -78,13 +78,15 @@ export class ProjectIndex {
       if (!kind) throw new Error(`can't read ${file.name}`)
       const text = await documentText(kind.kind, this.#files.read(fileId))
       if (!text) throw new Error('found no text in the file')
+      // Removed (with its project, maybe) while its text was extracted.
+      const projectId = this.#projects.projectOf(fileId)
+      if (!projectId) return
       const chunks = chunkText(text.slice(0, MAX_TEXT))
       const ids = this.#saveChunks(fileId, chunks)
       let note: string | null = null
-      const projectId = this.#projects.projectOf(fileId)
-      if (this.#embedding && projectId) {
+      if (this.#embedding) {
         try {
-          await this.#embed(projectId, ids, chunks)
+          await this.#embed(fileId, projectId, ids, chunks)
         } catch (err) {
           note = `Searchable by keywords only: ${(err as Error).message}`
         }
@@ -115,6 +117,7 @@ export class ProjectIndex {
   }
 
   async #embed(
+    fileId: string,
     projectId: string,
     ids: number[],
     texts: string[],
@@ -123,6 +126,11 @@ export class ProjectIndex {
       const vectors = await this.#vectors(
         texts.slice(start, start + EMBED_BATCH),
       )
+      // Removed while this batch was embedded: drop what was saved for it.
+      if (!this.#projects.projectOf(fileId)) {
+        this.#projects.deleteChunks(fileId)
+        return
+      }
       transaction(this.#db, () => {
         for (const [i, vector] of vectors.entries()) {
           this.#ensureVectors(this.#embedding!.model, vector.length)

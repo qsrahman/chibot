@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type OpenAI from 'openai'
 import { openDatabase } from '../../src/server/database.ts'
 import type { FileStore } from '../../src/server/file-store.ts'
@@ -182,5 +182,38 @@ describe('ProjectIndex', () => {
     expect(count('SELECT count(*) n FROM chunks_fts')).toBe(0)
     expect(count('SELECT count(*) n FROM chunk_vectors')).toBe(0)
     expect(files.get(id)).toBeNull()
+  })
+
+  it('keeps no chunks of a file removed while it was indexed', async () => {
+    let release!: () => void
+    const slow = {
+      embeddings: {
+        create: async ({ input }: { input: string[] }) => {
+          await new Promise<void>((resolve) => (release = resolve))
+          return {
+            data: input.map((_, index) => ({ index, embedding: [1, 0, 0] })),
+          }
+        },
+      },
+    } as unknown as OpenAI
+    const index = new ProjectIndex(db, projects, files, {
+      client: slow,
+      model: 'emb',
+    })
+    const id = add('a.md', 'Alpha.')
+    const indexing = index.index(id)
+    await vi.waitFor(() => expect(release).toBeTypeOf('function'))
+    projects.removeFile(projectId, id) // while the embedding is on its way
+    release()
+    await indexing
+
+    expect(count('SELECT count(*) n FROM chunks')).toBe(0)
+    expect(count('SELECT count(*) n FROM chunks_fts')).toBe(0)
+    // Nothing was embedded, so there's no vector table either.
+    expect(
+      count(
+        "SELECT count(*) n FROM sqlite_master WHERE name = 'chunk_vectors'",
+      ),
+    ).toBe(0)
   })
 })

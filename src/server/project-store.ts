@@ -166,19 +166,19 @@ export class ProjectStore {
 
   /** A file's chunks, with their keyword index and vectors. */
   deleteChunks(fileId: string): void {
-    const ids = this.#db
-      .prepare('SELECT id FROM chunks WHERE file_id = ?')
-      .all(fileId) as { id: number }[]
-    const vectors = this.#db
-      .prepare("SELECT 1 FROM sqlite_master WHERE name = 'chunk_vectors'")
-      .get()
-    for (const { id } of ids) {
-      this.#db.prepare('DELETE FROM chunks_fts WHERE rowid = ?').run(id)
-      if (vectors) {
-        this.#db
-          .prepare('DELETE FROM chunk_vectors WHERE rowid = ?')
-          .run(BigInt(id))
-      }
+    const ids = 'SELECT id FROM chunks WHERE file_id = ?'
+    this.#db
+      .prepare(`DELETE FROM chunks_fts WHERE rowid IN (${ids})`)
+      .run(fileId)
+    // The vector table exists once something was embedded.
+    if (
+      this.#db
+        .prepare("SELECT 1 FROM sqlite_master WHERE name = 'chunk_vectors'")
+        .get()
+    ) {
+      this.#db
+        .prepare(`DELETE FROM chunk_vectors WHERE rowid IN (${ids})`)
+        .run(fileId)
     }
     this.#db.prepare('DELETE FROM chunks WHERE file_id = ?').run(fileId)
   }
