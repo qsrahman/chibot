@@ -10,12 +10,14 @@ import { messageText } from '../shared/messages.ts'
 import type { Settings } from '../shared/settings.ts'
 import { pendingCalls } from '../shared/tools.ts'
 import type {
+  Project,
   TurnApprovalEvent,
   TurnRequest,
   TurnTitleEvent,
   TurnToolOutputEvent,
 } from '../shared/types.ts'
 import type { ConversationStore } from './conversation-store.ts'
+import type { ProjectStore } from './project-store.ts'
 import type { SettingsStore } from './settings-store.ts'
 import { TOOL_DENIED, ToolRegistry } from './tool-registry.ts'
 
@@ -37,6 +39,7 @@ export class ChatService {
   readonly #store: ConversationStore
   readonly #settings: SettingsStore
   readonly #tools: ToolRegistry
+  readonly #projects: ProjectStore | null
   // Model + optional-feature combinations the server rejected (400) while
   // the same request without them worked. Kept until restart.
   readonly #unsupported = new Set<string>()
@@ -46,11 +49,13 @@ export class ChatService {
     store: ConversationStore,
     settings: SettingsStore,
     tools = new ToolRegistry([]),
+    projects: ProjectStore | null = null,
   ) {
     this.#client = client
     this.#store = store
     this.#settings = settings
     this.#tools = tools
+    this.#projects = projects
   }
 
   /**
@@ -121,20 +126,24 @@ export class ChatService {
     }
     const settings = this.#settings.get()
     const { model, reasoningEffort, compactThreshold } = settings
-    const disabled = [
-      ...settings.disabledTools,
-      ...(this.#store.getConversation(conversationId)!.temporary
-        ? this.#tools.tools
-            .filter((t) => !t.inTemporaryChats)
-            .map((t) => t.name)
-        : []),
-    ]
-    const offered = this.#tools.offered(disabled)
+    const conversation = this.#store.getConversation(conversationId)!
+    const offered = this.#tools.tools.filter(
+      (t) =>
+        !settings.disabledTools.includes(t.name) && t.offeredIn(conversation),
+    )
+    const disabled = this.#tools.tools
+      .filter((t) => !offered.includes(t))
+      .map((t) => t.name)
     const tools = offered.map((t) => t.declaration)
+    const project =
+      conversation.projectId && this.#projects?.get(conversation.projectId)
     const instructions = [
       chatInstructions(settings),
-      ...offered.flatMap((t) => t.instructions() ?? []),
-    ].join('\n\n')
+      project && projectInstructions(project),
+      ...offered.map((t) => t.instructions(conversation)),
+    ]
+      .filter(Boolean)
+      .join('\n\n')
     // A tool the user picked is forced on the first request only; after
     // that the model decides (or it would call it forever).
     const forced = tools.find((t) => t.name === tool)
@@ -145,7 +154,11 @@ export class ChatService {
         const asks = this.#approvalNeeded(conversationId, leafId)
         leafId = yield* this.#answer(conversationId, leafId, calls, (call) =>
           !asks(call) || approvals?.[call.call_id]
-            ? this.#tools.run(call, { conversationId, signal }, disabled)
+            ? this.#tools.run(
+                call,
+                { conversationId, projectId: conversation.projectId, signal },
+                disabled,
+              )
             : Promise.resolve(TOOL_DENIED),
         )
         signal?.throwIfAborted()
@@ -252,8 +265,9 @@ export class ChatService {
       }
     }
 
-    const conversation = this.#store.getConversation(conversationId)!
-    if (answered && conversation.title === null && !conversation.temporary) {
+    // Read again: the title may have been set meanwhile.
+    const current = this.#store.getConversation(conversationId)!
+    if (answered && current.title === null && !current.temporary) {
       const title = await this.#generateTitle(conversationId, signal)
       if (title) yield { type: 'chibot.title', title }
     }
@@ -426,6 +440,17 @@ export function chatInstructions(
   ]
     .filter(Boolean)
     .join('\n\n')
+}
+
+/** What a project chat is told about its project. */
+export function projectInstructions({ name, instructions }: Project): string {
+  return [
+    `This chat is in the user's project "${name}".`,
+    instructions.trim() &&
+      `The project's instructions (follow them in this chat):\n${instructions.trim()}`,
+  ]
+    .filter(Boolean)
+    .join('\n')
 }
 
 /** First line, without quotes, Markdown emphasis or a trailing full stop. */

@@ -62,7 +62,8 @@ describe('document text', () => {
   })
 
   it('reads PDF, Word and HTML', async () => {
-    expect(await documentText('pdf', fixture('secret.pdf'))).toBe(
+    // As FileStore returns them: Buffers.
+    expect(await documentText('pdf', Buffer.from(fixture('secret.pdf')))).toBe(
       'The secret code is KESTREL.',
     )
     expect(await documentText('docx', fixture('notes.docx'))).toBe(

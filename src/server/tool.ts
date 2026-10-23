@@ -1,11 +1,14 @@
 import { zodResponsesFunction } from 'openai/helpers/zod'
 import type { FunctionTool } from 'openai/resources/responses/responses'
 import type { z } from 'zod'
+import type { Conversation } from '../shared/types.ts'
 
 /** What a tool run knows about where it was called. */
 export interface ToolContext {
   /** The chat the call belongs to (e.g. to keep files with it). */
   conversationId: string
+  /** The chat's project, if it's in one. */
+  projectId?: string | null
   /** Aborted when the user stops the answer. */
   signal?: AbortSignal
 }
@@ -30,13 +33,16 @@ export abstract class Tool<Parameters extends z.ZodObject = z.ZodObject> {
   /** The output holds text from others (web pages, search results). */
   readonly untrustedOutput: boolean = false
   /**
-   * Offered in temporary chats. Tools that read or keep the user's history
-   * (memory, chat search) aren't: temporary chats stay separate.
+   * Whether the tool is offered in `conversation`. E.g. tools that read or
+   * keep the user's history (memory, chat search) aren't in temporary chats,
+   * which stay separate.
    */
-  readonly inTemporaryChats: boolean = true
+  offeredIn(_conversation: Conversation): boolean {
+    return true
+  }
 
   /** Added to the chat's instructions while the tool is offered. */
-  instructions(): string | null {
+  instructions(_conversation: Conversation): string | null {
     return null
   }
 

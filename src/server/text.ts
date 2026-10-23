@@ -15,10 +15,14 @@ export function htmlToText(html: string): { title: string; text: string } {
   }
 }
 
+// unpdf refuses Node's Buffer (a Uint8Array subclass), so copy into a plain one.
 export const pdfToText = async (data: Uint8Array) =>
   tidy(
-    (await extractText(await getDocumentProxy(data), { mergePages: true }))
-      .text,
+    (
+      await extractText(await getDocumentProxy(new Uint8Array(data)), {
+        mergePages: true,
+      })
+    ).text,
   )
 
 export const docxToText = async (data: Uint8Array) =>

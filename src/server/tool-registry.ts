@@ -22,11 +22,6 @@ export class ToolRegistry {
     return [...this.#tools.values()]
   }
 
-  /** The tools to offer, except those named in `disabled`. */
-  offered(disabled: string[] = []): Tool[] {
-    return this.tools.filter((tool) => !disabled.includes(tool.name))
-  }
-
   get(name: string): Tool | undefined {
     return this.#tools.get(name)
   }

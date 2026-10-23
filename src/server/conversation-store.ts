@@ -5,7 +5,7 @@ import type {
 } from 'openai/resources/responses/responses'
 import { messageText } from '../shared/messages.ts'
 import type { ConversationExport } from '../shared/export.ts'
-import { transaction } from './database.ts'
+import { anyWordQuery, transaction } from './database.ts'
 import type {
   ChatMatch,
   Conversation,
@@ -145,7 +145,7 @@ export class ConversationStore {
 
   /**
    * Finds message text for the model's `search_chats`: any word may match
-   * (the model writes whole phrases), chats ranked by their best hit, each
+   * (see `anyWordQuery`), chats ranked by their best hit, each
    * with its best few matching messages in chat order (so a question comes
    * with its answer). Temporary chats and `excludeId` (the chat asking) are
    * left out; `after` / `before` (ms) limit when a message was written.
@@ -166,9 +166,8 @@ export class ConversationStore {
       perChat?: number
     },
   ): ChatMatch[] {
-    const words = query.split(/\s+/).filter(Boolean)
-    if (words.length === 0) return []
-    const match = words.map((w) => `"${w.replaceAll('"', '""')}"*`).join(' OR ')
+    const match = anyWordQuery(query)
+    if (!match) return []
     const rows = this.#db
       .prepare(
         // MATERIALIZED: see searchConversations.

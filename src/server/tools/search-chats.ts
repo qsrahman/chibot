@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { ConversationStore } from '../conversation-store.ts'
+import type { Conversation } from '../../shared/types.ts'
 import { Tool, type ToolContext } from '../tool.ts'
 
 const date = z.string().nullable().describe('A date as YYYY-MM-DD, or null')
@@ -22,7 +23,9 @@ export class SearchChatsTool extends Tool {
       'Only messages before this date (YYYY-MM-DD), or null',
     ),
   })
-  override readonly inTemporaryChats = false
+  override offeredIn({ temporary }: Conversation) {
+    return !temporary
+  }
   readonly #store: ConversationStore
 
   constructor(store: ConversationStore) {

@@ -4,6 +4,7 @@ import {
   MAX_MEMORY_LENGTH,
   type MemoryStore,
 } from '../memory-store.ts'
+import type { Conversation } from '../../shared/types.ts'
 import { Tool } from '../tool.ts'
 
 /** Saves, updates and deletes what chibot remembers about the user. */
@@ -26,7 +27,9 @@ export class MemoryTool extends Tool {
         'The memory, as a short sentence about the user; null to delete',
       ),
   })
-  override readonly inTemporaryChats = false
+  override offeredIn({ temporary }: Conversation) {
+    return !temporary
+  }
   // A page that reached the context could plant a memory that then affects
   // every later chat (a model was seen saving one), so then ask first.
   override readonly requiresApproval = 'after-untrusted'

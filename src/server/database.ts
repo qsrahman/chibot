@@ -123,6 +123,20 @@ export function openDatabase(path: string): DatabaseSync {
   return db
 }
 
+/**
+ * An FTS5 query matching any word of `text` (for the model's searches,
+ * which are whole phrases). Words are quoted, so FTS5 operators in them
+ * aren't parsed. Words of 4 letters or more also match as prefixes; shorter
+ * ones only whole, or "do" would find "door". `null` when there are no words.
+ */
+export function anyWordQuery(text: string): string | null {
+  const words = text.split(/\s+/).filter(Boolean)
+  if (words.length === 0) return null
+  return words
+    .map((w) => `"${w.replaceAll('"', '""')}"${w.length >= 4 ? '*' : ''}`)
+    .join(' OR ')
+}
+
 /** Runs `fn` in a transaction, rolling back if it throws. */
 export function transaction(db: DatabaseSync, fn: () => void): void {
   db.exec('BEGIN')

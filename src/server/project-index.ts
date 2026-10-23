@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 import type OpenAI from 'openai'
-import { transaction } from './database.ts'
+import { anyWordQuery, transaction } from './database.ts'
 import type { FileStore } from './file-store.ts'
 import type { ProjectStore } from './project-store.ts'
 import { documentKind, documentText } from './text.ts'
@@ -10,6 +10,9 @@ const CHUNK_OVERLAP = 480
 // About 1,500 chunks: plenty for notes and documents, bounded for embedding.
 const MAX_TEXT = 5_000_000
 const EMBED_BATCH = 64
+// Hits taken from each search before merging, and the usual RRF constant.
+const CANDIDATES = 30
+const RRF_K = 60
 
 /** The embedding endpoint's client and model. */
 export interface EmbeddingDeps {
@@ -77,9 +80,10 @@ export class ProjectIndex {
       const chunks = chunkText(text.slice(0, MAX_TEXT))
       const ids = this.#saveChunks(fileId, chunks)
       let note: string | null = null
-      if (this.#embedding) {
+      const projectId = this.#projects.projectOf(fileId)
+      if (this.#embedding && projectId) {
         try {
-          await this.#embed(ids, chunks)
+          await this.#embed(projectId, ids, chunks)
         } catch (err) {
           note = `Searchable by keywords only: ${(err as Error).message}`
         }
@@ -109,25 +113,101 @@ export class ProjectIndex {
     return ids
   }
 
-  async #embed(ids: number[], texts: string[]): Promise<void> {
-    const { client, model } = this.#embedding!
+  async #embed(
+    projectId: string,
+    ids: number[],
+    texts: string[],
+  ): Promise<void> {
     for (let start = 0; start < texts.length; start += EMBED_BATCH) {
-      const { data } = await client.embeddings.create({
-        model,
-        input: texts.slice(start, start + EMBED_BATCH),
-      })
+      const vectors = await this.#vectors(
+        texts.slice(start, start + EMBED_BATCH),
+      )
       transaction(this.#db, () => {
-        for (const { index, embedding } of data) {
-          this.#ensureVectors(model, embedding.length)
+        for (const [i, vector] of vectors.entries()) {
+          this.#ensureVectors(this.#embedding!.model, vector.length)
           this.#db
             .prepare(
-              'INSERT INTO chunk_vectors (rowid, embedding) VALUES (?, ?)',
+              `INSERT INTO chunk_vectors (rowid, project_id, embedding)
+               VALUES (?, ?, ?)`,
             )
             // vec0 needs an integer rowid; node:sqlite binds BigInts as such.
-            .run(BigInt(ids[start + index]!), new Float32Array(embedding))
+            .run(BigInt(ids[start + i]!), projectId, vector)
         }
       })
     }
+  }
+
+  /** Embeddings of `texts`, in order. */
+  async #vectors(texts: string[]): Promise<Float32Array[]> {
+    const { client, model } = this.#embedding!
+    const { data } = await client.embeddings.create({ model, input: texts })
+    return data
+      .toSorted((a, b) => a.index - b.index)
+      .map((d) => new Float32Array(d.embedding))
+  }
+
+  /**
+   * The project's chunks best matching `query`: keyword hits (any word, see
+   * `anyWordQuery`) and, with embeddings, the nearest by meaning, merged by
+   * reciprocal rank fusion, so a chunk ranked well by both comes first.
+   */
+  async search(
+    projectId: string,
+    query: string,
+    limit = 6,
+  ): Promise<{ fileId: string; name: string; text: string }[]> {
+    const lists = [this.#keywordHits(projectId, query)]
+    if (
+      this.#embedding &&
+      this.#vectorInfo()?.model === this.#embedding.model
+    ) {
+      try {
+        const [vector] = await this.#vectors([query])
+        const nearest = this.#db
+          .prepare(
+            `SELECT rowid AS id FROM chunk_vectors
+              WHERE embedding MATCH ? AND k = ? AND project_id = ?
+              ORDER BY distance`,
+          )
+          .all(vector!, CANDIDATES, projectId) as { id: number }[]
+        lists.push(nearest.map(({ id }) => id))
+      } catch (err) {
+        // The keyword hits still answer.
+        console.error('Embedding the search failed:', err)
+      }
+    }
+    const scores = new Map<number, number>()
+    for (const ids of lists) {
+      ids.forEach((id, rank) =>
+        scores.set(id, (scores.get(id) ?? 0) + 1 / (RRF_K + rank + 1)),
+      )
+    }
+    const get = this.#db.prepare(
+      `SELECT c.file_id AS fileId, f.name, c.text
+         FROM chunks c JOIN files f ON f.id = c.file_id WHERE c.id = ?`,
+    )
+    return [...scores]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
+      .map(
+        ([id]) => get.get(id) as { fileId: string; name: string; text: string },
+      )
+  }
+
+  #keywordHits(projectId: string, query: string): number[] {
+    const match = anyWordQuery(query)
+    if (!match) return []
+    const rows = this.#db
+      .prepare(
+        `SELECT c.id FROM chunks_fts
+           JOIN chunks c ON c.id = chunks_fts.rowid
+           JOIN project_files p ON p.file_id = c.file_id
+          WHERE chunks_fts MATCH ? AND p.project_id = ?
+          ORDER BY chunks_fts.rank
+          LIMIT ?`,
+      )
+      .all(match, projectId, CANDIDATES) as { id: number }[]
+    return rows.map(({ id }) => id)
   }
 
   /** Creates the vector table on first use, sized for the model. */
@@ -137,6 +217,7 @@ export class ProjectIndex {
     this.#dropVectors()
     this.#db.exec(
       `CREATE VIRTUAL TABLE chunk_vectors USING vec0(
+         project_id TEXT PARTITION KEY,
          embedding float[${dimensions}] distance_metric=cosine)`,
     )
     this.#db

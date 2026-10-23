@@ -105,6 +105,14 @@ export class ProjectStore {
       .all() as { projectId: string; fileId: string }[]
   }
 
+  /** The project a file is in. */
+  projectOf(fileId: string): string | null {
+    const row = this.#db
+      .prepare('SELECT project_id FROM project_files WHERE file_id = ?')
+      .get(fileId) as { project_id: string } | undefined
+    return row?.project_id ?? null
+  }
+
   hasFile(fileId: string): boolean {
     return (
       this.#db
