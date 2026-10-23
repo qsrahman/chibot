@@ -31,6 +31,9 @@ export default defineConfig({
         OPENAI_BASE_URL: `http://127.0.0.1:${FAKE_OPENAI_PORT}/v1`,
         OPENAI_API_KEY: 'e2e',
         OPENAI_MODEL: 'e2e-model',
+        OPENAI_IMAGE_MODEL: 'e2e-image',
+        // Blank means unset: tests/e2e/server.ts adds a fake web search.
+        BRAVE_API_KEY: '',
         HOST: '127.0.0.1',
         PORT: String(PORT),
         CHIBOT_DATA_DIR: '.e2e-data',
