@@ -67,9 +67,9 @@ export class ChatService {
    * call on the path gets an output before the next request, so the history
    * stays valid input.
    *
-   * A call to a tool that `requiresApproval` ends the turn with
-   * `chibot.approval` instead; `{ approvals }` resumes it. A new message
-   * sent meanwhile denies the waiting calls.
+   * A call to a tool that needs approval (see `Tool.requiresApproval`) ends
+   * the turn with `chibot.approval` instead; `{ approvals }` resumes it. A
+   * new message sent meanwhile denies the waiting calls.
    *
    * After a completed answer in a saved conversation that has no title yet,
    * a title is generated and yielded as a `chibot.title` event.
@@ -142,9 +142,9 @@ export class ChatService {
     let answered = false
     for (let step = 1; step <= MAX_STEPS; step++) {
       if (calls.length > 0) {
+        const asks = this.#approvalNeeded(conversationId, leafId)
         leafId = yield* this.#answer(conversationId, leafId, calls, (call) =>
-          !this.#tools.get(call.name)?.requiresApproval ||
-          approvals?.[call.call_id]
+          !asks(call) || approvals?.[call.call_id]
             ? this.#tools.run(call, { conversationId, signal }, disabled)
             : Promise.resolve(TOOL_DENIED),
         )
@@ -246,7 +246,7 @@ export class ChatService {
         )
         break
       }
-      if (calls.some((call) => this.#tools.get(call.name)?.requiresApproval)) {
+      if (calls.some(this.#approvalNeeded(conversationId, leafId))) {
         yield { type: 'chibot.approval', calls }
         break
       }
@@ -256,6 +256,21 @@ export class ChatService {
     if (answered && conversation.title === null && !conversation.temporary) {
       const title = await this.#generateTitle(conversationId, signal)
       if (title) yield { type: 'chibot.title', title }
+    }
+  }
+
+  /** Which calls, made on the path to `leafId`, wait for the user's approval. */
+  #approvalNeeded(conversationId: string, leafId: number) {
+    const untrusted = this.#store
+      .getPath(conversationId, leafId)
+      .some(
+        ({ data }) =>
+          data.type === 'function_call' &&
+          this.#tools.get(data.name)?.untrustedOutput,
+      )
+    return (call: ResponseFunctionToolCall) => {
+      const rule = this.#tools.get(call.name)?.requiresApproval
+      return rule === true || (rule === 'after-untrusted' && untrusted)
     }
   }
 

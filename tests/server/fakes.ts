@@ -148,16 +148,23 @@ export function testSettings(model = 'm', overrides: Partial<Settings> = {}) {
 
 /** Echoes `text` back, or throws when it is "fail". */
 export class EchoTool extends Tool {
-  readonly name = 'echo'
+  readonly name: string
   readonly label = 'Echo'
   readonly description = 'Echoes text back.'
   readonly parameters = z.object({ text: z.string() })
   readonly runs: string[] = []
-  override readonly requiresApproval: boolean
+  override readonly requiresApproval: boolean | 'after-untrusted'
+  override readonly untrustedOutput: boolean
 
-  constructor({ requiresApproval = false } = {}) {
+  constructor({
+    name = 'echo',
+    requiresApproval = false as boolean | 'after-untrusted',
+    untrustedOutput = false,
+  } = {}) {
     super()
+    this.name = name
     this.requiresApproval = requiresApproval
+    this.untrustedOutput = untrustedOutput
   }
 
   async run({ text }: { text: string }) {

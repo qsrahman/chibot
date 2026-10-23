@@ -21,8 +21,14 @@ export abstract class Tool<Parameters extends z.ZodObject = z.ZodObject> {
   /** Tells the model what the tool does and when to use it. */
   abstract readonly description: string
   abstract readonly parameters: Parameters
-  /** Tools with side effects wait for the user's Approve / Deny. */
-  readonly requiresApproval: boolean = false
+  /**
+   * Tools with side effects wait for the user's Approve / Deny: always, or
+   * (`'after-untrusted'`) once the chat holds output of an `untrustedOutput`
+   * tool, which may carry instructions planted for the model.
+   */
+  readonly requiresApproval: boolean | 'after-untrusted' = false
+  /** The output holds text from others (web pages, search results). */
+  readonly untrustedOutput: boolean = false
   /**
    * Offered in temporary chats. Tools that read or keep the user's history
    * (memory, chat search) aren't: temporary chats stay separate.

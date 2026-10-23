@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import type { ResponseStreamEvent } from 'openai/resources/responses/responses'
 import { z } from 'zod'
 import { ChatService, MAX_STEPS } from '../../src/server/chat-service.ts'
 import type { ConversationStore } from '../../src/server/conversation-store.ts'
@@ -256,5 +257,50 @@ describe('ChatService approvals', () => {
       { type: 'function_call_output', call_id: 'call_b', output: TOOL_DENIED },
       { role: 'user', content: 'Never mind' },
     ])
+  })
+})
+
+describe("approval 'after-untrusted'", () => {
+  const page = () => new EchoTool({ name: 'page', untrustedOutput: true })
+  const remember = () =>
+    new EchoTool({ name: 'remember', requiresApproval: 'after-untrusted' })
+
+  async function run(events: (call: number) => ResponseStreamEvent[]) {
+    const store = memoryStore()
+    const tools = [page(), remember()]
+    const chat = new ChatService(
+      fakeClient(events),
+      store,
+      testSettings(),
+      new ToolRegistry(tools),
+    )
+    const { id } = store.createConversation()
+    const output = await drain(chat.runTurn(id, { text: 'Go' }))
+    return { output, runs: tools.map((t) => t.runs) }
+  }
+
+  it("doesn't ask in a chat without untrusted content", async () => {
+    const { output, runs } = await run((n) =>
+      n === 0
+        ? callEvents({ name: 'remember', args: { text: 'fact' } })
+        : answerEvents('ok'),
+    )
+    expect(output.some((e) => e.type === 'chibot.approval')).toBe(false)
+    expect(runs).toEqual([[], ['fact']])
+  })
+
+  it('asks once a tool with untrusted output ran in the chat', async () => {
+    const { output, runs } = await run((n) =>
+      n === 0
+        ? callEvents({ name: 'page', args: { text: 'web' } })
+        : n === 1
+          ? callEvents({ name: 'remember', args: { text: 'planted' } })
+          : answerEvents('ok'),
+    )
+    expect(output).toContainEqual({
+      type: 'chibot.approval',
+      calls: [expect.objectContaining({ name: 'remember' })],
+    })
+    expect(runs).toEqual([['web'], []])
   })
 })

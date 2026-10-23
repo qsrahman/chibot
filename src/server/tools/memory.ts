@@ -27,6 +27,9 @@ export class MemoryTool extends Tool {
       ),
   })
   override readonly inTemporaryChats = false
+  // A page that reached the context could plant a memory that then affects
+  // every later chat (a model was seen saving one), so then ask first.
+  override readonly requiresApproval = 'after-untrusted'
   readonly #memories: MemoryStore
 
   constructor(memories: MemoryStore) {
