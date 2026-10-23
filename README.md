@@ -118,8 +118,9 @@ Then open http://127.0.0.1:3000.
   remembered.
 - **Search chats** finds chats by title or message text, including archived
   ones. Press Enter to open the top result.
-- **Model:** click the model name at the top to pick another model (searchable;
-  type a name if your server can't list its models). Each answer shows the
+- **Model:** click the model name at the top to pick another chat model
+  (searchable; embedding, image and speech models are left out; type a name
+  if yours isn't listed or your server can't list its models). Each answer shows the
   model that wrote it, so switching models and regenerating compares them.
 - **Tools:** the model uses chibot's tools on its own when they help, and the
   answer shows what it did ("Searched the web", "Used calculator"; open one to

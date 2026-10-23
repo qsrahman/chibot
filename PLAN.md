@@ -255,9 +255,10 @@ compaction on at 64k tokens; math formatting via a built-in instruction.
   values, environment as defaults). `GET`/`PATCH /api/settings`, never
   returning secrets.
 - **Model picker.** The header's model name opens a popover with a search box
-  over the chat endpoint's `models.list()` (unfiltered: the lists mix chat,
-  embedding, image and audio models), falling back to a text field when
-  listing fails. The choice is the `model` setting and applies to new turns,
+  over the chat endpoint's chat models, falling back to a text field when
+  listing fails. (`models.list()` mixes chat, embedding, image and audio
+  models; since v0.9.x chibot keeps the chat ones: by Ollama's `/api/show`
+  capabilities, or elsewhere by leaving out non-chat families by name.) The choice is the `model` setting and applies to new turns,
   edits and regenerations. Each answer stores and shows the model that wrote
   it, so regenerating after switching works like "Try again with…".
 - **Reasoning.** `reasoningEffort` setting: unset sends nothing, otherwise

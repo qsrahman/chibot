@@ -16,6 +16,7 @@ import type {
   TurnTitleEvent,
   TurnToolOutputEvent,
 } from '../shared/types.ts'
+import { chatModels } from './chat-models.ts'
 import type { ConversationStore } from './conversation-store.ts'
 import type { ProjectStore } from './project-store.ts'
 import type { SettingsStore } from './settings-store.ts'
@@ -341,15 +342,14 @@ export class ChatService {
   }
 
   /**
-   * Model ids the chat endpoint offers, sorted, or `null` when it can't list
-   * them. The list isn't filtered: it mixes chat, embedding, image and audio
-   * models, and their ids don't reliably say which is which.
+   * The chat models the endpoint offers, sorted, or `null` when it can't
+   * list them (see `chatModels` for how the others are left out).
    */
   async listModels(): Promise<string[] | null> {
     try {
       const ids: string[] = []
       for await (const model of this.#client.models.list()) ids.push(model.id)
-      return ids.sort()
+      return (await chatModels(ids, this.#client.baseURL)).sort()
     } catch (err) {
       console.error('Listing models failed:', err)
       return null

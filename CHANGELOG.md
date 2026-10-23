@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- The model picker lists only chat models: on Ollama by each model's capabilities (`/api/show`, which also catches image models with plain names), elsewhere by leaving out embedding, speech, transcription, image, video, moderation, realtime, Chat-Completions-only search and legacy completion models.
+
 ### Fixed
 
 - Image generation that can't work (e.g. `OPENAI_IMAGE_MODEL` set to a chat model, or an endpoint without images) now says which endpoint and model failed and what to set, instead of a bare 404 or "Connection error". README and `.env.example` say the image model must be an image-generation model.
