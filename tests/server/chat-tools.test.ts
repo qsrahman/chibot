@@ -9,7 +9,6 @@ import {
   TOOL_STOPPED,
   ToolRegistry,
 } from '../../src/server/tool-registry.ts'
-import { pendingCalls } from '../../src/shared/tools.ts'
 import {
   answerEvents,
   callEvents,
@@ -223,7 +222,7 @@ describe('ChatService approvals', () => {
     })
     expect(tool.runs).toEqual([])
     expect(calls).toHaveLength(1)
-    expect(pendingCalls(path())).toHaveLength(2)
+    expect(chat.waitingCalls(conversationId)).toHaveLength(2)
   })
 
   it('runs approved calls, denies the rest and continues', async () => {
@@ -241,7 +240,7 @@ describe('ChatService approvals', () => {
     ])
     expect(calls).toHaveLength(2)
     expect(path().at(-1)).toMatchObject({ type: 'message' })
-    expect(pendingCalls(path())).toEqual([])
+    expect(chat.waitingCalls(conversationId)).toEqual([])
   })
 
   it('denies waiting calls when a new message is sent instead', async () => {

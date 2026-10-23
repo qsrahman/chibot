@@ -19,7 +19,7 @@ src/server/   main.ts (start(): wiring + listen, defaultTools()), app.ts (Hono
               routes), database.ts (one SQLite connection + migrations), one
               class per file; tools/ holds the shipped Tool subclasses
 src/shared/   used by both server and web: API record types, chibot's own SSE events,
-              message text extraction, pending tool calls, zod schemas
+              message text extraction, zod schemas
               (requests, settings, export) and reasoning efforts (zod-free, so
               the web can import it)
 src/web/      Vite root: index.html, main.tsx, components, api.ts (fetch + SSE), hooks

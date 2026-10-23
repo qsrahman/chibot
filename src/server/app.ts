@@ -20,7 +20,6 @@ import {
   settingsPatchSchema,
   type SettingsResponse,
 } from '../shared/settings.ts'
-import { pendingCalls } from '../shared/tools.ts'
 import type { ModelsResponse, ToolInfo } from '../shared/types.ts'
 import type {
   ConversationWithItems,
@@ -288,10 +287,7 @@ export function createApp({
     const id = c.req.param('id')
     if (!store.getConversation(id)) return notFound(c)
     const request = c.req.valid('json')
-    if (
-      request.approvals &&
-      pendingCalls(store.getPath(id).map((item) => item.data)).length === 0
-    ) {
+    if (request.approvals && chat.waitingCalls(id).length === 0) {
       return c.json({ error: 'No tool calls are waiting for approval' }, 409)
     }
     if (typeof request.parentId === 'number') {

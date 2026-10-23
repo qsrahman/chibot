@@ -8,7 +8,6 @@ import type {
 } from 'openai/resources/responses/responses'
 import { messageText } from '../shared/messages.ts'
 import type { Settings } from '../shared/settings.ts'
-import { pendingCalls } from '../shared/tools.ts'
 import type {
   Project,
   TurnApprovalEvent,
@@ -97,7 +96,7 @@ export class ChatService {
     let calls: ResponseFunctionToolCall[] = []
     if (approvals) {
       leafId = this.#store.getConversation(conversationId)!.currentLeafId!
-      calls = this.#pending(conversationId, leafId)
+      calls = this.waitingCalls(conversationId, leafId)
     } else if (text === undefined) {
       leafId = parentId!
     } else {
@@ -106,7 +105,7 @@ export class ChatService {
           ? this.#store.getConversation(conversationId)!.currentLeafId
           : parentId
       const waiting =
-        parent === null ? [] : this.#pending(conversationId, parent)
+        parent === null ? [] : this.waitingCalls(conversationId, parent)
       if (waiting.length > 0) {
         parent = this.#store
           .appendItems(
@@ -288,10 +287,26 @@ export class ChatService {
     }
   }
 
-  /** Calls on the path to `leafId` waiting for an output (approval). */
-  #pending(conversationId: string, leafId: number) {
-    return pendingCalls(
-      this.#store.getPath(conversationId, leafId).map((item) => item.data),
+  /**
+   * Function calls without an output on the path to `leafId` (by default
+   * the current leaf). Every call is answered before the next request,
+   * except calls waiting for the user's approval, so these end the path.
+   */
+  waitingCalls(
+    conversationId: string,
+    leafId?: number,
+  ): ResponseFunctionToolCall[] {
+    const path = this.#store
+      .getPath(conversationId, leafId)
+      .map((item) => item.data)
+    const answered = new Set(
+      path.flatMap((item) =>
+        item.type === 'function_call_output' ? [item.call_id] : [],
+      ),
+    )
+    return path.filter(
+      (item): item is ResponseFunctionToolCall =>
+        item.type === 'function_call' && !answered.has(item.call_id),
     )
   }
 
