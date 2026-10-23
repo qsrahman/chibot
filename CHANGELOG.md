@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-23
+
 ### Added
 
 - Sending attachments: turns take `fileIds` (uploads from `POST /api/files`, which now also takes PNG, JPEG, WebP and GIF images), stored as `input_image` / `input_file` parts naming chibot's own file ids. Each request uploads them once to the provider's Files API (30-day expiry; the id is kept in `files.provider_file_id`), sends them inline where there's no Files API (Ollama), and sends documents as their extracted text to models that refuse files; a provider that lost an upload (404) gets it again. An image sent to a model that can't see images says so and suggests one that can. Deleting a chat deletes its provider copies too.
