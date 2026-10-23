@@ -4,6 +4,15 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- Memory: a `memory` tool saves, updates and deletes what chibot remembers about the user (at most 100 memories of 300 characters, stored in SQLite), and chat instructions list the memories while the tool is offered. Answers say "Memory updated".
+- Memory changes ask first in chats whose history holds web content (`requiresApproval: 'after-untrusted'`, with `untrustedOutput` on `web_search` and `fetch_url`), so a page can't plant a memory; a probe showed `gpt-oss` doing exactly that.
+- `search_chats`: searches the user's other chats (any word, ranked by relevance, optional date range) and returns each chat's best few messages in order; Sources links the chats found.
+- Settings → Personalization → Memory: the memory switch (the memory tool's) and Manage memories, to delete one or all (`GET /api/memories`, `DELETE /api/memories[/:id]`).
+- Tools can add to the instructions while offered (`instructions()`) and opt out of temporary chats (`inTemporaryChats`); memory and chat search do.
+- End-to-end tests for remembering across chats and deleting from Settings, temporary chats, asking after web content, and finding an earlier chat.
+
 ### Changed
 
 - Roadmap: Phase 7 detailed. Memory changes ask first in chats that read web content (a probe showed `gpt-oss` saving a memory planted in a page); the memory tool's switch is the memory switch; `search_chats` matches any word by relevance with an optional date range.

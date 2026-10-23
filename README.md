@@ -6,12 +6,12 @@ It works with OpenAI and with OpenAI-compatible servers that implement the
 Responses API, such as [Ollama](https://docs.ollama.com/openai) and
 [LM Studio](https://lmstudio.ai/).
 
-> **Status: Phase 6 (web search & image generation).** ChatGPT-style chat
-> with a sidebar, versions, a model picker, visible reasoning, custom
-> instructions, long-chat compaction, export/import, a theme setting, a
-> Settings dialog, and tools the model can call: web search with sources,
-> reading web pages, creating and editing images, and a calculator. Memory,
-> projects, and then attachments and voice input follow. See
+> **Status: Phase 7 (memory).** ChatGPT-style chat with a sidebar, versions,
+> a model picker, visible reasoning, custom instructions, long-chat
+> compaction, export/import, a theme setting, a Settings dialog, and tools the
+> model can call: web search with sources, reading web pages, creating and
+> editing images, a calculator, memory across chats and searching past chats.
+> Projects, and then attachments and voice input follow. See
 > [PLAN.md](PLAN.md) for the roadmap.
 
 ## Requirements
@@ -121,6 +121,14 @@ Then open http://127.0.0.1:3000.
     open full size and can be downloaded. They're kept with the chat, and
     deleted with it.
   - **Calculator:** exact arithmetic, functions and unit conversions.
+  - **Memory:** chibot remembers lasting facts and preferences you share
+    ("remember that…", or things like "I'm vegetarian") and uses them in new
+    chats; the answer says "Memory updated". Ask it to change or forget
+    something, or delete memories in Settings. In a chat that read web pages
+    or search results, memory changes ask first, so a page can't plant one.
+  - **Past chats:** ask about something you discussed before ("what did we
+    decide about…?"). chibot searches your other chats (on this machine) and
+    links the ones it used under **Sources**.
 
   The composer's **+** menu makes the next message use **Search the web** or
   **Create an image**. Tools with side effects (none ship yet) ask first:
@@ -131,7 +139,8 @@ Then open http://127.0.0.1:3000.
 - **Settings** (sidebar gear, or ⌘/Ctrl+,):
   - *General:* theme (System, Light or Dark).
   - *Personalization:* what chibot should know about you, and how it should
-    respond. Sent with every message.
+    respond. Sent with every message. **Memory**: turn it off, or manage
+    (delete) what chibot remembers.
   - *Model:* reasoning effort, and compaction for long chats (on by default at
     64,000 tokens; earlier messages are summarized and a divider marks the
     spot).
@@ -142,8 +151,8 @@ Then open http://127.0.0.1:3000.
 - **Export** a chat from its **…** menu as Markdown (what's shown) or JSON
   (every version, for importing later).
 - **Temporary chat:** on a new chat, turn on the dashed-bubble toggle (top
-  right). That chat isn't listed, titled or searchable, and it's deleted as
-  soon as you leave it.
+  right). That chat isn't listed, titled or searchable, doesn't use memory or
+  past chats, and it's deleted as soon as you leave it.
 - **Edit** a message (hover it, then the pencil) or **regenerate** an answer
   (the circular arrow). Either makes a new version; `< 2/3 >` switches
   between them, and each version keeps its own follow-up messages.

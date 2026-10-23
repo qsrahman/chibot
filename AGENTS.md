@@ -126,7 +126,12 @@ transpiles it.
    files with the chat in `FileStore`) and the stop `signal`. Return JSON when
    the web app reads the output too (as for sources and images).
 2. Set `override readonly requiresApproval = true` if it has side effects
-   (sends, writes, deletes, spends). The turn then waits for Approve / Deny.
+   (sends, writes, deletes, spends): the turn then waits for Approve / Deny.
+   Use `'after-untrusted'` to ask only in chats that hold untrusted content
+   (like `memory`), and mark tools whose output carries others' text
+   (pages, search results) `untrustedOutput = true`. Tools that read or keep
+   the user's history set `inTemporaryChats = false`, and a tool can add to
+   the chat's instructions while offered by overriding `instructions()`.
 3. Throw for errors: `ToolRegistry` returns `Error: …` to the model, as it
    does for invalid arguments. Honour `signal` for anything slow.
 4. Add it to `defaultTools()` (`main.ts`), only when its setup exists (keys,
@@ -153,8 +158,9 @@ invariants, API quirks. No line-by-line narration.
   `tests/e2e/fake-openai.ts` via `OPENAI_BASE_URL`. The fake answers
   `Answer #n to: <question>`; a question containing "slow" streams slowly,
   "think" adds a reasoning summary, "compact" a compaction item, and
-  "calculate", "approve", "search", "read <url>", "draw" and "bluer" call a
-  tool (see the top of the file). It also fakes Brave and the images API and
+  "calculate", "approve", "search", "read <url>", "draw", "bluer",
+  "remember <fact>" and "earlier chats <words>" call a tool (see the top of
+  the file). It also fakes Brave and the images API and
   serves a test page. `/debug/last-request` and `/debug/requests` show what
   chibot sent. Shared steps live in
   `tests/e2e/helpers.ts` (`send`, `answered`, `appReady`, `lastRequest`,
