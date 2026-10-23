@@ -121,7 +121,20 @@ export class ChatService {
     }
     const settings = this.#settings.get()
     const { model, reasoningEffort, compactThreshold } = settings
-    const tools = this.#tools.declarations(settings.disabledTools)
+    const disabled = [
+      ...settings.disabledTools,
+      ...(this.#store.getConversation(conversationId)!.temporary
+        ? this.#tools.tools
+            .filter((t) => !t.inTemporaryChats)
+            .map((t) => t.name)
+        : []),
+    ]
+    const offered = this.#tools.offered(disabled)
+    const tools = offered.map((t) => t.declaration)
+    const instructions = [
+      chatInstructions(settings),
+      ...offered.flatMap((t) => t.instructions() ?? []),
+    ].join('\n\n')
     // A tool the user picked is forced on the first request only; after
     // that the model decides (or it would call it forever).
     const forced = tools.find((t) => t.name === tool)
@@ -132,11 +145,7 @@ export class ChatService {
         leafId = yield* this.#answer(conversationId, leafId, calls, (call) =>
           !this.#tools.get(call.name)?.requiresApproval ||
           approvals?.[call.call_id]
-            ? this.#tools.run(
-                call,
-                { conversationId, signal },
-                settings.disabledTools,
-              )
+            ? this.#tools.run(call, { conversationId, signal }, disabled)
             : Promise.resolve(TOOL_DENIED),
         )
         signal?.throwIfAborted()
@@ -168,7 +177,7 @@ export class ChatService {
             this.#client.responses.create(
               {
                 model,
-                instructions: chatInstructions(settings),
+                instructions,
                 input,
                 ...(tools.length > 0 && {
                   tools,

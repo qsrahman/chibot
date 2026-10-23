@@ -1,7 +1,4 @@
-import type {
-  FunctionTool,
-  ResponseFunctionToolCall,
-} from 'openai/resources/responses/responses'
+import type { ResponseFunctionToolCall } from 'openai/resources/responses/responses'
 import { z } from 'zod'
 import type { Tool, ToolContext } from './tool.ts'
 
@@ -25,11 +22,9 @@ export class ToolRegistry {
     return [...this.#tools.values()]
   }
 
-  /** The request's `tools`, except those named in `disabled`. */
-  declarations(disabled: string[] = []): FunctionTool[] {
-    return this.tools
-      .filter((tool) => !disabled.includes(tool.name))
-      .map((tool) => tool.declaration)
+  /** The tools to offer, except those named in `disabled`. */
+  offered(disabled: string[] = []): Tool[] {
+    return this.tools.filter((tool) => !disabled.includes(tool.name))
   }
 
   get(name: string): Tool | undefined {

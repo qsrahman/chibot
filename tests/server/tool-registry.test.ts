@@ -13,21 +13,19 @@ const call = (name: string, args: string): ResponseFunctionToolCall => ({
 const context = { conversationId: 'c' }
 
 describe('ToolRegistry', () => {
-  it('declares tools as strict JSON-Schema functions', () => {
-    expect(new ToolRegistry([new EchoTool()]).declarations()).toEqual([
-      {
-        type: 'function',
-        name: 'echo',
-        description: 'Echoes text back.',
-        strict: true,
-        parameters: expect.objectContaining({
-          type: 'object',
-          properties: { text: { type: 'string' } },
-          required: ['text'],
-          additionalProperties: false,
-        }),
-      },
-    ])
+  it('declares a tool as a strict JSON-Schema function', () => {
+    expect(new EchoTool().declaration).toEqual({
+      type: 'function',
+      name: 'echo',
+      description: 'Echoes text back.',
+      strict: true,
+      parameters: expect.objectContaining({
+        type: 'object',
+        properties: { text: { type: 'string' } },
+        required: ['text'],
+        additionalProperties: false,
+      }),
+    })
   })
 
   it('rejects duplicate names', () => {
