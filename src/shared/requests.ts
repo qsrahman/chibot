@@ -25,7 +25,9 @@ export const conversationPatchSchema = z.object({
  * - `{ text }` sends a message after the current leaf;
  * - `{ text, parentId }` sends it under `parentId` (`null` = the root), i.e.
  *   an edit of the message currently there;
- * - `{ parentId }` regenerates the answer to the user message `parentId`.
+ * - `{ parentId }` regenerates the answer to the user message `parentId`;
+ * - `{ approvals }` answers the tool calls waiting for approval (call id →
+ *   approved) and continues the answer.
  */
 export const turnRequestSchema = z
   .object({
@@ -34,10 +36,14 @@ export const turnRequestSchema = z
       .refine((text) => text.trim() !== '', 'must not be blank')
       .optional(),
     parentId: z.number().int().nullable().optional(),
+    approvals: z.record(z.string(), z.boolean()).optional(),
   })
   .refine(
-    ({ text, parentId }) => text !== undefined || typeof parentId === 'number',
-    'Send `text`, `parentId`, or both',
+    ({ text, parentId, approvals }) =>
+      approvals !== undefined
+        ? text === undefined && parentId === undefined
+        : text !== undefined || typeof parentId === 'number',
+    'Send `text`, `parentId`, or both; or `approvals` alone',
   )
 
 /** `PUT /api/conversations/:id/leaf`: show another version. */

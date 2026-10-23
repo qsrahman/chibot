@@ -16,6 +16,7 @@ import {
   settingsPatchSchema,
   type SettingsResponse,
 } from '../shared/settings.ts'
+import { pendingCalls } from '../shared/tools.ts'
 import type { ModelsResponse } from '../shared/types.ts'
 import type { ConversationWithItems, TurnErrorEvent } from '../shared/types.ts'
 import type { ChatService } from './chat-service.ts'
@@ -133,6 +134,12 @@ export function createApp({ config, store, settings, chat }: AppDeps) {
     const id = c.req.param('id')
     if (!store.getConversation(id)) return notFound(c)
     const request = c.req.valid('json')
+    if (
+      request.approvals &&
+      pendingCalls(store.getPath(id).map((item) => item.data)).length === 0
+    ) {
+      return c.json({ error: 'No tool calls are waiting for approval' }, 409)
+    }
     if (typeof request.parentId === 'number') {
       const parent = store.getItem(id, request.parentId)
       if (!parent) return c.json({ error: 'Item not found' }, 404)

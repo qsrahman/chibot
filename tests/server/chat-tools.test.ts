@@ -3,7 +3,12 @@ import { z } from 'zod'
 import { ChatService, MAX_STEPS } from '../../src/server/chat-service.ts'
 import type { ConversationStore } from '../../src/server/conversation-store.ts'
 import { Tool } from '../../src/server/tool.ts'
-import { TOOL_STOPPED, ToolRegistry } from '../../src/server/tool-registry.ts'
+import {
+  TOOL_DENIED,
+  TOOL_STOPPED,
+  ToolRegistry,
+} from '../../src/server/tool-registry.ts'
+import { pendingCalls } from '../../src/shared/tools.ts'
 import {
   answerEvents,
   callEvents,
@@ -144,5 +149,83 @@ describe('ChatService tools', () => {
       call_id: 'call_0',
       output: TOOL_STOPPED,
     })
+  })
+})
+
+describe('ChatService approvals', () => {
+  let store: ConversationStore
+  let conversationId: string
+  let tool: EchoTool
+  let calls: FakeCall[]
+  let chat: ChatService
+  beforeEach(() => {
+    store = memoryStore()
+    conversationId = store.createConversation().id
+    tool = new EchoTool({ requiresApproval: true })
+    calls = []
+    chat = new ChatService(
+      fakeClient(
+        (n) =>
+          n === 0
+            ? callEvents(
+                { args: { text: 'a' }, callId: 'call_a' },
+                { args: { text: 'b' }, callId: 'call_b' },
+              )
+            : answerEvents('Done'),
+        calls,
+      ),
+      store,
+      testSettings(),
+      new ToolRegistry([tool]),
+    )
+  })
+
+  const path = () => store.getPath(conversationId).map((i) => i.data)
+
+  it('ends the turn with the calls waiting for approval', async () => {
+    const events = await drain(chat.runTurn(conversationId, { text: 'Go' }))
+    expect(events).toContainEqual({
+      type: 'chibot.approval',
+      calls: [
+        expect.objectContaining({ call_id: 'call_a' }),
+        expect.objectContaining({ call_id: 'call_b' }),
+      ],
+    })
+    expect(tool.runs).toEqual([])
+    expect(calls).toHaveLength(1)
+    expect(pendingCalls(path())).toHaveLength(2)
+  })
+
+  it('runs approved calls, denies the rest and continues', async () => {
+    await drain(chat.runTurn(conversationId, { text: 'Go' }))
+    const events = await drain(
+      chat.runTurn(conversationId, {
+        approvals: { call_a: true, call_b: false },
+      }),
+    )
+
+    expect(tool.runs).toEqual(['a'])
+    expect(events.filter((e) => e.type === 'chibot.tool_output')).toEqual([
+      { type: 'chibot.tool_output', call_id: 'call_a', output: 'echo: a' },
+      { type: 'chibot.tool_output', call_id: 'call_b', output: TOOL_DENIED },
+    ])
+    expect(calls).toHaveLength(2)
+    expect(path().at(-1)).toMatchObject({ type: 'message' })
+    expect(pendingCalls(path())).toEqual([])
+  })
+
+  it('denies waiting calls when a new message is sent instead', async () => {
+    await drain(chat.runTurn(conversationId, { text: 'Go' }))
+    await drain(chat.runTurn(conversationId, { text: 'Never mind' }))
+
+    expect(tool.runs).toEqual([])
+    expect(calls[1]!.params.input).toEqual([
+      { role: 'user', content: 'Go' },
+      expect.objectContaining({ call_id: 'call_a' }),
+      expect.objectContaining({ call_id: 'call_b' }),
+      { type: 'function_call_output', call_id: 'call_a', output: TOOL_DENIED },
+      { type: 'function_call_output', call_id: 'call_b', output: TOOL_DENIED },
+      { role: 'user', content: 'Never mind' },
+    ])
   })
 })

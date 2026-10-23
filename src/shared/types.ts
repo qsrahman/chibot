@@ -1,6 +1,7 @@
 // Types shared by the server and the web app. Item and event shapes come from
 // the SDK; only chibot's own records are defined here.
 import type {
+  ResponseFunctionToolCall,
   ResponseInputItem,
   ResponseUsage,
 } from 'openai/resources/responses/responses'
@@ -75,6 +76,15 @@ export interface TurnToolOutputEvent {
   type: 'chibot.tool_output'
   call_id: string
   output: string
+}
+
+/**
+ * SSE event that ends a turn whose tool calls wait for the user's approval
+ * (answered with `TurnRequest.approvals`).
+ */
+export interface TurnApprovalEvent {
+  type: 'chibot.approval'
+  calls: ResponseFunctionToolCall[]
 }
 
 /** `GET /api/models`: the chat endpoint's models, or `null` if it can't list them. */

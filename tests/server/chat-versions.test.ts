@@ -97,6 +97,11 @@ describe('edit, regenerate and switch versions', () => {
       const ok = await send({ parentId: q1!.id })
       expect(ok.status).toBe(200)
       await ok.text()
+      // Approvals come alone, and only when tool calls are waiting.
+      expect((await send({ approvals: { c: true }, text: 'x' })).status).toBe(
+        400,
+      )
+      expect((await send({ approvals: { c: true } })).status).toBe(409)
     })
 
     it('switches versions', async () => {

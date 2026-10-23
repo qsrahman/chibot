@@ -8,14 +8,16 @@ import type {
 } from 'openai/resources/responses/responses'
 import { messageText } from '../shared/messages.ts'
 import type { Settings } from '../shared/settings.ts'
+import { pendingCalls } from '../shared/tools.ts'
 import type {
+  TurnApprovalEvent,
   TurnRequest,
   TurnTitleEvent,
   TurnToolOutputEvent,
 } from '../shared/types.ts'
 import type { ConversationStore } from './conversation-store.ts'
 import type { SettingsStore } from './settings-store.ts'
-import { ToolRegistry } from './tool-registry.ts'
+import { TOOL_DENIED, ToolRegistry } from './tool-registry.ts'
 
 // remark-math renders only $…$ and $$…$$, so ask models for those.
 const FORMAT_INSTRUCTIONS =
@@ -65,26 +67,55 @@ export class ChatService {
    * call on the path gets an output before the next request, so the history
    * stays valid input.
    *
+   * A call to a tool that `requiresApproval` ends the turn with
+   * `chibot.approval` instead; `{ approvals }` resumes it. A new message
+   * sent meanwhile denies the waiting calls.
+   *
    * After a completed answer in a saved conversation that has no title yet,
    * a title is generated and yielded as a `chibot.title` event.
    */
   async *runTurn(
     conversationId: string,
-    { text, parentId }: TurnRequest,
+    { text, parentId, approvals }: TurnRequest,
     signal?: AbortSignal,
   ): AsyncGenerator<
-    ResponseStreamEvent | TurnTitleEvent | TurnToolOutputEvent
+    | ResponseStreamEvent
+    | TurnTitleEvent
+    | TurnToolOutputEvent
+    | TurnApprovalEvent
   > {
-    // The user message the answer goes under. Callers validate `parentId`.
-    let questionId: number
-    if (text === undefined) {
-      questionId = parentId!
+    // The item the next output goes under: the user message being answered,
+    // or (resuming after approval) the waiting calls. Callers validate
+    // `parentId` and that calls are waiting.
+    let leafId: number
+    // Calls to answer before the next request.
+    let calls: ResponseFunctionToolCall[] = []
+    if (approvals) {
+      leafId = this.#store.getConversation(conversationId)!.currentLeafId!
+      calls = this.#pending(conversationId, leafId)
+    } else if (text === undefined) {
+      leafId = parentId!
     } else {
-      const parent =
+      let parent =
         parentId === undefined
           ? this.#store.getConversation(conversationId)!.currentLeafId
           : parentId
-      questionId = this.#store.appendItems(conversationId, parent, [
+      const waiting =
+        parent === null ? [] : this.#pending(conversationId, parent)
+      if (waiting.length > 0) {
+        parent = this.#store
+          .appendItems(
+            conversationId,
+            parent,
+            waiting.map((call) => ({
+              type: 'function_call_output',
+              call_id: call.call_id,
+              output: TOOL_DENIED,
+            })),
+          )
+          .at(-1)!.id
+      }
+      leafId = this.#store.appendItems(conversationId, parent, [
         { role: 'user', content: text },
       ])[0]!.id
     }
@@ -92,10 +123,18 @@ export class ChatService {
     const { model, reasoningEffort, compactThreshold } = settings
     const tools = this.#tools.declarations
 
-    // The item the next output goes under.
-    let leafId = questionId
     let answered = false
     for (let step = 1; step <= MAX_STEPS; step++) {
+      if (calls.length > 0) {
+        leafId = yield* this.#answer(conversationId, leafId, calls, (call) =>
+          !this.#tools.get(call.name)?.requiresApproval ||
+          approvals?.[call.call_id]
+            ? this.#tools.run(call, signal)
+            : Promise.resolve(TOOL_DENIED),
+        )
+        signal?.throwIfAborted()
+        approvals = undefined
+      }
       const input = fromLastCompaction(
         this.#store.getPath(conversationId, leafId).map((item) => item.data),
       )
@@ -175,32 +214,22 @@ export class ChatService {
         }
       }
 
-      const calls = (output ?? []).filter(
+      calls = (output ?? []).filter(
         (item): item is ResponseFunctionToolCall =>
           item.type === 'function_call',
       )
       if (calls.length === 0) break
-      // All outputs are saved before any is yielded, so a client leaving at
-      // a yield can't leave a call unanswered.
-      const outputs: { call_id: string; output: string }[] = []
-      for (const call of calls) {
-        outputs.push({
-          call_id: call.call_id,
-          output:
-            step === MAX_STEPS
-              ? STEP_LIMIT_OUTPUT
-              : await this.#tools.run(call, signal),
-        })
-      }
-      leafId = this.#store
-        .appendItems(
-          conversationId,
-          leafId,
-          outputs.map((o) => ({ type: 'function_call_output', ...o })),
+      if (step === MAX_STEPS) {
+        // The server ignored `tool_choice: 'none'`.
+        leafId = yield* this.#answer(conversationId, leafId, calls, () =>
+          Promise.resolve(STEP_LIMIT_OUTPUT),
         )
-        .at(-1)!.id
-      for (const o of outputs) yield { type: 'chibot.tool_output', ...o }
-      signal?.throwIfAborted()
+        break
+      }
+      if (calls.some((call) => this.#tools.get(call.name)?.requiresApproval)) {
+        yield { type: 'chibot.approval', calls }
+        break
+      }
     }
 
     const conversation = this.#store.getConversation(conversationId)!
@@ -208,6 +237,37 @@ export class ChatService {
       const title = await this.#generateTitle(conversationId, signal)
       if (title) yield { type: 'chibot.title', title }
     }
+  }
+
+  /** Calls on the path to `leafId` waiting for an output (approval). */
+  #pending(conversationId: string, leafId: number) {
+    return pendingCalls(
+      this.#store.getPath(conversationId, leafId).map((item) => item.data),
+    )
+  }
+
+  /**
+   * Saves an output for each call under `leafId`, then yields them as
+   * `chibot.tool_output`, and returns the new leaf. All are saved before any
+   * is yielded, so a client leaving at a yield can't leave a call unanswered.
+   */
+  async *#answer(
+    conversationId: string,
+    leafId: number,
+    calls: ResponseFunctionToolCall[],
+    run: (call: ResponseFunctionToolCall) => Promise<string>,
+  ): AsyncGenerator<TurnToolOutputEvent, number> {
+    const outputs: { call_id: string; output: string }[] = []
+    for (const call of calls) {
+      outputs.push({ call_id: call.call_id, output: await run(call) })
+    }
+    const items = this.#store.appendItems(
+      conversationId,
+      leafId,
+      outputs.map((o) => ({ type: 'function_call_output', ...o })),
+    )
+    for (const o of outputs) yield { type: 'chibot.tool_output', ...o }
+    return items.at(-1)!.id
   }
 
   /**
