@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import type OpenAI from 'openai'
+import OpenAI from 'openai'
 import { openDatabase } from '../../src/server/database.ts'
 import type { FileStore } from '../../src/server/file-store.ts'
 import {
@@ -80,5 +80,40 @@ describe('image tools', () => {
       ).rejects.toThrow(`there is no image ${image_id} in this chat`)
     }
     expect(calls).toEqual([])
+  })
+
+  it('says which image service failed, and how to set it up', async () => {
+    const failing = (error: Error) =>
+      ({
+        baseURL: 'http://localhost:11434/v1',
+        images: {
+          generate: async () => {
+            throw error
+          },
+        },
+      }) as unknown as OpenAI
+    const run = (error: Error) =>
+      new GenerateImageTool({ ...deps, client: failing(error) }).run(
+        { prompt: 'x', size: 'square' },
+        { conversationId: 'chat-1' },
+      )
+
+    const notFound = new OpenAI.NotFoundError(
+      404,
+      { message: '404 page not found' },
+      '404 page not found',
+      new Headers(),
+    )
+    await expect(run(notFound)).rejects.toThrow(
+      /^the image service at http:\/\/localhost:11434\/v1 \(model img-1\) failed: .*404 page not found\. Images need an image model .*OPENAI_IMAGE_MODEL/,
+    )
+    const refused = new OpenAI.BadRequestError(
+      400,
+      { message: 'Your request was rejected' },
+      'Your request was rejected',
+      new Headers(),
+    )
+    await expect(run(refused)).rejects.toThrow('Your request was rejected')
+    await expect(run(refused)).rejects.not.toThrow('OPENAI_IMAGE_MODEL')
   })
 })

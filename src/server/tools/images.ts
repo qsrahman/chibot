@@ -50,9 +50,11 @@ export class GenerateImageTool extends Tool {
     { conversationId, signal }: ToolContext,
   ) {
     const { client, model } = this.#deps
-    const response = await client.images.generate(
-      { model, prompt, size: SIZES[size], quality: QUALITY },
-      { signal },
+    const response = await fromImageService(this.#deps, () =>
+      client.images.generate(
+        { model, prompt, size: SIZES[size], quality: QUALITY },
+        { signal },
+      ),
     )
     return saveImage(this.#deps.files, conversationId, response)
   }
@@ -84,18 +86,47 @@ export class EditImageTool extends Tool {
     if (file?.conversationId !== conversationId) {
       throw new Error(`there is no image ${image_id} in this chat`)
     }
-    const response = await client.images.edit(
-      {
-        model,
-        image: await toFile(files.read(file.id), file.name, {
-          type: file.mime,
-        }),
-        prompt,
-        quality: QUALITY,
-      },
-      { signal },
+    const image = await toFile(files.read(file.id), file.name, {
+      type: file.mime,
+    })
+    const response = await fromImageService(this.#deps, () =>
+      client.images.edit(
+        { model, image, prompt, quality: QUALITY },
+        { signal },
+      ),
     )
     return saveImage(files, conversationId, response)
+  }
+}
+
+/**
+ * Runs an image API call; failures say which endpoint and model failed, so
+ * the model (and the user) can tell a setup problem from a refused prompt.
+ * Not found and unreachable usually mean the endpoint can't make images
+ * (e.g. a chat model on Ollama), so those also say what to set.
+ */
+async function fromImageService<T>(
+  { client, model }: ImageDeps,
+  call: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await call()
+  } catch (err) {
+    if (!(err instanceof OpenAI.APIError)) throw err
+    console.error('Image request failed:', err)
+    const setup =
+      err instanceof OpenAI.NotFoundError ||
+      err instanceof OpenAI.APIConnectionError
+    throw new Error(
+      `the image service at ${client.baseURL} (model ${model}) failed: ` +
+        err.message.replace(/\.$/, '') +
+        (setup
+          ? '. Images need an image model (e.g. gpt-image-2) on a server ' +
+            'that makes images: tell the user to check OPENAI_IMAGE_MODEL ' +
+            'and OPENAI_IMAGE_BASE_URL in .env.'
+          : ''),
+      { cause: err },
+    )
   }
 }
 

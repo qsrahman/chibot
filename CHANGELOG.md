@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- Image generation that can't work (e.g. `OPENAI_IMAGE_MODEL` set to a chat model, or an endpoint without images) now says which endpoint and model failed and what to set, instead of a bare 404 or "Connection error". README and `.env.example` say the image model must be an image-generation model.
+
 ## [0.9.1] - 2026-10-23
 
 ### Fixed

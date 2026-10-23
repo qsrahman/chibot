@@ -45,7 +45,7 @@ chibot folder, so it finds its settings wherever you run it.
 | `OPENAI_MODEL` | `gpt-6-astra` | Chat model; required with `OPENAI_BASE_URL` |
 | `HOST` | `127.0.0.1` | Interface to listen on (see below) |
 | `PORT` | `3000` | API server port |
-| `OPENAI_IMAGE_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Image generation; the model defaults to `gpt-image-2` on OpenAI, and must be named on other servers |
+| `OPENAI_IMAGE_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Image generation; the model must be an image-generation model (not a chat model), and defaults to `gpt-image-2` on OpenAI |
 | `OPENAI_EMBEDDING_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Project file search by meaning; the model defaults to `text-embedding-3-small` on OpenAI, and must be named on other servers (without one, project files are searched by keywords) |
 | `BRAVE_API_KEY` | — | Turns on web search ([Brave Search API](https://brave.com/search/api/)) |
 | `CHIBOT_DATA_DIR` | `<repo>/data` | Where the database and generated images are kept |
@@ -58,12 +58,19 @@ OPENAI_MODEL=gemma4:cloud
 ```
 
 Use any model Ollama can serve. `:cloud` models need `ollama signin` first.
-Ollama can't make images, so to keep image generation, point it at OpenAI:
+Chat models (such as `gemma4` or `gpt-oss`) can't make images, so leave
+`OPENAI_IMAGE_MODEL` unset (or set it to an image model) and point image
+generation at OpenAI:
 
 ```bash
 OPENAI_IMAGE_BASE_URL=https://api.openai.com/v1
 OPENAI_IMAGE_API_KEY=sk-…
 ```
+
+(Ollama's own image generation is experimental and needs an image model
+pulled in Ollama; then set `OPENAI_IMAGE_MODEL` to that model instead.) If
+image generation is set up wrongly, the answer says which endpoint and model
+failed.
 
 For project files, embeddings can stay local:
 `ollama pull nomic-embed-text`, then `OPENAI_EMBEDDING_MODEL=nomic-embed-text`.
