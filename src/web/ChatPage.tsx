@@ -15,7 +15,8 @@ import {
   RefreshCw,
   Wrench,
 } from 'lucide-react'
-import { deleteProject, updateProject, type Health } from './api.ts'
+import type { Health } from '../shared/types.ts'
+import { deleteProject, updateProject } from './api.ts'
 import { Composer, type ToolOption } from './Composer.tsx'
 import { Markdown } from './Markdown.tsx'
 import { ModelPicker } from './ModelPicker.tsx'

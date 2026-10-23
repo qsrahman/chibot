@@ -10,6 +10,7 @@ import type {
   ConversationListItem,
   ConversationPatch,
   ConversationWithItems,
+  Health,
   Memory,
   ModelsResponse,
   Project,
@@ -31,24 +32,12 @@ export type TurnEvent =
   | TurnTitleEvent
   | TurnToolOutputEvent
 
-export interface Health {
-  status: string
-  model: string
-  baseURL: string | null
-}
-
-const JSON_HEADERS = { 'Content-Type': 'application/json' }
-
 export const getHealth = () => request<Health>('/api/health')
 
 export const getSettings = () => request<SettingsResponse>('/api/settings')
 
 export const updateSettings = (patch: SettingsPatch) =>
-  request<Settings>('/api/settings', {
-    method: 'PATCH',
-    headers: JSON_HEADERS,
-    body: JSON.stringify(patch),
-  })
+  request<Settings>('/api/settings', send('PATCH', patch))
 
 export const listModels = () => request<ModelsResponse>('/api/models')
 
@@ -60,26 +49,14 @@ export const getProject = (id: string) =>
   request<ProjectWithContents>(`/api/projects/${id}`)
 
 export const createProject = (name: string) =>
-  request<Project>('/api/projects', {
-    method: 'POST',
-    headers: JSON_HEADERS,
-    body: JSON.stringify({ name }),
-  })
+  request<Project>('/api/projects', send('POST', { name }))
 
 export const updateProject = (
   id: string,
   patch: { name?: string; instructions?: string },
-) =>
-  request<Project>(`/api/projects/${id}`, {
-    method: 'PATCH',
-    headers: JSON_HEADERS,
-    body: JSON.stringify(patch),
-  })
+) => request<Project>(`/api/projects/${id}`, send('PATCH', patch))
 
-export async function deleteProject(id: string) {
-  const res = await fetch(`/api/projects/${id}`, { method: 'DELETE' })
-  if (!res.ok) throw new Error(await errorMessage(res))
-}
+export const deleteProject = (id: string) => remove(`/api/projects/${id}`)
 
 /** Uploads `file` and adds it to the project, which then indexes it. */
 export async function addProjectFile(projectId: string, file: File) {
@@ -89,29 +66,20 @@ export async function addProjectFile(projectId: string, file: File) {
     method: 'POST',
     body: form,
   })
-  return request<ProjectFile[]>(`/api/projects/${projectId}/files`, {
-    method: 'POST',
-    headers: JSON_HEADERS,
-    body: JSON.stringify({ fileId: stored.id }),
-  })
+  return request<ProjectFile[]>(
+    `/api/projects/${projectId}/files`,
+    send('POST', { fileId: stored.id }),
+  )
 }
 
-export async function removeProjectFile(projectId: string, fileId: string) {
-  const res = await fetch(`/api/projects/${projectId}/files/${fileId}`, {
-    method: 'DELETE',
-  })
-  if (!res.ok && res.status !== 404) throw new Error(await errorMessage(res))
-}
+export const removeProjectFile = (projectId: string, fileId: string) =>
+  remove(`/api/projects/${projectId}/files/${fileId}`)
 
 export const listMemories = () => request<Memory[]>('/api/memories')
 
-/** Deletes one memory (gone already is fine), or all without `id`. */
-export async function deleteMemories(id?: number) {
-  const res = await fetch(`/api/memories${id === undefined ? '' : `/${id}`}`, {
-    method: 'DELETE',
-  })
-  if (!res.ok && res.status !== 404) throw new Error(await errorMessage(res))
-}
+/** Deletes one memory, or all without `id`. */
+export const deleteMemories = (id?: number) =>
+  remove(`/api/memories${id === undefined ? '' : `/${id}`}`)
 
 export const listConversations = ({ archived = false } = {}) =>
   request<ConversationListItem[]>(
@@ -124,60 +92,39 @@ export const searchConversations = (q: string, signal?: AbortSignal) =>
     { signal },
   )
 
-export const createConversation = ({
-  temporary = false,
-  projectId,
-}: { temporary?: boolean; projectId?: string } = {}) =>
-  request<Conversation>('/api/conversations', {
-    method: 'POST',
-    headers: JSON_HEADERS,
-    body: JSON.stringify({ temporary, projectId }),
-  })
+export const createConversation = (options: {
+  temporary?: boolean
+  projectId?: string
+}) => request<Conversation>('/api/conversations', send('POST', options))
 
 export const getConversation = (id: string) =>
   request<ConversationWithItems>(`/api/conversations/${id}`)
 
 export const updateConversation = (id: string, patch: ConversationPatch) =>
-  request<Conversation>(`/api/conversations/${id}`, {
-    method: 'PATCH',
-    headers: JSON_HEADERS,
-    body: JSON.stringify(patch),
-  })
+  request<Conversation>(`/api/conversations/${id}`, send('PATCH', patch))
 
 /** `keepalive` lets the request finish while the page is unloading. */
-export async function deleteConversation(
-  id: string,
-  { keepalive = false } = {},
-) {
-  const res = await fetch(`/api/conversations/${id}`, {
-    method: 'DELETE',
-    keepalive,
-  })
-  if (!res.ok && res.status !== 404) throw new Error(await errorMessage(res))
-}
+export const deleteConversation = (id: string, { keepalive = false } = {}) =>
+  remove(`/api/conversations/${id}`, { keepalive })
 
 /** Where to download a conversation as Markdown or JSON. */
 export const exportUrl = (id: string, format: 'md' | 'json') =>
   `/api/conversations/${id}/export?format=${format}`
 
 /** Adds a chat from an exported JSON file; the server validates it. */
-export async function importConversation(file: File) {
-  return request<Conversation>('/api/conversations/import', {
+export const importConversation = async (file: File) =>
+  request<Conversation>('/api/conversations/import', {
     method: 'POST',
     headers: JSON_HEADERS,
     body: await file.text(),
   })
-}
 
 /** Shows another version of a message or answer (see `Versions`). */
-export async function switchVersion(conversationId: string, itemId: number) {
-  const res = await fetch(`/api/conversations/${conversationId}/leaf`, {
-    method: 'PUT',
-    headers: JSON_HEADERS,
-    body: JSON.stringify({ itemId }),
-  })
-  if (!res.ok) throw new Error(await errorMessage(res))
-}
+export const switchVersion = (conversationId: string, itemId: number) =>
+  request<void>(
+    `/api/conversations/${conversationId}/leaf`,
+    send('PUT', { itemId }),
+  )
 
 /** Runs a turn and yields the streamed events until it ends. */
 export async function* streamTurn(
@@ -186,9 +133,7 @@ export async function* streamTurn(
   signal: AbortSignal,
 ): AsyncGenerator<TurnEvent> {
   const res = await fetch(`/api/conversations/${conversationId}/turns`, {
-    method: 'POST',
-    headers: JSON_HEADERS,
-    body: JSON.stringify(request),
+    ...send('POST', request),
     signal,
   })
   if (!res.ok) throw new Error(await errorMessage(res))
@@ -204,10 +149,26 @@ export async function* streamTurn(
   }
 }
 
+const JSON_HEADERS = { 'Content-Type': 'application/json' }
+
+/** A request with `body` as JSON. */
+const send = (method: string, body: unknown): RequestInit => ({
+  method,
+  headers: JSON_HEADERS,
+  body: JSON.stringify(body),
+})
+
+/** The JSON response, or nothing for an empty one (204). */
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init)
   if (!res.ok) throw new Error(await errorMessage(res))
-  return res.json() as Promise<T>
+  return (res.status === 204 ? undefined : await res.json()) as T
+}
+
+/** Deletes `url`. Already gone (404) is fine: the result is the same. */
+async function remove(url: string, init?: RequestInit): Promise<void> {
+  const res = await fetch(url, { ...init, method: 'DELETE' })
+  if (!res.ok && res.status !== 404) throw new Error(await errorMessage(res))
 }
 
 async function errorMessage(res: Response): Promise<string> {

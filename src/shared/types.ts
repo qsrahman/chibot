@@ -155,6 +155,15 @@ export interface ToolInfo {
   label: string
 }
 
+/** `GET /api/health`. */
+export interface Health {
+  status: 'ok'
+  /** The chat model from the environment. */
+  model: string
+  /** The chat endpoint; `null` is OpenAI. */
+  baseURL: string | null
+}
+
 /** `GET /api/models`: the chat endpoint's models, or `null` if it can't list them. */
 export interface ModelsResponse {
   models: string[] | null

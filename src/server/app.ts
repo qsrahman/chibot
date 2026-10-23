@@ -22,6 +22,7 @@ import {
 } from '../shared/settings.ts'
 import type {
   ConversationWithItems,
+  Health,
   ModelsResponse,
   ProjectWithContents,
   ToolInfo,
@@ -65,9 +66,9 @@ export function createApp({
     c.json({
       status: 'ok',
       model: config.chat.model,
-      // null = OpenAI. Never expose the key.
+      // Never expose the key.
       baseURL: config.chat.baseURL ?? null,
-    }),
+    } satisfies Health),
   )
 
   app.get('/api/settings', (c) =>

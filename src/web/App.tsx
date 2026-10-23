@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router'
-import { getHealth, type Health } from './api.ts'
+import type { Health } from '../shared/types.ts'
+import { getHealth } from './api.ts'
 import { ChatPage } from './ChatPage.tsx'
 import { Sidebar } from './Sidebar.tsx'
 import { useConversations } from './useConversations.ts'
