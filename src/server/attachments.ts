@@ -3,7 +3,7 @@ import type {
   ResponseInputContent,
   ResponseInputItem,
 } from 'openai/resources/responses/responses'
-import { fileKind } from '../shared/documents.ts'
+import { documentKind, fileKind } from '../shared/documents.ts'
 import type { StoredFile } from '../shared/types.ts'
 import type { FileStore } from './file-store.ts'
 import { documentText } from './text.ts'
@@ -12,6 +12,9 @@ import { documentText } from './text.ts'
 const EXPIRES_AFTER = 30 * 24 * 60 * 60
 // A document's text sent in place of the file (about 50k tokens).
 const MAX_TEXT = 200_000
+// Extracted texts kept for the requests that follow (a turn's tool steps,
+// the next turns); the oldest goes first.
+const CACHED_TEXTS = 20
 
 /** How a model takes documents: as files, or as their extracted text. */
 type DocumentMode = 'file' | 'text'
@@ -159,17 +162,18 @@ export class Attachments {
     }
   }
 
+  /** A document's extracted text (only `input_file` parts get here). */
   async #text(file: StoredFile): Promise<string> {
     let text = this.#texts.get(file.id)
     if (text === undefined) {
-      const kind = fileKind(file.name)!.kind
-      text =
-        kind === 'image'
-          ? ''
-          : await documentText(kind, this.#files.read(file.id))
+      const kind = documentKind(file.name)!.kind
+      text = await documentText(kind, this.#files.read(file.id))
       if (text.length > MAX_TEXT)
         text = `${text.slice(0, MAX_TEXT)}\n\n[truncated]`
       this.#texts.set(file.id, text)
+      if (this.#texts.size > CACHED_TEXTS) {
+        this.#texts.delete(this.#texts.keys().next().value!)
+      }
     }
     return text
   }

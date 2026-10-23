@@ -11,6 +11,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 ### Fixed
 
 - A turn refused after its attachments were checked (e.g. an unknown `parentId`) no longer links them to the chat; they stay unsent uploads and are swept as usual.
+- Documents' extracted text (sent to models that refuse files) was cached in memory for good, even after their chat was deleted; the cache now keeps the last 20.
 
 ## [0.10.0] - 2026-10-23
 
