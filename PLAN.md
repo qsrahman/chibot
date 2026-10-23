@@ -290,7 +290,7 @@ compaction on at 64k tokens; math formatting via a built-in instruction.
   export/import and compaction (the fake server gains summary and compaction
   events).
 
-### Phase 5 — Custom function tools
+### Phase 5 — Custom function tools ✅
 Decisions (agreed after probing OpenAI and Ollama): chibot's own tool loop
 rather than the SDK's `ResponsesToolRunner`; approval ends the turn and a new
 request resumes it; e2e approval through a test-only tool; no tool toggles yet

@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-23
+
 ### Added
 
 - Function tools: the model can call chibot's own tools mid-answer (`Tool` subclasses in a `ToolRegistry`). Calls run in order, their outputs are saved in the history and streamed as `chibot.tool_output`, and the model is asked again, up to 10 requests per answer. Tool errors and invalid arguments go back to the model instead of ending the turn, and a stopped answer still records an output for every call.
