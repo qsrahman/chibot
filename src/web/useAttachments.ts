@@ -84,8 +84,10 @@ export function useAttachments() {
     add,
     remove,
     clear,
-    /** Uploads still running, or failed ones to remove before sending. */
-    blocked: drafts.some((d) => !d.attachment),
+    /** Some files are still on their way. */
+    uploading: drafts.some((d) => !d.attachment && !d.error),
+    /** Some files were refused; they must be removed before sending. */
+    failed: drafts.some((d) => d.error !== null),
     ready: drafts.flatMap((d) => (d.attachment ? [d.attachment] : [])),
   }
 }

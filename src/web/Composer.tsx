@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useRef,
   useState,
   type KeyboardEvent,
@@ -56,6 +57,8 @@ export function Composer({
 }: Props) {
   const [text, setText] = useState('')
   const [picked, setPicked] = useState<ToolOption | null>(null)
+  // Sent while files were uploading: goes once they're all up.
+  const [queued, setQueued] = useState(false)
   const menu = useAnchoredPopover()
   const pickerRef = useRef<HTMLInputElement>(null)
   const dictation = useDictation((spoken) => {
@@ -77,20 +80,33 @@ export function Composer({
   // Files alone are a message too.
   const canSend =
     !busy &&
+    !queued &&
     (text.trim() !== '' || attachments.drafts.length > 0) &&
-    !attachments.blocked
+    !attachments.failed
   // A tool switched off meanwhile can't be used any more.
   const tool =
     picked && tools.some((t) => t.name === picked.name) ? picked : null
 
-  function submit() {
-    if (!canSend) return
+  function submit({ force = false } = {}) {
+    if (!canSend && !force) return
+    if (attachments.uploading) {
+      setQueued(true)
+      return
+    }
     onSend(text, tool?.name, attachments.ready)
     setText('')
     setPicked(null)
     attachments.clear()
     inputRef.current?.focus()
   }
+
+  // Re-run as uploads finish: send once the last one is up, or give up when
+  // one fails (its chip shows why).
+  useEffect(() => {
+    if (!queued || attachments.uploading) return
+    setQueued(false)
+    if (!attachments.failed) submit({ force: true })
+  }, [queued, attachments.uploading])
 
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     // isComposing: Enter confirms IME input (e.g. Japanese) rather than sending.
@@ -247,11 +263,15 @@ export function Composer({
         <button
           type="submit"
           className="icon-button primary"
-          aria-label="Send"
-          title={attachments.blocked ? 'Waiting for attachments' : undefined}
+          aria-label={queued ? 'Sending when the files are uploaded' : 'Send'}
+          title={queued ? 'Sending when the files are uploaded' : undefined}
           disabled={!canSend}
         >
-          <ArrowUp size={20} strokeWidth={2} />
+          {queued ? (
+            <LoaderCircle className="spin" size={20} strokeWidth={2} />
+          ) : (
+            <ArrowUp size={20} strokeWidth={2} />
+          )}
         </button>
       )}
       {dictation.error && (

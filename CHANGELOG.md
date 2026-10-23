@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Added
 
+- Sending while attachments upload no longer does nothing: the message goes as soon as they're up (the send button spins meanwhile), unless one is refused.
 - A message can be just attachments, with no text (the turn's `text` may be blank when it has `fileIds`).
 
 ### Changed

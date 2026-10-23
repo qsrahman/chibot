@@ -27,12 +27,13 @@ test.afterEach(({ page }) => resetSettings(page))
 async function attach(
   page: Page,
   files: { name: string; mimeType: string; buffer: Buffer }[],
+  { wait = true } = {},
 ) {
   await page.getByRole('button', { name: 'Add files and more' }).click()
   const chooser = page.waitForEvent('filechooser')
   await page.getByRole('menuitem', { name: 'Add photos & files' }).click()
   await (await chooser).setFiles(files)
-  await uploaded(page)
+  if (wait) await uploaded(page)
 }
 
 /** Send waits for uploads (Enter does nothing meanwhile). */
@@ -241,4 +242,24 @@ test('sends files without text', async ({ page }) => {
     bubble.getByRole('img', { name: 'Attached image' }),
   ).toBeVisible()
   await expect(bubble.locator('p')).toHaveCount(0)
+})
+
+test('sends once the files are uploaded', async ({ page }) => {
+  await page.route('/api/files', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 800))
+    await route.continue()
+  })
+  await page.goto('/')
+  await appReady(page)
+  await attach(page, [NOTES], { wait: false })
+  await send(page, 'Queued')
+  await expect(
+    page.getByRole('button', { name: 'Sending when the files are uploaded' }),
+  ).toBeVisible()
+  await answered(page)
+  await expect(answer(page, 0)).toContainText('to: Queued')
+  expect((await userContent(page)).map((part) => part.type)).toEqual([
+    'input_file',
+    'input_text',
+  ])
 })

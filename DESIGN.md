@@ -101,8 +101,9 @@ Code uses `"SF Mono", SFMono-Regular, ui-monospace, Consolas, "Liberation Mono",
 **Composer.** A 28 px-radius pill on `--surface` with a `--border` outline,
 7×10 px padding and 52 px tall when one line. The textarea grows up to 40 vh.
 A round 36 px icon button on the right is **send** (blue `--accent`, arrow-up icon),
-dimmed while the input is empty, and becomes **stop** (square icon) while an
-answer streams. A "+" button sits on the left (attachments and tools, see
+dimmed while the input is empty, shows a spinning `LoaderCircle` while a
+message waits for its attachments to upload, and becomes **stop** (square
+icon) while an answer streams. A "+" button sits on the left (attachments and tools, see
 *Composer tools*); a 36 px `Mic` icon button sits left of send. While
 recording it shows a stop square in `--danger`, then a spinning
 `LoaderCircle` while transcribing. Without transcription it's dimmed to 40 %
