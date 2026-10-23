@@ -30,6 +30,7 @@ interface Props {
   /** A chat was imported, so the sidebar list should reload. */
   onImported: () => void
   onShowArchived: () => void
+  onShowMemories: () => void
 }
 
 /** Settings (DESIGN.md §4): tabs on the left, cards of rows on the right. */
@@ -39,6 +40,7 @@ export function SettingsDialog({
   settings,
   onImported,
   onShowArchived,
+  onShowMemories,
 }: Props) {
   const [tab, setTab] = useState<Tab>('general')
   const current = settings.settings
@@ -70,7 +72,22 @@ export function SettingsDialog({
           )}
           {tab === 'general' && <General />}
           {tab === 'personalization' && current && (
-            <Personalization settings={current} onSave={settings.update} />
+            <>
+              <Personalization settings={current} onSave={settings.update} />
+              {settings.tools.some((tool) => tool.name === 'memory') && (
+                <Memory
+                  on={!current.disabledTools.includes('memory')}
+                  onChange={(on) =>
+                    void settings.update({
+                      disabledTools: on
+                        ? current.disabledTools.filter((n) => n !== 'memory')
+                        : [...current.disabledTools, 'memory'],
+                    })
+                  }
+                  onManage={onShowMemories}
+                />
+              )}
+            </>
           )}
           {tab === 'model' && current && settings.defaults && (
             <Model
@@ -217,6 +234,41 @@ function Personalization({
           Save
         </button>
       </div>
+    </Section>
+  )
+}
+
+/** The memory tool's switch (also in Tools), and its memories. */
+function Memory({
+  on,
+  onChange,
+  onManage,
+}: {
+  on: boolean
+  onChange: (on: boolean) => void
+  onManage: () => void
+}) {
+  return (
+    <Section title="Memory">
+      <Row
+        label="Remember across chats"
+        description="chibot saves facts and preferences you share, and uses them in new chats. Temporary chats don't use memory."
+        htmlFor="setting-memory"
+      >
+        <input
+          id="setting-memory"
+          type="checkbox"
+          role="switch"
+          className="switch"
+          checked={on}
+          onChange={(e) => onChange(e.target.checked)}
+        />
+      </Row>
+      <Row label="Saved memories">
+        <button type="button" className="button" onClick={onManage}>
+          Manage
+        </button>
+      </Row>
     </Section>
   )
 }

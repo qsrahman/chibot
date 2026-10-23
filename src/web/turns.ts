@@ -123,13 +123,18 @@ export function waitingCalls(turns: Turn[]): ToolActivity[] {
   return turns.at(-1)?.answer?.tools.filter((t) => t.output === null) ?? []
 }
 
-/** A page an answer searched or read. */
+/** A page or past chat an answer searched or read. */
 export interface Source {
   url: string
   title: string
+  /** A chat in chibot (`/c/:id`), not a web page. */
+  chat?: boolean
 }
 
-/** The pages an answer found with `web_search` or read with `fetch_url`. */
+/**
+ * The pages an answer found with `web_search` or read with `fetch_url`, and
+ * the chats it found with `search_chats`.
+ */
 export function sourcesOf(answer: Answer): Source[] {
   const found = new Map<string, Source>()
   for (const tool of answer.tools) {
@@ -137,6 +142,14 @@ export function sourcesOf(answer: Answer): Source[] {
     if (tool.name === 'web_search') {
       const { results = [] } = parseJson<{ results?: Source[] }>(tool.output)
       for (const { url, title } of results) found.set(url, { url, title })
+    } else if (tool.name === 'search_chats') {
+      const { results = [] } = parseJson<{
+        results?: { chat_id: string; title: string }[]
+      }>(tool.output)
+      for (const { chat_id, title } of results) {
+        const url = `/c/${chat_id}`
+        found.set(url, { url, title, chat: true })
+      }
     } else if (tool.name === 'fetch_url') {
       const { url } = parseJson<{ url?: string }>(tool.arguments)
       if (url && !found.has(url)) found.set(url, { url, title: url })

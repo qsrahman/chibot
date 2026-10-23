@@ -1437,6 +1437,13 @@ label.button {
   border-bottom: 1px solid var(--border);
 }
 
+.memory-text {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 0;
+  font-size: 14px;
+}
+
 .archived-title {
   flex: 1;
   min-width: 0;

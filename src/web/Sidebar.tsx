@@ -18,6 +18,7 @@ import {
 import type { ConversationListItem } from '../shared/types.ts'
 import { exportUrl } from './api.ts'
 import { ArchivedDialog } from './ArchivedDialog.tsx'
+import { MemoriesDialog } from './MemoriesDialog.tsx'
 import { groupConversations } from './dates.ts'
 import { DeleteChatDialog } from './Dialog.tsx'
 import { useAnchoredPopover } from './popover.ts'
@@ -45,6 +46,7 @@ export function Sidebar({
   const openId = useMatch('/c/:id')?.params.id
   const [searchOpen, setSearchOpen] = useState(false)
   const [archivedOpen, setArchivedOpen] = useState(false)
+  const [memoriesOpen, setMemoriesOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
 
@@ -156,10 +158,15 @@ export function Sidebar({
         settings={settings}
         onImported={conversations.refresh}
         onShowArchived={() => setArchivedOpen(true)}
+        onShowMemories={() => setMemoriesOpen(true)}
       />
       <ShortcutsDialog
         open={shortcutsOpen}
         onClose={() => setShortcutsOpen(false)}
+      />
+      <MemoriesDialog
+        open={memoriesOpen}
+        onClose={() => setMemoriesOpen(false)}
       />
       <ArchivedDialog
         open={archivedOpen}

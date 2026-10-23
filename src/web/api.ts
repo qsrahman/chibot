@@ -10,6 +10,7 @@ import type {
   ConversationListItem,
   ConversationPatch,
   ConversationWithItems,
+  Memory,
   ModelsResponse,
   ToolInfo,
   TurnApprovalEvent,
@@ -48,6 +49,16 @@ export const updateSettings = (patch: SettingsPatch) =>
 export const listModels = () => request<ModelsResponse>('/api/models')
 
 export const listTools = () => request<{ tools: ToolInfo[] }>('/api/tools')
+
+export const listMemories = () => request<Memory[]>('/api/memories')
+
+/** Deletes one memory (gone already is fine), or all without `id`. */
+export async function deleteMemories(id?: number) {
+  const res = await fetch(`/api/memories${id === undefined ? '' : `/${id}`}`, {
+    method: 'DELETE',
+  })
+  if (!res.ok && res.status !== 404) throw new Error(await errorMessage(res))
+}
 
 export const listConversations = ({ archived = false } = {}) =>
   request<ConversationListItem[]>(

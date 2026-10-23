@@ -5,7 +5,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import {
   Download,
   Globe,
@@ -56,6 +56,8 @@ const TOOL_LABELS: Record<string, [running: string, done: string]> = {
   generate_image: ['Creating an image…', 'Created an image'],
   edit_image: ['Editing the image…', 'Edited the image'],
   calculator: ['Calculating…', 'Used calculator'],
+  memory: ['Updating memory…', 'Memory updated'],
+  search_chats: ['Searching your chats…', 'Searched your chats'],
 }
 
 interface Props {
@@ -496,12 +498,19 @@ function Sources({ answer }: { answer: Answer }) {
     <details className="sources">
       <summary>Sources · {sources.length}</summary>
       <ul>
-        {sources.map(({ url, title }) => (
+        {sources.map(({ url, title, chat }) => (
           <li key={url}>
-            <a href={url} target="_blank" rel="noreferrer">
-              <span className="source-title">{title}</span>
-              <span className="source-host">{new URL(url).hostname}</span>
-            </a>
+            {chat ? (
+              <Link to={url}>
+                <span className="source-title">{title}</span>
+                <span className="source-host">Your chats</span>
+              </Link>
+            ) : (
+              <a href={url} target="_blank" rel="noreferrer">
+                <span className="source-title">{title}</span>
+                <span className="source-host">{new URL(url).hostname}</span>
+              </a>
+            )}
           </li>
         ))}
       </ul>

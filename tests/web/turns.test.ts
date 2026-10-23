@@ -182,3 +182,23 @@ describe('sourcesOf and imageOf', () => {
     expect(imageOf(tool('calculator', {}, '{"image_id":"x"}'))).toBeNull()
   })
 })
+
+describe('sourcesOf with past chats', () => {
+  it('links chats found by search_chats inside chibot', () => {
+    const output = JSON.stringify({
+      query: 'q',
+      results: [{ chat_id: 'abc', title: 'Storage design', messages: [] }],
+    })
+    expect(
+      sourcesOf({
+        itemId: 1,
+        text: '',
+        thinking: '',
+        usage: null,
+        model: null,
+        versions: null,
+        tools: [{ callId: 'c', name: 'search_chats', arguments: '{}', output }],
+      }),
+    ).toEqual([{ url: '/c/abc', title: 'Storage design', chat: true }])
+  })
+})
