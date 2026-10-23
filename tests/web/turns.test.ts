@@ -199,6 +199,36 @@ describe('sourcesOf with past chats', () => {
         versions: null,
         tools: [{ callId: 'c', name: 'search_chats', arguments: '{}', output }],
       }),
-    ).toEqual([{ url: '/c/abc', title: 'Storage design', chat: true }])
+    ).toEqual([{ url: '/c/abc', title: 'Storage design', kind: 'chat' }])
+  })
+})
+
+describe('sourcesOf with project files', () => {
+  it('links the files search_project_files found', () => {
+    const output = JSON.stringify({
+      query: 'q',
+      results: [
+        { file: 'plan.md', file_id: 'f1', text: 'a' },
+        { file: 'plan.md', file_id: 'f1', text: 'b' },
+      ],
+    })
+    expect(
+      sourcesOf({
+        itemId: 1,
+        text: '',
+        thinking: '',
+        usage: null,
+        model: null,
+        versions: null,
+        tools: [
+          {
+            callId: 'c',
+            name: 'search_project_files',
+            arguments: '{}',
+            output,
+          },
+        ],
+      }),
+    ).toEqual([{ url: '/api/files/f1', title: 'plan.md', kind: 'file' }])
   })
 })

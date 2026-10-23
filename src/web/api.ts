@@ -12,6 +12,10 @@ import type {
   ConversationWithItems,
   Memory,
   ModelsResponse,
+  Project,
+  ProjectFile,
+  ProjectWithContents,
+  StoredFile,
   ToolInfo,
   TurnApprovalEvent,
   TurnErrorEvent,
@@ -50,6 +54,55 @@ export const listModels = () => request<ModelsResponse>('/api/models')
 
 export const listTools = () => request<{ tools: ToolInfo[] }>('/api/tools')
 
+export const listProjects = () => request<Project[]>('/api/projects')
+
+export const getProject = (id: string) =>
+  request<ProjectWithContents>(`/api/projects/${id}`)
+
+export const createProject = (name: string) =>
+  request<Project>('/api/projects', {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ name }),
+  })
+
+export const updateProject = (
+  id: string,
+  patch: { name?: string; instructions?: string },
+) =>
+  request<Project>(`/api/projects/${id}`, {
+    method: 'PATCH',
+    headers: JSON_HEADERS,
+    body: JSON.stringify(patch),
+  })
+
+export async function deleteProject(id: string) {
+  const res = await fetch(`/api/projects/${id}`, { method: 'DELETE' })
+  if (!res.ok) throw new Error(await errorMessage(res))
+}
+
+/** Uploads `file` and adds it to the project, which then indexes it. */
+export async function addProjectFile(projectId: string, file: File) {
+  const form = new FormData()
+  form.append('file', file)
+  const stored = await request<StoredFile>('/api/files', {
+    method: 'POST',
+    body: form,
+  })
+  return request<ProjectFile[]>(`/api/projects/${projectId}/files`, {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ fileId: stored.id }),
+  })
+}
+
+export async function removeProjectFile(projectId: string, fileId: string) {
+  const res = await fetch(`/api/projects/${projectId}/files/${fileId}`, {
+    method: 'DELETE',
+  })
+  if (!res.ok && res.status !== 404) throw new Error(await errorMessage(res))
+}
+
 export const listMemories = () => request<Memory[]>('/api/memories')
 
 /** Deletes one memory (gone already is fine), or all without `id`. */
@@ -71,11 +124,14 @@ export const searchConversations = (q: string, signal?: AbortSignal) =>
     { signal },
   )
 
-export const createConversation = ({ temporary = false } = {}) =>
+export const createConversation = ({
+  temporary = false,
+  projectId,
+}: { temporary?: boolean; projectId?: string } = {}) =>
   request<Conversation>('/api/conversations', {
     method: 'POST',
     headers: JSON_HEADERS,
-    body: JSON.stringify({ temporary }),
+    body: JSON.stringify({ temporary, projectId }),
   })
 
 export const getConversation = (id: string) =>

@@ -13,8 +13,13 @@ export function useAnchoredPopover() {
   const ref = useRef<HTMLDivElement>(null)
   const [style, setStyle] = useState<CSSProperties>()
 
+  /**
+   * Places the popover under `trigger`, or above it when asked or when the
+   * trigger is low in the window (where a menu would run off the bottom).
+   */
   function place(trigger: HTMLElement, { above = false } = {}) {
     const r = trigger.getBoundingClientRect()
+    above ||= r.bottom > innerHeight * 0.6
     setStyle(
       above
         ? { bottom: innerHeight - r.top + 4, left: r.left }

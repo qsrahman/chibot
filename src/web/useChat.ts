@@ -34,6 +34,8 @@ interface Options {
   onListChanged: () => void
   /** Whether a conversation created by `send` is temporary. */
   temporary: boolean
+  /** The project a conversation created by `send` goes in. */
+  projectId?: string
 }
 
 /** A request being answered. */
@@ -46,13 +48,14 @@ interface Run {
 /** Chat state for the conversation on screen. */
 export function useChat(
   conversationId: string | undefined,
-  { onCreated, onListChanged, temporary }: Options,
+  { onCreated, onListChanged, temporary, projectId: newProjectId }: Options,
 ) {
   const [turns, setTurns] = useState<Turn[]>([])
   const [usage, setUsage] = useState<ResponseUsage | null>(null)
   const [pending, setPending] = useState<Pending | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isTemporary, setIsTemporary] = useState(false)
+  const [projectId, setProjectId] = useState<string | null>(null)
   // The run whose updates belong on screen. Cleared when the user switches
   // chats, so a run still going for the old chat can't touch the new one.
   const runRef = useRef<Run | null>(null)
@@ -76,6 +79,7 @@ export function useChat(
       setTurns([])
       setUsage(null)
       setIsTemporary(false)
+      setProjectId(null)
       return
     }
     let current = true
@@ -85,6 +89,7 @@ export function useChat(
         setTurns(toTurns(items))
         setUsage(usage)
         setIsTemporary(conversation.temporary)
+        setProjectId(conversation.projectId)
       },
       (err: Error) => current && setError(err.message),
     )
@@ -152,12 +157,16 @@ export function useChat(
     let id = conversationId
     try {
       if (!id) {
-        const created = await createConversation({ temporary })
+        const created = await createConversation({
+          temporary,
+          projectId: newProjectId,
+        })
         id = created.id
         if (!created.temporary) onListChanged()
         if (!live()) return
         createdIdRef.current = id
         setIsTemporary(created.temporary)
+        setProjectId(created.projectId)
         onCreated(id)
       }
       for await (const event of streamTurn(
@@ -335,6 +344,8 @@ export function useChat(
     usage,
     error,
     isTemporary,
+    /** The project of the conversation on screen, if any. */
+    projectId,
     busy: pending !== null,
     send,
     edit,

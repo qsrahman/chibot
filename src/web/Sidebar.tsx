@@ -1,38 +1,35 @@
-import { useState, type ReactElement, type ReactNode } from 'react'
+import { useState, type ReactElement } from 'react'
 import { Link, NavLink, useMatch, useNavigate } from 'react-router'
 import {
-  Archive,
-  Ellipsis,
-  FileJson,
-  FileText,
+  Folder,
+  FolderPlus,
   Keyboard,
   PanelLeft,
-  Pencil,
-  Pin,
-  PinOff,
   Search,
   Settings,
   SquarePen,
-  Trash2,
 } from 'lucide-react'
 import type { ConversationListItem } from '../shared/types.ts'
-import { exportUrl } from './api.ts'
+import { createProject } from './api.ts'
 import { ArchivedDialog } from './ArchivedDialog.tsx'
+import { ConversationRow } from './ConversationRow.tsx'
 import { MemoriesDialog } from './MemoriesDialog.tsx'
 import { groupConversations } from './dates.ts'
 import { DeleteChatDialog } from './Dialog.tsx'
-import { useAnchoredPopover } from './popover.ts'
+import { MoveToProjectDialog, ProjectNameDialog } from './ProjectDialogs.tsx'
 import { SearchDialog } from './SearchDialog.tsx'
 import { SettingsDialog } from './SettingsDialog.tsx'
 import { ShortcutsDialog } from './ShortcutsDialog.tsx'
 import { SHORTCUTS, useShortcuts } from './shortcuts.ts'
-import { UNTITLED, type ConversationsApi } from './useConversations.ts'
+import type { ConversationsApi } from './useConversations.ts'
+import type { ProjectsApi } from './useProjects.ts'
 import type { SettingsApi } from './useSettings.ts'
 
 interface Props {
   collapsed: boolean
   onToggle: () => void
   conversations: ConversationsApi
+  projects: ProjectsApi
   settings: SettingsApi
 }
 
@@ -40,6 +37,7 @@ export function Sidebar({
   collapsed,
   onToggle,
   conversations,
+  projects,
   settings,
 }: Props) {
   const navigate = useNavigate()
@@ -73,6 +71,19 @@ export function Sidebar({
     },
   })
   const [toDelete, setToDelete] = useState<ConversationListItem | null>(null)
+  const [toMove, setToMove] = useState<ConversationListItem | null>(null)
+  const [newProjectOpen, setNewProjectOpen] = useState(false)
+  const [projectError, setProjectError] = useState<string | null>(null)
+
+  async function addProject(name: string) {
+    try {
+      const project = await createProject(name)
+      await projects.refresh()
+      navigate(`/projects/${project.id}`)
+    } catch (err) {
+      setProjectError((err as Error).message)
+    }
+  }
 
   async function remove(id: string) {
     if ((await conversations.remove(id)) && id === openId) navigate('/')
@@ -107,6 +118,30 @@ export function Sidebar({
 
       {!collapsed && (
         <div className="sidebar-list">
+          <section>
+            <h3 className="sidebar-heading">Projects</h3>
+            <SidebarButton
+              icon={<FolderPlus />}
+              label="New project"
+              onClick={() => setNewProjectOpen(true)}
+            />
+            {(projectError ?? projects.error) && (
+              <p className="sidebar-note">{projectError ?? projects.error}</p>
+            )}
+            {projects.projects.map((project) => (
+              <NavLink
+                key={project.id}
+                to={`/projects/${project.id}`}
+                className="sidebar-row"
+                title={project.name}
+              >
+                <span className="row-icon" aria-hidden>
+                  <Folder />
+                </span>
+                <span className="row-label">{project.name}</span>
+              </NavLink>
+            ))}
+          </section>
           {conversations.error && (
             <p className="sidebar-note">{conversations.error}</p>
           )}
@@ -127,6 +162,7 @@ export function Sidebar({
                     void conversations.update(item.id, { archived: true })
                   }
                   onDelete={() => setToDelete(item)}
+                  onMove={() => setToMove(item)}
                 />
               ))}
             </section>
@@ -174,6 +210,22 @@ export function Sidebar({
         onChanged={conversations.refresh}
         onDeleted={(id) => id === openId && navigate('/')}
       />
+      <ProjectNameDialog
+        key={String(newProjectOpen)}
+        open={newProjectOpen}
+        title="New project"
+        confirmLabel="Create project"
+        onConfirm={(name) => void addProject(name)}
+        onClose={() => setNewProjectOpen(false)}
+      />
+      <MoveToProjectDialog
+        open={toMove !== null}
+        projects={projects.projects}
+        onMove={(projectId) =>
+          void conversations.update(toMove!.id, { projectId })
+        }
+        onClose={() => setToMove(null)}
+      />
       <DeleteChatDialog
         chat={toDelete}
         onDelete={(id) => void remove(id)}
@@ -214,144 +266,6 @@ function SidebarButton({
       aria-label={label}
       onClick={onClick}
     >
-      {content}
-    </button>
-  )
-}
-
-interface RowProps {
-  item: ConversationListItem
-  onRename: (title: string) => void
-  onPin: () => void
-  onArchive: () => void
-  onDelete: () => void
-}
-
-function ConversationRow({
-  item,
-  onRename,
-  onPin,
-  onArchive,
-  onDelete,
-}: RowProps) {
-  const [editing, setEditing] = useState(false)
-  const menu = useAnchoredPopover()
-  const title = item.title ?? UNTITLED
-
-  if (editing) {
-    const finish = (value: string | null) => {
-      setEditing(false)
-      if (value !== null && value.trim() && value.trim() !== item.title) {
-        onRename(value.trim())
-      }
-    }
-    return (
-      <input
-        className="sidebar-rename"
-        aria-label="Chat title"
-        defaultValue={title}
-        autoFocus
-        onFocus={(e) => e.currentTarget.select()}
-        onBlur={(e) => finish(e.currentTarget.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') finish(e.currentTarget.value)
-          if (e.key === 'Escape') finish(null)
-        }}
-      />
-    )
-  }
-
-  function act(action: () => void) {
-    menu.hide()
-    action()
-  }
-
-  return (
-    <div className="conversation-row">
-      <NavLink to={`/c/${item.id}`} className="sidebar-row" title={title}>
-        <span className="row-label">{title}</span>
-      </NavLink>
-      <button
-        type="button"
-        className="row-menu-button"
-        aria-label={`Options for ${title}`}
-        popoverTarget={menu.id}
-        onClick={(e) => menu.place(e.currentTarget)}
-      >
-        <Ellipsis size={18} strokeWidth={1.5} />
-      </button>
-      <div
-        id={menu.id}
-        ref={menu.ref}
-        popover="auto"
-        className="menu"
-        style={menu.style}
-      >
-        <MenuItem icon={<Pencil />} onClick={() => act(() => setEditing(true))}>
-          Rename
-        </MenuItem>
-        <MenuItem
-          icon={item.pinned ? <PinOff /> : <Pin />}
-          onClick={() => act(onPin)}
-        >
-          {item.pinned ? 'Unpin' : 'Pin'}
-        </MenuItem>
-        <MenuItem icon={<Archive />} onClick={() => act(onArchive)}>
-          Archive
-        </MenuItem>
-        <MenuItem
-          icon={<FileText />}
-          download={exportUrl(item.id, 'md')}
-          onClick={menu.hide}
-        >
-          Export as Markdown
-        </MenuItem>
-        <MenuItem
-          icon={<FileJson />}
-          download={exportUrl(item.id, 'json')}
-          onClick={menu.hide}
-        >
-          Export as JSON
-        </MenuItem>
-        <hr className="menu-divider" />
-        <MenuItem icon={<Trash2 />} danger onClick={() => act(onDelete)}>
-          Delete
-        </MenuItem>
-      </div>
-    </div>
-  )
-}
-
-/** A menu row: a button, or a download link when `download` is set. */
-function MenuItem({
-  icon,
-  danger,
-  onClick,
-  download,
-  children,
-}: {
-  icon: ReactElement
-  danger?: boolean
-  onClick: () => void
-  download?: string
-  children: ReactNode
-}) {
-  const content = (
-    <>
-      <span className="row-icon" aria-hidden>
-        {icon}
-      </span>
-      {children}
-    </>
-  )
-  const className = danger ? 'menu-item danger' : 'menu-item'
-  // The server names the file (Content-Disposition), so `download` is bare.
-  return download ? (
-    <a className={className} href={download} download onClick={onClick}>
-      {content}
-    </a>
-  ) : (
-    <button type="button" className={className} onClick={onClick}>
       {content}
     </button>
   )

@@ -15,10 +15,11 @@ import {
   RefreshCw,
   Wrench,
 } from 'lucide-react'
-import type { Health } from './api.ts'
+import { deleteProject, updateProject, type Health } from './api.ts'
 import { Composer, type ToolOption } from './Composer.tsx'
 import { Markdown } from './Markdown.tsx'
 import { ModelPicker } from './ModelPicker.tsx'
+import { ProjectDetails, ProjectHeading } from './ProjectHome.tsx'
 import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
 import { SHORTCUTS, useShortcuts } from './shortcuts.ts'
 import {
@@ -31,6 +32,7 @@ import {
 } from './turns.ts'
 import { describeUsage } from './usage.ts'
 import { useChat } from './useChat.ts'
+import type { ProjectsApi } from './useProjects.ts'
 import type { SettingsApi } from './useSettings.ts'
 
 /** Tools the composer's "+" menu offers, when the server has them. */
@@ -58,16 +60,19 @@ const TOOL_LABELS: Record<string, [running: string, done: string]> = {
   calculator: ['Calculating…', 'Used calculator'],
   memory: ['Updating memory…', 'Memory updated'],
   search_chats: ['Searching your chats…', 'Searched your chats'],
+  search_project_files: ['Searching project files…', 'Searched project files'],
 }
 
 interface Props {
   health: Health | undefined
   settings: SettingsApi
+  projects: ProjectsApi
   onListChanged: () => void
 }
 
-export function ChatPage({ health, settings, onListChanged }: Props) {
-  const { id } = useParams()
+export function ChatPage({ health, settings, projects, onListChanged }: Props) {
+  // `projectId`: a project's page, where a new chat starts in the project.
+  const { id, projectId: projectHome } = useParams()
   const navigate = useNavigate()
   // Chosen on a new chat before the first message; applies to that chat.
   const [temporaryMode, setTemporaryMode] = useState(false)
@@ -75,6 +80,7 @@ export function ChatPage({ health, settings, onListChanged }: Props) {
     onCreated: (newId) => navigate(`/c/${newId}`),
     onListChanged,
     temporary: temporaryMode,
+    projectId: projectHome,
   })
   const { turns, pending, error, isTemporary, busy } = chat
   const waiting = pending ? [] : waitingCalls(turns)
@@ -131,22 +137,39 @@ export function ChatPage({ health, settings, onListChanged }: Props) {
   // and text when the first message moves it to the bottom.
   const empty = turns.length === 0 && !pending && !error
   const temporary = id ? isTemporary : temporaryMode
+  const projectId = id ? chat.projectId : (projectHome ?? null)
+  const project = projects.projects.find((p) => p.id === projectId)
 
   return (
-    <main className={empty ? 'chat empty' : 'chat'}>
+    <main
+      className={
+        empty && projectHome
+          ? 'chat empty project-home'
+          : empty
+            ? 'chat empty'
+            : 'chat'
+      }
+    >
       <header className="topbar">
-        {!health ? (
-          <span className="model">Server unreachable</span>
-        ) : settings.settings && settings.defaults ? (
-          <span title={health.baseURL ?? 'OpenAI'}>
-            <ModelPicker
-              model={settings.settings.model}
-              defaultModel={settings.defaults.model}
-              onSelect={(model) => void settings.update({ model })}
-            />
-          </span>
-        ) : null}
-        {id ? (
+        <span className="topbar-start">
+          {id && project && (
+            <Link className="breadcrumb" to={`/projects/${project.id}`}>
+              {project.name} /
+            </Link>
+          )}
+          {!health ? (
+            <span className="model">Server unreachable</span>
+          ) : settings.settings && settings.defaults ? (
+            <span title={health.baseURL ?? 'OpenAI'}>
+              <ModelPicker
+                model={settings.settings.model}
+                defaultModel={settings.defaults.model}
+                onSelect={(model) => void settings.update({ model })}
+              />
+            </span>
+          ) : null}
+        </span>
+        {projectHome ? null : id ? (
           <span className="topbar-info">
             {chatUsage && (
               <span
@@ -171,7 +194,26 @@ export function ChatPage({ health, settings, onListChanged }: Props) {
           </button>
         )}
       </header>
-      {empty ? (
+      {empty && projectHome ? (
+        project ? (
+          <ProjectHeading
+            project={project}
+            onRename={(name) =>
+              void updateProject(project.id, { name }).then(projects.refresh)
+            }
+            onDelete={() =>
+              void deleteProject(project.id).then(() => {
+                void projects.refresh()
+                navigate('/')
+              })
+            }
+          />
+        ) : (
+          <div className="greeting">
+            <h1>{projects.error ?? ''}</h1>
+          </div>
+        )
+      ) : empty ? (
         <div className="greeting">
           <h1>{temporary ? 'Temporary chat' : 'What’s on your mind?'}</h1>
           {temporary && (
@@ -253,6 +295,12 @@ export function ChatPage({ health, settings, onListChanged }: Props) {
         inputRef={composerRef}
         tools={toolOptions}
       />
+      {empty && projectHome && (
+        <ProjectDetails
+          projectId={projectHome}
+          onChatsChanged={onListChanged}
+        />
+      )}
       <p className="disclaimer">
         chibot can make mistakes. Check important info.
       </p>
@@ -498,9 +546,9 @@ function Sources({ answer }: { answer: Answer }) {
     <details className="sources">
       <summary>Sources · {sources.length}</summary>
       <ul>
-        {sources.map(({ url, title, chat }) => (
+        {sources.map(({ url, title, kind }) => (
           <li key={url}>
-            {chat ? (
+            {kind === 'chat' ? (
               <Link to={url}>
                 <span className="source-title">{title}</span>
                 <span className="source-host">Your chats</span>
@@ -508,7 +556,9 @@ function Sources({ answer }: { answer: Answer }) {
             ) : (
               <a href={url} target="_blank" rel="noreferrer">
                 <span className="source-title">{title}</span>
-                <span className="source-host">{new URL(url).hostname}</span>
+                <span className="source-host">
+                  {kind === 'file' ? 'Project file' : new URL(url).hostname}
+                </span>
               </a>
             )}
           </li>

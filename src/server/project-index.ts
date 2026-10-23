@@ -1,9 +1,10 @@
 import type { DatabaseSync } from 'node:sqlite'
 import type OpenAI from 'openai'
+import { documentKind } from '../shared/documents.ts'
 import { anyWordQuery, transaction } from './database.ts'
 import type { FileStore } from './file-store.ts'
 import type { ProjectStore } from './project-store.ts'
-import { documentKind, documentText } from './text.ts'
+import { documentText } from './text.ts'
 
 const CHUNK_SIZE = 3200
 const CHUNK_OVERLAP = 480

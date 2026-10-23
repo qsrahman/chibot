@@ -123,17 +123,18 @@ export function waitingCalls(turns: Turn[]): ToolActivity[] {
   return turns.at(-1)?.answer?.tools.filter((t) => t.output === null) ?? []
 }
 
-/** A page or past chat an answer searched or read. */
+/** A page, past chat or project file an answer searched or read. */
 export interface Source {
   url: string
   title: string
-  /** A chat in chibot (`/c/:id`), not a web page. */
-  chat?: boolean
+  /** A chat in chibot (`/c/:id`) or a project file, not a web page. */
+  kind?: 'chat' | 'file'
 }
 
 /**
- * The pages an answer found with `web_search` or read with `fetch_url`, and
- * the chats it found with `search_chats`.
+ * The pages an answer found with `web_search` or read with `fetch_url`, the
+ * chats it found with `search_chats`, and the project files it found with
+ * `search_project_files`.
  */
 export function sourcesOf(answer: Answer): Source[] {
   const found = new Map<string, Source>()
@@ -148,7 +149,15 @@ export function sourcesOf(answer: Answer): Source[] {
       }>(tool.output)
       for (const { chat_id, title } of results) {
         const url = `/c/${chat_id}`
-        found.set(url, { url, title, chat: true })
+        found.set(url, { url, title, kind: 'chat' })
+      }
+    } else if (tool.name === 'search_project_files') {
+      const { results = [] } = parseJson<{
+        results?: { file: string; file_id: string }[]
+      }>(tool.output)
+      for (const { file, file_id } of results) {
+        const url = `/api/files/${file_id}`
+        found.set(url, { url, title: file, kind: 'file' })
       }
     } else if (tool.name === 'fetch_url') {
       const { url } = parseJson<{ url?: string }>(tool.arguments)

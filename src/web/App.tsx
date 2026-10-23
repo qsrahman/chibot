@@ -4,6 +4,7 @@ import { getHealth, type Health } from './api.ts'
 import { ChatPage } from './ChatPage.tsx'
 import { Sidebar } from './Sidebar.tsx'
 import { useConversations } from './useConversations.ts'
+import { useProjects } from './useProjects.ts'
 import { useSettings } from './useSettings.ts'
 
 const COLLAPSED_KEY = 'chibot.sidebarCollapsed'
@@ -31,6 +32,7 @@ export function App() {
   const [collapsed, setCollapsed] = useState(loadCollapsed)
   const conversations = useConversations()
   const settings = useSettings()
+  const projects = useProjects()
 
   useEffect(() => {
     getHealth().then(setHealth, () => setHealth(undefined))
@@ -47,6 +49,7 @@ export function App() {
     <ChatPage
       health={health}
       settings={settings}
+      projects={projects}
       onListChanged={conversations.refresh}
     />
   )
@@ -58,13 +61,16 @@ export function App() {
           collapsed={collapsed}
           onToggle={toggleSidebar}
           conversations={conversations}
+          projects={projects}
           settings={settings}
         />
-        {/* Both routes render ChatPage at the same tree position, so moving
-            from / to /c/:id after the first message keeps its state. */}
+        {/* All routes render ChatPage at the same tree position, so moving
+            from / (or a project) to /c/:id after the first message keeps
+            its state. */}
         <Routes>
           <Route path="/" element={page} />
           <Route path="/c/:id" element={page} />
+          <Route path="/projects/:projectId" element={page} />
         </Routes>
       </div>
     </BrowserRouter>

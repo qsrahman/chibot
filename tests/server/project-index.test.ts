@@ -7,7 +7,8 @@ import { openDatabase } from '../../src/server/database.ts'
 import type { FileStore } from '../../src/server/file-store.ts'
 import { chunkText, ProjectIndex } from '../../src/server/project-index.ts'
 import { ProjectStore } from '../../src/server/project-store.ts'
-import { documentKind, documentText } from '../../src/server/text.ts'
+import { documentKind } from '../../src/shared/documents.ts'
+import { documentText } from '../../src/server/text.ts'
 import { testFiles } from './fakes.ts'
 
 const fixture = (name: string) =>
