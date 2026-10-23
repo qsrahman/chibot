@@ -32,7 +32,12 @@ async function attach(
   const chooser = page.waitForEvent('filechooser')
   await page.getByRole('menuitem', { name: 'Add photos & files' }).click()
   await (await chooser).setFiles(files)
+  await uploaded(page)
 }
+
+/** Send waits for uploads (Enter does nothing meanwhile). */
+const uploaded = (page: Page) =>
+  expect(page.getByLabel('Uploading')).toHaveCount(0)
 
 const userContent = async (page: Page) => {
   const { input } = await lastRequest(page)
@@ -126,6 +131,7 @@ test('attaches pasted images', async ({ page }) => {
       .getByRole('list', { name: 'Attachments' })
       .getByRole('img', { name: 'image.png' }),
   ).toBeVisible()
+  await uploaded(page)
   await send(page, 'Pasted')
   await answered(page)
   expect((await userContent(page))[0]).toMatchObject({ type: 'input_image' })
@@ -164,4 +170,59 @@ test('sends documents as text to models that refuse files', async ({
     },
     { type: 'input_text', text: 'Summarize' },
   ])
+})
+
+test('drops files onto the chat; they survive a reload, export and import', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  const dropped = await page.evaluateHandle(
+    (bytes) => {
+      const data = new DataTransfer()
+      data.items.add(
+        new File([new Uint8Array(bytes)], 'dot.png', { type: 'image/png' }),
+      )
+      return data
+    },
+    [...PNG],
+  )
+  await page.locator('main.chat').dispatchEvent('dragover', {
+    dataTransfer: dropped,
+  })
+  await expect(page.locator('main.chat.dragging')).toHaveCount(1)
+  await page.locator('main.chat').dispatchEvent('drop', {
+    dataTransfer: dropped,
+  })
+  await expect(
+    page.locator('.composer').getByRole('img', { name: 'dot.png' }),
+  ).toBeVisible()
+  await expect(page.locator('main.chat.dragging')).toHaveCount(0)
+  await uploaded(page)
+  await send(page, 'Dropped')
+  await answered(page)
+
+  await page.reload()
+  const image = turns(page).nth(0).getByRole('img', { name: 'Attached image' })
+  await expect(image).toBeVisible()
+
+  const id = new URL(page.url()).pathname.split('/').pop()!
+  const exported = await (
+    await page.request.get(`/api/conversations/${id}/export?format=json`)
+  ).json()
+  expect(exported).toMatchObject({
+    version: 2,
+    files: [{ name: 'dot.png', data: PNG.toString('base64') }],
+  })
+  const imported = (await (
+    await page.request.post('/api/conversations/import', { data: exported })
+  ).json()) as { id: string }
+  await page.goto(`/c/${imported.id}`)
+  await expect(image).toBeVisible()
+  // A copy, not the original.
+  const src = await image.getAttribute('src')
+  expect(src).not.toContain(exported.files[0].id)
+  expect((await page.request.get(src!)).headers()['content-type']).toBe(
+    'image/png',
+  )
 })

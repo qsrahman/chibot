@@ -6,13 +6,13 @@ It works with OpenAI and with OpenAI-compatible servers that implement the
 Responses API, such as [Ollama](https://docs.ollama.com/openai) and
 [LM Studio](https://lmstudio.ai/).
 
-> **Status: Phase 8 (projects).** ChatGPT-style chat with a sidebar, versions,
-> a model picker, visible reasoning, custom instructions, long-chat
-> compaction, export/import, a theme setting, a Settings dialog, tools the
-> model can call (web search with sources, reading web pages, creating and
-> editing images, a calculator, memory across chats, searching past chats),
-> and projects with their own files and instructions. Attachments and voice
-> input follow. See [PLAN.md](PLAN.md) for the roadmap.
+> **Status: Phase 9 (attachments & voice input).** ChatGPT-style chat with a
+> sidebar, versions, a model picker, visible reasoning, custom instructions,
+> long-chat compaction, export/import, a theme setting, a Settings dialog,
+> tools the model can call (web search with sources, reading web pages,
+> creating and editing images, a calculator, memory across chats, searching
+> past chats), projects with their own files and instructions, photo and file
+> attachments, and voice input. See [PLAN.md](PLAN.md) for the roadmap.
 
 ## Requirements
 

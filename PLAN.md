@@ -549,7 +549,7 @@ Models differ in dimensions, so a model change means re-embedding.
   shows; moving chats in and out works; deleting a project removes its chats
   and files; checked with OpenAI embeddings and Ollama `nomic-embed-text`.
 
-### Phase 9 — Attachments & voice input
+### Phase 9 — Attachments & voice input ✅
 Decisions (agreed after probing OpenAI and Ollama; revised after Phases 5–8
 landed): Files API where available, inline otherwise, uploads expiring after
 30 days; documents go as their extracted text to models that reject files;
@@ -680,8 +680,9 @@ Environment variables:
   pre-check model capabilities.
 - **Stateless + compaction compatibility** gets verified in Phase 4. Compaction
   items become part of the tree like any other output item.
-- **Export format** is versioned (`{ version: 1, … }`) so that later phases
-  (attachments, tool output) can extend it.
+- **Export format** is versioned: version 2 (Phase 9) embeds files as
+  base64, and import still reads version 1. Large chats make large exports
+  (imports are capped at 200 MB).
 - **`sqlite-vec` is pre-1.0** (0.1.9, pinned exactly). Verified while
   planning Phase 8: it loads into `node:sqlite` with `allowExtension` and
   answers cosine nearest-neighbour queries. If it ever breaks, the fallback is
