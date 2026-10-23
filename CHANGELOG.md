@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- Math written with LaTeX's `\(…\)` and `\[…\]` showed as raw text (remark-math only knows `$…$` / `$$…$$`); answers now render it, leaving code as is.
+
 ## [0.10.2] - 2026-10-23
 
 ### Added

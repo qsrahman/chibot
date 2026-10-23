@@ -6,6 +6,7 @@ import rehypeKatex from 'rehype-katex'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import 'katex/dist/katex.min.css'
+import { dollarMath } from './math.ts'
 import { CopyButton } from './MessageActions.tsx'
 
 const remarkPlugins = [remarkGfm, remarkMath]
@@ -21,7 +22,7 @@ export function Markdown({ text }: { text: string }) {
         rehypePlugins={rehypePlugins}
         components={components}
       >
-        {text}
+        {dollarMath(text)}
       </ReactMarkdown>
     </div>
   )

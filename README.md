@@ -124,7 +124,7 @@ Then open http://127.0.0.1:3000.
 
 - Type a message and press **Enter** to send. **Shift+Enter** adds a new line.
 - Answers stream in as Markdown, with tables, syntax-highlighted code and
-  `$…$` / `$$…$$` math.
+  math (`$…$` / `$$…$$`, or LaTeX's `\(…\)` / `\[…\]`).
 - **Stop** (■) ends an answer early. What arrived so far is kept, and the same
   happens if you close the tab mid-answer.
 - The first message gives the chat its own URL (`/c/…`). Reloading reopens it.

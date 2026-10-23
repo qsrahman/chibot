@@ -154,3 +154,14 @@ test('keyboard shortcuts', async ({ page }) => {
   await page.keyboard.press('ControlOrMeta+K')
   await expect(page.getByRole('dialog', { name: 'Search chats' })).toBeVisible()
 })
+
+test('renders \\( \\) and \\[ \\] math, not raw LaTeX', async ({ page }) => {
+  await page.goto('/')
+  await appReady(page)
+  // The fake answer repeats the question.
+  await send(page, 'Area \\(x^2\\) and \\[y_1\\]')
+  await answered(page)
+  await expect(answer(page, 0).locator('.katex')).toHaveCount(2)
+  await expect(answer(page, 0).locator('.katex-display')).toHaveCount(1)
+  await expect(answer(page, 0)).not.toContainText('\\(')
+})

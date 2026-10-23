@@ -727,9 +727,6 @@ Environment variables:
   answers cosine nearest-neighbour queries. If it ever breaks, the fallback is
   storing vectors as BLOBs and ranking in JS; keyword search keeps working
   either way.
-- **Math delimiters:** `remark-math` renders `$…$` and `$$…$$` only. Phase 4's
-  built-in instruction asks models for those delimiters; a model that ignores
-  it still shows `\(…\)` as raw LaTeX.
 - **Imported encrypted items:** reasoning and compaction items carry content
   only the issuing provider/account can decrypt; an import used with another
   provider may need them dropped.
