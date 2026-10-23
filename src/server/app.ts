@@ -68,6 +68,7 @@ export function createApp({
       model: config.chat.model,
       // Never expose the key.
       baseURL: config.chat.baseURL ?? null,
+      features: { transcription: config.transcription !== null },
     } satisfies Health),
   )
 

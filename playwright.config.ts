@@ -39,6 +39,9 @@ export default defineConfig({
         OPENAI_EMBEDDING_BASE_URL: FAKE_V1,
         OPENAI_EMBEDDING_API_KEY: '',
         OPENAI_EMBEDDING_MODEL: 'e2e-embed',
+        OPENAI_TRANSCRIBE_BASE_URL: FAKE_V1,
+        OPENAI_TRANSCRIBE_API_KEY: '',
+        OPENAI_TRANSCRIBE_MODEL: 'e2e-transcribe',
         // tests/e2e/server.ts adds a fake web search.
         BRAVE_API_KEY: '',
         HOST: '127.0.0.1',

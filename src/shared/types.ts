@@ -162,6 +162,8 @@ export interface Health {
   model: string
   /** The chat endpoint; `null` is OpenAI. */
   baseURL: string | null
+  /** What the setup allows (e.g. no mic without a transcription endpoint). */
+  features: { transcription: boolean }
 }
 
 /** `GET /api/models`: the chat endpoint's models, or `null` if it can't list them. */

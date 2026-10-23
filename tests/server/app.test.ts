@@ -78,6 +78,8 @@ describe('API', () => {
       status: 'ok',
       model: 'm-1',
       baseURL: 'http://localhost:1234/v1',
+      // A compatible server without a transcription model: no mic.
+      features: { transcription: false },
     })
   })
 

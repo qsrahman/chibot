@@ -53,6 +53,9 @@ const envSchema = z
     OPENAI_EMBEDDING_BASE_URL: optional,
     OPENAI_EMBEDDING_API_KEY: optional,
     OPENAI_EMBEDDING_MODEL: optional,
+    OPENAI_TRANSCRIBE_BASE_URL: optional,
+    OPENAI_TRANSCRIBE_API_KEY: optional,
+    OPENAI_TRANSCRIBE_MODEL: optional,
     BRAVE_API_KEY: optional,
     // Loopback by default: the app has no auth and spends the owner's API key.
     HOST: optional.transform((host) => host ?? '127.0.0.1'),
@@ -91,6 +94,8 @@ export class Config {
   readonly image: Endpoint | null
   /** Project file embeddings, or `null`: then search is by keywords only. */
   readonly embedding: Endpoint | null
+  /** Voice input, or `null`: then the mic is off. */
+  readonly transcription: Endpoint | null
   /** Enables the web search tool. */
   readonly braveApiKey: string | null
   readonly host: string
@@ -112,21 +117,23 @@ export class Config {
       e.OPENAI_API_KEY,
       e.OPENAI_MODEL ?? (e.OPENAI_BASE_URL ? undefined : 'gpt-6-astra'),
     )!
-    // Each part not set for images is inherited from the chat endpoint.
-    const imageBaseURL = e.OPENAI_IMAGE_BASE_URL ?? e.OPENAI_BASE_URL
-    this.image = endpoint(
-      imageBaseURL,
-      e.OPENAI_IMAGE_API_KEY ?? e.OPENAI_API_KEY,
-      e.OPENAI_IMAGE_MODEL ??
-        (isOpenAI(imageBaseURL) ? 'gpt-image-2' : undefined),
-    )
-    const embeddingBaseURL = e.OPENAI_EMBEDDING_BASE_URL ?? e.OPENAI_BASE_URL
-    this.embedding = endpoint(
-      embeddingBaseURL,
-      e.OPENAI_EMBEDDING_API_KEY ?? e.OPENAI_API_KEY,
-      e.OPENAI_EMBEDDING_MODEL ??
-        (isOpenAI(embeddingBaseURL) ? 'text-embedding-3-small' : undefined),
-    )
+    // A feature's endpoint: each part not set (OPENAI_<FEATURE>_*) is the
+    // chat endpoint's; the model defaults only on OpenAI.
+    const feature = (
+      name: 'IMAGE' | 'EMBEDDING' | 'TRANSCRIBE',
+      openAIModel: string,
+    ) => {
+      const baseURL = e[`OPENAI_${name}_BASE_URL`] ?? e.OPENAI_BASE_URL
+      return endpoint(
+        baseURL,
+        e[`OPENAI_${name}_API_KEY`] ?? e.OPENAI_API_KEY,
+        e[`OPENAI_${name}_MODEL`] ??
+          (isOpenAI(baseURL) ? openAIModel : undefined),
+      )
+    }
+    this.image = feature('IMAGE', 'gpt-image-2')
+    this.embedding = feature('EMBEDDING', 'text-embedding-3-small')
+    this.transcription = feature('TRANSCRIBE', 'gpt-transcribe')
     this.braveApiKey = e.BRAVE_API_KEY ?? null
     this.host = e.HOST
     this.port = e.PORT

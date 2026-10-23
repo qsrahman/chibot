@@ -117,6 +117,28 @@ describe('Config', () => {
     })
   })
 
+  it('inherits the chat endpoint for transcription', () => {
+    expect(new Config({ OPENAI_API_KEY: 'k' }).transcription?.model).toBe(
+      'gpt-transcribe',
+    )
+    const ollama = {
+      OPENAI_BASE_URL: 'http://localhost:11434/v1',
+      OPENAI_MODEL: 'gemma4',
+      OPENAI_API_KEY: 'sk-openai',
+    }
+    expect(new Config(ollama).transcription).toBeNull()
+    expect(
+      new Config({
+        ...ollama,
+        OPENAI_TRANSCRIBE_BASE_URL: 'https://api.openai.com/v1',
+      }).transcription,
+    ).toEqual({
+      baseURL: 'https://api.openai.com/v1',
+      apiKey: 'sk-openai',
+      model: 'gpt-transcribe',
+    })
+  })
+
   it('reads the Brave key, treating blank as unset', () => {
     expect(new Config({ OPENAI_API_KEY: 'k' }).braveApiKey).toBeNull()
     expect(
