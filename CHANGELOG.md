@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- Roadmap: Phase 8 detailed. Project files are searched by keywords always and by meaning when an embedding model is set (`sqlite-vec`, verified in `node:sqlite`); Word files are supported; projects get no model override (one global model); project chats are listed only in their project, and deleting a project deletes them.
+
 ## [0.8.0] - 2026-10-23
 
 ### Added

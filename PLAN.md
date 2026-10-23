@@ -157,10 +157,13 @@ files(id TEXT PK, conversation_id FK NULL, name TEXT,  -- Phase 6: original at d
       mime TEXT, size INTEGER, provider_file_id TEXT NULL,  -- Phase 9: provider_file_id
       created_at INTEGER)
 projects(id TEXT PK, name TEXT, instructions TEXT NULL,  -- Phase 8
-         model TEXT NULL, reasoning_effort TEXT NULL, created_at INTEGER)
-project_files(project_id FK → projects, file_id FK → files)          -- Phase 8
-chunks(id INTEGER PK, file_id FK → files, text TEXT)                -- Phase 8
-chunk_vectors USING vec0(embedding float[N])  -- sqlite-vec, rowid = chunks.id
+         created_at INTEGER, updated_at INTEGER)
+project_files(project_id FK → projects, file_id FK → files,          -- Phase 8
+              status TEXT, error TEXT NULL)  -- indexing / ready / failed
+chunks(id INTEGER PK, file_id FK → files, position INTEGER, text TEXT)  -- Phase 8
+chunks_fts USING fts5(text)                   -- Phase 8, rowid = chunks.id
+chunk_vectors USING vec0(embedding float[N])  -- sqlite-vec, rowid = chunks.id;
+                                              -- N from the embedding model
 memories(id INTEGER PK AUTOINCREMENT, text TEXT,          -- Phase 7
          created_at INTEGER, updated_at INTEGER)
 ```
@@ -184,7 +187,7 @@ tool payloads), written in the same transaction as the item.
 | `GET /api/models` | 4 | The chat endpoint's models, or `null` if it can't list them |
 | `GET /api/files/:id` · `GET /api/tools` | 6 | Serve a stored file's original (generated images; Phase 9 attachments) / list tools with availability and on/off state (never keys) |
 | `GET /api/memories` · `DELETE /api/memories[/:id]` | 7 | View / delete one or all memories |
-| `/api/projects[/:id]` (CRUD + files) · `POST /api/files` | 8 | Projects; upload a file (project files; Phase 9 attachments, ≤ 50 MB) |
+| `/api/projects[/:id]` (CRUD) · `/api/projects/:id/files[/:fileId]` · `POST /api/files` | 8 | Projects; their files (list, attach, detach, with indexing status); upload a file (project files; Phase 9 attachments, ≤ 50 MB). Conversation `PATCH` gains `projectId`. |
 | `POST /api/transcriptions` | 9 | Transcribe a recording (≤ 25 MB). Phase 9 adds `fileIds` to turns and `features` to health. |
 
 ## 5. Phases
@@ -484,19 +487,64 @@ others): persistent prompt injection through memory. The sidebar search
   with `search_chats`, and Sources links to it.
 
 ### Phase 8 — Projects
-- Group conversations into projects (sidebar section, `/projects/:id`).
-- Each project has:
-  - **files**, uploaded through a new `POST /api/files` into the `FileStore`
-    (Phase 6) and searched through local RAG: text is extracted (`unpdf` for
-    PDFs), chunked, embedded with `embeddings.create`
-    (`OPENAI_EMBEDDING_MODEL`) and stored in SQLite through `sqlite-vec`.
-    A `search_project_files` tool returns the best chunks with their file
-    names, and the answer cites them.
-  - **instructions**, added to every chat in the project on top of the global
-    custom instructions
-  - **default model and reasoning effort**, overriding the global settings
-- **Done when:** an answer in a project cites content from one of its files and
-  follows the project's instructions and model.
+Decisions (agreed after probing): hybrid search (keywords always, vectors when
+an embedding model is set); project chats listed only in their project; one
+global model (projects get no model or reasoning-effort override); PDF, Word
+(`.docx`) and text formats; deleting a project deletes its chats and files.
+
+Probe results: `sqlite-vec` 0.1.9 loads into `node:sqlite` (`allowExtension`,
+`loadExtension(getLoadablePath())`) and answers cosine k-NN queries on
+`Float32Array`s. `unpdf` extracts PDF text exactly and `mammoth` extracts
+`.docx` text. Embeddings: OpenAI `text-embedding-3-small` (1536 dims, related
+0.63 / unrelated 0.05) and Ollama `nomic-embed-text`, already installed
+(768 dims, 0.70 / 0.29), so with chat on Ollama embeddings can stay local.
+Models differ in dimensions, so a model change means re-embedding.
+
+- **Data.** Migration 7 adds `projects`, `conversations.project_id`,
+  `project_files` (with indexing status), `chunks` with an FTS5 index, and a
+  `chunk_vectors` vec0 table created for the embedding model in use (§4). A
+  `ProjectStore` handles projects, their files and their chats. Deleting a
+  project deletes its chats and files (the confirm says so).
+- **Config.** `OPENAI_EMBEDDING_BASE_URL` / `_API_KEY` / `_MODEL`, inheriting
+  the chat endpoint; the model defaults to `text-embedding-3-small` on OpenAI
+  and must be named elsewhere (e.g. `nomic-embed-text` on Ollama). Without
+  one, search is keywords only.
+- **Indexing.** `POST /api/files` (multipart) takes PDF, Word (`.docx`) and
+  text formats (txt, md, code, json, csv, html), ≤ 50 MB.
+  `POST /api/projects/:id/files` attaches a file and indexes it in the
+  background: extract text (`unpdf`, `mammoth`, Readability for HTML, the rest
+  as is), chunk (~3,200 characters, 15% overlap, at paragraph breaks), add to
+  the FTS index and, with an embedding endpoint, embed in batches. Status
+  (indexing / ready / failed with a reason) shows in the project. Unfinished
+  files resume after a restart; a changed embedding model rebuilds the
+  vectors.
+- **`search_project_files`** (`query`), offered only in project chats with
+  files: keyword and vector hits merged by reciprocal rank fusion, the top 6
+  chunks as JSON (file name, file id, text); the description asks the model to
+  cite file names. Project chats' instructions add the project's instructions
+  and its file names. Answers show "Searched project files", and Sources lists
+  the files (opening the original).
+- **Web.** A Projects section above the chats in the sidebar ("New project",
+  a row each). `/projects/:id`: the name (rename), a composer that starts a
+  chat in the project, its chats, a Files card (upload by picker or drop,
+  status, delete) and an Instructions card. Project chats appear only there
+  (search still finds them). A chat's "…" menu gains "Move to project" /
+  "Remove from project". A project chat's header shows "Project name /"
+  linking back; temporary mode isn't offered in projects.
+- **Routes.** `/api/projects[/:id]` (list, create, update name and
+  instructions, delete), `/api/projects/:id/files[/:fileId]`,
+  `POST /api/files`; conversation `PATCH` gains `projectId`.
+- **Dependencies:** `sqlite-vec` (pinned), `unpdf`, `mammoth`.
+- **Commits.** Open SQLite with extensions and load `sqlite-vec` → projects
+  and moving chats → file upload and indexing (extraction, chunks, FTS,
+  embedding endpoint, vectors, resume) → `search_project_files` and project
+  instructions → sidebar projects and the project page → e2e specs (the fake
+  server gains a deterministic `/v1/embeddings`) → docs → release v0.9.0.
+- **Done when:** an answer in a project cites content from its files (the
+  PDF's secret code, a `.docx` note, and a Markdown note found by meaning
+  rather than wording) and follows the project's instructions; indexing status
+  shows; moving chats in and out works; deleting a project removes its chats
+  and files; checked with OpenAI embeddings and Ollama `nomic-embed-text`.
 
 ### Phase 9 — Attachments & voice input
 Decisions (agreed after probing OpenAI and Ollama): images plus every
@@ -575,8 +623,8 @@ Configuration lives in three layers, split by who changes it and how often:
 | User preferences | Chat model, custom instructions, reasoning effort, tool switches (memory's is the memory on/off) | SQLite `settings` table (`SettingsStore`, Phase 4) | Settings dialog, live |
 | Browser preferences | Theme, sidebar collapsed | `localStorage` | The UI, per browser |
 
-- **Precedence:** conversation or project override (Phase 8) → user setting →
-  environment default.
+- **Precedence:** user setting → environment default. (Projects add
+  instructions on top of the custom instructions, but no setting overrides.)
 - **Secrets never leave layer 1:** no keys in SQLite, exports or API
   responses. Settings shows only whether a key is configured.
 - **`.env` lookup:** real environment variables win, then `.env` in the current
@@ -621,9 +669,11 @@ Environment variables:
   items become part of the tree like any other output item.
 - **Export format** is versioned (`{ version: 1, … }`) so that later phases
   (attachments, tool output) can extend it.
-- **`sqlite-vec` is pre-1.0** (0.1.x) and needs `node:sqlite` extension loading
-  (`allowExtension`). Both get verified at the start of Phase 8. The fallback
-  is storing vectors as BLOBs and ranking in JS.
+- **`sqlite-vec` is pre-1.0** (0.1.9, pinned exactly). Verified while
+  planning Phase 8: it loads into `node:sqlite` with `allowExtension` and
+  answers cosine nearest-neighbour queries. If it ever breaks, the fallback is
+  storing vectors as BLOBs and ranking in JS; keyword search keeps working
+  either way.
 - **Math delimiters:** `remark-math` renders `$…$` and `$$…$$` only. Phase 4's
   built-in instruction asks models for those delimiters; a model that ignores
   it still shows `\(…\)` as raw LaTeX.
