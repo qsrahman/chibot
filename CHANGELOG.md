@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- Roadmap: Phase 9 revised. Documents go as their extracted text to models that reject files (Ollama), so PDFs and Word files work there; attachments accept images plus the project document types; attaching joins the composer's "+" menu; JSON export also embeds generated images; images and transcription get clear setup errors.
 - The model picker lists only chat models: on Ollama by each model's capabilities (`/api/show`, which also catches image models with plain names), elsewhere by leaving out embedding, speech, transcription, image, video, moderation, realtime, Chat-Completions-only search and legacy completion models.
 
 ### Fixed

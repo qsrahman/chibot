@@ -49,7 +49,7 @@ LM Studio).
 | Tools | Our own function tools only, no OpenAI-hosted tools | Full control over behaviour, storage and what leaves the machine. Web search uses Brave; project files use local RAG. |
 | Tool approval | Per-tool `requiresApproval` flag (`true`, or `'after-untrusted'` from Phase 7); a call needing approval ends the turn, and Approve/Deny resumes it with a new request | Read-only tools run automatically; tools with side effects wait for Approve/Deny in the chat. `'after-untrusted'` asks only in chats whose history holds output of a tool marked `untrustedOutput` (web content), against prompt injection. A pending approval is stored state (the path ends in an unanswered call), so it survives a reload and needs no in-memory wait. |
 | Tool loop | chibot's own loop in `ChatService`; tools declared with the SDK's `zodResponsesFunction` | The SDK's `ResponsesToolRunner` was tested: it fails on Ollama `gpt-oss` (its stream accumulator, with the cause hidden), runs the whole loop in one call (no approval across requests) and doesn't let chibot persist each step before relaying `response.completed`. |
-| Attachments | Original kept in `data/files/`; stored messages reference it by chibot's own file id. Each request sends it by Files API `file_id` where the endpoint supports it (uploaded once, expiring after 30 days), otherwise inline as base64 | Requests stay small on OpenAI (stateless chats would otherwise re-send every attachment each turn), compatible servers without a Files API still work, and the local copy is the source of truth: a file the provider no longer has gets re-uploaded. |
+| Attachments | Original kept in `data/files/`; stored messages reference it by chibot's own file id. Each request sends it by Files API `file_id` where the endpoint supports it (uploaded once, expiring after 30 days), otherwise inline as base64, or as its extracted text when the model rejects files | Requests stay small on OpenAI (stateless chats would otherwise re-send every attachment each turn), compatible servers without a Files API still work, and the local copy is the source of truth: a file the provider no longer has gets re-uploaded. |
 | Providers | One Responses-API endpoint for chat, set by `OPENAI_BASE_URL` / `OPENAI_API_KEY` / `OPENAI_MODEL` | The SDK's own env names, and the same code path for OpenAI, Ollama, LM Studio and other Open Responses servers. The key is optional when a base URL is set, since local servers ignore it. |
 | Feature endpoints | Transcription, images and embeddings each have an optional endpoint override, inheriting the chat endpoint | Lets chat run locally while, say, images use OpenAI. With a compatible endpoint and no model configured, the feature is off with a clear message. |
 | Server runtime | Node ≥ 26 running `.ts` directly | No server build step. Requires `erasableSyntaxOnly` (no `enum`, no constructor parameter properties). |
@@ -550,71 +550,80 @@ Models differ in dimensions, so a model change means re-embedding.
   and files; checked with OpenAI embeddings and Ollama `nomic-embed-text`.
 
 ### Phase 9 — Attachments & voice input
-Decisions (agreed after probing OpenAI and Ollama): images plus every
-document type OpenAI accepts as `input_file`; Files API where available,
-inline otherwise; uploads expire after 30 days; JSON export embeds
-attachments.
+Decisions (agreed after probing OpenAI and Ollama; revised after Phases 5–8
+landed): Files API where available, inline otherwise, uploads expiring after
+30 days; documents go as their extracted text to models that reject files;
+images plus the project document types; attaching lives in the composer's
+"+" menu (plus paste and drop); JSON export embeds attachments and generated
+images; the owner's `.env` transcription setting is pointed at OpenAI when
+this phase is built.
 
 Probe results: OpenAI answers about an image and a PDF sent by `file_id` or
 inline; a deleted `file_id` fails the turn with a 404 `NotFoundError` ("Files
-[file-…] were not found"). Ollama has no `/v1/files` (404), answers about
-inline images on vision models (`gemma4:cloud`; `gpt-oss` returns 400), rejects
-`input_file` (400) and has no `audio.transcriptions` (404). OpenAI's
-`gpt-transcribe` transcribes m4a exactly.
+[file-…] were not found"); `gpt-transcribe` transcribes m4a exactly. Ollama
+0.40.9 (re-probed): no `/v1/files` (404); inline images work on vision models
+(`gemma4:cloud`, `gemma4:e4b`, `qwen3.5:9b`; `gpt-oss` answers 400 "this model
+does not support image input"); every model rejects `input_file` (400 "file
+inputs are not currently supported"); `/v1/audio/transcriptions` isn't
+available for `gemma4:cloud`.
 
-- **Config.** `Config` gains the transcription endpoint: `OPENAI_TRANSCRIBE_BASE_URL` / `_API_KEY` /
-  `_MODEL`, inheriting the chat endpoint. The model defaults to
-  `gpt-transcribe` on OpenAI; on a compatible endpoint without a model,
+- **Config.** `OPENAI_TRANSCRIBE_BASE_URL` / `_API_KEY` / `_MODEL`,
+  inheriting the chat endpoint like images and embeddings; the model defaults
+  to `gpt-transcribe` on OpenAI, and on a compatible endpoint without a model
   transcription is off. `GET /api/health` gains `features: { transcription }`.
-- **Storage.** Builds on `files` / `FileStore` (Phase 6): a migration adds
+- **Storage.** Builds on `files` / `FileStore`: a migration adds
   `provider_file_id` (§4), and uploads get their `conversation_id` when first
   sent with a turn. Messages keep the SDK's types: a user message's content is
   `input_image { file_id: <chibot id>, detail: 'auto' }` /
   `input_file { file_id: <chibot id>, filename }` parts plus `input_text`, so
   no base64 lands in SQLite or the search index.
-- **Routes.** `POST /api/files` (Phase 8) accepts attachments: it checks the
-  type against the accept list (png/jpeg/webp/non-animated gif; pdf,
-  txt/md/json/html/xml/code, doc/docx/rtf/odt, ppt/pptx, csv/xls/xlsx) and
-  size (≤ 50 MB), saves the file and returns `{ id, name, mime, size }`.
-  `GET /api/files/:id` (Phase 6) serves the original for thumbnails and
-  opening. Turns take `fileIds`; the files are
-  linked to the conversation when the turn is stored.
-- **Sending.** For each request `ChatService` resolves chibot ids to the
-  cached `provider_file_id`, or uploads (`purpose: 'user_data'`,
-  `expires_after` 30 days from creation) and caches the id, or inlines base64
-  (`image_url` data URL / `file_data`) when `files.create` returned 404, which
-  is remembered like other unsupported options. A turn that fails with a 404
-  naming a file clears the conversation's provider ids, re-uploads from the
-  local copies and retries once.
+- **Routes.** `POST /api/files` (from Phase 8) also accepts images
+  (png/jpeg/webp/non-animated gif) beside the project document types (PDF,
+  Word, text, Markdown, code, CSV, JSON, HTML; `src/shared/documents.ts`),
+  ≤ 50 MB. Turns take `fileIds`; the files are linked to the conversation
+  when the turn is stored. `POST /api/transcriptions` (≤ 25 MB).
+- **Sending.** For each request `ChatService` resolves chibot ids: to the
+  cached `provider_file_id`; or uploads (`purpose: 'user_data'`,
+  `expires_after` 30 days) and caches the id; or inline base64 (`image_url`
+  data URL / `file_data`) when `files.create` returned 404; or, for
+  documents, their extracted text (`text.ts`, as an `input_text` part:
+  "Attached file report.pdf: …") when the model rejected files with a 400.
+  What works is remembered per model, like other unsupported options. A turn
+  that fails with a 404 naming a file clears the conversation's provider ids,
+  re-uploads from the local copies and retries once.
+- **Clear errors.** An image sent to a model that can't see images says so,
+  naming the model and suggesting a vision model. Transcription failures name
+  the endpoint and model and what to set, like image generation's.
 - **Deletion.** Deleting a conversation (including the temporary-chat sweep)
-  deletes its local files, and their provider copies on a best-effort basis.
-  Uploads never sent with a turn are swept at startup after a day.
-- **Composer.** Attach with the "+" button (file picker), paste, or drop onto
-  the chat. Chips above the textarea show a thumbnail or file icon, the name, a
-  spinner while uploading and × to remove; Send waits for uploads. The server
-  error is shown if a server rejects a type (e.g. PDFs on Ollama).
+  deletes its files locally and, best effort, their provider copies. Uploads
+  never sent are swept after a day (already in place).
+- **Composer.** "Add photos & files" heads the "+" menu, above Search the web
+  and Create an image; pasting and dropping onto the chat attach too. Chips
+  above the textarea show a thumbnail or file icon, the name, a spinner while
+  uploading and × to remove; Send waits for uploads.
 - **Messages.** User bubbles show image thumbnails (opening full size) and
   file cards (icon, name, type). Editing a message keeps its attachments and
   changes only the text.
 - **Export / import.** JSON export becomes `{ version: 2, … }` with
-  attachments embedded as base64; import still accepts version 1. Markdown
-  export lists attachment names.
+  attachments and generated images embedded as base64; import still accepts
+  version 1. Markdown export lists attachment names.
 - **Voice input.** A mic button records with `MediaRecorder` in the browser's
-  default format (webm/opus in Chrome and Firefox, mp4 in Safari).
-  `POST /api/transcriptions` (≤ 25 MB) returns the text, which is inserted at
-  the cursor for review before sending. With transcription off, the button is
-  disabled with a tooltip saying why.
-- **Commits.** Transcription endpoint → attachment storage and routes → sending with
-  turns (inline fallback, 404 re-upload) → deletion and sweep → composer and
-  message UI → export/import → dictation → e2e specs → docs → release v0.10.0.
+  default format (webm/opus in Chrome and Firefox, mp4 in Safari); the text
+  is inserted at the cursor for review before sending. With transcription
+  off, the button is disabled with a tooltip saying why.
+- **Commits.** Transcription endpoint → attachment storage and routes →
+  sending (Files API, inline, text fallback, 404 re-upload) → clear errors →
+  deletion → composer and message UI → export/import v2 → dictation → e2e
+  specs (the fake server gains `/v1/files`, a switch to reject files,
+  `/v1/audio/transcriptions`; Chromium uses a fake microphone) → docs →
+  release v0.10.0.
 - **Done when:** on OpenAI the model answers about an attached image and an
   attached PDF, including after the uploaded copy was deleted at OpenAI; on
-  Ollama `gemma4:cloud` answers about an inline image and a PDF shows a
-  readable error; dictation fills the composer in a real browser (webm
-  included). Unit tests cover the server parts; Playwright covers attaching by
-  picker, paste and drop, removing, rendering after reload, export/import and
-  the mic (the fake server gains `/v1/files`, file deletion, a lost-upload
-  switch and `/v1/audio/transcriptions`; Chromium uses a fake microphone).
+  Ollama `gemma4:cloud` answers about an image and about a PDF (through its
+  text); `gpt-oss` with an image shows the clear message; dictation fills the
+  composer in a real browser (webm included). Unit tests cover the server
+  parts; Playwright covers attaching by menu, paste and drop, removing,
+  rendering after reload, the text fallback, export/import and the mic.
 
 ## 6. Configuration
 
@@ -666,8 +675,9 @@ Environment variables:
   immutable.
 - **Attachment support varies by server.** Ollama has no Files API (inline
   fallback), accepts images only on vision models and rejects `input_file`
-  (400). These surface as the server's error with the message kept; chibot
-  doesn't pre-check model capabilities.
+  (400): documents then go as their extracted text, and images on a model
+  that can't see them give a message naming the model. chibot doesn't
+  pre-check model capabilities.
 - **Stateless + compaction compatibility** gets verified in Phase 4. Compaction
   items become part of the tree like any other output item.
 - **Export format** is versioned (`{ version: 1, … }`) so that later phases
