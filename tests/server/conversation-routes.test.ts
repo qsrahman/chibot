@@ -7,21 +7,27 @@ import type {
   Conversation,
   ConversationListItem,
 } from '../../src/shared/types.ts'
-import { fakeClient, memoryStore, testSettings } from './fakes.ts'
+import { openDatabase } from '../../src/server/database.ts'
+import type { FileStore } from '../../src/server/file-store.ts'
+import { fakeClient, memoryStore, testFiles, testSettings } from './fakes.ts'
 
 const config = new Config({ OPENAI_API_KEY: 'k' })
 
 describe('conversation routes', () => {
   let store: ConversationStore
+  let files: FileStore
   let app: ReturnType<typeof createApp>
   beforeEach(() => {
-    store = memoryStore()
+    const db = openDatabase(':memory:')
+    store = memoryStore(db)
+    files = testFiles(db)
     const settings = testSettings('m')
     app = createApp({
       config,
       store,
       settings,
       chat: new ChatService(fakeClient([]), store, settings),
+      files,
     })
   })
 
@@ -116,5 +122,27 @@ describe('conversation routes', () => {
       (await app.request(`/api/conversations/${id}`, { method: 'DELETE' }))
         .status,
     ).toBe(404)
+  })
+
+  it("serves a chat's files and deletes them with it", async () => {
+    const id = saved('hi')
+    const other = saved('other')
+    const png = new Uint8Array([137, 80, 78, 71])
+    const file = files.save(id, 'robot (1).png', 'image/png', png)
+    const kept = files.save(other, 'kept.png', 'image/png', png)
+
+    const res = await app.request(`/api/files/${file.id}`)
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toBe('image/png')
+    expect(res.headers.get('content-disposition')).toBe(
+      "inline; filename*=UTF-8''robot%20(1).png",
+    )
+    expect(new Uint8Array(await res.arrayBuffer())).toEqual(png)
+    expect((await app.request('/api/files/nope')).status).toBe(404)
+
+    await app.request(`/api/conversations/${id}`, { method: 'DELETE' })
+    expect(files.get(file.id)).toBeNull()
+    expect(() => files.read(file.id)).toThrow(/ENOENT/)
+    expect(files.read(kept.id)).toEqual(Buffer.from(png))
   })
 })

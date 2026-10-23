@@ -45,6 +45,18 @@ const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
    );`,
   // The model that wrote a response, stored with its usage on the last item.
   `ALTER TABLE items ADD COLUMN model TEXT;`,
+  // Stored files (generated images); the bytes live in <data dir>/files/<id>.
+  // No foreign key: deleting a conversation leaves its rows for
+  // FileStore.deleteOrphans(), which also removes the files on disk.
+  `CREATE TABLE files (
+     id TEXT PRIMARY KEY,
+     conversation_id TEXT,
+     name TEXT NOT NULL,
+     mime TEXT NOT NULL,
+     size INTEGER NOT NULL,
+     created_at INTEGER NOT NULL
+   );
+   CREATE INDEX files_conversation ON files(conversation_id);`,
 ]
 
 /**

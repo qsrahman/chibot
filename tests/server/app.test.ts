@@ -13,7 +13,13 @@ import type {
   Conversation,
   ConversationWithItems,
 } from '../../src/shared/types.ts'
-import { answerEvents, fakeClient, memoryStore, testSettings } from './fakes.ts'
+import {
+  answerEvents,
+  fakeClient,
+  memoryStore,
+  testSettings,
+  testFiles,
+} from './fakes.ts'
 
 const config = new Config({
   OPENAI_API_KEY: 'secret',
@@ -39,7 +45,7 @@ describe('API', () => {
   function appWith(events: ResponseStreamEvent[] | Error) {
     const settings = testSettings('m-1')
     const chat = new ChatService(fakeClient(events), store, settings)
-    return createApp({ config, store, settings, chat })
+    return createApp({ config, store, settings, chat, files: testFiles() })
   }
 
   async function createConversation(app: ReturnType<typeof appWith>) {

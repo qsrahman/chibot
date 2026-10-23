@@ -22,6 +22,7 @@ import type { ConversationWithItems, TurnErrorEvent } from '../shared/types.ts'
 import type { ChatService } from './chat-service.ts'
 import type { Config } from './config.ts'
 import type { ConversationStore } from './conversation-store.ts'
+import type { FileStore } from './file-store.ts'
 import { toMarkdown } from './markdown-export.ts'
 import type { SettingsStore } from './settings-store.ts'
 
@@ -30,10 +31,11 @@ export interface AppDeps {
   store: ConversationStore
   settings: SettingsStore
   chat: ChatService
+  files: FileStore
 }
 
 /** Builds the HTTP app. A factory so tests can inject fakes. */
-export function createApp({ config, store, settings, chat }: AppDeps) {
+export function createApp({ config, store, settings, chat, files }: AppDeps) {
   const app = new Hono()
 
   app.get('/api/health', (c) =>
@@ -88,7 +90,19 @@ export function createApp({ config, store, settings, chat }: AppDeps) {
     if (!store.deleteConversation(c.req.param('id'))) {
       return notFound(c)
     }
+    files.deleteOrphans()
     return c.body(null, 204)
+  })
+
+  app.get('/api/files/:id', (c) => {
+    const file = files.get(c.req.param('id'))
+    if (!file) return notFound(c)
+    return c.body(files.read(file.id), 200, {
+      'Content-Type': file.mime,
+      // A file never changes under its id.
+      'Cache-Control': 'private, max-age=31536000, immutable',
+      'Content-Disposition': `inline; filename*=UTF-8''${encodeURIComponent(file.name)}`,
+    })
   })
 
   app.get('/api/conversations/:id/export', (c) => {

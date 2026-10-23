@@ -1,7 +1,11 @@
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import OpenAI from 'openai'
 import { z } from 'zod'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
 import { openDatabase } from '../../src/server/database.ts'
+import { FileStore } from '../../src/server/file-store.ts'
 import {
   settingsDefaults,
   SettingsStore,
@@ -119,8 +123,13 @@ export function fakeClient(
   return { responses: { create }, models: { list } } as unknown as OpenAI
 }
 
-/** A conversation store on a fresh in-memory database. */
-export const memoryStore = () => new ConversationStore(openDatabase(':memory:'))
+/** A conversation store on `db` (by default a fresh in-memory database). */
+export const memoryStore = (db = openDatabase(':memory:')) =>
+  new ConversationStore(db)
+
+/** A file store on `db`, keeping bytes in a new temporary folder. */
+export const testFiles = (db = openDatabase(':memory:')) =>
+  new FileStore(db, mkdtempSync(join(tmpdir(), 'chibot-files-')))
 
 /** Settings with `model` (and any overrides), on their own in-memory database. */
 export function testSettings(model = 'm', overrides: Partial<Settings> = {}) {

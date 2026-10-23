@@ -12,6 +12,7 @@ import {
   type FakeCall,
   memoryStore,
   testSettings,
+  testFiles,
 } from './fakes.ts'
 
 describe('edit, regenerate and switch versions', () => {
@@ -72,7 +73,8 @@ describe('edit, regenerate and switch versions', () => {
 
   describe('routes', () => {
     const config = new Config({ OPENAI_API_KEY: 'k' })
-    const app = () => createApp({ config, store, settings, chat })
+    const app = () =>
+      createApp({ config, store, settings, chat, files: testFiles() })
     const send = (body: unknown) =>
       app().request(`/api/conversations/${id}/turns`, {
         method: 'POST',

@@ -54,6 +54,17 @@ export interface ConversationWithItems {
   usage: ResponseUsage
 }
 
+/** A file chibot keeps (a generated image), served by `GET /api/files/:id`. */
+export interface StoredFile {
+  id: string
+  /** The chat it belongs to; it's deleted with it. */
+  conversationId: string | null
+  name: string
+  mime: string
+  size: number
+  createdAt: number
+}
+
 /** Body of `POST /api/conversations/:id/turns` (see `turnRequestSchema`). */
 export type TurnRequest = z.output<typeof turnRequestSchema>
 

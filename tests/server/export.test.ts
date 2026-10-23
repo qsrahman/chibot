@@ -5,7 +5,13 @@ import { Config } from '../../src/server/config.ts'
 import type { ConversationStore } from '../../src/server/conversation-store.ts'
 import type { ConversationExport } from '../../src/shared/export.ts'
 import type { Conversation } from '../../src/shared/types.ts'
-import { fakeClient, memoryStore, testSettings, usage } from './fakes.ts'
+import {
+  fakeClient,
+  memoryStore,
+  testFiles,
+  testSettings,
+  usage,
+} from './fakes.ts'
 
 describe('export and import', () => {
   let store: ConversationStore
@@ -18,6 +24,7 @@ describe('export and import', () => {
       store,
       settings,
       chat: new ChatService(fakeClient([]), store, settings),
+      files: testFiles(),
     })
   })
 
