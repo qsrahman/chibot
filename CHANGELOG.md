@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- Roadmap: Phase 6 detailed. Tools are used automatically, forced from a composer "+" menu and switched off in Settings (instead of per-chat toggles); `edit_image` joins `generate_image`, without streamed partial images; `fetch_url` guards addresses in an undici connector; generated images get `files.conversation_id` now.
+
 ## [0.6.0] - 2026-10-23
 
 ### Added

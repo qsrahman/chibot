@@ -154,8 +154,8 @@ items(id INTEGER PK AUTOINCREMENT,
 settings(key TEXT PK, value TEXT)     -- Phase 4: JSON values over env defaults
 items_fts USING fts5(text, conversation_id UNINDEXED)  -- Phase 2: message text for search
 files(id TEXT PK, conversation_id FK NULL, name TEXT,  -- Phase 6: original at data/files/<id>;
-      mime TEXT, size INTEGER, provider_file_id TEXT NULL,  -- Phase 9: conversation_id,
-      created_at INTEGER)                                   --   provider_file_id
+      mime TEXT, size INTEGER, provider_file_id TEXT NULL,  -- Phase 9: provider_file_id
+      created_at INTEGER)
 projects(id TEXT PK, name TEXT, instructions TEXT NULL,  -- Phase 8
          model TEXT NULL, reasoning_effort TEXT NULL, created_at INTEGER)
 project_files(project_id FK → projects, file_id FK → files)          -- Phase 8
@@ -181,7 +181,7 @@ tool payloads), written in the same transaction as the item.
 | `GET /api/conversations/:id/export?format=md\|json` · `POST /api/conversations/import` | 4 | Export (download) / import (validated JSON, ≤ 20 MB) |
 | `GET/PATCH /api/settings` | 4 | User settings and their defaults (never secrets) |
 | `GET /api/models` | 4 | The chat endpoint's models, or `null` if it can't list them |
-| `GET /api/files/:id` | 6 | Serve a stored file's original (generated images; Phase 9 attachments) |
+| `GET /api/files/:id` · `GET /api/tools` | 6 | Serve a stored file's original (generated images; Phase 9 attachments) / list tools with availability and on/off state (never keys) |
 | `GET /api/memories` · `DELETE /api/memories/:id` | 7 | View / delete memories |
 | `/api/projects[/:id]` (CRUD + files) · `POST /api/files` | 8 | Projects; upload a file (project files; Phase 9 attachments, ≤ 50 MB) |
 | `POST /api/transcriptions` | 9 | Transcribe a recording (≤ 25 MB). Phase 9 adds `fileIds` to turns and `features` to health. |
@@ -294,7 +294,7 @@ compaction on at 64k tokens; math formatting via a built-in instruction.
 Decisions (agreed after probing OpenAI and Ollama): chibot's own tool loop
 rather than the SDK's `ResponsesToolRunner`; approval ends the turn and a new
 request resumes it; e2e approval through a test-only tool; no tool toggles yet
-(Phase 6 adds per-chat toggles).
+(Phase 6 adds Settings switches and a composer menu).
 
 Probe results: streamed function calling with `store: false` works on OpenAI
 `gpt-6-astra`, Ollama `gemma4:cloud` and `gpt-oss:120b-cloud`
@@ -359,28 +359,73 @@ support (`qwen2.5-coder:1.5b`) ignores tools rather than failing.
   the model knows today's date.
 
 ### Phase 6 — Web search & image generation
-Both are our own `Tool` subclasses, not OpenAI-hosted tools, with per-chat
-toggles in the composer.
-- **`web_search`** calls the Brave Search API with `fetch` and returns titles,
-  URLs and snippets. The model is instructed to cite sources as Markdown links,
-  and the UI lists the sources under the answer. It's disabled when
-  `BRAVE_API_KEY` is unset. No approval: it's read-only, though the query goes
-  to Brave.
-- **`fetch_url`** reads a page the model found or the user pasted and returns
-  its main text (converted with a small, well-known library, not our own
-  parser), truncated to a size limit. No approval: it's read-only. It refuses
-  loopback, private-network and link-local addresses (checked after DNS
-  resolution and on every redirect), so a page can't make chibot read the
-  router or `localhost`.
-- **`generate_image`** calls `images.generate` (`OPENAI_IMAGE_MODEL`) with
-  streamed partial images. Results are saved by a new `FileStore` (`files`
-  table, original at `data/files/<id>`), served by `GET /api/files/:id` and
-  rendered in the chat. The model receives a reference, not the image bytes.
-- `Config` moves to zod as the first per-feature endpoint arrives
-  (`OPENAI_IMAGE_*`, §6).
-- **Done when:** a web-search answer shows clickable sources, the model can
-  read a pasted URL (and is refused a private address), and a generated image
-  renders and persists.
+Decisions (agreed after probing Brave, OpenAI and Ollama): the model uses
+available tools on its own, a composer "+" menu forces one for the next
+message and Settings switches turn tools off; no streamed partial images; an
+`edit_image` tool for follow-ups; image quality fixed at `medium`; generated
+images join JSON exports in Phase 9.
+
+Probe results: Brave returns `title`, `url`, `description` (with `<strong>`
+tags), `age`, `page_age` and `extra_snippets` per result. Node's
+`net.BlockList` flags loopback, private, CGNAT, link-local/metadata and IPv6
+ULA/link-local addresses, IPv4-mapped IPv6 included. An undici `Agent` that
+checks resolved addresses at connect time blocks `localhost` and redirects to
+it, but literal-IP URLs skip DNS and got through, so the check belongs in the
+connector itself. Node's built-in `fetch` ignores `http.Agent`, hence the
+`undici` dependency. Readability + linkedom extract clean main text. OpenAI
+`gpt-image-2` streams, but at low quality the one partial image came only
+2.4 s before the final one (12.7 s, ~850 KB PNG, no revised prompt); newer
+`gpt-image-2.5-*` models exist. Ollama has no images endpoint (404), so with
+chat on Ollama, images need `OPENAI_IMAGE_BASE_URL` / `_API_KEY`.
+
+- **Config and tools list.** `Config` moves to zod and gains the image
+  endpoint (`OPENAI_IMAGE_*`, inheriting the chat endpoint; off on a
+  compatible endpoint without a model) and `BRAVE_API_KEY`. A tool is offered
+  only when its setup exists. `GET /api/tools` lists name, label, available and
+  enabled, never keys.
+- **Files.** Migration 5 adds `files` (§4; the original at
+  `data/files/<id>`). `FileStore` saves, reads and deletes them;
+  `GET /api/files/:id` serves them with immutable caching. Deleting a
+  conversation (and the temporary-chat sweep) deletes its files.
+- **`web_search`** (`query`, optional `freshness`: day/week/month/year) calls
+  the Brave Search API with `fetch` and returns JSON with the top 5 results:
+  title, URL, description without tags, age and extra snippets. The tool
+  description asks the model to cite sources as Markdown links. Brave errors
+  (quota, rate limit) go back as `Error: …`. No approval: it's read-only,
+  though the query goes to Brave.
+- **`fetch_url`** reads a page through an undici connector that refuses
+  blocked addresses for literal IPs and resolved names alike, on every
+  redirect; http(s) only, at most 5 redirects, 10 s timeout, 5 MB download
+  cap. HTML goes through Readability (falling back to the whole page text);
+  plain text, Markdown and JSON pass through; other types (e.g. PDF) are
+  refused until Phase 9. The output is truncated to 40k characters and framed
+  as untrusted page content, so the model doesn't follow instructions in it.
+  The address guard is injectable, so the e2e server can allow its local test
+  page; unit tests cover the guard. No approval: it's read-only.
+- **`generate_image`** (`prompt`, `size`: square/portrait/landscape/auto) and
+  **`edit_image`** (`image_id`, `prompt`) call `images.generate` /
+  `images.edit` (on the stored file) with the image endpoint's model at
+  `medium` quality, save the result to the `FileStore` and return
+  `{"image_id": …}`; the model never receives image bytes. No approval: the
+  user asked for it, though it costs money.
+- **Turning tools on and off.** A switch per tool in Settings → Tools
+  (`disabledTools` setting); disabled tools aren't sent. The composer's "+"
+  menu (Web search, Create image) forces one tool for the next message with
+  `tool_choice`; otherwise the model decides.
+- **Answers.** Generated images render in the answer (open full size,
+  download), with a shimmering "Creating image…" placeholder while running.
+  A Sources row under the answer lists the searched and read sites as links
+  with their domain, built from the tool outputs, so sources show even if the
+  model doesn't cite them.
+- **Dependencies:** `undici`, `@mozilla/readability`, `linkedom`.
+- **Commits.** Config on zod → file storage → `web_search` → `fetch_url` →
+  image tools → tool switches and composer menu → sources and images in
+  answers → e2e specs (fake Brave and images endpoints, a local test page) →
+  docs → release v0.7.0.
+- **Done when:** a web-search answer shows clickable sources; the model reads
+  a pasted URL and is refused `localhost`, `127.0.0.1` and a redirect to
+  either; a generated image renders and persists across a reload, and "make
+  it bluer" edits it; a tool switched off in Settings isn't sent.
 
 ### Phase 7 — Memory
 - A `memory` tool (a `Tool` subclass, no approval) lets the model save facts
@@ -428,8 +473,8 @@ inline images on vision models (`gemma4:cloud`; `gpt-oss` returns 400), rejects
   `gpt-transcribe` on OpenAI; on a compatible endpoint without a model,
   transcription is off. `GET /api/health` gains `features: { transcription }`.
 - **Storage.** Builds on `files` / `FileStore` (Phase 6): a migration adds
-  `conversation_id` and `provider_file_id` (§4), and `FileStore` gains linking
-  files to a conversation. Messages keep the SDK's types: a user message's content is
+  `provider_file_id` (§4), and uploads get their `conversation_id` when first
+  sent with a turn. Messages keep the SDK's types: a user message's content is
   `input_image { file_id: <chibot id>, detail: 'auto' }` /
   `input_file { file_id: <chibot id>, filename }` parts plus `input_text`, so
   no base64 lands in SQLite or the search index.
