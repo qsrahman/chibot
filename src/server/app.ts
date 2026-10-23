@@ -1,5 +1,7 @@
+import { isIP } from 'node:net'
 import { Hono, type Context } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
+import { csrf } from 'hono/csrf'
 import { streamSSE } from 'hono/streaming'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
@@ -71,6 +73,35 @@ export function createApp({
   transcription,
 }: AppDeps) {
   const app = new Hono()
+
+  // chibot has no login, so only this machine's names may reach it: a site
+  // whose name is pointed at 127.0.0.1 (DNS rebinding) would otherwise be
+  // same-origin with it.
+  const allowedHost = (url: string) => {
+    const host = URL.parse(url)?.hostname.replace(/^\[|\]$/g, '')
+    return (
+      !!host &&
+      (isIP(host) !== 0 ||
+        host === 'localhost' ||
+        host.endsWith('.localhost') ||
+        host === config.host)
+    )
+  }
+  app.use(async (c, next) => {
+    if (!allowedHost(c.req.url)) {
+      return c.text('chibot only answers to this machine’s addresses', 403)
+    }
+    await next()
+  })
+  // Form posts (uploads) skip CORS preflight, so other sites could send them.
+  // Browsers mark every post with Origin or Sec-Fetch-Site; requests with
+  // neither come from tools like curl, which no site can drive.
+  const fromOtherSites = csrf({ origin: allowedHost })
+  app.use((c, next) =>
+    c.req.header('origin') || c.req.header('sec-fetch-site')
+      ? fromOtherSites(c, next)
+      : next(),
+  )
 
   app.get('/api/health', (c) =>
     c.json({

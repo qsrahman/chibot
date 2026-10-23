@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Security
+
+- Web pages could use chibot behind the user's back: any site could post uploads (and, through `/api/transcriptions`, spend the API key), since form posts skip CORS preflight; and a site that points its own name at 127.0.0.1 (DNS rebinding) could read chats and run turns. chibot now answers only to this machine's names and IP addresses (plus `HOST`), and refuses form posts from other origins (Hono's `csrf()`; requests without browser headers, e.g. curl, are unaffected).
+
 ## [0.10.1] - 2026-10-23
 
 ### Added

@@ -81,6 +81,12 @@ therefore listens only on this machine by default. To use it from another
 device on your network, set `HOST=0.0.0.0` (this applies to both `pnpm dev`
 and `pnpm start`). The server prints a warning when it's exposed.
 
+Web pages you visit can't use chibot behind your back: it answers only to
+this machine's names (`localhost`, IP addresses, and `HOST` if it's a name),
+so a site can't point its own name at it, and it refuses uploads posted from
+other sites. From another device, open it by IP address, or set `HOST` to
+the name you use.
+
 ## Running
 
 **Development** runs the API server (restarts on change) and the Vite dev
