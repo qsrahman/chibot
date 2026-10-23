@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import OpenAI from 'openai'
 import { z } from 'zod'
 import { createApp, type AppDeps } from '../../src/server/app.ts'
+import { Attachments } from '../../src/server/attachments.ts'
 import { ChatService } from '../../src/server/chat-service.ts'
 import { Config } from '../../src/server/config.ts'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
@@ -62,7 +63,7 @@ export interface FakeCall {
   signal: AbortSignal | undefined
 }
 
-export interface TitleOptions {
+export interface FakeOptions {
   /** What the title request returns as `output_text`, or throws. */
   title?: string | Error | ((params: ResponseCreateParams) => string | Error)
   titleCalls?: ResponseCreateParams[]
@@ -70,12 +71,18 @@ export interface TitleOptions {
   models?: string[] | Error
   /** Streaming calls with `reasoning` fail with 400, like non-reasoning models. */
   rejectReasoning?: boolean
+  /** An error for a streaming call (e.g. a 400 for its input), or none. */
+  reject?: (params: ResponseCreateParamsStreaming) => Error | undefined
+  /** Records uploaded file names (`files.create`, ids `file-1`, …), or the error it throws (no Files API). */
+  uploads?: string[] | Error
+  /** Records the ids passed to `files.delete`. */
+  deletedUploads?: string[]
 }
 
 /**
  * An OpenAI client whose streaming `responses.create` yields the given
  * events (or rejects with an error), honouring the abort signal between
- * events. Non-streaming calls are title requests: see `TitleOptions`.
+ * events. Non-streaming calls are title requests: see `FakeOptions`.
  */
 export function fakeClient(
   /** Per streaming call: the events, an error, or a function picking them. */
@@ -87,7 +94,10 @@ export function fakeClient(
     titleCalls = [],
     models = ['m-2', 'm-1'],
     rejectReasoning = false,
-  }: TitleOptions = {},
+    reject,
+    uploads = [],
+    deletedUploads = [],
+  }: FakeOptions = {},
 ): OpenAI {
   const create = async (
     params: ResponseCreateParams,
@@ -106,6 +116,8 @@ export function fakeClient(
     if (events instanceof Error) throw events
     const streamed =
       typeof events === 'function' ? events(calls.length - 1) : events
+    const rejected = reject?.(params as ResponseCreateParamsStreaming)
+    if (rejected) throw rejected
     if (rejectReasoning && params.reasoning) {
       throw new OpenAI.BadRequestError(
         400,
@@ -126,7 +138,21 @@ export function fakeClient(
     if (models instanceof Error) throw models
     for (const id of models) yield { id }
   }
-  return { responses: { create }, models: { list } } as unknown as OpenAI
+  const files = {
+    create: async ({ file }: { file: File }) => {
+      if (uploads instanceof Error) throw uploads
+      return { id: `file-${uploads.push(file.name)}` }
+    },
+    delete: async (id: string) => {
+      deletedUploads.push(id)
+      return { id, deleted: true }
+    },
+  }
+  return {
+    responses: { create },
+    models: { list },
+    files,
+  } as unknown as OpenAI
 }
 
 /** A conversation store on `db` (by default a fresh in-memory database). */
@@ -212,6 +238,7 @@ export function testApp(deps: Partial<AppDeps> = {}) {
     chat: new ChatService(fakeClient([]), store, settings),
     memories: new MemoryStore(db),
     index: new ProjectIndex(db, projects, files, null),
+    attachments: new Attachments(fakeClient([]), files),
     ...deps,
     projects,
     store,

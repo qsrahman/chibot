@@ -5,6 +5,7 @@ import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
 import OpenAI from 'openai'
 import { createApp } from './app.ts'
+import { Attachments } from './attachments.ts'
 import { ChatService } from './chat-service.ts'
 import { Config, loadEnvFiles } from './config.ts'
 import { ConversationStore } from './conversation-store.ts'
@@ -95,7 +96,6 @@ export function start({
   void index.resume()
   // Temporary chats whose tab closed before it could delete them.
   store.deleteTemporaryConversations()
-  files.deleteOrphans()
   const client = new OpenAI({
     baseURL: config.chat.baseURL,
     apiKey: config.chat.apiKey,
@@ -103,9 +103,12 @@ export function start({
   const registry = new ToolRegistry(
     tools({ config, store, files, memories, projects, index }),
   )
+  const attachments = new Attachments(client, files)
+  attachments.deleteOrphans()
   const chat = new ChatService(client, store, settings, {
     tools: registry,
-    projects: projects,
+    projects,
+    attachments,
   })
   const app = createApp({
     config,
@@ -116,6 +119,7 @@ export function start({
     memories,
     projects,
     index,
+    attachments,
   })
 
   // In dev, Vite serves the web app. The production build only exists after `pnpm build`.

@@ -28,6 +28,7 @@ import type {
   ToolInfo,
   TurnErrorEvent,
 } from '../shared/types.ts'
+import type { Attachments } from './attachments.ts'
 import type { ChatService } from './chat-service.ts'
 import type { Config } from './config.ts'
 import type { ConversationStore } from './conversation-store.ts'
@@ -47,6 +48,7 @@ export interface AppDeps {
   memories: MemoryStore
   projects: ProjectStore
   index: ProjectIndex
+  attachments: Attachments
 }
 
 /** Builds the HTTP app. A factory so tests can inject fakes. */
@@ -59,6 +61,7 @@ export function createApp({
   memories,
   projects,
   index,
+  attachments,
 }: AppDeps) {
   const app = new Hono()
 
@@ -127,7 +130,7 @@ export function createApp({
     if (!store.deleteConversation(c.req.param('id'))) {
       return notFound(c)
     }
-    files.deleteOrphans()
+    attachments.deleteOrphans()
     return c.body(null, 204)
   })
 
@@ -210,7 +213,7 @@ export function createApp({
       .projectConversationIds(id)
       .forEach((chat) => store.deleteConversation(chat))
     projects.delete(id)
-    files.deleteOrphans()
+    attachments.deleteOrphans()
     return c.body(null, 204)
   })
 
@@ -289,6 +292,19 @@ export function createApp({
     const id = c.req.param('id')
     if (!store.getConversation(id)) return notFound(c)
     const request = c.req.valid('json')
+    // Attachments: our uploads (or this chat's own files), not a project's.
+    for (const fileId of request.fileIds ?? []) {
+      const file = files.get(fileId)
+      if (
+        !file ||
+        !fileKind(file.name) ||
+        projects.hasFile(fileId) ||
+        (file.conversationId !== null && file.conversationId !== id)
+      ) {
+        return c.json({ error: `File ${fileId} can't be attached here` }, 400)
+      }
+    }
+    files.link(request.fileIds ?? [], id)
     if (request.approvals && chat.waitingCalls(id).length === 0) {
       return c.json({ error: 'No tool calls are waiting for approval' }, 409)
     }

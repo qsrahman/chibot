@@ -105,6 +105,8 @@ export interface StoredFile {
   mime: string
   size: number
   createdAt: number
+  /** The provider's copy (Files API), for attachments sent to it. */
+  providerFileId: string | null
 }
 
 /** Something chibot remembers about the user (`GET /api/memories`). */

@@ -7,7 +7,7 @@ import {
   answerEvents,
   drain,
   fakeClient,
-  type TitleOptions,
+  type FakeOptions,
   memoryStore,
   testSettings,
 } from './fakes.ts'
@@ -29,7 +29,7 @@ describe('ChatService titles', () => {
     store = memoryStore()
   })
 
-  function service(options: TitleOptions) {
+  function service(options: FakeOptions) {
     return new ChatService(
       fakeClient(answerEvents('A'), [], options),
       store,

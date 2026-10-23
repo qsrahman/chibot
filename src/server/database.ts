@@ -48,7 +48,8 @@ const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
   `ALTER TABLE items ADD COLUMN model TEXT;`,
   // Stored files (generated images); the bytes live in <data dir>/files/<id>.
   // No foreign key: deleting a conversation leaves its rows for
-  // FileStore.deleteOrphans(), which also removes the files on disk.
+  // FileStore.deleteOrphans() (via Attachments, which also deletes the
+  // provider's copies), which removes the files on disk too.
   `CREATE TABLE files (
      id TEXT PRIMARY KEY,
      conversation_id TEXT,

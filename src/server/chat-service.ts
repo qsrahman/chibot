@@ -16,6 +16,7 @@ import type {
   TurnTitleEvent,
   TurnToolOutputEvent,
 } from '../shared/types.ts'
+import type { Attachments } from './attachments.ts'
 import { chatModels } from './chat-models.ts'
 import type { ConversationStore } from './conversation-store.ts'
 import type { ProjectStore } from './project-store.ts'
@@ -41,6 +42,7 @@ export class ChatService {
   readonly #settings: SettingsStore
   readonly #tools: ToolRegistry
   readonly #projects: ProjectStore | null
+  readonly #attachments: Attachments | null
   // Model + optional-feature combinations the server rejected (400) while
   // the same request without them worked. Kept until restart.
   readonly #unsupported = new Set<string>()
@@ -48,6 +50,7 @@ export class ChatService {
   /**
    * @param options.tools offered to the model (none by default)
    * @param options.projects for project chats' instructions
+   * @param options.attachments to send files attached to messages
    */
   constructor(
     client: OpenAI,
@@ -56,13 +59,19 @@ export class ChatService {
     {
       tools = new ToolRegistry([]),
       projects = null,
-    }: { tools?: ToolRegistry; projects?: ProjectStore | null } = {},
+      attachments = null,
+    }: {
+      tools?: ToolRegistry
+      projects?: ProjectStore | null
+      attachments?: Attachments | null
+    } = {},
   ) {
     this.#client = client
     this.#store = store
     this.#settings = settings
     this.#tools = tools
     this.#projects = projects
+    this.#attachments = attachments
   }
 
   /**
@@ -88,7 +97,7 @@ export class ChatService {
    */
   async *runTurn(
     conversationId: string,
-    { text, parentId, approvals, tool }: TurnRequest,
+    { text, parentId, approvals, tool, fileIds = [] }: TurnRequest,
     signal?: AbortSignal,
   ): AsyncGenerator<
     | ResponseStreamEvent
@@ -127,8 +136,16 @@ export class ChatService {
           )
           .at(-1)!.id
       }
+      // Callers validate `fileIds` (only with `attachments`).
+      const content =
+        fileIds.length > 0
+          ? [
+              ...this.#attachments!.parts(fileIds),
+              { type: 'input_text' as const, text },
+            ]
+          : text
       leafId = this.#store.appendItems(conversationId, parent, [
-        { role: 'user', content: text },
+        { role: 'user', content },
       ])[0]!.id
     }
     const settings = this.#settings.get()
@@ -180,43 +197,45 @@ export class ChatService {
         // Not `responses.stream()`: its accumulator rejects some compatible
         // servers' streams (Ollama gpt-oss: "missing content at index 0"), and
         // chibot must save the answer before relaying `response.completed`.
-        const stream = await this.#withOptional(
-          model,
-          {
-            reasoning: {
-              summary: 'auto',
-              ...(reasoningEffort && { effort: reasoningEffort }),
-            },
-            ...(compactThreshold !== null && {
-              context_management: [
-                { type: 'compaction', compact_threshold: compactThreshold },
-              ],
-            }),
-          },
-          (optional) =>
-            this.#client.responses.create(
-              {
-                model,
-                instructions,
-                input,
-                ...(tools.length > 0 && {
-                  tools,
-                  // Make the last request answer instead of calling more.
-                  ...(step === MAX_STEPS && { tool_choice: 'none' as const }),
-                  ...(step === 1 &&
-                    forced && {
-                      tool_choice: { type: 'function', name: forced.name },
-                    }),
-                }),
-                stream: true,
-                store: false,
-                // Reasoning items can only be replayed without server-side
-                // storage when they carry their encrypted content.
-                include: ['reasoning.encrypted_content'],
-                ...optional,
+        const stream = await this.#withAttachments(model, input, (input) =>
+          this.#withOptional(
+            model,
+            {
+              reasoning: {
+                summary: 'auto',
+                ...(reasoningEffort && { effort: reasoningEffort }),
               },
-              { signal },
-            ),
+              ...(compactThreshold !== null && {
+                context_management: [
+                  { type: 'compaction', compact_threshold: compactThreshold },
+                ],
+              }),
+            },
+            (optional) =>
+              this.#client.responses.create(
+                {
+                  model,
+                  instructions,
+                  input,
+                  ...(tools.length > 0 && {
+                    tools,
+                    // Make the last request answer instead of calling more.
+                    ...(step === MAX_STEPS && { tool_choice: 'none' as const }),
+                    ...(step === 1 &&
+                      forced && {
+                        tool_choice: { type: 'function', name: forced.name },
+                      }),
+                  }),
+                  stream: true,
+                  store: false,
+                  // Reasoning items can only be replayed without server-side
+                  // storage when they carry their encrypted content.
+                  include: ['reasoning.encrypted_content'],
+                  ...optional,
+                },
+                { signal },
+              ),
+          ),
         )
         for await (const event of stream) {
           if (event.type === 'response.output_text.delta') {
@@ -383,6 +402,38 @@ export class ChatService {
       const result = await send({})
       this.#unsupported.add(key)
       return result
+    }
+  }
+
+  /**
+   * Sends `input` with its attachments resolved (see `Attachments`). A model
+   * that rejects files (400) gets documents as their text from then on, and
+   * a provider that lost an upload (404) gets it again: each retried once.
+   */
+  async #withAttachments<T>(
+    model: string,
+    input: ResponseInputItem[],
+    send: (input: ResponseInputItem[]) => Promise<T>,
+  ): Promise<T> {
+    const attachments = this.#attachments
+    if (!attachments) return send(input)
+    try {
+      return await send(await attachments.resolve(input, model))
+    } catch (err) {
+      if (
+        err instanceof OpenAI.BadRequestError &&
+        attachments.sendsFiles(input, model)
+      ) {
+        attachments.useText(model)
+      } else if (
+        err instanceof OpenAI.NotFoundError &&
+        attachments.uploaded(input)
+      ) {
+        attachments.forgetUploads(input)
+      } else {
+        throw err
+      }
+      return send(await attachments.resolve(input, model))
     }
   }
 

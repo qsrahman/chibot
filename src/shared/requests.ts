@@ -58,6 +58,8 @@ export const turnRequestSchema = z
     parentId: z.number().int().nullable().optional(),
     approvals: z.record(z.string(), z.boolean()).optional(),
     tool: z.string().max(100).optional(),
+    /** Uploads (`POST /api/files`) attached to the message, with `text`. */
+    fileIds: z.array(z.string()).max(10).optional(),
   })
   .refine(
     ({ text, parentId, approvals }) =>
@@ -65,6 +67,10 @@ export const turnRequestSchema = z
         ? text === undefined && parentId === undefined
         : text !== undefined || typeof parentId === 'number',
     'Send `text`, `parentId`, or both; or `approvals` alone',
+  )
+  .refine(
+    ({ text, fileIds }) => fileIds === undefined || text !== undefined,
+    'Attach `fileIds` to a message (`text`)',
   )
 
 /** `PUT /api/conversations/:id/leaf`: show another version. */
