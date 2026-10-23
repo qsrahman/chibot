@@ -171,9 +171,10 @@ invariants, API quirks. No line-by-line narration.
   "calculate", "approve", "search", "read <url>", "draw", "bluer",
   "remember <fact>", "earlier chats <words>" and "in my files <words>" call a
   tool (see the top of the file). It also fakes Brave, the images API,
-  embeddings and transcription (`/debug/last-transcription`), and serves a
-  test page; it has no Files API, so attachments go inline. Chromium runs
-  with a fake microphone. `/debug/last-request` and `/debug/requests` show what
+  embeddings, transcription (`/debug/last-transcription`) and a Files API
+  (`/debug/files`, `/debug/forget-files`; unknown file ids get a 404), and
+  serves a test page; the model `e2e-other` refuses `input_file` parts, as
+  Ollama does. Chromium runs with a fake microphone. `/debug/last-request` and `/debug/requests` show what
   chibot sent. Shared steps live in
   `tests/e2e/helpers.ts` (`send`, `answered`, `appReady`, `lastRequest`,
   `resetSettings`, …). Wait for the app (e.g. a focused composer, or the empty

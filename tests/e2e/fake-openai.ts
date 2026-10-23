@@ -11,7 +11,10 @@
 // it. It also fakes the Brave Search API (/brave/…), serves a test page
 // (/pages/robots), makes 1×1 images (/v1/images/…), embeds text as counts
 // of a few letters (/v1/embeddings) and transcribes any recording as
-// "Hello from the microphone" (/v1/audio/transcriptions).
+// "Hello from the microphone" (/v1/audio/transcriptions). Its Files API
+// (/v1/files) keeps uploads until POST /debug/forget-files; a request naming
+// an unknown file gets a 404, as on OpenAI, and e2e-other rejects
+// `input_file` parts with a 400, as Ollama does.
 // Non-streaming requests are title requests. GET /debug/last-request shows
 // the last chat request, so tests can check what chibot sent.
 import { serve } from '@hono/node-server'
@@ -115,6 +118,37 @@ app.post('/v1/embeddings', async (c) => {
   })
 })
 
+const uploads = new Map<string, string>()
+let uploadCount = 0
+app.post('/v1/files', async (c) => {
+  const { file, purpose } = await c.req.parseBody()
+  if (!(file instanceof File)) {
+    return c.json({ error: { message: 'no file' } }, 400)
+  }
+  const id = `file-${++uploadCount}`
+  uploads.set(id, file.name)
+  return c.json({
+    id,
+    object: 'file',
+    bytes: file.size,
+    created_at: Math.floor(Date.now() / 1000),
+    filename: file.name,
+    purpose,
+    status: 'processed',
+  })
+})
+app.delete('/v1/files/:id', (c) => {
+  const id = c.req.param('id')
+  return c.json({ id, object: 'file', deleted: uploads.delete(id) })
+})
+app.get('/debug/files', (c) =>
+  c.json({ count: uploadCount, kept: [...uploads.values()] }),
+)
+app.post('/debug/forget-files', (c) => {
+  uploads.clear()
+  return c.json({ ok: true })
+})
+
 app.post('/v1/responses', async (c) => {
   const body = (await c.req.json()) as {
     model: string
@@ -144,6 +178,32 @@ app.post('/v1/responses', async (c) => {
 
   lastRequest = body
   requests.push(body)
+  const parts =
+    typeof body.input === 'string'
+      ? []
+      : body.input.flatMap((item) =>
+          Array.isArray(item.content)
+            ? (item.content as { type: string; file_id?: string }[])
+            : [],
+        )
+  const missing = parts.flatMap((part) =>
+    part.file_id && !uploads.has(part.file_id) ? [part.file_id] : [],
+  )
+  if (missing.length > 0) {
+    return c.json(
+      { error: { message: `Files [${missing.join(', ')}] were not found` } },
+      404,
+    )
+  }
+  if (
+    body.model === 'e2e-other' &&
+    parts.some((part) => part.type === 'input_file')
+  ) {
+    return c.json(
+      { error: { message: 'file inputs are not currently supported' } },
+      400,
+    )
+  }
   const question =
     typeof body.input === 'string'
       ? body.input
