@@ -164,6 +164,26 @@ describe('projects', () => {
     expect(files.get(file.id)).toBeNull()
   })
 
+  it('serves uploads so that HTML can’t run scripts', async () => {
+    const page = files.save(
+      null,
+      'page.html',
+      'text/html',
+      Buffer.from('<script>alert(1)</script>'),
+    )
+    const res = await app.request(`/api/files/${page.id}`)
+    expect(res.headers.get('content-security-policy')).toBe('sandbox')
+    expect(res.headers.get('x-content-type-options')).toBe('nosniff')
+    const pdf = files.save(
+      null,
+      'a.pdf',
+      'application/pdf',
+      Buffer.from('%PDF'),
+    )
+    const shown = await app.request(`/api/files/${pdf.id}`)
+    expect(shown.headers.get('content-security-policy')).toBeNull()
+  })
+
   it('refuses files it can’t read', async () => {
     const form = new FormData()
     form.append('file', new File(['x'], 'photo.png'))

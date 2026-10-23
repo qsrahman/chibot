@@ -232,6 +232,13 @@ export function createApp({
     if (!file) return notFound(c, 'File')
     return c.body(files.read(file.id), 200, {
       'Content-Type': file.mime,
+      'X-Content-Type-Options': 'nosniff',
+      // Uploads are served from chibot's origin: an HTML file opened here must
+      // not run scripts that could use the API. (PDFs are left alone: the
+      // browser's viewer doesn't render them in a sandbox.)
+      ...(file.mime !== 'application/pdf' && {
+        'Content-Security-Policy': 'sandbox',
+      }),
       // A file never changes under its id.
       'Cache-Control': 'private, max-age=31536000, immutable',
       'Content-Disposition': `inline; filename*=UTF-8''${encodeURIComponent(file.name)}`,
