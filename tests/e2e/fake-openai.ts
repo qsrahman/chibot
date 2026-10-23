@@ -2,6 +2,8 @@
 // Streams `Answer #n to: <last user message>` word by word. A question that
 // contains "slow" streams a long answer slowly (to act mid-answer), "think"
 // first streams a reasoning summary, and "compact" returns a compaction item.
+// "calculate" calls the calculator tool and "approve" the test-only e2e_note
+// tool (see server.ts); once the tool's output arrives, the answer quotes it.
 // Non-streaming requests are title requests. GET /debug/last-request shows
 // the last chat request, so tests can check what chibot sent.
 import { serve } from '@hono/node-server'
@@ -37,7 +39,9 @@ app.post('/v1/responses', async (c) => {
   const body = (await c.req.json()) as {
     model: string
     stream?: boolean
-    input: string | { role?: string; content?: unknown }[]
+    input:
+      | string
+      | { role?: string; type?: string; content?: unknown; output?: string }[]
   }
   const message = (text: string) => ({
     id: `msg_${crypto.randomUUID()}`,
@@ -66,7 +70,6 @@ app.post('/v1/responses', async (c) => {
   const text = slow
     ? Array.from({ length: 200 }, (_, i) => `word${i}`).join(' ')
     : `Answer #${++answers} to: ${question}`
-  const words = text.split(' ')
   const id = `resp_${crypto.randomUUID()}`
   const thinking = question.includes('think')
   const reasoning = {
@@ -80,10 +83,28 @@ app.post('/v1/responses', async (c) => {
     type: 'compaction',
     encrypted_content: 'e2e',
   }
+  const last = typeof body.input === 'string' ? null : body.input.at(-1)
+  const tool =
+    last?.type === 'function_call_output'
+      ? null
+      : question.includes('calculate')
+        ? { name: 'calculator', arguments: '{"expression":"6 * 7"}' }
+        : question.includes('approve')
+          ? { name: 'e2e_note', arguments: '{"text":"hello"}' }
+          : null
+  const call = tool && {
+    id: `fc_${crypto.randomUUID()}`,
+    type: 'function_call',
+    status: 'completed',
+    call_id: `call_${crypto.randomUUID()}`,
+    ...tool,
+  }
+  const reply =
+    last?.type === 'function_call_output' ? `Tool said: ${last.output}` : text
   const output = [
     ...(question.includes('compact') ? [compaction] : []),
     ...(thinking ? [reasoning] : []),
-    message(text),
+    call ?? message(reply),
   ]
 
   return streamSSE(c, async (stream) => {
@@ -102,7 +123,20 @@ app.post('/v1/responses', async (c) => {
         await stream.sleep(50)
       }
     }
-    for (const [i, word] of words.entries()) {
+    if (call) {
+      await send({
+        type: 'response.output_item.added',
+        output_index: 0,
+        item: { ...call, arguments: '' },
+      })
+      await stream.sleep(50)
+      await send({
+        type: 'response.output_item.done',
+        output_index: 0,
+        item: call,
+      })
+    }
+    for (const [i, word] of (call ? [] : reply.split(' ')).entries()) {
       if (stream.aborted) return
       await send({
         type: 'response.output_text.delta',

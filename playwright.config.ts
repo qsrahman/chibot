@@ -22,7 +22,7 @@ export default defineConfig({
       env: { FAKE_OPENAI_PORT: String(FAKE_OPENAI_PORT) },
     },
     {
-      command: 'rm -rf .e2e-data && pnpm build && node src/server/main.ts',
+      command: 'rm -rf .e2e-data && pnpm build && node tests/e2e/server.ts',
       url: `http://127.0.0.1:${PORT}/api/health`,
       timeout: 120_000,
       // Real environment variables beat .env, so the developer's own
