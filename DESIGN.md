@@ -158,6 +158,17 @@ Hairline dividers separate rows.
 "Thinking…" with a shimmer while the summary streams, "Thoughts" once the
 answer starts. Opened, the summary sits behind a 2 px `--border` rule.
 
+**Tool calls.** Like Thinking: a `<details>` in 14 px muted text above the
+answer, "Running calculator…" with the shimmer while a tool runs, "Used
+calculator" afterwards. Opened, it lists Arguments (indented JSON) and Result
+in 13 px monospace blocks on `--surface-muted` (10 px radius).
+
+**Approval card.** In place of the answer's actions while tool calls wait: a
+card (`--surface`, hairline border, 16 px radius, 16 px padding) with a 15 px
+title "chibot wants to use <tool>" and a `Wrench` icon, each call's arguments,
+a 13 px muted hint that a new message denies it, and Deny (secondary) /
+Approve (primary) at the bottom right.
+
 **Compaction note.** A 12 px muted line between hairlines: "Earlier messages
 were summarized to save context."
 
@@ -189,6 +200,7 @@ for the composer's "+". The lucide equivalents use a 1.5 px stroke:
 | Model picker | `ChevronDown`, `Check` |
 | Export as Markdown / JSON | `FileText` / `FileJson` |
 | Temporary chat / shortcuts | `MessageCircleDashed` / `Keyboard` |
+| Tool approval | `Wrench` |
 
 ## 6. Interaction
 

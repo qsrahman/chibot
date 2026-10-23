@@ -4,8 +4,18 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- Function tools: the model can call chibot's own tools mid-answer (`Tool` subclasses in a `ToolRegistry`). Calls run in order, their outputs are saved in the history and streamed as `chibot.tool_output`, and the model is asked again, up to 10 requests per answer. Tool errors and invalid arguments go back to the model instead of ending the turn, and a stopped answer still records an output for every call.
+- Approval: a tool with `requiresApproval` ends the turn with `chibot.approval`; `POST /turns` with `{ approvals }` runs or denies the waiting calls and continues the answer. Sending a new message instead denies them. Waiting approvals survive a reload.
+- Calculator tool (mathjs, exact BigNumber arithmetic, functions and unit conversions; expressions can't reach the parser itself).
+- The instructions tell the model the current date, time and timezone.
+- Answers show each tool call ("Running …", then a collapsed "Used …" with arguments and result), and an approval card with Approve / Deny. Markdown exports quote tool calls with their results.
+- End-to-end tests for the calculator and for approving, denying and implicitly denying a tool, through a test-only tool that needs approval.
+
 ### Changed
 
+- An answer's token count now sums all its responses (one per tool round).
 - Roadmap: phases reordered to tools (5), web search & image generation (6), memory (7), projects (8), then attachments & voice input (9). Generated images now introduce file storage (`FileStore`, `GET /api/files/:id`) and project files introduce `POST /api/files`, which attachments build on; `Config` moves to zod with the image endpoint in Phase 6.
 - Roadmap: the current date goes into the instructions (Phase 5), a `fetch_url` tool joins web search (Phase 6) and a `search_chats` tool joins memory (Phase 7). A sandboxed code runner and an MCP client are noted as future tools.
 

@@ -310,8 +310,9 @@ support (`qwen2.5-coder:1.5b`) ignores tools rather than failing.
   a string, and a `declaration` built with `zodResponsesFunction`.
   `ToolRegistry(tools)` gives the declarations and looks tools up by name;
   `main.ts` registers the shipped tools.
-- **Loop.** Each request sends `tools`, which join the optional parameters
-  (a 400 is retried without them). After each response its output items,
+- **Loop.** Each request sends `tools` (always: unlike reasoning or
+  compaction they aren't dropped on a 400, and models without tool support
+  were seen to ignore them). After each response its output items,
   `function_call`s included, are saved as today; the calls run in order with
   arguments validated by the tool's schema. Errors and invalid arguments go
   back to the model as the output (`Error: …`) rather than ending the turn.
