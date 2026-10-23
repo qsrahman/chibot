@@ -21,8 +21,15 @@ export class ToolRegistry {
     }
   }
 
-  get declarations(): FunctionTool[] {
-    return [...this.#tools.values()].map((tool) => tool.declaration)
+  get tools(): Tool[] {
+    return [...this.#tools.values()]
+  }
+
+  /** The request's `tools`, except those named in `disabled`. */
+  declarations(disabled: string[] = []): FunctionTool[] {
+    return this.tools
+      .filter((tool) => !disabled.includes(tool.name))
+      .map((tool) => tool.declaration)
   }
 
   get(name: string): Tool | undefined {

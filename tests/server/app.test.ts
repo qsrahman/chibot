@@ -7,6 +7,7 @@ import {
 } from 'eventsource-parser/stream'
 import { createApp } from '../../src/server/app.ts'
 import { ChatService } from '../../src/server/chat-service.ts'
+import { ToolRegistry } from '../../src/server/tool-registry.ts'
 import { Config } from '../../src/server/config.ts'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
 import type {
@@ -15,6 +16,7 @@ import type {
 } from '../../src/shared/types.ts'
 import {
   answerEvents,
+  EchoTool,
   fakeClient,
   memoryStore,
   testSettings,
@@ -72,6 +74,20 @@ describe('API', () => {
       status: 'ok',
       model: 'm-1',
       baseURL: 'http://localhost:1234/v1',
+    })
+  })
+
+  it('GET /api/tools lists tools with their on/off state', async () => {
+    const settings = testSettings('m-1', { disabledTools: ['echo'] })
+    const chat = new ChatService(
+      fakeClient([]),
+      store,
+      settings,
+      new ToolRegistry([new EchoTool()]),
+    )
+    const app = createApp({ config, store, settings, chat, files: testFiles() })
+    expect(await (await app.request('/api/tools')).json()).toEqual({
+      tools: [{ name: 'echo', label: 'Echo', enabled: false }],
     })
   })
 

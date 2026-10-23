@@ -54,6 +54,7 @@ export async function resetSettings(page: Page) {
       aboutUser: '',
       responseStyle: '',
       compactThreshold: 64_000,
+      disabledTools: [],
     },
   })
   expect(res.ok()).toBe(true)

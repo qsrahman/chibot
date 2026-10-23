@@ -17,6 +17,7 @@ export function settingsDefaults(model: string): Settings {
     aboutUser: '',
     responseStyle: '',
     compactThreshold: DEFAULT_COMPACT_THRESHOLD,
+    disabledTools: [],
   }
 }
 

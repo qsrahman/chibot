@@ -28,6 +28,7 @@ export interface ImageDeps {
 /** Creates an image with `images.generate`; the model gets its id only. */
 export class GenerateImageTool extends Tool {
   readonly name = 'generate_image'
+  readonly label = 'Create images'
   readonly description = `Creates an image from a description. ${SHOWN} To change an image made earlier, use edit_image.`
   readonly parameters = z.object({
     prompt: z
@@ -60,6 +61,7 @@ export class GenerateImageTool extends Tool {
 /** Changes an image from this chat with `images.edit`. */
 export class EditImageTool extends Tool {
   readonly name = 'edit_image'
+  readonly label = 'Edit images'
   readonly description = `Changes an image made earlier in this chat (by generate_image or edit_image), e.g. "make it bluer". ${SHOWN}`
   readonly parameters = z.object({
     image_id: z.string().describe('The image_id returned for the image'),

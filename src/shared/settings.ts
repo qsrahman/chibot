@@ -14,6 +14,8 @@ export const settingsSchema = z.object({
   responseStyle: z.string().max(1500),
   /** Compact the context past this many tokens; `null` turns it off. */
   compactThreshold: z.number().int().min(1000).max(10_000_000).nullable(),
+  /** Tools switched off in Settings: never offered to the model. */
+  disabledTools: z.array(z.string().max(100)).max(100),
 })
 
 export type Settings = z.infer<typeof settingsSchema>

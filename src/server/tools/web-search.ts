@@ -29,6 +29,7 @@ export interface SearchResult {
 /** Web search through the Brave Search API. */
 export class WebSearchTool extends Tool {
   readonly name = 'web_search'
+  readonly label = 'Web search'
   readonly description =
     'Searches the web (Brave Search) for current or specific information: ' +
     'news, recent events, prices, documentation, facts you are unsure of. ' +

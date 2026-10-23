@@ -76,6 +76,7 @@ const blockedError = (host: string, address: string) =>
 /** Reads a web page (or plain text) and returns its main text. */
 export class FetchUrlTool extends Tool {
   readonly name = 'fetch_url'
+  readonly label = 'Read web pages'
   readonly description =
     'Reads a web page and returns its main text: a search result to read in ' +
     'full, or a URL the user gave. Works for HTML, plain text, Markdown and ' +

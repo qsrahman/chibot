@@ -6,6 +6,7 @@ import { Tool } from '../../src/server/tool.ts'
 
 class NoteTool extends Tool {
   readonly name = 'e2e_note'
+  readonly label = 'Notes (test)'
   readonly description = 'Saves a note.'
   readonly parameters = z.object({ text: z.string() })
   override readonly requiresApproval = true

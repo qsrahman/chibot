@@ -82,6 +82,34 @@ describe('ChatService tools', () => {
     expect(calls[0]!.params).not.toHaveProperty('tools')
   })
 
+  it('leaves out tools switched off in Settings', async () => {
+    const calls: FakeCall[] = []
+    const chat = new ChatService(
+      fakeClient(answerEvents('Hi'), calls),
+      store,
+      testSettings('m', { disabledTools: ['echo'] }),
+      new ToolRegistry([new EchoTool()]),
+    )
+    await drain(chat.runTurn(conversationId, { text: 'Hi', tool: 'echo' }))
+    expect(calls[0]!.params).not.toHaveProperty('tools')
+    expect(calls[0]!.params).not.toHaveProperty('tool_choice')
+  })
+
+  it('forces a chosen tool on the first request only', async () => {
+    const calls: FakeCall[] = []
+    const chat = chatWith(
+      (n) =>
+        n === 0 ? callEvents({ args: { text: 'hi' } }) : answerEvents('Done'),
+      calls,
+    )
+    await drain(chat.runTurn(conversationId, { text: 'Go', tool: 'echo' }))
+    expect(calls[0]!.params.tool_choice).toEqual({
+      type: 'function',
+      name: 'echo',
+    })
+    expect(calls[1]!.params).not.toHaveProperty('tool_choice')
+  })
+
   it('returns tool errors to the model', async () => {
     const calls: FakeCall[] = []
     const chat = chatWith(
@@ -126,6 +154,7 @@ describe('ChatService tools', () => {
     const controller = new AbortController()
     class SlowTool extends Tool {
       readonly name = 'echo'
+      readonly label = 'Slow'
       readonly description = 'Waits until stopped.'
       readonly parameters = z.object({ text: z.string() })
       async run(_: unknown, { signal }: { signal?: AbortSignal }) {

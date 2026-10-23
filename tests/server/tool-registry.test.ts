@@ -14,7 +14,7 @@ const context = { conversationId: 'c' }
 
 describe('ToolRegistry', () => {
   it('declares tools as strict JSON-Schema functions', () => {
-    expect(new ToolRegistry([new EchoTool()]).declarations).toEqual([
+    expect(new ToolRegistry([new EchoTool()]).declarations()).toEqual([
       {
         type: 'function',
         name: 'echo',

@@ -22,6 +22,7 @@ math.import(
 /** Exact arithmetic, functions and unit conversions with mathjs. */
 export class CalculatorTool extends Tool {
   readonly name = 'calculator'
+  readonly label = 'Calculator'
   readonly description =
     'Evaluates a math expression exactly: arithmetic, powers, roots, ' +
     'functions such as sqrt, log, sin and factorial, matrices, and unit ' +

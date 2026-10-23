@@ -98,6 +98,14 @@ export interface TurnApprovalEvent {
   calls: ResponseFunctionToolCall[]
 }
 
+/** A tool in `GET /api/tools` (`{ tools: ToolInfo[] }`). */
+export interface ToolInfo {
+  name: string
+  label: string
+  /** Not switched off in Settings. */
+  enabled: boolean
+}
+
 /** `GET /api/models`: the chat endpoint's models, or `null` if it can't list them. */
 export interface ModelsResponse {
   models: string[] | null

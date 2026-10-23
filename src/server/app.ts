@@ -17,7 +17,7 @@ import {
   type SettingsResponse,
 } from '../shared/settings.ts'
 import { pendingCalls } from '../shared/tools.ts'
-import type { ModelsResponse } from '../shared/types.ts'
+import type { ModelsResponse, ToolInfo } from '../shared/types.ts'
 import type { ConversationWithItems, TurnErrorEvent } from '../shared/types.ts'
 import type { ChatService } from './chat-service.ts'
 import type { Config } from './config.ts'
@@ -53,6 +53,15 @@ export function createApp({ config, store, settings, chat, files }: AppDeps) {
       defaults: settings.defaults,
     } satisfies SettingsResponse),
   )
+
+  app.get('/api/tools', (c) => {
+    const { disabledTools } = settings.get()
+    const tools: ToolInfo[] = chat.tools.map((tool) => ({
+      ...tool,
+      enabled: !disabledTools.includes(tool.name),
+    }))
+    return c.json({ tools })
+  })
 
   app.patch('/api/settings', json(settingsPatchSchema), (c) =>
     c.json(settings.update(c.req.valid('json'))),

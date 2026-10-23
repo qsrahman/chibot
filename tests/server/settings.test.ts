@@ -33,6 +33,7 @@ describe('SettingsStore', () => {
       aboutUser: '',
       responseStyle: '',
       compactThreshold: DEFAULT_COMPACT_THRESHOLD,
+      disabledTools: [],
     })
     expect(DEFAULT_COMPACT_THRESHOLD).toBe(64_000)
   })

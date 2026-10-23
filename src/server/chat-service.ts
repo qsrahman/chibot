@@ -76,7 +76,7 @@ export class ChatService {
    */
   async *runTurn(
     conversationId: string,
-    { text, parentId, approvals }: TurnRequest,
+    { text, parentId, approvals, tool }: TurnRequest,
     signal?: AbortSignal,
   ): AsyncGenerator<
     | ResponseStreamEvent
@@ -121,7 +121,10 @@ export class ChatService {
     }
     const settings = this.#settings.get()
     const { model, reasoningEffort, compactThreshold } = settings
-    const tools = this.#tools.declarations
+    const tools = this.#tools.declarations(settings.disabledTools)
+    // A tool the user picked is forced on the first request only; after
+    // that the model decides (or it would call it forever).
+    const forced = tools.find((t) => t.name === tool)
 
     let answered = false
     for (let step = 1; step <= MAX_STEPS; step++) {
@@ -167,6 +170,10 @@ export class ChatService {
                   tools,
                   // Make the last request answer instead of calling more.
                   ...(step === MAX_STEPS && { tool_choice: 'none' as const }),
+                  ...(step === 1 &&
+                    forced && {
+                      tool_choice: { type: 'function', name: forced.name },
+                    }),
                 }),
                 stream: true,
                 store: false,
@@ -268,6 +275,11 @@ export class ChatService {
     )
     for (const o of outputs) yield { type: 'chibot.tool_output', ...o }
     return items.at(-1)!.id
+  }
+
+  /** The tools chibot offers (whatever the user switched off), for Settings. */
+  get tools(): { name: string; label: string }[] {
+    return this.#tools.tools.map(({ name, label }) => ({ name, label }))
   }
 
   /**

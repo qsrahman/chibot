@@ -144,6 +144,7 @@ export function testSettings(model = 'm', overrides: Partial<Settings> = {}) {
 /** Echoes `text` back, or throws when it is "fail". */
 export class EchoTool extends Tool {
   readonly name = 'echo'
+  readonly label = 'Echo'
   readonly description = 'Echoes text back.'
   readonly parameters = z.object({ text: z.string() })
   readonly runs: string[] = []

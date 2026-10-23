@@ -28,6 +28,9 @@ export const conversationPatchSchema = z.object({
  * - `{ parentId }` regenerates the answer to the user message `parentId`;
  * - `{ approvals }` answers the tool calls waiting for approval (call id →
  *   approved) and continues the answer.
+ *
+ * `tool` (with `text`) makes the model call that tool first, e.g. "Search
+ * the web" chosen in the composer.
  */
 export const turnRequestSchema = z
   .object({
@@ -37,6 +40,7 @@ export const turnRequestSchema = z
       .optional(),
     parentId: z.number().int().nullable().optional(),
     approvals: z.record(z.string(), z.boolean()).optional(),
+    tool: z.string().max(100).optional(),
   })
   .refine(
     ({ text, parentId, approvals }) =>

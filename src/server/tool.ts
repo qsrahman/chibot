@@ -16,6 +16,8 @@ export interface ToolContext {
  */
 export abstract class Tool<Parameters extends z.ZodObject = z.ZodObject> {
   abstract readonly name: string
+  /** What the user sees, e.g. in Settings: "Web search". */
+  abstract readonly label: string
   /** Tells the model what the tool does and when to use it. */
   abstract readonly description: string
   abstract readonly parameters: Parameters
