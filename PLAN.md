@@ -722,23 +722,6 @@ Environment variables:
 - **Compatible providers vary.** Reasoning items, usage details, `models.list()`
   and the Files API may be missing or differ. The UI degrades gracefully: no
   Thinking view, no token counts, a free-text model field instead of a picker.
-- **Model names change.** Models are configured through env, never hard-coded
-  in logic. Defaults are checked against `models.list()` when the model picker
-  arrives in Phase 4.
-- **Re-uploaded files:** stored messages reference chibot's own file ids,
-  resolved to a provider `file_id` (or inline data) per request, so a
-  re-upload only updates `files.provider_file_id` and history items stay
-  immutable.
-- **Attachment support varies by server.** Ollama has no Files API (inline
-  fallback), accepts images only on vision models and rejects `input_file`
-  (400): documents then go as their extracted text, and images on a model
-  that can't see them give a message naming the model. chibot doesn't
-  pre-check model capabilities.
-- **Stateless + compaction compatibility** gets verified in Phase 4. Compaction
-  items become part of the tree like any other output item.
-- **Export format** is versioned: version 2 (Phase 9) embeds files as
-  base64, and import still reads version 1. Large chats make large exports
-  (imports are capped at 200 MB).
 - **`sqlite-vec` is pre-1.0** (0.1.9, pinned exactly). Verified while
   planning Phase 8: it loads into `node:sqlite` with `allowExtension` and
   answers cosine nearest-neighbour queries. If it ever breaks, the fallback is
@@ -756,16 +739,16 @@ Environment variables:
 - **Menu placement:** CSS anchor positioning isn't widely supported yet, so
   popover menus are placed from the trigger's bounding rect when opened. Switch
   to `position-area` once it is.
-- **Bundle size:** the web bundle is ~860 kB (highlight.js grammars, KaTeX).
+- **Bundle size:** the web bundle is ~930 kB (highlight.js grammars, KaTeX).
   That's acceptable for a local app; code-split if it starts to matter.
-- **Future tools:** the code runner is Phase 10; an MCP client that exposes
-  local MCP servers' tools as chibot function tools (approval required by
-  default, since their side effects are unknown) is planned as Phase 11. Deliberately out:
+- **Future tools:** an MCP client that exposes local MCP servers' tools as
+  chibot function tools (approval required by default, since their side
+  effects are unknown) is planned as Phase 11. Deliberately out:
   shell/filesystem tools (too costly when mis-approved on an unauthenticated
   server) and narrow APIs like weather, which web search plus `fetch_url`
   cover.
 - **Citations from our own web search** depend on the model following the
   instructions, since there are no hosted `url_citation` annotations. The UI's
   sources list comes from the tool result, so sources are always shown.
-- **`node:sqlite` stability:** it's built into Node 26. If its API shifts, the
-  `ConversationStore` is the only place to change.
+- **`node:sqlite` stability:** it's built into Node 26. If its API shifts,
+  `database.ts` and the stores are the places to change.
