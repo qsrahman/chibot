@@ -9,6 +9,7 @@ import {
   ArrowUp,
   FileText,
   LoaderCircle,
+  Mic,
   Paperclip,
   Plus,
   Square,
@@ -18,6 +19,7 @@ import { ATTACHMENT_ACCEPT } from '../shared/documents.ts'
 import { useAnchoredPopover } from './popover.ts'
 import type { Attachment } from './turns.ts'
 import type { AttachmentsApi, Draft } from './useAttachments.ts'
+import { useDictation } from './useDictation.ts'
 
 /** A tool the user can pick for the next message ("+" menu). */
 export interface ToolOption {
@@ -39,6 +41,8 @@ interface Props {
   tools: ToolOption[]
   /** Owned by the page, which also attaches dropped files. */
   attachments: AttachmentsApi
+  /** The server can transcribe (voice input). */
+  transcription: boolean
 }
 
 export function Composer({
@@ -48,11 +52,28 @@ export function Composer({
   inputRef,
   tools,
   attachments,
+  transcription,
 }: Props) {
   const [text, setText] = useState('')
   const [picked, setPicked] = useState<ToolOption | null>(null)
   const menu = useAnchoredPopover()
   const pickerRef = useRef<HTMLInputElement>(null)
+  const dictation = useDictation((spoken) => {
+    // At the cursor, for review before sending.
+    const box = inputRef.current
+    const start = box?.selectionStart ?? text.length
+    const end = box?.selectionEnd ?? text.length
+    setText((current) => current.slice(0, start) + spoken + current.slice(end))
+    box?.focus()
+  })
+  const recording = dictation.state === 'recording'
+  const micLabel = !transcription
+    ? 'Voice input needs a transcription model (OPENAI_TRANSCRIBE_MODEL)'
+    : recording
+      ? 'Stop recording'
+      : dictation.state === 'transcribing'
+        ? 'Transcribing…'
+        : 'Dictate'
   const canSend = !busy && text.trim() !== '' && !attachments.blocked
   // A tool switched off meanwhile can't be used any more.
   const tool =
@@ -184,6 +205,28 @@ export function Composer({
           attachments.add(files)
         }}
       />
+      <button
+        type="button"
+        className={recording ? 'icon-button recording' : 'icon-button'}
+        aria-label={micLabel}
+        title={micLabel}
+        // aria-disabled rather than disabled, so the tooltip still shows.
+        aria-disabled={!transcription || dictation.state === 'transcribing'}
+        aria-pressed={recording}
+        onClick={() => {
+          if (!transcription) return
+          if (recording) dictation.stop()
+          else if (dictation.state === 'idle') void dictation.start()
+        }}
+      >
+        {dictation.state === 'transcribing' ? (
+          <LoaderCircle className="spin" size={20} strokeWidth={1.5} />
+        ) : recording ? (
+          <Square size={14} fill="currentColor" />
+        ) : (
+          <Mic size={20} strokeWidth={1.5} />
+        )}
+      </button>
       {busy ? (
         <button
           type="button"
@@ -206,6 +249,11 @@ export function Composer({
         >
           <ArrowUp size={20} strokeWidth={2} />
         </button>
+      )}
+      {dictation.error && (
+        <p className="composer-error" role="alert">
+          {dictation.error}
+        </p>
       )}
     </form>
   )

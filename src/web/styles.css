@@ -1071,6 +1071,28 @@ body {
   animation: spin 1s linear infinite;
 }
 
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+.composer .icon-button[aria-disabled='true'] {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* The mic while recording. */
+.composer .icon-button.recording {
+  color: var(--danger);
+}
+
+.composer-error {
+  flex-basis: 100%;
+  margin: 0;
+  padding: 0 8px 4px;
+  color: var(--danger);
+  font-size: 14px;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);

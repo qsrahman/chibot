@@ -73,10 +73,11 @@ export function uploadFile(file: File, signal?: AbortSignal) {
 /** Turns a recording into text (`health.features.transcription`). */
 export async function transcribe(audio: Blob) {
   const form = new FormData()
+  // e.g. audio/webm;codecs=opus → recording.webm
   form.append(
     'file',
     audio,
-    `recording.${audio.type.includes('mp4') ? 'mp4' : 'webm'}`,
+    `recording.${/\/(\w+)/.exec(audio.type)?.[1] ?? 'webm'}`,
   )
   return (
     await request<{ text: string }>('/api/transcriptions', {

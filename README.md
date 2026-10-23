@@ -47,6 +47,7 @@ chibot folder, so it finds its settings wherever you run it.
 | `PORT` | `3000` | API server port |
 | `OPENAI_IMAGE_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Image generation; the model must be an image-generation model (not a chat model), and defaults to `gpt-image-2` on OpenAI |
 | `OPENAI_EMBEDDING_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Project file search by meaning; the model defaults to `text-embedding-3-small` on OpenAI, and must be named on other servers (without one, project files are searched by keywords) |
+| `OPENAI_TRANSCRIBE_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Voice input; the model defaults to `gpt-transcribe` on OpenAI, and must be named on other servers (without one, the mic is off). With chat on Ollama, point this at OpenAI |
 | `BRAVE_API_KEY` | — | Turns on web search ([Brave Search API](https://brave.com/search/api/)) |
 | `CHIBOT_DATA_DIR` | `<repo>/data` | Where the database and generated images are kept |
 
@@ -149,6 +150,9 @@ Then open http://127.0.0.1:3000.
   on their project's page; a chat's **…** menu moves it into a project or out.
   Deleting a project deletes its chats and files.
 
+- **Voice input:** click the mic, speak, click again: the text appears at the
+  cursor to check before sending. It needs a transcription model (see
+  `OPENAI_TRANSCRIBE_*`); without one the mic is greyed out and says so.
 - **Attachments:** **+** → **Add photos & files**, or paste or drop them onto
   the chat: images (PNG, JPEG, WebP, GIF) and the document types projects
   take. Send waits until they're uploaded; editing a message keeps them.

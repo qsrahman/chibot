@@ -170,8 +170,10 @@ invariants, API quirks. No line-by-line narration.
   "think" adds a reasoning summary, "compact" a compaction item, and
   "calculate", "approve", "search", "read <url>", "draw", "bluer",
   "remember <fact>", "earlier chats <words>" and "in my files <words>" call a
-  tool (see the top of the file). It also fakes Brave, the images API and
-  embeddings, and serves a test page. `/debug/last-request` and `/debug/requests` show what
+  tool (see the top of the file). It also fakes Brave, the images API,
+  embeddings and transcription (`/debug/last-transcription`), and serves a
+  test page; it has no Files API, so attachments go inline. Chromium runs
+  with a fake microphone. `/debug/last-request` and `/debug/requests` show what
   chibot sent. Shared steps live in
   `tests/e2e/helpers.ts` (`send`, `answered`, `appReady`, `lastRequest`,
   `resetSettings`, …). Wait for the app (e.g. a focused composer, or the empty

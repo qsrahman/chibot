@@ -9,8 +9,9 @@
 // <words>" searches project files; a forced
 // tool_choice is followed. Once the tool's output arrives, the answer quotes
 // it. It also fakes the Brave Search API (/brave/…), serves a test page
-// (/pages/robots), makes 1×1 images (/v1/images/…) and embeds text as counts
-// of a few letters (/v1/embeddings).
+// (/pages/robots), makes 1×1 images (/v1/images/…), embeds text as counts
+// of a few letters (/v1/embeddings) and transcribes any recording as
+// "Hello from the microphone" (/v1/audio/transcriptions).
 // Non-streaming requests are title requests. GET /debug/last-request shows
 // the last chat request, so tests can check what chibot sent.
 import { serve } from '@hono/node-server'
@@ -81,6 +82,17 @@ app.post('/v1/images/edits', async (c) => {
   const { prompt, model } = await c.req.parseBody()
   return image(c, { endpoint: 'edits', prompt, model })
 })
+let lastTranscription: { model: unknown; name: string; size: number } | null =
+  null
+app.get('/debug/last-transcription', (c) => c.json(lastTranscription))
+app.post('/v1/audio/transcriptions', async (c) => {
+  const { file, model } = await c.req.parseBody()
+  if (!(file instanceof File))
+    return c.json({ error: { message: 'no file' } }, 400)
+  lastTranscription = { model, name: file.name, size: file.size }
+  return c.json({ text: 'Hello from the microphone' })
+})
+
 app.get('/v1/models', (c) =>
   c.json({
     object: 'list',

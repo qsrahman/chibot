@@ -7,6 +7,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 ### Added
 
 - Attachments: "Add photos & files" heads the composer's "+" menu (always shown now), and pasting or dropping files onto the chat attaches them too. Chips above the text show a thumbnail or file card, a spinner while uploading, the error if a file is refused, and × to remove; Send waits for uploads. Sent messages show image thumbnails (opening full size) and file cards, and editing a message keeps its attachments.
+- Voice input: a mic button in the composer records (`MediaRecorder`, the browser's own format) and inserts the transcript at the cursor, through `POST /api/transcriptions`. Without a transcription model it's greyed out and its tooltip says what to set. `.env.example` and README document `OPENAI_TRANSCRIBE_*`.
 - JSON export version 2 embeds the chat's attachments and generated images (base64); import gives them new ids and still accepts version 1. Imports may be up to 200 MB (was 20 MB). Markdown export lists each message's attachments.
 
 ### Changed

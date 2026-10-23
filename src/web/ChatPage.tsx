@@ -264,6 +264,7 @@ export function ChatPage({ health, settings, projects, onListChanged }: Props) {
         inputRef={composerRef}
         tools={toolOptions}
         attachments={attachments}
+        transcription={health?.features.transcription ?? false}
       />
       {empty && projectHome && (
         <ProjectDetails

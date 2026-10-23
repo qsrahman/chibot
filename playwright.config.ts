@@ -14,7 +14,14 @@ export default defineConfig({
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
     ...devices['Desktop Chrome'],
-    permissions: ['clipboard-read', 'clipboard-write'],
+    permissions: ['clipboard-read', 'clipboard-write', 'microphone'],
+    // A fake microphone (a tone) for voice input.
+    launchOptions: {
+      args: [
+        '--use-fake-device-for-media-stream',
+        '--use-fake-ui-for-media-stream',
+      ],
+    },
   },
   webServer: [
     {

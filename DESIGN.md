@@ -103,7 +103,11 @@ Code uses `"SF Mono", SFMono-Regular, ui-monospace, Consolas, "Liberation Mono",
 A round 36 px icon button on the right is **send** (blue `--accent`, arrow-up icon),
 dimmed while the input is empty, and becomes **stop** (square icon) while an
 answer streams. A "+" button sits on the left (attachments and tools, see
-*Composer tools*); a mic button (voice, Phase 9) follows.
+*Composer tools*); a 36 px `Mic` icon button sits left of send. While
+recording it shows a stop square in `--danger`, then a spinning
+`LoaderCircle` while transcribing. Without transcription it's dimmed to 40 %
+(`aria-disabled`, so its tooltip still says why). Errors show in `--danger`
+14 px text under the composer's row.
 
 **Attachments.** In the composer, a row above the text: images as 56 px
 thumbnails (12 px radius), documents as file cards. A file card is a
