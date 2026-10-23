@@ -1,0 +1,148 @@
+import { beforeEach, describe, expect, it } from 'vitest'
+import { z } from 'zod'
+import { ChatService, MAX_STEPS } from '../../src/server/chat-service.ts'
+import type { ConversationStore } from '../../src/server/conversation-store.ts'
+import { Tool } from '../../src/server/tool.ts'
+import { TOOL_STOPPED, ToolRegistry } from '../../src/server/tool-registry.ts'
+import {
+  answerEvents,
+  callEvents,
+  drain,
+  EchoTool,
+  fakeClient,
+  memoryStore,
+  testSettings,
+  type FakeCall,
+} from './fakes.ts'
+
+describe('ChatService tools', () => {
+  let store: ConversationStore
+  let conversationId: string
+  beforeEach(() => {
+    store = memoryStore()
+    conversationId = store.createConversation().id
+  })
+
+  const chatWith = (
+    events: Parameters<typeof fakeClient>[0],
+    calls: FakeCall[],
+    tools: Tool[] = [new EchoTool()],
+  ) =>
+    new ChatService(
+      fakeClient(events, calls),
+      store,
+      testSettings(),
+      new ToolRegistry(tools),
+    )
+
+  it('runs the calls and asks the model again with their outputs', async () => {
+    const calls: FakeCall[] = []
+    const chat = chatWith(
+      (n) =>
+        n === 0 ? callEvents({ args: { text: 'hi' } }) : answerEvents('Done'),
+      calls,
+    )
+
+    const events = await drain(chat.runTurn(conversationId, { text: 'Go' }))
+
+    expect(events).toContainEqual({
+      type: 'chibot.tool_output',
+      call_id: 'call_0',
+      output: 'echo: hi',
+    })
+    expect(calls).toHaveLength(2)
+    expect(calls[0]!.params.tools).toEqual([
+      expect.objectContaining({ type: 'function', name: 'echo' }),
+    ])
+    expect(calls[1]!.params.input).toEqual([
+      { role: 'user', content: 'Go' },
+      expect.objectContaining({ type: 'function_call', call_id: 'call_0' }),
+      { type: 'function_call_output', call_id: 'call_0', output: 'echo: hi' },
+    ])
+    expect(store.getPath(conversationId).map((i) => i.data.type)).toEqual([
+      undefined,
+      'function_call',
+      'function_call_output',
+      'message',
+    ])
+  })
+
+  it('sends no tools when none are registered', async () => {
+    const calls: FakeCall[] = []
+    await drain(
+      chatWith(answerEvents('Hi'), calls, []).runTurn(conversationId, {
+        text: 'Hi',
+      }),
+    )
+    expect(calls[0]!.params).not.toHaveProperty('tools')
+  })
+
+  it('returns tool errors to the model', async () => {
+    const calls: FakeCall[] = []
+    const chat = chatWith(
+      (n) =>
+        n === 0
+          ? callEvents({ args: { text: 'fail' } })
+          : answerEvents('Sorry'),
+      calls,
+    )
+    await drain(chat.runTurn(conversationId, { text: 'Go' }))
+    expect(calls[1]!.params.input).toContainEqual({
+      type: 'function_call_output',
+      call_id: 'call_0',
+      output: 'Error: it failed',
+    })
+  })
+
+  it('stops calling tools after MAX_STEPS requests', async () => {
+    const calls: FakeCall[] = []
+    const tool = new EchoTool()
+    const chat = chatWith(
+      () => callEvents({ args: { text: 'again' } }),
+      calls,
+      [tool],
+    )
+
+    await drain(chat.runTurn(conversationId, { text: 'Loop' }))
+
+    expect(calls).toHaveLength(MAX_STEPS)
+    expect(calls.at(-1)!.params.tool_choice).toBe('none')
+    expect(calls.at(-2)!.params).not.toHaveProperty('tool_choice')
+    expect(tool.runs).toHaveLength(MAX_STEPS - 1)
+    // The last call is answered too, so the history stays valid input.
+    expect(store.getPath(conversationId).at(-1)!.data).toEqual({
+      type: 'function_call_output',
+      call_id: 'call_0',
+      output: 'Error: too many tool calls in one answer.',
+    })
+  })
+
+  it('answers a call stopped mid-run, so the chat keeps working', async () => {
+    const controller = new AbortController()
+    class SlowTool extends Tool {
+      readonly name = 'echo'
+      readonly description = 'Waits until stopped.'
+      readonly parameters = z.object({ text: z.string() })
+      async run(_: unknown, { signal }: { signal?: AbortSignal }) {
+        controller.abort()
+        signal?.throwIfAborted()
+        return 'never'
+      }
+    }
+    const calls: FakeCall[] = []
+    const chat = chatWith(callEvents({ args: { text: 'x' } }), calls, [
+      new SlowTool(),
+    ])
+
+    await expect(
+      drain(chat.runTurn(conversationId, { text: 'Go' }, controller.signal)),
+    ).rejects.toThrow()
+
+    expect(calls).toHaveLength(1)
+    expect(store.getPath(conversationId).at(-1)!.data).toEqual({
+      type: 'function_call_output',
+      call_id: 'call_0',
+      output: TOOL_STOPPED,
+    })
+  })
+})

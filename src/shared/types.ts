@@ -70,6 +70,13 @@ export interface TurnTitleEvent {
   title: string
 }
 
+/** SSE event sent after chibot ran a tool the model called. */
+export interface TurnToolOutputEvent {
+  type: 'chibot.tool_output'
+  call_id: string
+  output: string
+}
+
 /** `GET /api/models`: the chat endpoint's models, or `null` if it can't list them. */
 export interface ModelsResponse {
   models: string[] | null

@@ -14,9 +14,11 @@ import type {
   TurnErrorEvent,
   TurnRequest,
   TurnTitleEvent,
+  TurnToolOutputEvent,
 } from '../shared/types.ts'
 
-export type TurnEvent = ResponseStreamEvent | TurnErrorEvent | TurnTitleEvent
+export type TurnEvent =
+  ResponseStreamEvent | TurnErrorEvent | TurnTitleEvent | TurnToolOutputEvent
 
 export interface Health {
   status: string

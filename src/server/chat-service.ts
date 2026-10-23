@@ -2,14 +2,20 @@ import OpenAI from 'openai'
 import type {
   ResponseCreateParams,
   ResponseCreateParamsNonStreaming,
+  ResponseFunctionToolCall,
   ResponseInputItem,
   ResponseStreamEvent,
 } from 'openai/resources/responses/responses'
 import { messageText } from '../shared/messages.ts'
 import type { Settings } from '../shared/settings.ts'
-import type { TurnRequest, TurnTitleEvent } from '../shared/types.ts'
+import type {
+  TurnRequest,
+  TurnTitleEvent,
+  TurnToolOutputEvent,
+} from '../shared/types.ts'
 import type { ConversationStore } from './conversation-store.ts'
 import type { SettingsStore } from './settings-store.ts'
+import { ToolRegistry } from './tool-registry.ts'
 
 // remark-math renders only $…$ and $$…$$, so ask models for those.
 const FORMAT_INSTRUCTIONS =
@@ -19,11 +25,16 @@ const TITLE_INSTRUCTIONS =
   'Write a short title (3 to 6 words) for the conversation below, in its ' +
   'language. Reply with the title only: no quotes, no trailing punctuation.'
 
+/** Model requests per turn. The last one may not call tools. */
+export const MAX_STEPS = 10
+const STEP_LIMIT_OUTPUT = 'Error: too many tool calls in one answer.'
+
 /** Runs chat turns statelessly: the full history is sent on every request. */
 export class ChatService {
   readonly #client: OpenAI
   readonly #store: ConversationStore
   readonly #settings: SettingsStore
+  readonly #tools: ToolRegistry
   // Model + optional-feature combinations the server rejected (400) while
   // the same request without them worked. Kept until restart.
   readonly #unsupported = new Set<string>()
@@ -32,20 +43,27 @@ export class ChatService {
     client: OpenAI,
     store: ConversationStore,
     settings: SettingsStore,
+    tools = new ToolRegistry([]),
   ) {
     this.#client = client
     this.#store = store
     this.#settings = settings
+    this.#tools = tools
   }
 
   /**
    * Runs one turn (see `TurnRequest`): appends the user's message unless it's
-   * a regenerate, then streams the model's answer to it.
+   * a regenerate, then streams the model's answer to it. When the model calls
+   * tools, they run, their outputs are saved and yielded as
+   * `chibot.tool_output`, and the model is asked again, up to `MAX_STEPS`
+   * requests.
    *
-   * The answer is persisted *before* `response.completed` is yielded, so a
-   * client can re-read the conversation as soon as it sees that event. If the
-   * stream ends any other way (abort, disconnect, error), the text received so
-   * far is kept as a partial assistant message.
+   * Each response is persisted *before* its `response.completed` is yielded,
+   * so a client can re-read the conversation as soon as it sees that event.
+   * If a stream ends any other way (abort, disconnect, error), the text
+   * received so far is kept as a partial assistant message. Every function
+   * call on the path gets an output before the next request, so the history
+   * stays valid input.
    *
    * After a completed answer in a saved conversation that has no title yet,
    * a title is generated and yielded as a `chibot.title` event.
@@ -54,7 +72,9 @@ export class ChatService {
     conversationId: string,
     { text, parentId }: TurnRequest,
     signal?: AbortSignal,
-  ): AsyncGenerator<ResponseStreamEvent | TurnTitleEvent> {
+  ): AsyncGenerator<
+    ResponseStreamEvent | TurnTitleEvent | TurnToolOutputEvent
+  > {
     // The user message the answer goes under. Callers validate `parentId`.
     let questionId: number
     if (text === undefined) {
@@ -68,84 +88,123 @@ export class ChatService {
         { role: 'user', content: text },
       ])[0]!.id
     }
-    const input = fromLastCompaction(
-      this.#store.getPath(conversationId, questionId).map((item) => item.data),
-    )
     const settings = this.#settings.get()
     const { model, reasoningEffort, compactThreshold } = settings
+    const tools = this.#tools.declarations
 
-    let partial = ''
-    let saved = false
-    try {
-      // Not `responses.stream()`: its accumulator rejects some compatible
-      // servers' streams (Ollama gpt-oss: "missing content at index 0"), and
-      // chibot must save the answer before relaying `response.completed`.
-      const stream = await this.#withOptional(
-        model,
-        {
-          reasoning: {
-            summary: 'auto',
-            ...(reasoningEffort && { effort: reasoningEffort }),
-          },
-          ...(compactThreshold !== null && {
-            context_management: [
-              { type: 'compaction', compact_threshold: compactThreshold },
-            ],
-          }),
-        },
-        (optional) =>
-          this.#client.responses.create(
-            {
-              model,
-              instructions: chatInstructions(settings),
-              input,
-              stream: true,
-              store: false,
-              // Reasoning items can only be replayed without server-side
-              // storage when they carry their encrypted content.
-              include: ['reasoning.encrypted_content'],
-              ...optional,
-            },
-            { signal },
-          ),
+    // The item the next output goes under.
+    let leafId = questionId
+    let answered = false
+    for (let step = 1; step <= MAX_STEPS; step++) {
+      const input = fromLastCompaction(
+        this.#store.getPath(conversationId, leafId).map((item) => item.data),
       )
-      for await (const event of stream) {
-        if (event.type === 'response.output_text.delta') {
-          partial += event.delta
-        } else if (
-          event.type === 'response.completed' ||
-          event.type === 'response.incomplete'
-        ) {
-          const { output, usage } = event.response
-          this.#store.appendItems(
-            conversationId,
-            questionId,
+      let partial = ''
+      let output: ResponseInputItem[] | null = null
+      try {
+        // Not `responses.stream()`: its accumulator rejects some compatible
+        // servers' streams (Ollama gpt-oss: "missing content at index 0"), and
+        // chibot must save the answer before relaying `response.completed`.
+        const stream = await this.#withOptional(
+          model,
+          {
+            reasoning: {
+              summary: 'auto',
+              ...(reasoningEffort && { effort: reasoningEffort }),
+            },
+            ...(compactThreshold !== null && {
+              context_management: [
+                { type: 'compaction', compact_threshold: compactThreshold },
+              ],
+            }),
+          },
+          (optional) =>
+            this.#client.responses.create(
+              {
+                model,
+                instructions: chatInstructions(settings),
+                input,
+                ...(tools.length > 0 && {
+                  tools,
+                  // Make the last request answer instead of calling more.
+                  ...(step === MAX_STEPS && { tool_choice: 'none' as const }),
+                }),
+                stream: true,
+                store: false,
+                // Reasoning items can only be replayed without server-side
+                // storage when they carry their encrypted content.
+                include: ['reasoning.encrypted_content'],
+                ...optional,
+              },
+              { signal },
+            ),
+        )
+        for await (const event of stream) {
+          if (event.type === 'response.output_text.delta') {
+            partial += event.delta
+          } else if (
+            event.type === 'response.completed' ||
+            event.type === 'response.incomplete'
+          ) {
             // Output items are valid input for the next turn. The SDK's types
             // only disagree for item kinds chibot never requests.
-            output as ResponseInputItem[],
-            usage ?? null,
-            // The server may name a dated snapshot of the model requested.
-            event.response.model || model,
-          )
-          saved = true
+            output = event.response.output as ResponseInputItem[]
+            const items = this.#store.appendItems(
+              conversationId,
+              leafId,
+              output,
+              event.response.usage ?? null,
+              // The server may name a dated snapshot of the model requested.
+              event.response.model || model,
+            )
+            leafId = items.at(-1)?.id ?? leafId
+            answered = true
+          }
+          yield event
         }
-        yield event
+      } finally {
+        // `finally` also runs when the consumer stops iterating (client gone).
+        if (!output && partial) {
+          this.#store.appendItems(
+            conversationId,
+            leafId,
+            [{ role: 'assistant', content: partial }],
+            null,
+            model,
+          )
+        }
       }
-    } finally {
-      // `finally` also runs when the consumer stops iterating (client gone).
-      if (!saved && partial) {
-        this.#store.appendItems(
+
+      const calls = (output ?? []).filter(
+        (item): item is ResponseFunctionToolCall =>
+          item.type === 'function_call',
+      )
+      if (calls.length === 0) break
+      // All outputs are saved before any is yielded, so a client leaving at
+      // a yield can't leave a call unanswered.
+      const outputs: { call_id: string; output: string }[] = []
+      for (const call of calls) {
+        outputs.push({
+          call_id: call.call_id,
+          output:
+            step === MAX_STEPS
+              ? STEP_LIMIT_OUTPUT
+              : await this.#tools.run(call, signal),
+        })
+      }
+      leafId = this.#store
+        .appendItems(
           conversationId,
-          questionId,
-          [{ role: 'assistant', content: partial }],
-          null,
-          model,
+          leafId,
+          outputs.map((o) => ({ type: 'function_call_output', ...o })),
         )
-      }
+        .at(-1)!.id
+      for (const o of outputs) yield { type: 'chibot.tool_output', ...o }
+      signal?.throwIfAborted()
     }
 
     const conversation = this.#store.getConversation(conversationId)!
-    if (saved && conversation.title === null && !conversation.temporary) {
+    if (answered && conversation.title === null && !conversation.temporary) {
       const title = await this.#generateTitle(conversationId, signal)
       if (title) yield { type: 'chibot.title', title }
     }
