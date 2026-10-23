@@ -358,7 +358,7 @@ support (`qwen2.5-coder:1.5b`) ignores tools rather than failing.
   after a reload); stopping during a tool leaves a chat that keeps working;
   the model knows today's date.
 
-### Phase 6 — Web search & image generation
+### Phase 6 — Web search & image generation ✅
 Decisions (agreed after probing Brave, OpenAI and Ollama): the model uses
 available tools on its own, a composer "+" menu forces one for the next
 message and Settings switches turn tools off; no streamed partial images; an

@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-23
+
 ### Added
 
 - Web search (`web_search`, Brave Search API with `BRAVE_API_KEY`): top results with snippets; answers cite sources, and a Sources list under the answer links every page searched or read.
