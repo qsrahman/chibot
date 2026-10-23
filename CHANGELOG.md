@@ -4,6 +4,12 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.10.4] - 2026-10-23
+
+### Added
+
+- The header's model menu sets the reasoning effort too (Default, or `none` to `max`), the same setting as Settings → Model; a chosen effort shows next to the model name.
+
 ## [0.10.3] - 2026-10-23
 
 ### Changed
