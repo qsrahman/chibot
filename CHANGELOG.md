@@ -4,10 +4,16 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.10.5] - 2026-10-23
+
 ### Added
 
 - A mode switch in the composer: Auto (the model's default), Fast (`low` reasoning effort) or Thinking (`high`), the same setting as the header menu and Settings.
 - A "Jump to latest" ↓ button appears above the composer while the chat is scrolled up.
+
+### Changed
+
+- The composer's "+" menu says what "Add photos & files" takes, and lists "Search the web" and "Create an image" even when they can't be used, greyed out with the reason (what to set in `.env`, or "Off in Settings → Tools").
 
 ### Fixed
 
