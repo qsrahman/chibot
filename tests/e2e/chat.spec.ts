@@ -165,3 +165,28 @@ test('renders \\( \\) and \\[ \\] math, not raw LaTeX', async ({ page }) => {
   await expect(answer(page, 0).locator('.katex-display')).toHaveCount(1)
   await expect(answer(page, 0)).not.toContainText('\\(')
 })
+
+test('jumps back to the latest message after scrolling up', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1000, height: 420 })
+  await page.goto('/')
+  await appReady(page)
+  for (const text of ['First', 'Second', 'Third']) {
+    await send(page, text)
+    await answered(page)
+  }
+  const jump = page.getByRole('button', { name: 'Jump to latest' })
+  await expect(jump).toHaveCount(0)
+
+  const list = page.locator('.messages')
+  await list.evaluate((el) => el.scrollTo({ top: 0 }))
+  await expect(jump).toBeVisible()
+  await jump.click()
+  await expect(jump).toHaveCount(0)
+  expect(
+    await list.evaluate(
+      (el) => el.scrollHeight - el.scrollTop - el.clientHeight,
+    ),
+  ).toBeLessThan(40)
+})

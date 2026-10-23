@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { Globe, ImagePlus, MessageCircleDashed, PanelLeft } from 'lucide-react'
+import {
+  ArrowDown,
+  Globe,
+  ImagePlus,
+  MessageCircleDashed,
+  PanelLeft,
+} from 'lucide-react'
 import type { Health } from '../shared/types.ts'
 import { Composer, type ToolOption } from './Composer.tsx'
 import { ModelPicker } from './ModelPicker.tsx'
@@ -72,9 +78,12 @@ export function ChatPage({
   // Follow the answer only while the user is at the bottom, so scrolling up
   // to read isn't undone by every new token.
   const followRef = useRef(true)
+  // Scrolled up: a button jumps back to the latest message.
+  const [away, setAway] = useState(false)
 
   useEffect(() => {
     followRef.current = true
+    setAway(false)
     // A new chat starts as a normal one again.
     if (!id) setTemporaryMode(false)
   }, [id])
@@ -243,6 +252,7 @@ export function ChatPage({
             const el = e.currentTarget
             followRef.current =
               el.scrollHeight - el.scrollTop - el.clientHeight < 40
+            setAway(!followRef.current)
           }}
         >
           <div className="thread">
@@ -277,6 +287,23 @@ export function ChatPage({
             )}
             <div ref={endRef} />
           </div>
+          {away && (
+            <button
+              type="button"
+              className="jump-latest"
+              aria-label="Jump to latest"
+              title="Jump to latest"
+              onClick={() => {
+                followRef.current = true
+                endRef.current?.scrollIntoView({
+                  block: 'end',
+                  behavior: 'smooth',
+                })
+              }}
+            >
+              <ArrowDown size={18} strokeWidth={2} />
+            </button>
+          )}
         </div>
       )}
       <Composer

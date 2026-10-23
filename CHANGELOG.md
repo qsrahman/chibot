@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- A "Jump to latest" ↓ button appears above the composer while the chat is scrolled up.
+
 ### Fixed
 
 - chibot was unusable on phones: the sidebar kept 260 of 375 px, squeezing the chat to a word per line. Below 768 px the sidebar is now a drawer over a full-width chat (opened from the header, closed by tapping beside it or opening a chat). Dialogs and the drawer share a `--scrim` token.

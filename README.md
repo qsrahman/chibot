@@ -127,6 +127,8 @@ Then open http://127.0.0.1:3000.
   math (`$…$` / `$$…$$`, or LaTeX's `\(…\)` / `\[…\]`).
 - **Stop** (■) ends an answer early. What arrived so far is kept, and the same
   happens if you close the tab mid-answer.
+- Scroll up to read while an answer streams and the view stays put; the ↓
+  button above the message box jumps back to the latest message.
 - The first message gives the chat its own URL (`/c/…`). Reloading reopens it.
 - **Sidebar:** chats are grouped as Pinned, Today, Yesterday, Previous 7 days,
   Previous 30 days, then by month. Each gets a short title once its first

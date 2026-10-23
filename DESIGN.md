@@ -129,6 +129,10 @@ same thumbnails (up to 240 px, 16 px radius) and cards sit right-aligned above
 the bubble. Dragging files over the chat outlines it with a 2 px dashed
 `--accent` border.
 
+**Jump to latest.** While the message list is scrolled up, a 36 px round
+`ArrowDown` button (`--surface-raised`, `--border` outline, `--composer-shadow`)
+sticks 12 px above the list's bottom, centred over the composer.
+
 **Messages.**
 - *User:* right-aligned bubble with `--bubble-bg` and `--bubble-fg` text,
   22 px radius, 10×16 px padding, max 70 % width, `white-space: pre-wrap`.
