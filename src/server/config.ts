@@ -112,7 +112,8 @@ export class Config {
     this.image = endpoint(
       imageBaseURL,
       e.OPENAI_IMAGE_API_KEY ?? e.OPENAI_API_KEY,
-      e.OPENAI_IMAGE_MODEL ?? (imageBaseURL ? undefined : 'gpt-image-2'),
+      e.OPENAI_IMAGE_MODEL ??
+        (isOpenAI(imageBaseURL) ? 'gpt-image-2' : undefined),
     )
     this.braveApiKey = e.BRAVE_API_KEY ?? null
     this.host = e.HOST
@@ -129,6 +130,11 @@ export class Config {
   get isLoopback(): boolean {
     return ['127.0.0.1', '::1', 'localhost'].includes(this.host)
   }
+}
+
+/** No base URL (the SDK's default) or OpenAI's own. */
+function isOpenAI(baseURL: string | undefined): boolean {
+  return !baseURL || URL.parse(baseURL)?.hostname === 'api.openai.com'
 }
 
 /** An endpoint, or `null` when it can't be used: no model, or OpenAI without a key. */

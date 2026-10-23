@@ -70,6 +70,14 @@ describe('Config', () => {
       apiKey: 'k',
       model: 'gpt-image-2',
     })
+    // Also when OpenAI's URL is spelled out.
+    expect(
+      new Config({
+        OPENAI_API_KEY: 'k',
+        OPENAI_BASE_URL: 'https://api.openai.com/v1',
+        OPENAI_MODEL: 'gpt-6-astra',
+      }).image?.model,
+    ).toBe('gpt-image-2')
     // A compatible chat server has no image model unless one is named.
     const ollama = {
       OPENAI_BASE_URL: 'http://localhost:11434/v1',
