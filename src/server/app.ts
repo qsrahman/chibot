@@ -9,6 +9,7 @@ import { messageText } from '../shared/messages.ts'
 import {
   conversationPatchSchema,
   createConversationSchema,
+  addProjectFileSchema,
   createProjectSchema,
   projectPatchSchema,
   switchVersionSchema,
@@ -30,7 +31,9 @@ import type { Config } from './config.ts'
 import type { ConversationStore } from './conversation-store.ts'
 import type { FileStore } from './file-store.ts'
 import type { MemoryStore } from './memory-store.ts'
+import type { ProjectIndex } from './project-index.ts'
 import type { ProjectStore } from './project-store.ts'
+import { documentKind } from './text.ts'
 import { toMarkdown } from './markdown-export.ts'
 import type { SettingsStore } from './settings-store.ts'
 
@@ -42,6 +45,7 @@ export interface AppDeps {
   files: FileStore
   memories: MemoryStore
   projects: ProjectStore
+  index: ProjectIndex
 }
 
 /** Builds the HTTP app. A factory so tests can inject fakes. */
@@ -53,6 +57,7 @@ export function createApp({
   files,
   memories,
   projects,
+  index,
 }: AppDeps) {
   const app = new Hono()
 
@@ -143,6 +148,50 @@ export function createApp({
       conversations: store.listConversations({ projectId: project.id }),
     }
     return c.json(contents)
+  })
+
+  app.post(
+    '/api/files',
+    bodyLimit({
+      maxSize: FILE_LIMIT,
+      onError: (c) => c.json({ error: 'The file is larger than 50 MB' }, 413),
+    }),
+    async (c) => {
+      const { file } = await c.req.parseBody()
+      if (!(file instanceof File)) {
+        return c.json({ error: 'Send the file as `file` (multipart)' }, 400)
+      }
+      const kind = documentKind(file.name)
+      if (!kind) {
+        return c.json(
+          { error: `${file.name}: only PDF, Word and text files` },
+          415,
+        )
+      }
+      const bytes = new Uint8Array(await file.arrayBuffer())
+      return c.json(files.save(null, file.name, kind.mime, bytes), 201)
+    },
+  )
+
+  // Adds an uploaded file to a project and indexes it in the background.
+  app.post('/api/projects/:id/files', json(addProjectFileSchema), (c) => {
+    const project = projects.get(c.req.param('id'))
+    const file = files.get(c.req.valid('json').fileId)
+    if (!project || !file) return notFound(c)
+    if (file.conversationId !== null || projects.hasFile(file.id)) {
+      return c.json({ error: 'The file is already in use' }, 409)
+    }
+    projects.addFile(project.id, file.id)
+    void index.index(file.id)
+    return c.json(projects.files(project.id), 201)
+  })
+
+  app.delete('/api/projects/:id/files/:fileId', (c) => {
+    const removed = projects.removeFile(
+      c.req.param('id'),
+      c.req.param('fileId'),
+    )
+    return removed ? c.body(null, 204) : notFound(c)
   })
 
   app.patch('/api/projects/:id', json(projectPatchSchema), (c) => {
@@ -282,6 +331,7 @@ export function createApp({
 }
 
 const IMPORT_LIMIT = 20 * 1024 * 1024
+const FILE_LIMIT = 50 * 1024 * 1024
 
 /** Validates a JSON body against `schema`; failures are `{ error }` 400s. */
 const json = <T extends z.ZodType>(schema: T) =>

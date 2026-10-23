@@ -28,6 +28,9 @@ export const createProjectSchema = z.object({
   name: z.string().trim().min(1).max(100),
 })
 
+/** `POST /api/projects/:id/files`: a file from `POST /api/files`. */
+export const addProjectFileSchema = z.object({ fileId: z.string() })
+
 /** `PATCH /api/projects/:id`. */
 export const projectPatchSchema = z.object({
   name: z.string().trim().min(1).max(100).optional(),

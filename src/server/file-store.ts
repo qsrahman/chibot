@@ -65,17 +65,21 @@ export class FileStore {
   }
 
   /**
-   * Deletes the files of conversations that no longer exist, rows and
-   * bytes. Run after deleting conversations.
+   * Deletes, rows and bytes, the files of conversations that no longer
+   * exist, and uploads that were never attached (a day gives the client time
+   * to attach them). Run after deleting conversations, and at startup.
    */
   deleteOrphans(): number {
     const rows = this.#db
       .prepare(
         `SELECT id FROM files
           WHERE conversation_id IS NOT NULL
-            AND conversation_id NOT IN (SELECT id FROM conversations)`,
+            AND conversation_id NOT IN (SELECT id FROM conversations)
+             OR conversation_id IS NULL
+            AND id NOT IN (SELECT file_id FROM project_files)
+            AND created_at < ?`,
       )
-      .all() as { id: string }[]
+      .all(Date.now() - 24 * 60 * 60 * 1000) as { id: string }[]
     transaction(this.#db, () => {
       const remove = this.#db.prepare('DELETE FROM files WHERE id = ?')
       for (const { id } of rows) remove.run(id)

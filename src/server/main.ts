@@ -11,6 +11,7 @@ import { ConversationStore } from './conversation-store.ts'
 import { openDatabase } from './database.ts'
 import { FileStore } from './file-store.ts'
 import { MemoryStore } from './memory-store.ts'
+import { ProjectIndex } from './project-index.ts'
 import { ProjectStore } from './project-store.ts'
 import { settingsDefaults, SettingsStore } from './settings-store.ts'
 import type { Tool } from './tool.ts'
@@ -73,6 +74,19 @@ export function start({
   const files = new FileStore(db, join(config.dataDir, 'files'))
   const memories = new MemoryStore(db)
   const projects = new ProjectStore(db, files)
+  const index = new ProjectIndex(
+    db,
+    projects,
+    files,
+    config.embedding && {
+      client: new OpenAI({
+        baseURL: config.embedding.baseURL,
+        apiKey: config.embedding.apiKey,
+      }),
+      model: config.embedding.model,
+    },
+  )
+  void index.resume()
   // Temporary chats whose tab closed before it could delete them.
   store.deleteTemporaryConversations()
   files.deleteOrphans()
@@ -90,6 +104,7 @@ export function start({
     files,
     memories,
     projects,
+    index,
   })
 
   // In dev, Vite serves the web app. The production build only exists after `pnpm build`.

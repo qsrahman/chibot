@@ -67,7 +67,8 @@ const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
   // Projects. A project's chats and files are deleted with it (by
   // ProjectStore, which also clears their chunks and vectors). The vec0
   // table of chunk embeddings is created by the indexer, sized for the
-  // embedding model; chunk_vectors_info records which.
+  // embedding model; embedding_model records which. (vec0 reserves the
+  // names chunk_vectors_*, for its own tables.)
   `CREATE TABLE projects (
      id TEXT PRIMARY KEY,
      name TEXT NOT NULL,
@@ -93,7 +94,7 @@ const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
    CREATE INDEX chunks_file ON chunks(file_id);
    -- rowid = chunks.id
    CREATE VIRTUAL TABLE chunks_fts USING fts5(text);
-   CREATE TABLE chunk_vectors_info (model TEXT NOT NULL, dimensions INTEGER NOT NULL);`,
+   CREATE TABLE embedding_model (model TEXT NOT NULL, dimensions INTEGER NOT NULL);`,
 ]
 
 /**

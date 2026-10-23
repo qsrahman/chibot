@@ -50,6 +50,9 @@ const envSchema = z
     OPENAI_IMAGE_BASE_URL: optional,
     OPENAI_IMAGE_API_KEY: optional,
     OPENAI_IMAGE_MODEL: optional,
+    OPENAI_EMBEDDING_BASE_URL: optional,
+    OPENAI_EMBEDDING_API_KEY: optional,
+    OPENAI_EMBEDDING_MODEL: optional,
     BRAVE_API_KEY: optional,
     // Loopback by default: the app has no auth and spends the owner's API key.
     HOST: optional.transform((host) => host ?? '127.0.0.1'),
@@ -86,6 +89,8 @@ export class Config {
   readonly chat: Endpoint
   /** Image generation, or `null` when there's no image model to use. */
   readonly image: Endpoint | null
+  /** Project file embeddings, or `null`: then search is by keywords only. */
+  readonly embedding: Endpoint | null
   /** Enables the web search tool. */
   readonly braveApiKey: string | null
   readonly host: string
@@ -114,6 +119,13 @@ export class Config {
       e.OPENAI_IMAGE_API_KEY ?? e.OPENAI_API_KEY,
       e.OPENAI_IMAGE_MODEL ??
         (isOpenAI(imageBaseURL) ? 'gpt-image-2' : undefined),
+    )
+    const embeddingBaseURL = e.OPENAI_EMBEDDING_BASE_URL ?? e.OPENAI_BASE_URL
+    this.embedding = endpoint(
+      embeddingBaseURL,
+      e.OPENAI_EMBEDDING_API_KEY ?? e.OPENAI_API_KEY,
+      e.OPENAI_EMBEDDING_MODEL ??
+        (isOpenAI(embeddingBaseURL) ? 'text-embedding-3-small' : undefined),
     )
     this.braveApiKey = e.BRAVE_API_KEY ?? null
     this.host = e.HOST

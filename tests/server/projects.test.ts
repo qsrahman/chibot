@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ConversationStore } from '../../src/server/conversation-store.ts'
 import { openDatabase } from '../../src/server/database.ts'
 import type { FileStore } from '../../src/server/file-store.ts'
@@ -7,7 +7,9 @@ import type {
   Conversation,
   ConversationListItem,
   Project,
+  ProjectFile,
   ProjectWithContents,
+  StoredFile,
 } from '../../src/shared/types.ts'
 import { memoryStore, testApp, testFiles } from './fakes.ts'
 
@@ -120,5 +122,49 @@ describe('projects', () => {
     expect((await call('DELETE', `/api/projects/${project.id}`)).status).toBe(
       404,
     )
+  })
+
+  it('uploads a file, indexes it in the project and removes it', async () => {
+    const project = projects.create('Trip')
+    const form = new FormData()
+    form.append('file', new File(['# Plan\n\nVisit Kyoto.'], 'plan.md'))
+    const upload = await app.request('/api/files', {
+      method: 'POST',
+      body: form,
+    })
+    expect(upload.status).toBe(201)
+    const file = (await upload.json()) as StoredFile
+    expect(file).toMatchObject({ name: 'plan.md', mime: 'text/markdown' })
+
+    const attached = await call<ProjectFile[]>(
+      'POST',
+      `/api/projects/${project.id}/files`,
+      { fileId: file.id },
+    )
+    expect(attached.status).toBe(201)
+    await vi.waitFor(() =>
+      expect(projects.files(project.id)[0]?.status).toBe('ready'),
+    )
+    expect(
+      (
+        await call('POST', `/api/projects/${project.id}/files`, {
+          fileId: file.id,
+        })
+      ).status,
+    ).toBe(409)
+
+    expect(
+      (await call('DELETE', `/api/projects/${project.id}/files/${file.id}`))
+        .status,
+    ).toBe(204)
+    expect(projects.files(project.id)).toEqual([])
+    expect(files.get(file.id)).toBeNull()
+  })
+
+  it('refuses files it can’t read', async () => {
+    const form = new FormData()
+    form.append('file', new File(['x'], 'photo.png'))
+    const res = await app.request('/api/files', { method: 'POST', body: form })
+    expect(res.status).toBe(415)
   })
 })

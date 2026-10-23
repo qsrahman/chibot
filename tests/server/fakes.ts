@@ -10,6 +10,7 @@ import { ConversationStore } from '../../src/server/conversation-store.ts'
 import { openDatabase } from '../../src/server/database.ts'
 import { FileStore } from '../../src/server/file-store.ts'
 import { MemoryStore } from '../../src/server/memory-store.ts'
+import { ProjectIndex } from '../../src/server/project-index.ts'
 import { ProjectStore } from '../../src/server/project-store.ts'
 import {
   settingsDefaults,
@@ -205,12 +206,14 @@ export function testApp(deps: Partial<AppDeps> = {}) {
   const store = deps.store ?? new ConversationStore(db)
   const settings = deps.settings ?? testSettings()
   const files = deps.files ?? testFiles(db)
+  const projects = deps.projects ?? new ProjectStore(db, files)
   return createApp({
     config: new Config({ OPENAI_API_KEY: 'k' }),
     chat: new ChatService(fakeClient([]), store, settings),
     memories: new MemoryStore(db),
-    projects: new ProjectStore(db, files),
+    index: new ProjectIndex(db, projects, files, null),
     ...deps,
+    projects,
     store,
     settings,
     files,

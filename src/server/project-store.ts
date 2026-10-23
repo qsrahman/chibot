@@ -89,7 +89,8 @@ export class ProjectStore {
         `SELECT p.file_id AS fileId, f.name, f.mime, f.size, p.status, p.error
            FROM project_files p JOIN files f ON f.id = p.file_id
           WHERE p.project_id = ?
-          ORDER BY f.created_at`,
+          ORDER BY p.rowid -- the order they were added
+        `,
       )
       .all(projectId) as unknown as ProjectFile[]
   }
@@ -102,6 +103,14 @@ export class ProjectStore {
            FROM project_files WHERE status = 'indexing'`,
       )
       .all() as { projectId: string; fileId: string }[]
+  }
+
+  hasFile(fileId: string): boolean {
+    return (
+      this.#db
+        .prepare('SELECT 1 FROM project_files WHERE file_id = ?')
+        .get(fileId) !== undefined
+    )
   }
 
   addFile(projectId: string, fileId: string): void {

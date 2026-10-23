@@ -98,6 +98,25 @@ describe('Config', () => {
     })
   })
 
+  it('inherits the chat endpoint for embeddings', () => {
+    expect(new Config({ OPENAI_API_KEY: 'k' }).embedding?.model).toBe(
+      'text-embedding-3-small',
+    )
+    const ollama = {
+      OPENAI_BASE_URL: 'http://localhost:11434/v1',
+      OPENAI_MODEL: 'gemma4',
+    }
+    expect(new Config(ollama).embedding).toBeNull()
+    expect(
+      new Config({ ...ollama, OPENAI_EMBEDDING_MODEL: 'nomic-embed-text' })
+        .embedding,
+    ).toEqual({
+      baseURL: 'http://localhost:11434/v1',
+      apiKey: 'unused',
+      model: 'nomic-embed-text',
+    })
+  })
+
   it('reads the Brave key, treating blank as unset', () => {
     expect(new Config({ OPENAI_API_KEY: 'k' }).braveApiKey).toBeNull()
     expect(
