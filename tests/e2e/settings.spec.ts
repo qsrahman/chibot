@@ -44,6 +44,31 @@ test('picks a model and labels answers with it', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'e2e-other' })).toBeVisible()
 })
 
+test('picks the reasoning effort in the model menu', async ({ page }) => {
+  await page.goto('/')
+  await appReady(page)
+  await page.getByRole('button', { name: 'e2e-model' }).click()
+  const efforts = page.getByRole('radiogroup', { name: 'Reasoning effort' })
+  await expect(efforts.getByRole('radio', { name: 'Default' })).toBeChecked()
+  await efforts.getByRole('radio', { name: 'high', exact: true }).click()
+  await expect(
+    efforts.getByRole('radio', { name: 'high', exact: true }),
+  ).toBeChecked()
+  await page.keyboard.press('Escape')
+  // The header shows it.
+  await expect(page.locator('.model-button')).toHaveText('e2e-modelhigh')
+
+  await send(page, 'Hello')
+  await answered(page)
+  expect((await lastRequest(page)).reasoning).toEqual({
+    summary: 'auto',
+    effort: 'high',
+  })
+  // It's the same setting as in Settings.
+  const dialog = await openSettings(page, 'Model')
+  await expect(dialog.getByLabel('Reasoning effort')).toHaveValue('high')
+})
+
 test('applies reasoning effort and custom instructions', async ({ page }) => {
   await page.goto('/')
   let dialog = await openSettings(page, 'Model')

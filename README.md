@@ -139,6 +139,8 @@ Then open http://127.0.0.1:3000.
   (searchable; embedding, image and speech models are left out; type a name
   if yours isn't listed or your server can't list its models). Each answer shows the
   model that wrote it, so switching models and regenerating compares them.
+  The same menu sets the **reasoning effort** (Default, or `none` to `max`;
+  also in Settings → Model), shown next to the model name when set.
 - **Tools:** the model uses chibot's tools on its own when they help, and the
   answer shows what it did ("Searched the web", "Used calculator"; open one to
   see the details):

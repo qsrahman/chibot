@@ -94,7 +94,10 @@ Code uses `"SF Mono", SFMono-Regular, ui-monospace, Consolas, "Liberation Mono",
   It collapses to a 56 px icon rail, and the collapsed state is remembered.
 - **Header.** Model name with a chevron on the left: the model picker, a
   popover with a search box over the model list (a name field when the
-  server can't list models). Page actions sit on the right.
+  server can't list models), then a divider and "Reasoning effort": wrapping
+  28 px pill buttons (Default, `none` … `max`, 13 px text, `--border`
+  outline; the chosen one filled `--button` / `--button-fg`). A chosen effort
+  shows after the model name in `--fg-muted`. Page actions sit on the right.
 
 ## 4. Components
 
