@@ -20,8 +20,7 @@ export function ModelPicker({ model, defaultModel, onSelect }: Props) {
   const [models, setModels] = useState<string[] | null>()
   const [query, setQuery] = useState('')
 
-  function open(trigger: HTMLElement) {
-    popover.place(trigger)
+  function open() {
     setQuery('')
     if (models === undefined) {
       listModels().then(
@@ -45,7 +44,8 @@ export function ModelPicker({ model, defaultModel, onSelect }: Props) {
         type="button"
         className="model-button"
         popoverTarget={popover.id}
-        onClick={(e) => open(e.currentTarget)}
+        style={popover.triggerStyle}
+        onClick={open}
       >
         {model}
         <ChevronDown size={16} strokeWidth={1.5} />

@@ -141,7 +141,7 @@ export function Composer({
         aria-label="Add files and more"
         title="Add files and more"
         popoverTarget={menu.id}
-        onClick={(e) => menu.place(e.currentTarget, { above: true })}
+        style={menu.triggerStyle}
       >
         <Plus size={24} strokeWidth={1.5} />
       </button>
@@ -163,7 +163,7 @@ export function Composer({
         id={menu.id}
         ref={menu.ref}
         popover="auto"
-        className="menu"
+        className="menu above"
         role="menu"
         style={menu.style}
       >

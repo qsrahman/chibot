@@ -733,9 +733,6 @@ Environment variables:
 - **Sidebar size:** the list shows the 200 most recent chats (pinned first)
   and search returns 50 hits. Older chats are reachable through search. Add
   paging or "show more" if that limit is ever hit.
-- **Menu placement:** CSS anchor positioning isn't widely supported yet, so
-  popover menus are placed from the trigger's bounding rect when opened. Switch
-  to `position-area` once it is.
 - **Bundle size:** the web bundle is ~930 kB (highlight.js grammars, KaTeX).
   That's acceptable for a local app; code-split if it starts to matter.
 - **Future tools:** an MCP client that exposes local MCP servers' tools as

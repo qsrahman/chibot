@@ -1,33 +1,22 @@
-import { useId, useRef, useState, type CSSProperties } from 'react'
+import { useId, useRef } from 'react'
 
 /**
- * A popover placed under (or above) the button that opens it. CSS anchor positioning
- * isn't in every browser yet, so the trigger calls `place` on click (before
- * the popover opens) and the popover gets fixed coordinates.
+ * A popover placed by CSS anchor positioning next to the button that opens
+ * it (`.menu` in styles.css: below, flipping when there's no room).
  *
- * Usage: `<button popoverTarget={id} onClick={(e) => place(e.currentTarget)}>`
- * and `<div id={id} ref={ref} popover="auto" className="menu" style={style}>`.
+ * Usage: `<button popoverTarget={id} style={triggerStyle}>` and
+ * `<div id={id} ref={ref} popover="auto" className="menu" style={style}>`.
  */
 export function useAnchoredPopover() {
   const id = useId()
   const ref = useRef<HTMLDivElement>(null)
-  const [style, setStyle] = useState<CSSProperties>()
-
-  /**
-   * Places the popover under `trigger`, or above it when asked or when the
-   * trigger is low in the window (where a menu would run off the bottom).
-   */
-  function place(trigger: HTMLElement, { above = false } = {}) {
-    const r = trigger.getBoundingClientRect()
-    above ||= r.bottom > innerHeight * 0.6
-    setStyle(
-      above
-        ? { bottom: innerHeight - r.top + 4, left: r.left }
-        : { top: r.bottom + 4, left: r.left },
-    )
+  // useId's characters aren't all valid in a CSS name.
+  const anchorName = `--anchor-${id.replace(/[^\w-]/g, '')}`
+  return {
+    id,
+    ref,
+    triggerStyle: { anchorName },
+    style: { positionAnchor: anchorName },
+    hide: () => ref.current?.hidePopover(),
   }
-
-  const hide = () => ref.current?.hidePopover()
-
-  return { id, ref, style, place, hide }
 }

@@ -81,7 +81,7 @@ export function ConversationRow({
         className="row-menu-button"
         aria-label={`Options for ${title}`}
         popoverTarget={menu.id}
-        onClick={(e) => menu.place(e.currentTarget)}
+        style={menu.triggerStyle}
       >
         <Ellipsis size={18} strokeWidth={1.5} />
       </button>

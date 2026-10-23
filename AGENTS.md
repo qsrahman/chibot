@@ -106,10 +106,10 @@ transpiles it.
   OpenAI-only extras (Files API, `models.list()`, reasoning items, usage
   details) exist: degrade gracefully when they're missing.
 - **Browser support:** current versions of Chrome, Edge, Firefox and Safari.
-  Baseline features (Popover API, `<dialog>`) are used without polyfills.
-  Anything not yet Baseline gets a small fallback rather than a polyfill
-  (e.g. menus placed by script instead of anchor positioning, scripted
-  light-dismiss where `closedby` is missing).
+  Baseline features (Popover API, `<dialog>`, anchor positioning for menus)
+  are used without polyfills. Anything not yet Baseline gets a small fallback
+  rather than a polyfill (e.g. scripted light-dismiss where `closedby` is
+  missing).
 - **Tools are our own function tools** (`Tool` subclasses). Don't put
   OpenAI-hosted tools (`web_search`, `file_search`, `image_generation`,
   `code_interpreter`, remote MCP) in a request's `tools`.

@@ -1381,7 +1381,14 @@ body {
   position: fixed;
   inset: auto;
   min-width: 200px;
-  margin: 0;
+  margin: 4px 0;
+  /* Under the button that opens it (useAnchoredPopover), left edges aligned;
+     flipped when that would run off the window. */
+  position-area: block-end span-inline-end;
+  position-try-fallbacks:
+    flip-block,
+    flip-inline,
+    flip-block flip-inline;
   padding: 6px;
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
@@ -1412,6 +1419,11 @@ body {
   /* --chip, not --surface-muted: in dark mode that equals the menu's own
      --surface-raised background, so the highlight would be invisible. */
   background: var(--chip);
+}
+
+/* The composer's menu opens upward, over the chat. */
+.menu.above {
+  position-area: block-start span-inline-end;
 }
 
 a.menu-item {

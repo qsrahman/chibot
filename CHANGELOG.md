@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- Menus (model picker, the composer's "+", a chat's "…") are placed by CSS anchor positioning, Baseline since Firefox 147, instead of script measuring the button on each click. They follow their button on scroll and resize, flip when there's no room, and stay on screen in short windows.
+
 ### Fixed
 
 - Math written with LaTeX's `\(…\)` and `\[…\]` showed as raw text (remark-math only knows `$…$` / `$$…$$`); answers now render it, leaving code as is.
