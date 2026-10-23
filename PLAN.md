@@ -625,6 +625,61 @@ available for `gemma4:cloud`.
   parts; Playwright covers attaching by menu, paste and drop, removing,
   rendering after reload, the text fallback, export/import and the mic.
 
+### Phase 10 — Code runner
+Decisions (agreed before building; the sandbox is probed on Node 26 first):
+a `run_python` function tool on Pyodide in a locked-down child process, a
+fresh interpreter per run with files persisting in `/mnt/data/`, a fixed
+package set cached locally, and `.xlsx` attachments for it to read. The
+MCP client follows as Phase 11.
+
+- **Engine.** [Pyodide](https://pyodide.org) (CPython on WebAssembly) from
+  npm, pinned exactly. WebAssembly is the real sandbox: Python reaches the
+  host only through Pyodide's `js` bridge.
+- **Isolation (second layer).** Each run is a child `node` process with
+  `--permission`, reading only the Pyodide folder and its package cache, no
+  writes, no `--allow-net` (so no network, processes, workers or addons), an
+  empty environment (no API keys), a memory cap and a 30 s limit; Stop kills
+  it. Node calls its permission model a guardrail, not a sandbox, and network
+  blocking is still experimental, so WebAssembly stays the boundary. First
+  step: probe that network, `fs`, `child_process` and `process.env` are really
+  out of reach from Python on Node 26.
+- **No session between runs.** Each call starts a fresh interpreter; the
+  chat's attachments and earlier outputs are copied into `/mnt/data/`, and
+  files the run writes there are kept with the chat (`FileStore`), so they're
+  deleted and exported with it and the next run sees them. The tool's
+  instructions say variables don't carry over but files do. This survives
+  restarts and needs no worker pool, at ~1–3 s start-up per run.
+- **Packages.** A fixed set (numpy, pandas, matplotlib, scipy, sympy,
+  openpyxl), downloaded once from Pyodide's CDN (jsDelivr) into
+  `data/pyodide/` on first use by a separate step that runs no model code
+  (the card says "Setting up Python (one-time download)"). The sandbox loads
+  them from that cache only; no `micropip` installs.
+- **Output.** stdout, stderr and the last expression's value (like Jupyter),
+  truncated to 20k characters for the model; open matplotlib figures are
+  saved as PNGs and shown like generated images; files written to
+  `/mnt/data/` are returned as file cards. Errors return the traceback so the
+  model can fix its code and retry.
+- **Tool flags.** No approval (sandboxed, no side effects outside the chat's
+  files), offered in temporary chats, switchable in Settings → Tools, and not
+  `untrustedOutput`.
+- **`.xlsx` attachments.** Accepted while the runner is available. Models
+  can't read them, so a spreadsheet part goes as an `input_text` note:
+  "Attached spreadsheet sales.xlsx: read it with run_python at
+  /mnt/data/sales.xlsx".
+- **UI.** A collapsed **Ran code** tool card with the highlighted code and the
+  output; charts below it like generated images; written files as file cards.
+  DESIGN.md gets the card spec.
+- **Commits.** Sandbox probe and runner → package setup → `run_python` tool →
+  `.xlsx` attachments → UI → e2e specs (the fake server's "run code" calls
+  `run_python`) → docs → release v0.11.0.
+- **Done when:** with `gemma4:cloud` and OpenAI, pandas reads an attached CSV
+  and an `.xlsx`, matplotlib draws a chart that shows in the answer, and code
+  that tries to fetch a URL or read `process.env` fails. Unit tests run real
+  Pyodide on the standard library only (no network): output, tracebacks, the
+  timeout and Stop, files in and out, and that `fetch`, `fs` and the
+  environment are blocked; the tool is tested with fakes. Playwright covers
+  the card, its output, a written file and exporting the chat with it.
+
 ## 6. Configuration
 
 Configuration lives in three layers, split by who changes it and how often:
@@ -702,11 +757,9 @@ Environment variables:
   to `position-area` once it is.
 - **Bundle size:** the web bundle is ~860 kB (highlight.js grammars, KaTeX).
   That's acceptable for a local app; code-split if it starts to matter.
-- **Future tools (not yet scheduled):** a sandboxed code runner
-  (`run_python` on Pyodide in a worker: data analysis and charts over
-  attachments; a large dependency, so after Phase 9), and an MCP client that
-  exposes local MCP servers' tools as chibot function tools (approval required
-  by default, since their side effects are unknown). Deliberately out:
+- **Future tools:** the code runner is Phase 10; an MCP client that exposes
+  local MCP servers' tools as chibot function tools (approval required by
+  default, since their side effects are unknown) is planned as Phase 11. Deliberately out:
   shell/filesystem tools (too costly when mis-approved on an unauthenticated
   server) and narrow APIs like weather, which web search plus `fetch_url`
   cover.
