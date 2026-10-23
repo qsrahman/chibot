@@ -14,6 +14,7 @@ import { settingsDefaults, SettingsStore } from './settings-store.ts'
 import type { Tool } from './tool.ts'
 import { ToolRegistry } from './tool-registry.ts'
 import { CalculatorTool } from './tools/calculator.ts'
+import { FetchUrlTool } from './tools/fetch-url.ts'
 import { WebSearchTool } from './tools/web-search.ts'
 
 /** What tools may need to be built. */
@@ -26,6 +27,7 @@ export interface ToolDeps {
 export function defaultTools({ config }: ToolDeps): Tool[] {
   return [
     new CalculatorTool(),
+    new FetchUrlTool(),
     ...(config.braveApiKey ? [new WebSearchTool(config.braveApiKey)] : []),
   ]
 }
