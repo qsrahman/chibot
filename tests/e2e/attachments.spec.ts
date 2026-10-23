@@ -226,3 +226,19 @@ test('drops files onto the chat; they survive a reload, export and import', asyn
     'image/png',
   )
 })
+
+test('sends files without text', async ({ page }) => {
+  await page.goto('/')
+  await appReady(page)
+  await attach(page, [{ name: 'dot.png', mimeType: 'image/png', buffer: PNG }])
+  await page.getByRole('button', { name: 'Send' }).click()
+  await answered(page)
+  expect(await userContent(page)).toEqual([
+    expect.objectContaining({ type: 'input_image' }),
+  ])
+  const bubble = turns(page).nth(0).locator('.message.user')
+  await expect(
+    bubble.getByRole('img', { name: 'Attached image' }),
+  ).toBeVisible()
+  await expect(bubble.locator('p')).toHaveCount(0)
+})

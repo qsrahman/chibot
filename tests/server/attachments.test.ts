@@ -75,6 +75,23 @@ describe('attachments', () => {
     })
   })
 
+  it('sends files without text', async () => {
+    await send(chatWith({}, []), ' ')
+    expect(store.getPath(conversationId)[0]!.data).toMatchObject({
+      content: [{ type: 'input_image' }, { type: 'input_file' }],
+    })
+    const app = testApp({ store, files })
+    const turn = (body: object) =>
+      app.request(`/api/conversations/${conversationId}/turns`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+    // Blank text needs files.
+    expect((await turn({ text: ' ' })).status).toBe(400)
+    expect((await turn({ text: ' ', fileIds: [] })).status).toBe(400)
+  })
+
   it('uploads each file once and sends its Files API id', async () => {
     const calls: FakeCall[] = []
     const uploads: string[] = []

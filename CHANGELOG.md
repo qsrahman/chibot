@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- A message can be just attachments, with no text (the turn's `text` may be blank when it has `fileIds`).
+
 ### Changed
 
 - Internal simplifications: one shared helper finds a message's attachments (web turns, Markdown export and sending used three); upload routes validate their multipart body with zod like every JSON route (`form()` beside `json()`); JSON export reuses the stored-item mapping; `FileCard` has its own module; `useChat` shows a loaded chat through one helper.

@@ -74,7 +74,11 @@ export function Composer({
       : dictation.state === 'transcribing'
         ? 'Transcribing…'
         : 'Dictate'
-  const canSend = !busy && text.trim() !== '' && !attachments.blocked
+  // Files alone are a message too.
+  const canSend =
+    !busy &&
+    (text.trim() !== '' || attachments.drafts.length > 0) &&
+    !attachments.blocked
   // A tool switched off meanwhile can't be used any more.
   const tool =
     picked && tools.some((t) => t.name === picked.name) ? picked : null

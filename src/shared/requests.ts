@@ -51,16 +51,19 @@ export const projectPatchSchema = z.object({
  */
 export const turnRequestSchema = z
   .object({
-    text: z
-      .string()
-      .refine((text) => text.trim() !== '', 'must not be blank')
-      .optional(),
+    /** Blank only when the message attaches files. */
+    text: z.string().optional(),
     parentId: z.number().int().nullable().optional(),
     approvals: z.record(z.string(), z.boolean()).optional(),
     tool: z.string().max(100).optional(),
     /** Uploads (`POST /api/files`) attached to the message, with `text`. */
     fileIds: z.array(z.string()).max(10).optional(),
   })
+  .refine(
+    ({ text, fileIds }) =>
+      text === undefined || text.trim() !== '' || (fileIds?.length ?? 0) > 0,
+    { message: 'must not be blank', path: ['text'] },
+  )
   .refine(
     ({ text, parentId, approvals }) =>
       approvals !== undefined

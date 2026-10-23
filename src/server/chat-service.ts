@@ -141,7 +141,8 @@ export class ChatService {
         fileIds.length > 0
           ? [
               ...this.#attachments!.parts(fileIds),
-              { type: 'input_text' as const, text },
+              // Files alone are a message too.
+              ...(text.trim() ? [{ type: 'input_text' as const, text }] : []),
             ]
           : text
       leafId = this.#store.appendItems(conversationId, parent, [

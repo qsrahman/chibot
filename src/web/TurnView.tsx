@@ -95,12 +95,12 @@ export function TurnView({
               ))}
             </ul>
           )}
-          <p>{question.text}</p>
+          {question.text && <p>{question.text}</p>}
         </div>
       )}
       {!pending && !editing && (
         <div className="actions user-actions">
-          <CopyButton text={question.text} />
+          {question.text && <CopyButton text={question.text} />}
           {saved && (
             <IconAction
               label="Edit message"
