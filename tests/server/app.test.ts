@@ -81,8 +81,8 @@ describe('API', () => {
     })
   })
 
-  it('GET /api/tools lists tools with their on/off state', async () => {
-    const settings = testSettings('m-1', { disabledTools: ['echo'] })
+  it('GET /api/tools lists the tools with their labels', async () => {
+    const settings = testSettings('m-1')
     const chat = new ChatService(
       fakeClient([]),
       store,
@@ -96,7 +96,7 @@ describe('API', () => {
       chat,
     })
     expect(await (await app.request('/api/tools')).json()).toEqual({
-      tools: [{ name: 'echo', label: 'Echo', enabled: false }],
+      tools: [{ name: 'echo', label: 'Echo' }],
     })
   })
 

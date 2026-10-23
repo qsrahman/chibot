@@ -18,7 +18,7 @@ interface BraveResponse {
 }
 
 /** A search result as the model (and the Sources list) sees it. */
-export interface SearchResult {
+interface SearchResult {
   title: string
   url: string
   description: string

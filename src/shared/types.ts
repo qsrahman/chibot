@@ -151,9 +151,8 @@ export interface TurnApprovalEvent {
 /** A tool in `GET /api/tools` (`{ tools: ToolInfo[] }`). */
 export interface ToolInfo {
   name: string
+  /** What the user sees, e.g. "Web search". */
   label: string
-  /** Not switched off in Settings. */
-  enabled: boolean
 }
 
 /** `GET /api/models`: the chat endpoint's models, or `null` if it can't list them. */

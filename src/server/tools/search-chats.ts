@@ -3,7 +3,7 @@ import type { ConversationStore } from '../conversation-store.ts'
 import type { Conversation } from '../../shared/types.ts'
 import { Tool, type ToolContext } from '../tool.ts'
 
-const date = z.string().nullable().describe('A date as YYYY-MM-DD, or null')
+const date = z.string().nullable()
 
 /** Searches the user's other chats (the full-text index, all local). */
 export class SearchChatsTool extends Tool {
@@ -12,7 +12,8 @@ export class SearchChatsTool extends Tool {
   readonly description =
     "Searches the user's earlier chats with you (their messages and your " +
     'answers) and returns each matching chat’s title with its best-matching ' +
-    'messages (excerpts, in order, with role and date). Use it when the user refers to something discussed before. ' +
+    'messages (excerpts, in order, with role and date). Use it when the ' +
+    'user refers to something discussed before. ' +
     'Put dates in after/before rather than in the query.'
   readonly parameters = z.object({
     query: z.string().describe('Words the messages may contain'),
@@ -23,14 +24,15 @@ export class SearchChatsTool extends Tool {
       'Only messages before this date (YYYY-MM-DD), or null',
     ),
   })
-  override offeredIn({ temporary }: Conversation) {
-    return !temporary
-  }
   readonly #store: ConversationStore
 
   constructor(store: ConversationStore) {
     super()
     this.#store = store
+  }
+
+  override offeredIn({ temporary }: Conversation) {
+    return !temporary
   }
 
   async run(

@@ -10,6 +10,7 @@ import { messageText } from '../shared/messages.ts'
 import type { Settings } from '../shared/settings.ts'
 import type {
   Project,
+  ToolInfo,
   TurnApprovalEvent,
   TurnRequest,
   TurnTitleEvent,
@@ -335,7 +336,7 @@ export class ChatService {
   }
 
   /** The tools chibot offers (whatever the user switched off), for Settings. */
-  get tools(): { name: string; label: string }[] {
+  get tools(): ToolInfo[] {
     return this.#tools.tools.map(({ name, label }) => ({ name, label }))
   }
 
@@ -458,7 +459,7 @@ export function chatInstructions(
 }
 
 /** What a project chat is told about its project. */
-export function projectInstructions({ name, instructions }: Project): string {
+function projectInstructions({ name, instructions }: Project): string {
   return [
     `This chat is in the user's project "${name}".`,
     instructions.trim() &&

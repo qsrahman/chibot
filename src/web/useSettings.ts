@@ -9,7 +9,7 @@ export function useSettings() {
   const [defaults, setDefaults] = useState<Settings | null>(null)
   const [error, setError] = useState<string | null>(null)
   // The server's tools; whether each is on comes from `disabledTools`.
-  const [tools, setTools] = useState<Omit<ToolInfo, 'enabled'>[]>([])
+  const [tools, setTools] = useState<ToolInfo[]>([])
 
   useEffect(() => {
     getSettings().then(
@@ -20,7 +20,7 @@ export function useSettings() {
       (err: Error) => setError(err.message),
     )
     listTools().then(
-      (res) => setTools(res.tools.map(({ name, label }) => ({ name, label }))),
+      (res) => setTools(res.tools),
       (err: Error) => setError(err.message),
     )
   }, [])

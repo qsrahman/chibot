@@ -17,7 +17,7 @@ export function htmlToText(html: string): { title: string; text: string } {
 }
 
 // unpdf refuses Node's Buffer (a Uint8Array subclass), so copy into a plain one.
-export const pdfToText = async (data: Uint8Array) =>
+const pdfToText = async (data: Uint8Array) =>
   tidy(
     (
       await extractText(await getDocumentProxy(new Uint8Array(data)), {
@@ -26,7 +26,7 @@ export const pdfToText = async (data: Uint8Array) =>
     ).text,
   )
 
-export const docxToText = async (data: Uint8Array) =>
+const docxToText = async (data: Uint8Array) =>
   tidy((await mammoth.extractRawText({ buffer: Buffer.from(data) })).value)
 
 /** Collapses runs of spaces, and of blank lines into one. */

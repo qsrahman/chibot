@@ -20,10 +20,11 @@ import {
   settingsPatchSchema,
   type SettingsResponse,
 } from '../shared/settings.ts'
-import type { ModelsResponse, ToolInfo } from '../shared/types.ts'
 import type {
   ConversationWithItems,
+  ModelsResponse,
   ProjectWithContents,
+  ToolInfo,
   TurnErrorEvent,
 } from '../shared/types.ts'
 import type { ChatService } from './chat-service.ts'
@@ -76,14 +77,10 @@ export function createApp({
     } satisfies SettingsResponse),
   )
 
-  app.get('/api/tools', (c) => {
-    const { disabledTools } = settings.get()
-    const tools: ToolInfo[] = chat.tools.map((tool) => ({
-      ...tool,
-      enabled: !disabledTools.includes(tool.name),
-    }))
-    return c.json({ tools })
-  })
+  // Whether each is on is the `disabledTools` setting.
+  app.get('/api/tools', (c) =>
+    c.json({ tools: chat.tools } satisfies { tools: ToolInfo[] }),
+  )
 
   app.patch('/api/settings', json(settingsPatchSchema), (c) =>
     c.json(settings.update(c.req.valid('json'))),
@@ -240,7 +237,7 @@ export function createApp({
       }),
       // A file never changes under its id.
       'Cache-Control': 'private, max-age=31536000, immutable',
-      'Content-Disposition': `inline; filename*=UTF-8''${encodeURIComponent(file.name)}`,
+      'Content-Disposition': disposition('inline', file.name),
     })
   })
 
@@ -257,8 +254,7 @@ export function createApp({
       'Content-Type': markdown
         ? 'text/markdown; charset=utf-8'
         : 'application/json; charset=utf-8',
-      // RFC 6266: filename* carries non-ASCII titles.
-      'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(name)}`,
+      'Content-Disposition': disposition('attachment', name),
     })
   })
 
@@ -346,6 +342,10 @@ const json = <T extends z.ZodType>(schema: T) =>
       return c.json({ error: z.prettifyError(result.error) }, 400)
     }
   })
+
+/** RFC 6266: `filename*` carries non-ASCII names. */
+const disposition = (type: 'inline' | 'attachment', name: string) =>
+  `${type}; filename*=UTF-8''${encodeURIComponent(name)}`
 
 const notFound = (c: Context, what = 'Conversation') =>
   c.json({ error: `${what} not found` }, 404)
