@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-10-23
+
 ### Fixed
 
 - Stored files (project uploads, generated images) are served with `nosniff`, and all but PDFs with `Content-Security-Policy: sandbox`: an uploaded HTML file opened from a project could otherwise run scripts with access to chibot's API.
