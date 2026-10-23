@@ -1,5 +1,6 @@
-// Which files projects accept, by extension: shared by the server (to read
-// them) and the web (for the file picker).
+// Which files chibot accepts, by extension: documents (projects and
+// attachments) and images (attachments). Shared by the server (to read them)
+// and the web (for the file pickers).
 
 /** The document types project files may be, by file name extension. */
 const KINDS: Record<string, { kind: DocumentKind; mime: string }> = {
@@ -32,7 +33,34 @@ export function documentKind(
   return TEXT.includes(extension) ? { kind: 'text', mime: 'text/plain' } : null
 }
 
-/** For `<input type="file" accept>`: every supported extension. */
-export const DOCUMENT_ACCEPT = [...Object.keys(KINDS), ...TEXT]
-  .map((extension) => `.${extension}`)
-  .join(',')
+const IMAGES: Record<string, string> = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  webp: 'image/webp',
+  gif: 'image/gif',
+}
+
+export type FileKind = DocumentKind | 'image'
+
+/** A document's or image's kind and type; `null` if unsupported. */
+export function fileKind(
+  name: string,
+): { kind: FileKind; mime: string } | null {
+  const extension = /\.([^.]+)$/.exec(name)?.[1]?.toLowerCase() ?? ''
+  const image = IMAGES[extension]
+  return image ? { kind: 'image', mime: image } : documentKind(name)
+}
+
+const accept = (extensions: string[]) =>
+  extensions.map((extension) => `.${extension}`).join(',')
+
+/** For `<input type="file" accept>`: documents (project files). */
+export const DOCUMENT_ACCEPT = accept([...Object.keys(KINDS), ...TEXT])
+
+/** For `<input type="file" accept>`: documents and images (attachments). */
+export const ATTACHMENT_ACCEPT = accept([
+  ...Object.keys(IMAGES),
+  ...Object.keys(KINDS),
+  ...TEXT,
+])

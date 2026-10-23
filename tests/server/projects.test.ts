@@ -184,10 +184,24 @@ describe('projects', () => {
     expect(shown.headers.get('content-security-policy')).toBeNull()
   })
 
-  it('refuses files it can’t read', async () => {
-    const form = new FormData()
-    form.append('file', new File(['x'], 'photo.png'))
-    const res = await app.request('/api/files', { method: 'POST', body: form })
-    expect(res.status).toBe(415)
+  it('refuses files it can’t read, and images in projects', async () => {
+    const upload = (name: string) => {
+      const form = new FormData()
+      form.append('file', new File(['x'], name))
+      return app.request('/api/files', { method: 'POST', body: form })
+    }
+    expect((await upload('archive.zip')).status).toBe(415)
+
+    const image = await upload('photo.png')
+    expect(image.status).toBe(201)
+    const { id } = (await image.json()) as StoredFile
+    const project = projects.create('Trip')
+    const attached = await call('POST', `/api/projects/${project.id}/files`, {
+      fileId: id,
+    })
+    expect(attached).toEqual({
+      status: 415,
+      body: { error: 'photo.png: projects take documents' },
+    })
   })
 })

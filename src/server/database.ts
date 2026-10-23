@@ -95,6 +95,8 @@ const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
    -- rowid = chunks.id
    CREATE VIRTUAL TABLE chunks_fts USING fts5(text);
    CREATE TABLE embedding_model (model TEXT NOT NULL, dimensions INTEGER NOT NULL);`,
+  // Attachments: the id of the provider's (Files API) copy, uploaded once.
+  `ALTER TABLE files ADD COLUMN provider_file_id TEXT;`,
 ]
 
 /**

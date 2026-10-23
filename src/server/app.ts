@@ -4,7 +4,7 @@ import { streamSSE } from 'hono/streaming'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import OpenAI from 'openai'
-import { documentKind } from '../shared/documents.ts'
+import { documentKind, fileKind } from '../shared/documents.ts'
 import { conversationExportSchema } from '../shared/export.ts'
 import { messageText } from '../shared/messages.ts'
 import {
@@ -159,10 +159,10 @@ export function createApp({
       if (!(file instanceof File)) {
         return c.json({ error: 'Send the file as `file` (multipart)' }, 400)
       }
-      const kind = documentKind(file.name)
+      const kind = fileKind(file.name)
       if (!kind) {
         return c.json(
-          { error: `${file.name}: only PDF, Word and text files` },
+          { error: `${file.name}: only images, PDF, Word and text files` },
           415,
         )
       }
@@ -177,6 +177,10 @@ export function createApp({
     const file = files.get(c.req.valid('json').fileId)
     if (!project) return notFound(c, 'Project')
     if (!file) return notFound(c, 'File')
+    // Projects search text; images have none.
+    if (!documentKind(file.name)) {
+      return c.json({ error: `${file.name}: projects take documents` }, 415)
+    }
     if (file.conversationId !== null || projects.hasFile(file.id)) {
       return c.json({ error: 'The file is already in use' }, 409)
     }
