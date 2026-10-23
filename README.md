@@ -132,7 +132,8 @@ Then open http://127.0.0.1:3000.
   Previous 30 days, then by month. Each gets a short title once its first
   answer arrives. Hover a chat and click **…** to rename, pin, archive or
   delete it. The panel button collapses the sidebar to an icon rail, which is
-  remembered.
+  remembered. On a phone the sidebar slides over the chat: open it with the
+  panel button at the top left.
 - **Search chats** finds chats by title or message text, including archived
   ones. Press Enter to open the top result.
 - **Model:** click the model name at the top to pick another chat model

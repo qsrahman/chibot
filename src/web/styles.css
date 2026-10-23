@@ -35,6 +35,8 @@
     0 4px 80px 8px light-dark(rgb(0 0 0 / 2.4%), transparent),
     inset 0 0 1px light-dark(transparent, rgb(255 255 255 / 20%));
   --dialog-shadow: 0 24px 64px rgb(0 0 0 / 22%), 0 4px 16px rgb(0 0 0 / 12%);
+  /* Behind dialogs and the phone sidebar. */
+  --scrim: rgb(0 0 0 / 50%);
 
   /* Code highlighting, GitHub's palettes (highlight.js's theme files are
      media-query based and can't follow the theme setting). */
@@ -1487,7 +1489,7 @@ a.menu-item {
 }
 
 .dialog::backdrop {
-  background: rgb(0 0 0 / 50%);
+  background: var(--scrim);
 }
 
 .dialog-title {
@@ -1855,6 +1857,37 @@ label.button {
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
+}
+
+/* Phones: the sidebar is a drawer over the chat, which takes the full width. */
+@media (max-width: 767px) {
+  .sidebar.drawer {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 20;
+    width: min(300px, 85vw);
+    box-shadow: var(--dialog-shadow);
+  }
+
+  .sidebar.drawer.collapsed {
+    display: none;
+  }
+
+  .drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 19;
+    background: var(--scrim);
+  }
+
+  .topbar {
+    padding-left: 8px;
+  }
+
+  .message.user p,
+  .message-attachments {
+    max-width: 85%;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

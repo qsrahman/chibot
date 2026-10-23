@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { Globe, ImagePlus, MessageCircleDashed } from 'lucide-react'
+import { Globe, ImagePlus, MessageCircleDashed, PanelLeft } from 'lucide-react'
 import type { Health } from '../shared/types.ts'
 import { Composer, type ToolOption } from './Composer.tsx'
 import { ModelPicker } from './ModelPicker.tsx'
@@ -35,9 +35,17 @@ interface Props {
   settings: SettingsApi
   projects: ProjectsApi
   onListChanged: () => void
+  /** On phones while the sidebar is hidden: a header button opens it. */
+  onOpenSidebar?: () => void
 }
 
-export function ChatPage({ health, settings, projects, onListChanged }: Props) {
+export function ChatPage({
+  health,
+  settings,
+  projects,
+  onListChanged,
+  onOpenSidebar,
+}: Props) {
   // `projectId`: a project's page, where a new chat starts in the project.
   const { id, projectId: projectHome } = useParams()
   const navigate = useNavigate()
@@ -146,6 +154,16 @@ export function ChatPage({ health, settings, projects, onListChanged }: Props) {
     >
       <header className="topbar">
         <span className="topbar-start">
+          {onOpenSidebar && (
+            <button
+              type="button"
+              className="icon-button"
+              aria-label="Open sidebar"
+              onClick={onOpenSidebar}
+            >
+              <PanelLeft size={20} strokeWidth={1.5} />
+            </button>
+          )}
           {id && project && (
             <Link className="breadcrumb" to={`/projects/${project.id}`}>
               {project.name} /

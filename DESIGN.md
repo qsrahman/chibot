@@ -47,6 +47,7 @@ enough to switch to a dark-grey page.
 | `--accent` / `--accent-fg` | `#3566f0` / `#fff` | `#3566f0` / `#fff` | Send button, switches (measured `oklch(0.56 0.21 265)`) |
 | `--button` / `--button-fg` | `#0d0d0d` / `#fff` | `#fff` / `#0d0d0d` | Primary buttons in dialogs |
 | `--danger` | `#d93025` | `#ff6b6b` | Errors, destructive buttons |
+| `--scrim` | `rgb(0 0 0 / 50%)` | same | Behind dialogs and the phone sidebar |
 
 
 **Shadows.** In light mode the composer floats on a layered shadow:
@@ -92,6 +93,10 @@ Code uses `"SF Mono", SFMono-Regular, ui-monospace, Consolas, "Liberation Mono",
   tall, 8×10 px padding, 10 px radius, 6 px icon gap. The hover/active fill is
   `--surface-muted`. Groups have 12 px muted headings (Today, Yesterday, …).
   It collapses to a 56 px icon rail, and the collapsed state is remembered.
+  Below 768 px (phones) it's a drawer instead: hidden by default, opened by a
+  panel button at the header's left, `min(300px, 85vw)` wide over the chat
+  with `--dialog-shadow` and a `--scrim` behind it; tapping the scrim or
+  opening a chat closes it. User bubbles may then take 85 % of the width.
 - **Header.** Model name with a chevron on the left: the model picker, a
   popover with a search box over the model list (a name field when the
   server can't list models), then a divider and "Reasoning effort": wrapping
