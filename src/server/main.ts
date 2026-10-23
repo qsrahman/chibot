@@ -10,42 +10,53 @@ import { Config, loadEnvFiles } from './config.ts'
 import { ConversationStore } from './conversation-store.ts'
 import { openDatabase } from './database.ts'
 import { settingsDefaults, SettingsStore } from './settings-store.ts'
+import type { Tool } from './tool.ts'
 import { ToolRegistry } from './tool-registry.ts'
 import { CalculatorTool } from './tools/calculator.ts'
 
-loadEnvFiles()
+/**
+ * Starts chibot: reads the configuration, opens the database and serves the
+ * API (and the web app once built). `tools` are the tools offered to the
+ * model; the e2e tests add a test-only one.
+ */
+export function start({
+  tools = [new CalculatorTool()],
+}: { tools?: Tool[] } = {}) {
+  loadEnvFiles()
 
-const config = new Config(process.env)
-mkdirSync(config.dataDir, { recursive: true })
-const db = openDatabase(config.databasePath)
-const store = new ConversationStore(db)
-const settings = new SettingsStore(db, settingsDefaults(config.chat.model))
-// Temporary chats whose tab closed before it could delete them.
-store.deleteTemporaryConversations()
-const client = new OpenAI({
-  baseURL: config.chat.baseURL,
-  apiKey: config.chat.apiKey,
-})
-const tools = new ToolRegistry([new CalculatorTool()])
-const chat = new ChatService(client, store, settings, tools)
-const app = createApp({ config, store, settings, chat })
+  const config = new Config(process.env)
+  mkdirSync(config.dataDir, { recursive: true })
+  const db = openDatabase(config.databasePath)
+  const store = new ConversationStore(db)
+  const settings = new SettingsStore(db, settingsDefaults(config.chat.model))
+  // Temporary chats whose tab closed before it could delete them.
+  store.deleteTemporaryConversations()
+  const client = new OpenAI({
+    baseURL: config.chat.baseURL,
+    apiKey: config.chat.apiKey,
+  })
+  const chat = new ChatService(client, store, settings, new ToolRegistry(tools))
+  const app = createApp({ config, store, settings, chat })
 
-// In dev, Vite serves the web app. The production build only exists after `pnpm build`.
-const webRoot = join(import.meta.dirname, '../../dist/web')
-if (existsSync(webRoot)) {
-  app.use('/*', serveStatic({ root: webRoot }))
-  // Client-side routes such as /c/:id all load the same page.
-  app.get('*', serveStatic({ root: webRoot, path: 'index.html' }))
+  // In dev, Vite serves the web app. The production build only exists after `pnpm build`.
+  const webRoot = join(import.meta.dirname, '../../dist/web')
+  if (existsSync(webRoot)) {
+    app.use('/*', serveStatic({ root: webRoot }))
+    // Client-side routes such as /c/:id all load the same page.
+    app.get('*', serveStatic({ root: webRoot, path: 'index.html' }))
+  }
+
+  serve(
+    { fetch: app.fetch, hostname: config.host, port: config.port },
+    (info) => {
+      console.log(`chibot listening on http://${config.host}:${info.port}`)
+      if (!config.isLoopback) {
+        console.warn(
+          `Warning: HOST=${config.host} exposes chibot beyond this machine, with no authentication.`,
+        )
+      }
+    },
+  )
 }
 
-serve(
-  { fetch: app.fetch, hostname: config.host, port: config.port },
-  (info) => {
-    console.log(`chibot listening on http://${config.host}:${info.port}`)
-    if (!config.isLoopback) {
-      console.warn(
-        `Warning: HOST=${config.host} exposes chibot beyond this machine, with no authentication.`,
-      )
-    }
-  },
-)
+if (import.meta.main) start()
