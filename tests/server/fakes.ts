@@ -1,10 +1,12 @@
 import OpenAI from 'openai'
+import { z } from 'zod'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
 import { openDatabase } from '../../src/server/database.ts'
 import {
   settingsDefaults,
   SettingsStore,
 } from '../../src/server/settings-store.ts'
+import { Tool } from '../../src/server/tool.ts'
 import type { Settings } from '../../src/shared/settings.ts'
 import type {
   ResponseCreateParams,
@@ -128,4 +130,42 @@ export function testSettings(model = 'm', overrides: Partial<Settings> = {}) {
   )
   settings.update(overrides)
   return settings
+}
+
+/** Echoes `text` back, or throws when it is "fail". */
+export class EchoTool extends Tool {
+  readonly name = 'echo'
+  readonly description = 'Echoes text back.'
+  readonly parameters = z.object({ text: z.string() })
+  readonly runs: string[] = []
+  override readonly requiresApproval: boolean
+
+  constructor({ requiresApproval = false } = {}) {
+    super()
+    this.requiresApproval = requiresApproval
+  }
+
+  async run({ text }: { text: string }) {
+    if (text === 'fail') throw new Error('it failed')
+    this.runs.push(text)
+    return `echo: ${text}`
+  }
+}
+
+/** A streamed response that calls `name` with `args` (one call per entry). */
+export function callEvents(
+  ...calls: { name?: string; args: unknown; callId?: string }[]
+): ResponseStreamEvent[] {
+  const output = calls.map(({ name = 'echo', args, callId }, i) => ({
+    id: `fc_${i}`,
+    type: 'function_call',
+    status: 'completed',
+    call_id: callId ?? `call_${i}`,
+    name,
+    arguments: JSON.stringify(args),
+  }))
+  return [
+    ...output.map((item) => ({ type: 'response.output_item.done', item })),
+    { type: 'response.completed', response: { output, usage } },
+  ] as unknown as ResponseStreamEvent[]
 }
