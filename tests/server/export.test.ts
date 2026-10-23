@@ -125,6 +125,27 @@ describe('export and import', () => {
     )
   })
 
+  it('quotes tool calls with their results in Markdown', async () => {
+    const { id } = store.createConversation()
+    const [q] = store.appendItems(id, null, [{ role: 'user', content: 'q' }])
+    store.appendItems(id, q!.id, [
+      {
+        type: 'function_call',
+        call_id: 'c1',
+        name: 'calculator',
+        arguments: '{"expression":"1+1"}',
+      },
+      { type: 'function_call_output', call_id: 'c1', output: '2\nexactly' },
+      { role: 'assistant', content: 'Two.' },
+    ])
+    const res = await app.request(`/api/conversations/${id}/export?format=md`)
+    expect(await res.text()).toBe(
+      '# Chat\n\n## You\n\nq\n\n' +
+        '> Used **calculator** with `{"expression":"1+1"}`:\n>\n> 2\n> exactly\n\n' +
+        '## Assistant\n\nTwo.\n',
+    )
+  })
+
   it('rejects malformed files', async () => {
     const good = (await exportJson(sampleChat())).body
     const broken = [
