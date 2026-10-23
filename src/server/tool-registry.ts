@@ -37,18 +37,21 @@ export class ToolRegistry {
   }
 
   /**
-   * Runs `call` and returns its output. Never throws: unknown tools,
-   * invalid arguments and tool errors become an `Error: …` output, so the
-   * model can recover, and a stop becomes `TOOL_STOPPED`.
+   * Runs `call` and returns its output. Never throws: unknown (or
+   * `disabled`) tools, invalid arguments and tool errors become an
+   * `Error: …` output, so the model can recover, and a stop becomes
+   * `TOOL_STOPPED`.
    */
   async run(
     call: ResponseFunctionToolCall,
     context: ToolContext,
+    disabled: string[] = [],
   ): Promise<string> {
     const { signal } = context
     if (signal?.aborted) return TOOL_STOPPED
     const tool = this.#tools.get(call.name)
-    if (!tool) return `Error: there is no tool named "${call.name}".`
+    if (!tool || disabled.includes(tool.name))
+      return `Error: there is no tool named "${call.name}".`
     let json: unknown
     try {
       json = JSON.parse(call.arguments)

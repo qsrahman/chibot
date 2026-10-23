@@ -48,6 +48,9 @@ describe('ToolRegistry', () => {
     expect(await registry.run(call('nope', '{}'), context)).toBe(
       'Error: there is no tool named "nope".',
     )
+    expect(await registry.run(call('echo', '{}'), context, ['echo'])).toBe(
+      'Error: there is no tool named "echo".',
+    )
     expect(await registry.run(call('echo', '{'), context)).toBe(
       'Error: the arguments are not valid JSON.',
     )
