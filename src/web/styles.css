@@ -236,6 +236,7 @@ body {
 /* Chat layout */
 
 .chat {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -782,7 +783,33 @@ body {
 
 .message.user {
   display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.message-attachments {
+  display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
+  gap: 8px;
+  max-width: 70%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.message-attachments a {
+  display: block;
+  text-decoration: none;
+}
+
+.message-attachments img {
+  display: block;
+  max-width: 240px;
+  max-height: 240px;
+  border-radius: var(--radius-card);
+  object-fit: cover;
 }
 
 .message.user p {
@@ -987,22 +1014,140 @@ body {
 
 .composer {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-end;
   gap: 8px;
   width: calc(100% - 32px);
   max-width: calc(var(--column) - 32px);
   min-height: 52px;
   margin: 0 auto;
-  padding: 7px 7px 7px 20px;
+  padding: 7px;
   border: 1px solid var(--border);
   border-radius: var(--radius-composer);
   background: var(--surface);
   box-shadow: var(--composer-shadow);
 }
 
-/* The "+" button sits where the text would start. */
-.composer.with-tools {
-  padding-left: 7px;
+/* Attachments get a row of their own above the text. */
+.composer-attachments {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 4px 0;
+  list-style: none;
+}
+
+.attachment {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+.attachment.image img {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.attachment.uploading > :first-child {
+  opacity: 0.5;
+}
+
+.attachment.failed .file-card {
+  border-color: var(--danger);
+}
+
+.attachment.failed .file-card-type {
+  color: var(--danger);
+}
+
+.attachment-spinner {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.attachment-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--surface);
+  border-radius: 50%;
+  background: var(--button);
+  color: var(--button-fg);
+  cursor: pointer;
+}
+
+/* A document: icon, name and type, in the composer and in messages. */
+.file-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  max-width: 260px;
+  padding: 8px 12px 8px 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--fg);
+}
+
+.file-card-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+.file-card-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.file-card-name {
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-card-type {
+  overflow: hidden;
+  color: var(--fg-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Dropping files anywhere on the chat attaches them. */
+.chat.dragging::after {
+  position: absolute;
+  inset: 8px;
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius-card);
+  content: '';
+  pointer-events: none;
 }
 
 .composer-chip {

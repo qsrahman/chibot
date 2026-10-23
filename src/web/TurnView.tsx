@@ -3,6 +3,7 @@
 import { useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { Download, Pencil, RefreshCw, Wrench } from 'lucide-react'
+import { FileCard } from './Composer.tsx'
 import { Markdown } from './Markdown.tsx'
 import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
 import {
@@ -71,6 +72,29 @@ export function TurnView({
         />
       ) : (
         <div className="message user">
+          {question.attachments.length > 0 && (
+            <ul className="message-attachments" aria-label="Attachments">
+              {question.attachments.map(({ fileId, image, name }) => (
+                <li key={fileId}>
+                  <a
+                    href={`/api/files/${fileId}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {image ? (
+                      <img
+                        src={`/api/files/${fileId}`}
+                        alt="Attached image"
+                        onLoad={onImageLoad}
+                      />
+                    ) : (
+                      <FileCard name={name ?? 'File'} />
+                    )}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
           <p>{question.text}</p>
         </div>
       )}

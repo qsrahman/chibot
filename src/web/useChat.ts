@@ -12,6 +12,7 @@ import {
   toTurns,
   waitingCalls,
   type Answer,
+  type Attachment,
   type Question,
   type ToolActivity,
   type Turn,
@@ -275,27 +276,35 @@ export function useChat(
     }
   }
 
-  const newQuestion = (text: string, parentId: number | null): Question => ({
-    itemId: null,
-    parentId,
-    text,
-    versions: null,
-  })
+  const newQuestion = (
+    text: string,
+    parentId: number | null,
+    attachments: Attachment[],
+  ): Question => ({ itemId: null, parentId, text, attachments, versions: null })
 
-  /** Sends a new message after the last turn, optionally forcing `tool`. */
-  function send(text: string, tool?: string) {
+  const fileIds = (attachments: Attachment[]) =>
+    attachments.length > 0 ? { fileIds: attachments.map((a) => a.fileId) } : {}
+
+  /**
+   * Sends a new message after the last turn, with its `attachments`
+   * (uploaded), optionally forcing `tool`.
+   */
+  function send(text: string, tool?: string, attachments: Attachment[] = []) {
     return run(
-      { text, ...(tool && { tool }) },
-      { keep: turns.length, question: newQuestion(text, null) },
+      { text, ...(tool && { tool }), ...fileIds(attachments) },
+      { keep: turns.length, question: newQuestion(text, null, attachments) },
     )
   }
 
-  /** Replaces the question of turn `index` with `text` as a new version. */
+  /**
+   * Replaces the question of turn `index` with `text` as a new version,
+   * keeping its attachments.
+   */
   function edit(index: number, text: string) {
-    const { parentId } = turns[index]!.question
+    const { parentId, attachments } = turns[index]!.question
     return run(
-      { text, parentId },
-      { keep: index, question: newQuestion(text, parentId) },
+      { text, parentId, ...fileIds(attachments) },
+      { keep: index, question: newQuestion(text, parentId, attachments) },
     )
   }
 

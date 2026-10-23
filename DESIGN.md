@@ -102,8 +102,19 @@ Code uses `"SF Mono", SFMono-Regular, ui-monospace, Consolas, "Liberation Mono",
 7×10 px padding and 52 px tall when one line. The textarea grows up to 40 vh.
 A round 36 px icon button on the right is **send** (blue `--accent`, arrow-up icon),
 dimmed while the input is empty, and becomes **stop** (square icon) while an
-answer streams. Later phases add a "+" button on the left (attachments,
-Phase 9) and a mic button (voice, Phase 9).
+answer streams. A "+" button sits on the left (attachments and tools, see
+*Composer tools*); a mic button (voice, Phase 9) follows.
+
+**Attachments.** In the composer, a row above the text: images as 56 px
+thumbnails (12 px radius), documents as file cards. A file card is a
+`--border`-outlined 12 px-radius card up to 260 px wide: a 40 px `--accent`
+square with a `FileText` icon, then the name (500 weight, ellipsized) over the
+type ("PDF") in `--fg-muted`, or the error in `--danger` with a `--danger`
+outline. A spinning `LoaderCircle` covers a chip while it uploads (dimmed), and
+a 20 px round `--button` × sits on its top-right corner. In a sent message the
+same thumbnails (up to 240 px, 16 px radius) and cards sit right-aligned above
+the bubble. Dragging files over the chat outlines it with a 2 px dashed
+`--accent` border.
 
 **Messages.**
 - *User:* right-aligned bubble with `--bubble-bg` and `--bubble-fg` text,
@@ -170,7 +181,7 @@ a 13 px muted hint that a new message denies it, and Deny (secondary) /
 Approve (primary) at the bottom right.
 
 **Composer tools.** A 24 px `Plus` button at the composer's left opens a menu
-above it (Search the web, Create an image). The picked tool shows as a pill
+above it (Add photos & files, then Search the web and Create an image). The picked tool shows as a pill
 chip (`--bubble-bg` / `--bubble-fg`, 36 px tall, icon + "Search"/"Image" +
 `X`) before the text; it applies to one message.
 

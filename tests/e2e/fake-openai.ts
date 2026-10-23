@@ -135,7 +135,7 @@ app.post('/v1/responses', async (c) => {
   const question =
     typeof body.input === 'string'
       ? body.input
-      : String(body.input.findLast((i) => i.role === 'user')?.content ?? '')
+      : textOf(body.input.findLast((i) => i.role === 'user')?.content)
   const slow = question.includes('slow')
   const text = slow
     ? Array.from({ length: 200 }, (_, i) => `word${i}`).join(' ')
@@ -219,6 +219,15 @@ app.post('/v1/responses', async (c) => {
     })
   })
 })
+
+/** A message's text; with attachments, its `input_text` parts. */
+function textOf(content: unknown): string {
+  if (!Array.isArray(content)) return String(content ?? '')
+  return (content as { type: string; text?: string }[])
+    .filter((part) => part.type === 'input_text')
+    .map((part) => part.text)
+    .join('\n')
+}
 
 /** The tool call the question asks for (see the top of this file). */
 function pickTool(

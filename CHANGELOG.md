@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- Attachments: "Add photos & files" heads the composer's "+" menu (always shown now), and pasting or dropping files onto the chat attaches them too. Chips above the text show a thumbnail or file card, a spinner while uploading, the error if a file is refused, and × to remove; Send waits for uploads. Sent messages show image thumbnails (opening full size) and file cards, and editing a message keeps its attachments.
+
 ### Changed
 
 - Roadmap: Phase 9 revised. Documents go as their extracted text to models that reject files (Ollama), so PDFs and Word files work there; attachments accept images plus the project document types; attaching joins the composer's "+" menu; JSON export also embeds generated images; images and transcription get clear setup errors.

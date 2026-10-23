@@ -84,7 +84,7 @@ test('creates an image, keeps it, and edits it', async ({ page }) => {
 test('the composer menu forces a tool for one message', async ({ page }) => {
   await page.goto('/')
   await appReady(page)
-  await page.getByRole('button', { name: 'Choose a tool' }).click()
+  await page.getByRole('button', { name: 'Add files and more' }).click()
   await page.getByRole('menuitem', { name: 'Search the web' }).click()
   await expect(
     page.getByRole('button', { name: 'Remove Search the web' }),
@@ -119,7 +119,7 @@ test('a tool switched off in Settings is not offered', async ({ page }) => {
   await expect(webSearch).not.toBeChecked()
   await page.keyboard.press('Escape')
 
-  await page.getByRole('button', { name: 'Choose a tool' }).click()
+  await page.getByRole('button', { name: 'Add files and more' }).click()
   await expect(
     page.getByRole('menuitem', { name: 'Search the web' }),
   ).toHaveCount(0)

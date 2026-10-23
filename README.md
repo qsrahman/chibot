@@ -149,8 +149,12 @@ Then open http://127.0.0.1:3000.
   on their project's page; a chat's **…** menu moves it into a project or out.
   Deleting a project deletes its chats and files.
 
-  The composer's **+** menu makes the next message use **Search the web** or
-  **Create an image**. Tools with side effects (none ship yet) ask first:
+- **Attachments:** **+** → **Add photos & files**, or paste or drop them onto
+  the chat: images (PNG, JPEG, WebP, GIF) and the document types projects
+  take. Send waits until they're uploaded; editing a message keeps them.
+
+  The composer's **+** menu also makes the next message use **Search the web**
+  or **Create an image**. Tools with side effects (none ship yet) ask first:
   **Approve** or **Deny**, or send a new message to deny. Models also know
   today's date and time.
 - **Thinking:** reasoning models show "Thinking…" while they think; afterwards

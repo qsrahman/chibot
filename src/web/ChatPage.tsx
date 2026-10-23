@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type DragEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { Globe, ImagePlus, MessageCircleDashed } from 'lucide-react'
 import type { Health } from '../shared/types.ts'
@@ -9,6 +9,7 @@ import { SHORTCUTS, useShortcuts } from './shortcuts.ts'
 import { waitingCalls } from './turns.ts'
 import { ApprovalCard, TurnView } from './TurnView.tsx'
 import { describeUsage } from './usage.ts'
+import { useAttachments } from './useAttachments.ts'
 import { useChat } from './useChat.ts'
 import type { ProjectsApi } from './useProjects.ts'
 import type { SettingsApi } from './useSettings.ts'
@@ -49,6 +50,8 @@ export function ChatPage({ health, settings, projects, onListChanged }: Props) {
     projectId: projectHome,
   })
   const { turns, pending, error, isTemporary, busy } = chat
+  const attachments = useAttachments()
+  const [dragging, setDragging] = useState(false)
   const waiting = pending ? [] : waitingCalls(turns)
   const toolOptions = COMPOSER_TOOLS.filter(
     ({ name }) =>
@@ -98,6 +101,29 @@ export function ChatPage({ health, settings, projects, onListChanged }: Props) {
     }
   }
 
+  const dropping = (e: DragEvent) => e.dataTransfer.types.includes('Files')
+  const dragHandlers = {
+    onDragOver: (e: DragEvent) => {
+      if (!dropping(e) || e.defaultPrevented) return
+      e.preventDefault()
+      setDragging(true)
+    },
+    onDragLeave: (e: DragEvent) => {
+      // Leaving for a child element isn't leaving the page.
+      if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+        setDragging(false)
+      }
+    },
+    onDrop: (e: DragEvent) => {
+      setDragging(false)
+      // A project's file list handles its own drops.
+      if (e.defaultPrevented) return
+      e.preventDefault()
+      attachments.add([...e.dataTransfer.files])
+      composerRef.current?.focus()
+    },
+  }
+
   // An empty chat centres the composer under a greeting, as ChatGPT does.
   // The composer stays the third child either way, so it keeps its focus
   // and text when the first message moves it to the bottom.
@@ -108,13 +134,15 @@ export function ChatPage({ health, settings, projects, onListChanged }: Props) {
 
   return (
     <main
-      className={
-        empty && projectHome
-          ? 'chat empty project-home'
-          : empty
-            ? 'chat empty'
-            : 'chat'
-      }
+      className={[
+        'chat',
+        empty && 'empty',
+        empty && projectHome && 'project-home',
+        dragging && 'dragging',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      {...dragHandlers}
     >
       <header className="topbar">
         <span className="topbar-start">
@@ -235,6 +263,7 @@ export function ChatPage({ health, settings, projects, onListChanged }: Props) {
         onStop={chat.stop}
         inputRef={composerRef}
         tools={toolOptions}
+        attachments={attachments}
       />
       {empty && projectHome && (
         <ProjectDetails

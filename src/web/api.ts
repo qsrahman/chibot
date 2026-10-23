@@ -59,13 +59,35 @@ export const updateProject = (
 export const deleteProject = (id: string) => remove(`/api/projects/${id}`)
 
 /** Uploads `file` and adds it to the project, which then indexes it. */
-export async function addProjectFile(projectId: string, file: File) {
+/** Stores a file (a document or an image) for a project or a message. */
+export function uploadFile(file: File, signal?: AbortSignal) {
   const form = new FormData()
   form.append('file', file)
-  const stored = await request<StoredFile>('/api/files', {
+  return request<StoredFile>('/api/files', {
     method: 'POST',
     body: form,
+    signal,
   })
+}
+
+/** Turns a recording into text (`health.features.transcription`). */
+export async function transcribe(audio: Blob) {
+  const form = new FormData()
+  form.append(
+    'file',
+    audio,
+    `recording.${audio.type.includes('mp4') ? 'mp4' : 'webm'}`,
+  )
+  return (
+    await request<{ text: string }>('/api/transcriptions', {
+      method: 'POST',
+      body: form,
+    })
+  ).text
+}
+
+export async function addProjectFile(projectId: string, file: File) {
+  const stored = await uploadFile(file)
   return request<ProjectFile[]>(
     `/api/projects/${projectId}/files`,
     send('POST', { fileId: stored.id }),

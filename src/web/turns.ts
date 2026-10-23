@@ -9,11 +9,21 @@ export interface Versions {
   ids: number[]
 }
 
+/** A file attached to a message (`/api/files/:fileId`). */
+export interface Attachment {
+  fileId: string
+  /** Shown as a thumbnail; other files as a card with their name. */
+  image: boolean
+  /** Documents' file names (images' aren't stored with the message). */
+  name: string | null
+}
+
 export interface Question {
   /** `null` until the server has saved it (e.g. shown after a Stop). */
   itemId: number | null
   parentId: number | null
   text: string
+  attachments: Attachment[]
   /** Edits of this message, or `null` if it was never edited. */
   versions: Versions | null
 }
@@ -68,6 +78,7 @@ export function toTurns(items: StoredItem[]): Turn[] {
           itemId: item.id,
           parentId: item.parentId,
           text: message.text,
+          attachments: attachmentsOf(item.data),
           versions: versionsOf(item),
         },
         answer: null,
@@ -186,6 +197,18 @@ function parseJson<T extends object>(text: string): Partial<T> {
   } catch {
     return {}
   }
+}
+
+/** The files a user message attaches (its `input_image` / `input_file`). */
+function attachmentsOf(data: StoredItem['data']): Attachment[] {
+  if (!('content' in data) || !Array.isArray(data.content)) return []
+  return data.content.flatMap((part): Attachment[] =>
+    part.type === 'input_image' && part.file_id
+      ? [{ fileId: part.file_id, image: true, name: null }]
+      : part.type === 'input_file' && part.file_id
+        ? [{ fileId: part.file_id, image: false, name: part.filename ?? null }]
+        : [],
+  )
 }
 
 /** Joins paragraphs with a blank line. */

@@ -1,11 +1,23 @@
 import {
+  useRef,
   useState,
   type KeyboardEvent,
   type ReactNode,
   type RefObject,
 } from 'react'
-import { ArrowUp, Plus, Square, X } from 'lucide-react'
+import {
+  ArrowUp,
+  FileText,
+  LoaderCircle,
+  Paperclip,
+  Plus,
+  Square,
+  X,
+} from 'lucide-react'
+import { ATTACHMENT_ACCEPT } from '../shared/documents.ts'
 import { useAnchoredPopover } from './popover.ts'
+import type { Attachment } from './turns.ts'
+import type { AttachmentsApi, Draft } from './useAttachments.ts'
 
 /** A tool the user can pick for the next message ("+" menu). */
 export interface ToolOption {
@@ -20,27 +32,38 @@ export interface ToolOption {
 interface Props {
   busy: boolean
   /** `tool` is the picked tool's name, if any. */
-  onSend: (text: string, tool?: string) => void
+  onSend: (text: string, tool?: string, attachments?: Attachment[]) => void
   onStop: () => void
   /** The textarea, so the page can focus it (e.g. from a shortcut). */
   inputRef: RefObject<HTMLTextAreaElement | null>
   tools: ToolOption[]
+  /** Owned by the page, which also attaches dropped files. */
+  attachments: AttachmentsApi
 }
 
-export function Composer({ busy, onSend, onStop, inputRef, tools }: Props) {
+export function Composer({
+  busy,
+  onSend,
+  onStop,
+  inputRef,
+  tools,
+  attachments,
+}: Props) {
   const [text, setText] = useState('')
   const [picked, setPicked] = useState<ToolOption | null>(null)
   const menu = useAnchoredPopover()
-  const canSend = !busy && text.trim() !== ''
+  const pickerRef = useRef<HTMLInputElement>(null)
+  const canSend = !busy && text.trim() !== '' && !attachments.blocked
   // A tool switched off meanwhile can't be used any more.
   const tool =
     picked && tools.some((t) => t.name === picked.name) ? picked : null
 
   function submit() {
     if (!canSend) return
-    onSend(text, tool?.name)
+    onSend(text, tool?.name, attachments.ready)
     setText('')
     setPicked(null)
+    attachments.clear()
     inputRef.current?.focus()
   }
 
@@ -54,51 +77,84 @@ export function Composer({ busy, onSend, onStop, inputRef, tools }: Props) {
 
   return (
     <form
-      className={tools.length > 0 ? 'composer with-tools' : 'composer'}
+      className="composer"
       onSubmit={(e) => {
         e.preventDefault()
         submit()
       }}
     >
-      {tools.length > 0 && (
-        <>
-          <button
-            type="button"
-            className="icon-button"
-            aria-label="Choose a tool"
-            title="Choose a tool"
-            popoverTarget={menu.id}
-            onClick={(e) => menu.place(e.currentTarget, { above: true })}
-          >
-            <Plus size={24} strokeWidth={1.5} />
-          </button>
-          <div
-            id={menu.id}
-            ref={menu.ref}
-            popover="auto"
-            className="menu"
-            role="menu"
-            style={menu.style}
-          >
-            {tools.map((option) => (
-              <button
-                key={option.name}
-                type="button"
-                role="menuitem"
-                className="menu-item"
-                onClick={() => {
-                  setPicked(option)
-                  menu.hide()
-                  inputRef.current?.focus()
-                }}
-              >
-                {option.icon}
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </>
+      {attachments.drafts.length > 0 && (
+        <ul className="composer-attachments" aria-label="Attachments">
+          {attachments.drafts.map((draft) => (
+            <DraftChip
+              key={draft.key}
+              draft={draft}
+              onRemove={() => attachments.remove(draft.key)}
+            />
+          ))}
+        </ul>
       )}
+      <button
+        type="button"
+        className="icon-button"
+        aria-label="Add files and more"
+        title="Add files and more"
+        popoverTarget={menu.id}
+        onClick={(e) => menu.place(e.currentTarget, { above: true })}
+      >
+        <Plus size={24} strokeWidth={1.5} />
+      </button>
+      <input
+        ref={pickerRef}
+        type="file"
+        multiple
+        hidden
+        accept={ATTACHMENT_ACCEPT}
+        aria-label="Add photos & files"
+        onChange={(e) => {
+          const files = [...(e.target.files ?? [])]
+          e.target.value = ''
+          attachments.add(files)
+          inputRef.current?.focus()
+        }}
+      />
+      <div
+        id={menu.id}
+        ref={menu.ref}
+        popover="auto"
+        className="menu"
+        role="menu"
+        style={menu.style}
+      >
+        <button
+          type="button"
+          role="menuitem"
+          className="menu-item"
+          onClick={() => {
+            menu.hide()
+            pickerRef.current?.click()
+          }}
+        >
+          <Paperclip size={18} strokeWidth={1.5} aria-hidden />
+          Add photos & files
+        </button>
+        {tools.map((option) => (
+          <button
+            key={option.name}
+            type="button"
+            role="menuitem"
+            className="menu-item"
+            onClick={() => {
+              setPicked(option)
+              menu.hide()
+              inputRef.current?.focus()
+            }}
+          >
+            {option.icon}
+            {option.label}
+          </button>
+        ))}
+      </div>
       {tool && (
         <button
           type="button"
@@ -121,6 +177,12 @@ export function Composer({ busy, onSend, onStop, inputRef, tools }: Props) {
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={onKeyDown}
+        onPaste={(e) => {
+          const files = [...e.clipboardData.files]
+          if (files.length === 0) return
+          e.preventDefault()
+          attachments.add(files)
+        }}
       />
       {busy ? (
         <button
@@ -139,11 +201,70 @@ export function Composer({ busy, onSend, onStop, inputRef, tools }: Props) {
           type="submit"
           className="icon-button primary"
           aria-label="Send"
+          title={attachments.blocked ? 'Waiting for attachments' : undefined}
           disabled={!canSend}
         >
           <ArrowUp size={20} strokeWidth={2} />
         </button>
       )}
     </form>
+  )
+}
+
+/** An attachment in the composer: a thumbnail or a file card, with ×. */
+function DraftChip({
+  draft,
+  onRemove,
+}: {
+  draft: Draft
+  onRemove: () => void
+}) {
+  const state = draft.error
+    ? 'failed'
+    : draft.attachment
+      ? 'ready'
+      : 'uploading'
+  return (
+    <li
+      className={`attachment ${draft.preview ? 'image' : 'file'} ${state}`}
+      title={draft.error ?? draft.name}
+    >
+      {draft.preview ? (
+        <img src={draft.preview} alt={draft.name} />
+      ) : (
+        <FileCard name={draft.name} detail={draft.error ?? undefined} />
+      )}
+      {state === 'uploading' && (
+        <LoaderCircle
+          className="attachment-spinner"
+          size={20}
+          aria-label="Uploading"
+        />
+      )}
+      <button
+        type="button"
+        className="attachment-remove"
+        aria-label={`Remove ${draft.name}`}
+        onClick={onRemove}
+      >
+        <X size={12} strokeWidth={2.5} aria-hidden />
+      </button>
+    </li>
+  )
+}
+
+/** A document's icon, name and type ("PDF"); `detail` replaces the type. */
+export function FileCard({ name, detail }: { name: string; detail?: string }) {
+  const type = /\.([^.]+)$/.exec(name)?.[1]?.toUpperCase() ?? 'File'
+  return (
+    <span className="file-card">
+      <span className="file-card-icon">
+        <FileText size={20} strokeWidth={1.5} aria-hidden />
+      </span>
+      <span className="file-card-text">
+        <span className="file-card-name">{name}</span>
+        <span className="file-card-type">{detail ?? type}</span>
+      </span>
+    </span>
   )
 }

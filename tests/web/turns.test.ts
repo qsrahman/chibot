@@ -47,7 +47,13 @@ describe('toTurns', () => {
     expect(turns).toEqual([
       {
         key: '1',
-        question: { itemId: 1, parentId: null, text: 'Hi', versions: null },
+        question: {
+          itemId: 1,
+          parentId: null,
+          text: 'Hi',
+          attachments: [],
+          versions: null,
+        },
         // The answer is identified by its first item (where regenerations
         // branch off), and its text joins the message items.
         answer: {
@@ -63,7 +69,13 @@ describe('toTurns', () => {
       },
       {
         key: '5',
-        question: { itemId: 5, parentId: 4, text: 'Bye', versions: null },
+        question: {
+          itemId: 5,
+          parentId: 4,
+          text: 'Bye',
+          attachments: [],
+          versions: null,
+        },
         answer: null,
         compacted: false,
       },
@@ -230,5 +242,27 @@ describe('sourcesOf with project files', () => {
         ],
       }),
     ).toEqual([{ url: '/api/files/f1', title: 'plan.md', kind: 'file' }])
+  })
+})
+
+describe('attachments', () => {
+  it('lists the files a message attaches', () => {
+    const [turn] = toTurns([
+      item(1, {
+        role: 'user',
+        content: [
+          { type: 'input_image', file_id: 'img', detail: 'auto' },
+          { type: 'input_file', file_id: 'doc', filename: 'notes.pdf' },
+          { type: 'input_text', text: 'What is this?' },
+        ],
+      }),
+    ])
+    expect(turn!.question).toMatchObject({
+      text: 'What is this?',
+      attachments: [
+        { fileId: 'img', image: true, name: null },
+        { fileId: 'doc', image: false, name: 'notes.pdf' },
+      ],
+    })
   })
 })
