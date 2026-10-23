@@ -57,6 +57,12 @@ const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
      created_at INTEGER NOT NULL
    );
    CREATE INDEX files_conversation ON files(conversation_id);`,
+  `CREATE TABLE memories (
+     id INTEGER PRIMARY KEY AUTOINCREMENT,
+     text TEXT NOT NULL,
+     created_at INTEGER NOT NULL,
+     updated_at INTEGER NOT NULL
+   );`,
 ]
 
 /**

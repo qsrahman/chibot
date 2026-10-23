@@ -9,6 +9,7 @@ import {
   fakeClient,
   memoryStore,
   testFiles,
+  testMemories,
   testSettings,
   usage,
 } from './fakes.ts'
@@ -25,6 +26,7 @@ describe('export and import', () => {
       settings,
       chat: new ChatService(fakeClient([]), store, settings),
       files: testFiles(),
+      memories: testMemories(),
     })
   })
 

@@ -23,6 +23,7 @@ import type { ChatService } from './chat-service.ts'
 import type { Config } from './config.ts'
 import type { ConversationStore } from './conversation-store.ts'
 import type { FileStore } from './file-store.ts'
+import type { MemoryStore } from './memory-store.ts'
 import { toMarkdown } from './markdown-export.ts'
 import type { SettingsStore } from './settings-store.ts'
 
@@ -32,10 +33,18 @@ export interface AppDeps {
   settings: SettingsStore
   chat: ChatService
   files: FileStore
+  memories: MemoryStore
 }
 
 /** Builds the HTTP app. A factory so tests can inject fakes. */
-export function createApp({ config, store, settings, chat, files }: AppDeps) {
+export function createApp({
+  config,
+  store,
+  settings,
+  chat,
+  files,
+  memories,
+}: AppDeps) {
   const app = new Hono()
 
   app.get('/api/health', (c) =>
@@ -100,6 +109,19 @@ export function createApp({ config, store, settings, chat, files }: AppDeps) {
       return notFound(c)
     }
     files.deleteOrphans()
+    return c.body(null, 204)
+  })
+
+  app.get('/api/memories', (c) => c.json(memories.list().reverse()))
+
+  app.delete('/api/memories/:id', (c) => {
+    const id = Number(c.req.param('id'))
+    if (!Number.isInteger(id) || !memories.delete(id)) return notFound(c)
+    return c.body(null, 204)
+  })
+
+  app.delete('/api/memories', (c) => {
+    memories.clear()
     return c.body(null, 204)
   })
 

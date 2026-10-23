@@ -16,6 +16,7 @@ import {
   memoryStore,
   type FakeCall,
   testFiles,
+  testMemories,
 } from './fakes.ts'
 
 describe('SettingsStore', () => {
@@ -78,7 +79,14 @@ describe('settings routes and use', () => {
       store,
       settings,
     )
-    app = createApp({ config, store, settings, chat, files: testFiles() })
+    app = createApp({
+      config,
+      store,
+      settings,
+      chat,
+      files: testFiles(),
+      memories: testMemories(),
+    })
   })
 
   const patch = (body: unknown) =>

@@ -9,7 +9,13 @@ import type {
 } from '../../src/shared/types.ts'
 import { openDatabase } from '../../src/server/database.ts'
 import type { FileStore } from '../../src/server/file-store.ts'
-import { fakeClient, memoryStore, testFiles, testSettings } from './fakes.ts'
+import {
+  fakeClient,
+  memoryStore,
+  testFiles,
+  testMemories,
+  testSettings,
+} from './fakes.ts'
 
 const config = new Config({ OPENAI_API_KEY: 'k' })
 
@@ -28,6 +34,7 @@ describe('conversation routes', () => {
       settings,
       chat: new ChatService(fakeClient([]), store, settings),
       files,
+      memories: testMemories(),
     })
   })
 

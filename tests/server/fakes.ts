@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
 import { openDatabase } from '../../src/server/database.ts'
 import { FileStore } from '../../src/server/file-store.ts'
+import { MemoryStore } from '../../src/server/memory-store.ts'
 import {
   settingsDefaults,
   SettingsStore,
@@ -126,6 +127,10 @@ export function fakeClient(
 /** A conversation store on `db` (by default a fresh in-memory database). */
 export const memoryStore = (db = openDatabase(':memory:')) =>
   new ConversationStore(db)
+
+/** A memory store on `db` (by default a fresh in-memory database). */
+export const testMemories = (db = openDatabase(':memory:')) =>
+  new MemoryStore(db)
 
 /** A file store on `db`, keeping bytes in a new temporary folder. */
 export const testFiles = (db = openDatabase(':memory:')) =>

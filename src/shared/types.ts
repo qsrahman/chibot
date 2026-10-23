@@ -65,6 +65,14 @@ export interface StoredFile {
   createdAt: number
 }
 
+/** Something chibot remembers about the user (`GET /api/memories`). */
+export interface Memory {
+  id: number
+  text: string
+  createdAt: number
+  updatedAt: number
+}
+
 /** Body of `POST /api/conversations/:id/turns` (see `turnRequestSchema`). */
 export type TurnRequest = z.output<typeof turnRequestSchema>
 

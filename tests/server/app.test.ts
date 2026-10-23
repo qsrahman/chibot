@@ -21,6 +21,7 @@ import {
   memoryStore,
   testSettings,
   testFiles,
+  testMemories,
 } from './fakes.ts'
 
 const config = new Config({
@@ -47,7 +48,14 @@ describe('API', () => {
   function appWith(events: ResponseStreamEvent[] | Error) {
     const settings = testSettings('m-1')
     const chat = new ChatService(fakeClient(events), store, settings)
-    return createApp({ config, store, settings, chat, files: testFiles() })
+    return createApp({
+      config,
+      store,
+      settings,
+      chat,
+      files: testFiles(),
+      memories: testMemories(),
+    })
   }
 
   async function createConversation(app: ReturnType<typeof appWith>) {
@@ -85,7 +93,14 @@ describe('API', () => {
       settings,
       new ToolRegistry([new EchoTool()]),
     )
-    const app = createApp({ config, store, settings, chat, files: testFiles() })
+    const app = createApp({
+      config,
+      store,
+      settings,
+      chat,
+      files: testFiles(),
+      memories: testMemories(),
+    })
     expect(await (await app.request('/api/tools')).json()).toEqual({
       tools: [{ name: 'echo', label: 'Echo', enabled: false }],
     })
