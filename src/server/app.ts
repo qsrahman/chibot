@@ -1,6 +1,8 @@
+import { timingSafeEqual } from 'node:crypto'
 import { isIP } from 'node:net'
-import { Hono, type Context } from 'hono'
+import { Hono, type Context, type MiddlewareHandler } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
+import { getCookie, setCookie } from 'hono/cookie'
 import { csrf } from 'hono/csrf'
 import { streamSSE } from 'hono/streaming'
 import { zValidator } from '@hono/zod-validator'
@@ -93,6 +95,7 @@ export function createApp({
     }
     await next()
   })
+  if (config.token) app.use(requireToken(config.token))
   // Form posts (uploads) skip CORS preflight, so other sites could send them.
   // Browsers mark every post with Origin or Sec-Fetch-Site; requests with
   // neither come from tools like curl, which no site can drive.
@@ -478,6 +481,43 @@ const json = <T extends z.ZodType>(schema: T) =>
 /** Validates a multipart form body against `schema`. */
 const form = <T extends z.ZodType>(schema: T) =>
   zValidator('form', schema, invalid)
+
+const TOKEN_COOKIE = 'chibot_token'
+
+/**
+ * Lets in browsers that opened chibot once with `?token=<CHIBOT_TOKEN>`
+ * (remembered in a cookie); everything else gets a 401.
+ */
+function requireToken(token: string): MiddlewareHandler {
+  const expected = Buffer.from(token)
+  const matches = (value: string | undefined) => {
+    const given = Buffer.from(value ?? '')
+    return given.length === expected.length && timingSafeEqual(given, expected)
+  }
+  return async (c, next) => {
+    if (matches(c.req.query('token'))) {
+      setCookie(c, TOKEN_COOKIE, token, {
+        httpOnly: true,
+        // Never sent with requests from other sites.
+        sameSite: 'Strict',
+        path: '/',
+        maxAge: 400 * 24 * 60 * 60, // browsers' upper limit
+      })
+      // Out of the address bar and history.
+      const url = new URL(c.req.url)
+      url.searchParams.delete('token')
+      return c.redirect(url.pathname + url.search)
+    }
+    if (!matches(getCookie(c, TOKEN_COOKIE))) {
+      const error =
+        'chibot needs its access token: open it once as …/?token=<CHIBOT_TOKEN>'
+      return c.req.path.startsWith('/api/')
+        ? c.json({ error }, 401)
+        : c.text(error, 401)
+    }
+    await next()
+  }
+}
 
 /** RFC 6266: `filename*` carries non-ASCII names. */
 const disposition = (type: 'inline' | 'attachment', name: string) =>

@@ -49,4 +49,38 @@ describe('who may reach chibot', () => {
       ).status,
     ).toBe(201)
   })
+
+  describe('with CHIBOT_TOKEN', () => {
+    const TOKEN = 'a-long-enough-token'
+    const chibot = () => app({ CHIBOT_TOKEN: TOKEN })
+
+    it('lets in only browsers that opened it with the token', async () => {
+      const app = chibot()
+      expect((await app.request('/api/health')).status).toBe(401)
+      expect((await app.request('/c/abc')).status).toBe(401)
+      expect((await app.request('/?token=wrong')).status).toBe(401)
+
+      const opened = await app.request('/c/abc?token=' + TOKEN + '&x=1')
+      expect(opened.status).toBe(302)
+      expect(opened.headers.get('location')).toBe('/c/abc?x=1')
+      const cookie = opened.headers.get('set-cookie')!
+      expect(cookie).toContain('HttpOnly')
+      expect(cookie).toContain('SameSite=Strict')
+
+      const health = await app.request('/api/health', {
+        headers: { Cookie: cookie.split(';')[0]! },
+      })
+      expect(health.status).toBe(200)
+      const forged = await app.request('/api/health', {
+        headers: { Cookie: 'chibot_token=nope' },
+      })
+      expect(forged.status).toBe(401)
+    })
+
+    it('refuses a short token', () => {
+      expect(
+        () => new Config({ OPENAI_API_KEY: 'k', CHIBOT_TOKEN: 'short' }),
+      ).toThrow(/CHIBOT_TOKEN/)
+    })
+  })
 })

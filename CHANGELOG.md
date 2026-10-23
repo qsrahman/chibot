@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- `CHIBOT_TOKEN`: an optional access token, for using chibot from other devices (`HOST=0.0.0.0`). Open it once per browser with `?token=…`; an HttpOnly, SameSite=Strict cookie remembers it, and requests without it get a 401. The startup warning for an exposed server now suggests it.
+
 ### Security
 
 - Web pages could use chibot behind the user's back: any site could post uploads (and, through `/api/transcriptions`, spend the API key), since form posts skip CORS preflight; and a site that points its own name at 127.0.0.1 (DNS rebinding) could read chats and run turns. chibot now answers only to this machine's names and IP addresses (plus `HOST`), and refuses form posts from other origins (Hono's `csrf()`; requests without browser headers, e.g. curl, are unaffected).

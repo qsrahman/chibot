@@ -69,6 +69,11 @@ const envSchema = z
           .max(65535, 'must be in 1-65535'),
       ),
     CHIBOT_DATA_DIR: optional,
+    // Required to use chibot (once per browser), e.g. when HOST exposes it.
+    CHIBOT_TOKEN: optional.refine(
+      (token) => token === undefined || token.length >= 16,
+      'must be at least 16 characters (e.g. `openssl rand -hex 16`)',
+    ),
   })
   .superRefine((env, ctx) => {
     if (!env.OPENAI_API_KEY && !env.OPENAI_BASE_URL) {
@@ -102,6 +107,8 @@ export class Config {
   readonly port: number
   /** Holds the database and stored files. */
   readonly dataDir: string
+  /** Required to use chibot, or `null`: no login. */
+  readonly token: string | null
 
   constructor(env: NodeJS.ProcessEnv) {
     const parsed = envSchema.safeParse(env)
@@ -140,6 +147,7 @@ export class Config {
     this.dataDir = e.CHIBOT_DATA_DIR
       ? resolve(e.CHIBOT_DATA_DIR)
       : join(ROOT, 'data')
+    this.token = e.CHIBOT_TOKEN ?? null
   }
 
   get databasePath(): string {

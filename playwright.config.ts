@@ -54,6 +54,7 @@ export default defineConfig({
         HOST: '127.0.0.1',
         PORT: String(PORT),
         CHIBOT_DATA_DIR: '.e2e-data',
+        CHIBOT_TOKEN: '',
       },
     },
   ],

@@ -50,6 +50,7 @@ chibot folder, so it finds its settings wherever you run it.
 | `OPENAI_TRANSCRIBE_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Voice input; the model defaults to `gpt-transcribe` on OpenAI, and must be named on other servers (without one, the mic is off). With chat on Ollama, point this at OpenAI |
 | `BRAVE_API_KEY` | — | Turns on web search ([Brave Search API](https://brave.com/search/api/)) |
 | `CHIBOT_DATA_DIR` | `<repo>/data` | Where the database and generated images are kept |
+| `CHIBOT_TOKEN` | — | Requires a token (16+ characters) to use chibot; set it when `HOST` exposes chibot |
 
 For example, to chat with a local Ollama model, put this in `.env`:
 
@@ -79,7 +80,16 @@ For project files, embeddings can stay local:
 chibot has no login, and anyone who can reach it spends your API key. It
 therefore listens only on this machine by default. To use it from another
 device on your network, set `HOST=0.0.0.0` (this applies to both `pnpm dev`
-and `pnpm start`). The server prints a warning when it's exposed.
+and `pnpm start`) together with a token:
+
+```bash
+HOST=0.0.0.0
+CHIBOT_TOKEN=…   # e.g. the output of: openssl rand -hex 16
+```
+
+Then open `http://<this machine's IP>:3000/?token=<CHIBOT_TOKEN>` once in each
+browser; a cookie remembers it, and without it chibot answers 401. The server
+prints a warning when it's exposed without a token.
 
 Web pages you visit can't use chibot behind your back: it answers only to
 this machine's names (`localhost`, IP addresses, and `HOST` if it's a name),

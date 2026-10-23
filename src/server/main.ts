@@ -137,9 +137,13 @@ export function start({
     { fetch: app.fetch, hostname: config.host, port: config.port },
     (info) => {
       console.log(`chibot listening on http://${config.host}:${info.port}`)
-      if (!config.isLoopback) {
+      if (config.token) {
+        console.log(
+          'Open it once in each browser with ?token=<CHIBOT_TOKEN> (from .env).',
+        )
+      } else if (!config.isLoopback) {
         console.warn(
-          `Warning: HOST=${config.host} exposes chibot beyond this machine, with no authentication.`,
+          `Warning: HOST=${config.host} exposes chibot beyond this machine, with no authentication. Set CHIBOT_TOKEN to require a token.`,
         )
       }
     },
