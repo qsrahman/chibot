@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-23
+
 ### Added
 
 - Memory: a `memory` tool saves, updates and deletes what chibot remembers about the user (at most 100 memories of 300 characters, stored in SQLite), and chat instructions list the memories while the tool is offered. Answers say "Memory updated".

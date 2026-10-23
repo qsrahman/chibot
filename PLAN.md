@@ -429,7 +429,7 @@ chat on Ollama, images need `OPENAI_IMAGE_BASE_URL` / `_API_KEY`.
   either; a generated image renders and persists across a reload, and "make
   it bluer" edits it; a tool switched off in Settings isn't sent.
 
-### Phase 7 — Memory
+### Phase 7 — Memory ✅
 Decisions (agreed after probing OpenAI and Ollama): memory changes ask first
 in chats whose history holds web content; the model may save lasting facts
 the user shares even unasked, each with a visible notice; memories can be
