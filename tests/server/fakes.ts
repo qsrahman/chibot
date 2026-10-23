@@ -3,10 +3,14 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import OpenAI from 'openai'
 import { z } from 'zod'
+import { createApp, type AppDeps } from '../../src/server/app.ts'
+import { ChatService } from '../../src/server/chat-service.ts'
+import { Config } from '../../src/server/config.ts'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
 import { openDatabase } from '../../src/server/database.ts'
 import { FileStore } from '../../src/server/file-store.ts'
 import { MemoryStore } from '../../src/server/memory-store.ts'
+import { ProjectStore } from '../../src/server/project-store.ts'
 import {
   settingsDefaults,
   SettingsStore,
@@ -190,4 +194,25 @@ export function callEvents(
     ...output.map((item) => ({ type: 'response.output_item.done', item })),
     { type: 'response.completed', response: { output, usage } },
   ] as unknown as ResponseStreamEvent[]
+}
+
+/**
+ * The app on one in-memory database, with fakes for whatever `deps` leaves
+ * out (an OpenAI key config, a chat service whose client streams nothing).
+ */
+export function testApp(deps: Partial<AppDeps> = {}) {
+  const db = openDatabase(':memory:')
+  const store = deps.store ?? new ConversationStore(db)
+  const settings = deps.settings ?? testSettings()
+  const files = deps.files ?? testFiles(db)
+  return createApp({
+    config: new Config({ OPENAI_API_KEY: 'k' }),
+    chat: new ChatService(fakeClient([]), store, settings),
+    memories: new MemoryStore(db),
+    projects: new ProjectStore(db, files),
+    ...deps,
+    store,
+    settings,
+    files,
+  })
 }

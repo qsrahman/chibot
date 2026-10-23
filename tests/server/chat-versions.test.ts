@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createApp } from '../../src/server/app.ts'
 import { ChatService } from '../../src/server/chat-service.ts'
 import { Config } from '../../src/server/config.ts'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
@@ -12,8 +11,7 @@ import {
   type FakeCall,
   memoryStore,
   testSettings,
-  testFiles,
-  testMemories,
+  testApp,
 } from './fakes.ts'
 
 describe('edit, regenerate and switch versions', () => {
@@ -75,13 +73,11 @@ describe('edit, regenerate and switch versions', () => {
   describe('routes', () => {
     const config = new Config({ OPENAI_API_KEY: 'k' })
     const app = () =>
-      createApp({
+      testApp({
         config,
         store,
         settings,
         chat,
-        files: testFiles(),
-        memories: testMemories(),
       })
     const send = (body: unknown) =>
       app().request(`/api/conversations/${id}/turns`, {

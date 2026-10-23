@@ -11,6 +11,7 @@ import { ConversationStore } from './conversation-store.ts'
 import { openDatabase } from './database.ts'
 import { FileStore } from './file-store.ts'
 import { MemoryStore } from './memory-store.ts'
+import { ProjectStore } from './project-store.ts'
 import { settingsDefaults, SettingsStore } from './settings-store.ts'
 import type { Tool } from './tool.ts'
 import { ToolRegistry } from './tool-registry.ts'
@@ -71,6 +72,7 @@ export function start({
   const settings = new SettingsStore(db, settingsDefaults(config.chat.model))
   const files = new FileStore(db, join(config.dataDir, 'files'))
   const memories = new MemoryStore(db)
+  const projects = new ProjectStore(db, files)
   // Temporary chats whose tab closed before it could delete them.
   store.deleteTemporaryConversations()
   files.deleteOrphans()
@@ -80,7 +82,15 @@ export function start({
   })
   const registry = new ToolRegistry(tools({ config, store, files, memories }))
   const chat = new ChatService(client, store, settings, registry)
-  const app = createApp({ config, store, settings, chat, files, memories })
+  const app = createApp({
+    config,
+    store,
+    settings,
+    chat,
+    files,
+    memories,
+    projects,
+  })
 
   // In dev, Vite serves the web app. The production build only exists after `pnpm build`.
   const webRoot = join(import.meta.dirname, '../../dist/web')

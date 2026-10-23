@@ -64,6 +64,36 @@ const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
      created_at INTEGER NOT NULL,
      updated_at INTEGER NOT NULL
    );`,
+  // Projects. A project's chats and files are deleted with it (by
+  // ProjectStore, which also clears their chunks and vectors). The vec0
+  // table of chunk embeddings is created by the indexer, sized for the
+  // embedding model; chunk_vectors_info records which.
+  `CREATE TABLE projects (
+     id TEXT PRIMARY KEY,
+     name TEXT NOT NULL,
+     instructions TEXT NOT NULL DEFAULT '',
+     created_at INTEGER NOT NULL,
+     updated_at INTEGER NOT NULL
+   );
+   ALTER TABLE conversations ADD COLUMN project_id TEXT REFERENCES projects(id);
+   CREATE INDEX conversations_project ON conversations(project_id);
+   CREATE TABLE project_files (
+     project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+     file_id TEXT NOT NULL,
+     status TEXT NOT NULL, -- indexing, ready or failed
+     error TEXT,
+     PRIMARY KEY (project_id, file_id)
+   );
+   CREATE TABLE chunks (
+     id INTEGER PRIMARY KEY AUTOINCREMENT,
+     file_id TEXT NOT NULL,
+     position INTEGER NOT NULL,
+     text TEXT NOT NULL
+   );
+   CREATE INDEX chunks_file ON chunks(file_id);
+   -- rowid = chunks.id
+   CREATE VIRTUAL TABLE chunks_fts USING fts5(text);
+   CREATE TABLE chunk_vectors_info (model TEXT NOT NULL, dimensions INTEGER NOT NULL);`,
 ]
 
 /**

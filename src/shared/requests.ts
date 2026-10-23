@@ -5,6 +5,7 @@ import { z } from 'zod'
 /** `POST /api/conversations`; the body may be empty. */
 export const createConversationSchema = z.object({
   temporary: z.boolean().optional(),
+  projectId: z.string().optional(),
 })
 
 /** `PATCH /api/conversations/:id`: rename, pin or archive. */
@@ -18,6 +19,19 @@ export const conversationPatchSchema = z.object({
     .optional(),
   pinned: z.boolean().optional(),
   archived: z.boolean().optional(),
+  /** Moves the chat into a project, or out of one with `null`. */
+  projectId: z.string().nullable().optional(),
+})
+
+/** `POST /api/projects`. */
+export const createProjectSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+})
+
+/** `PATCH /api/projects/:id`. */
+export const projectPatchSchema = z.object({
+  name: z.string().trim().min(1).max(100).optional(),
+  instructions: z.string().max(8000).optional(),
 })
 
 /**

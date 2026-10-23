@@ -21,6 +21,7 @@ interface ConversationRow {
   pinned: number
   archived_at: number | null
   temporary: number
+  project_id: string | null
   created_at: number
   updated_at: number
   snippet?: string | null
@@ -58,15 +59,18 @@ export class ConversationStore {
     this.#db = db
   }
 
-  createConversation({ temporary = false } = {}): Conversation {
+  createConversation({
+    temporary = false,
+    projectId = null,
+  }: { temporary?: boolean; projectId?: string | null } = {}): Conversation {
     const now = Date.now()
     const id = crypto.randomUUID()
     this.#db
       .prepare(
-        `INSERT INTO conversations (id, temporary, created_at, updated_at)
-         VALUES (?, ?, ?, ?)`,
+        `INSERT INTO conversations (id, temporary, project_id, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?)`,
       )
-      .run(id, temporary ? 1 : 0, now, now)
+      .run(id, temporary ? 1 : 0, projectId, now, now)
     return this.getConversation(id)!
   }
 
@@ -77,16 +81,30 @@ export class ConversationStore {
     return row && toConversation(row)
   }
 
-  /** Saved conversations, pinned first, then most recently active. */
-  listConversations({ archived = false } = {}): ConversationListItem[] {
+  /**
+   * Saved conversations, pinned first, then most recently active: those of
+   * `projectId`, or (without one) those in no project. Archived ones are
+   * listed together, wherever they are.
+   */
+  listConversations({
+    archived = false,
+    projectId = null,
+  }: {
+    archived?: boolean
+    projectId?: string | null
+  } = {}): ConversationListItem[] {
     const rows = this.#db
       .prepare(
         `SELECT * FROM conversations
-          WHERE temporary = 0 AND (archived_at IS NOT NULL) = ?
+          WHERE temporary = 0 AND (archived_at IS NOT NULL) = $archived
+            AND ($archived OR project_id IS $projectId)
           ORDER BY pinned DESC, updated_at DESC
           LIMIT ${LIST_LIMIT}`,
       )
-      .all(archived ? 1 : 0) as unknown as ConversationRow[]
+      .all({
+        archived: archived ? 1 : 0,
+        projectId,
+      }) as unknown as ConversationRow[]
     return rows.map(toConversation)
   }
 
@@ -226,12 +244,25 @@ export class ConversationStore {
       sets.push('archived_at = ?')
       values.push(patch.archived ? Date.now() : null)
     }
+    if (patch.projectId !== undefined) {
+      sets.push('project_id = ?')
+      values.push(patch.projectId)
+    }
     if (sets.length > 0) {
       this.#db
         .prepare(`UPDATE conversations SET ${sets.join(', ')} WHERE id = ?`)
         .run(...values, id)
     }
     return this.getConversation(id)
+  }
+
+  /** Every chat in the project: archived and temporary ones too. */
+  projectConversationIds(projectId: string): string[] {
+    return (
+      this.#db
+        .prepare('SELECT id FROM conversations WHERE project_id = ?')
+        .all(projectId) as { id: string }[]
+    ).map(({ id }) => id)
   }
 
   /** @returns whether the conversation existed. */
@@ -513,6 +544,7 @@ function toConversation(row: ConversationRow): ConversationListItem {
     pinned: row.pinned === 1,
     archived: row.archived_at !== null,
     temporary: row.temporary === 1,
+    projectId: row.project_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     ...(row.snippet ? { snippet: row.snippet } : {}),

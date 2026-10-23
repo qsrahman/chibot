@@ -16,6 +16,8 @@ export interface Conversation {
   archived: boolean
   /** Hidden from lists and search, and deleted when the user leaves it. */
   temporary: boolean
+  /** The project it's in, if any. */
+  projectId: string | null
   createdAt: number
   updatedAt: number
 }
@@ -64,6 +66,34 @@ export interface ChatMatch {
     writtenAt: number
     excerpt: string
   }[]
+}
+
+/** A project: chats and files that share instructions. */
+export interface Project {
+  id: string
+  name: string
+  /** Added to the instructions of the project's chats. */
+  instructions: string
+  createdAt: number
+  updatedAt: number
+}
+
+/** A file in a project, with how far its indexing got. */
+export interface ProjectFile {
+  fileId: string
+  name: string
+  mime: string
+  size: number
+  status: 'indexing' | 'ready' | 'failed'
+  /** Why indexing failed. */
+  error: string | null
+}
+
+/** `GET /api/projects/:id`. */
+export interface ProjectWithContents {
+  project: Project
+  files: ProjectFile[]
+  conversations: ConversationListItem[]
 }
 
 /** A file chibot keeps (a generated image), served by `GET /api/files/:id`. */

@@ -9,6 +9,8 @@ import { messageText } from '../shared/messages.ts'
 import {
   conversationPatchSchema,
   createConversationSchema,
+  createProjectSchema,
+  projectPatchSchema,
   switchVersionSchema,
   turnRequestSchema,
 } from '../shared/requests.ts'
@@ -18,12 +20,17 @@ import {
 } from '../shared/settings.ts'
 import { pendingCalls } from '../shared/tools.ts'
 import type { ModelsResponse, ToolInfo } from '../shared/types.ts'
-import type { ConversationWithItems, TurnErrorEvent } from '../shared/types.ts'
+import type {
+  ConversationWithItems,
+  ProjectWithContents,
+  TurnErrorEvent,
+} from '../shared/types.ts'
 import type { ChatService } from './chat-service.ts'
 import type { Config } from './config.ts'
 import type { ConversationStore } from './conversation-store.ts'
 import type { FileStore } from './file-store.ts'
 import type { MemoryStore } from './memory-store.ts'
+import type { ProjectStore } from './project-store.ts'
 import { toMarkdown } from './markdown-export.ts'
 import type { SettingsStore } from './settings-store.ts'
 
@@ -34,6 +41,7 @@ export interface AppDeps {
   chat: ChatService
   files: FileStore
   memories: MemoryStore
+  projects: ProjectStore
 }
 
 /** Builds the HTTP app. A factory so tests can inject fakes. */
@@ -44,6 +52,7 @@ export function createApp({
   chat,
   files,
   memories,
+  projects,
 }: AppDeps) {
   const app = new Hono()
 
@@ -92,14 +101,21 @@ export function createApp({
     '/api/conversations',
     // The body is optional: `{ temporary: true }` starts a temporary chat.
     json(createConversationSchema),
-    (c) => c.json(store.createConversation(c.req.valid('json')), 201),
+    (c) => {
+      const request = c.req.valid('json')
+      if (request.projectId && !projects.get(request.projectId)) {
+        return c.json({ error: 'Project not found' }, 404)
+      }
+      return c.json(store.createConversation(request), 201)
+    },
   )
 
   app.patch('/api/conversations/:id', json(conversationPatchSchema), (c) => {
-    const updated = store.updateConversation(
-      c.req.param('id'),
-      c.req.valid('json'),
-    )
+    const patch = c.req.valid('json')
+    if (patch.projectId && !projects.get(patch.projectId)) {
+      return c.json({ error: 'Project not found' }, 404)
+    }
+    const updated = store.updateConversation(c.req.param('id'), patch)
     if (!updated) return notFound(c)
     return c.json(updated)
   })
@@ -108,6 +124,40 @@ export function createApp({
     if (!store.deleteConversation(c.req.param('id'))) {
       return notFound(c)
     }
+    files.deleteOrphans()
+    return c.body(null, 204)
+  })
+
+  app.get('/api/projects', (c) => c.json(projects.list()))
+
+  app.post('/api/projects', json(createProjectSchema), (c) =>
+    c.json(projects.create(c.req.valid('json').name), 201),
+  )
+
+  app.get('/api/projects/:id', (c) => {
+    const project = projects.get(c.req.param('id'))
+    if (!project) return notFound(c)
+    const contents: ProjectWithContents = {
+      project,
+      files: projects.files(project.id),
+      conversations: store.listConversations({ projectId: project.id }),
+    }
+    return c.json(contents)
+  })
+
+  app.patch('/api/projects/:id', json(projectPatchSchema), (c) => {
+    const project = projects.update(c.req.param('id'), c.req.valid('json'))
+    return project ? c.json(project) : notFound(c)
+  })
+
+  // Deletes the project's chats and files with it.
+  app.delete('/api/projects/:id', (c) => {
+    const id = c.req.param('id')
+    if (!projects.get(id)) return notFound(c)
+    store
+      .projectConversationIds(id)
+      .forEach((chat) => store.deleteConversation(chat))
+    projects.delete(id)
     files.deleteOrphans()
     return c.body(null, 204)
   })

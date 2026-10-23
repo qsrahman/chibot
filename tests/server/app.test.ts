@@ -5,7 +5,6 @@ import {
   EventSourceParserStream,
   type EventSourceMessage,
 } from 'eventsource-parser/stream'
-import { createApp } from '../../src/server/app.ts'
 import { ChatService } from '../../src/server/chat-service.ts'
 import { ToolRegistry } from '../../src/server/tool-registry.ts'
 import { Config } from '../../src/server/config.ts'
@@ -20,8 +19,7 @@ import {
   fakeClient,
   memoryStore,
   testSettings,
-  testFiles,
-  testMemories,
+  testApp,
 } from './fakes.ts'
 
 const config = new Config({
@@ -48,13 +46,11 @@ describe('API', () => {
   function appWith(events: ResponseStreamEvent[] | Error) {
     const settings = testSettings('m-1')
     const chat = new ChatService(fakeClient(events), store, settings)
-    return createApp({
+    return testApp({
       config,
       store,
       settings,
       chat,
-      files: testFiles(),
-      memories: testMemories(),
     })
   }
 
@@ -93,13 +89,11 @@ describe('API', () => {
       settings,
       new ToolRegistry([new EchoTool()]),
     )
-    const app = createApp({
+    const app = testApp({
       config,
       store,
       settings,
       chat,
-      files: testFiles(),
-      memories: testMemories(),
     })
     expect(await (await app.request('/api/tools')).json()).toEqual({
       tools: [{ name: 'echo', label: 'Echo', enabled: false }],

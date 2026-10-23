@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { DatabaseSync } from 'node:sqlite'
-import { createApp } from '../../src/server/app.ts'
 import { ChatService } from '../../src/server/chat-service.ts'
 import { Config } from '../../src/server/config.ts'
 import { openDatabase } from '../../src/server/database.ts'
@@ -15,8 +14,7 @@ import {
   fakeClient,
   memoryStore,
   type FakeCall,
-  testFiles,
-  testMemories,
+  testApp,
 } from './fakes.ts'
 
 describe('SettingsStore', () => {
@@ -66,7 +64,7 @@ describe('settings routes and use', () => {
   const config = new Config({ OPENAI_API_KEY: 'k' })
   let settings: SettingsStore
   let calls: FakeCall[]
-  let app: ReturnType<typeof createApp>
+  let app: ReturnType<typeof testApp>
   beforeEach(() => {
     settings = new SettingsStore(
       openDatabase(':memory:'),
@@ -79,13 +77,11 @@ describe('settings routes and use', () => {
       store,
       settings,
     )
-    app = createApp({
+    app = testApp({
       config,
       store,
       settings,
       chat,
-      files: testFiles(),
-      memories: testMemories(),
     })
   })
 

@@ -59,6 +59,11 @@ export class FileStore {
     return readFileSync(this.#path(id))
   }
 
+  delete(id: string): void {
+    this.#db.prepare('DELETE FROM files WHERE id = ?').run(id)
+    rmSync(this.#path(id), { force: true })
+  }
+
   /**
    * Deletes the files of conversations that no longer exist, rows and
    * bytes. Run after deleting conversations.

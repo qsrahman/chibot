@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createApp } from '../../src/server/app.ts'
 import { ChatService } from '../../src/server/chat-service.ts'
 import { Config } from '../../src/server/config.ts'
 import type { ConversationStore } from '../../src/server/conversation-store.ts'
@@ -8,25 +7,22 @@ import type { Conversation } from '../../src/shared/types.ts'
 import {
   fakeClient,
   memoryStore,
-  testFiles,
-  testMemories,
   testSettings,
   usage,
+  testApp,
 } from './fakes.ts'
 
 describe('export and import', () => {
   let store: ConversationStore
-  let app: ReturnType<typeof createApp>
+  let app: ReturnType<typeof testApp>
   beforeEach(() => {
     store = memoryStore()
     const settings = testSettings()
-    app = createApp({
+    app = testApp({
       config: new Config({ OPENAI_API_KEY: 'k' }),
       store,
       settings,
       chat: new ChatService(fakeClient([]), store, settings),
-      files: testFiles(),
-      memories: testMemories(),
     })
   })
 

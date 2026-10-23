@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createApp } from '../../src/server/app.ts'
 import { ChatService } from '../../src/server/chat-service.ts'
 import { Config } from '../../src/server/config.ts'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
@@ -13,8 +12,8 @@ import {
   fakeClient,
   memoryStore,
   testFiles,
-  testMemories,
   testSettings,
+  testApp,
 } from './fakes.ts'
 
 const config = new Config({ OPENAI_API_KEY: 'k' })
@@ -22,19 +21,18 @@ const config = new Config({ OPENAI_API_KEY: 'k' })
 describe('conversation routes', () => {
   let store: ConversationStore
   let files: FileStore
-  let app: ReturnType<typeof createApp>
+  let app: ReturnType<typeof testApp>
   beforeEach(() => {
     const db = openDatabase(':memory:')
     store = memoryStore(db)
     files = testFiles(db)
     const settings = testSettings('m')
-    app = createApp({
+    app = testApp({
       config,
       store,
       settings,
       chat: new ChatService(fakeClient([]), store, settings),
       files,
-      memories: testMemories(),
     })
   })
 

@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { createApp } from '../../src/server/app.ts'
 import { ChatService } from '../../src/server/chat-service.ts'
 import { Config } from '../../src/server/config.ts'
 import type { Memory } from '../../src/shared/types.ts'
 import {
   fakeClient,
   memoryStore,
-  testFiles,
   testMemories,
   testSettings,
+  testApp,
 } from './fakes.ts'
 
 describe('MemoryStore', () => {
@@ -36,12 +35,11 @@ describe('MemoryStore', () => {
     const memories = testMemories()
     const store = memoryStore()
     const settings = testSettings()
-    const app = createApp({
+    const app = testApp({
       config: new Config({ OPENAI_API_KEY: 'k' }),
       store,
       settings,
       chat: new ChatService(fakeClient([]), store, settings),
-      files: testFiles(),
       memories,
     })
     const first = memories.save('First.')
