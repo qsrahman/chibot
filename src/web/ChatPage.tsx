@@ -314,6 +314,10 @@ export function ChatPage({
         tools={toolOptions}
         attachments={attachments}
         transcription={health?.features.transcription ?? false}
+        effort={settings.settings?.reasoningEffort ?? null}
+        onEffort={(reasoningEffort) =>
+          void settings.update({ reasoningEffort })
+        }
       />
       {empty && projectHome && (
         <ProjectDetails

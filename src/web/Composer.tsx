@@ -16,7 +16,9 @@ import {
   X,
 } from 'lucide-react'
 import { ATTACHMENT_ACCEPT } from '../shared/documents.ts'
+import type { Settings } from '../shared/settings.ts'
 import { FileCard } from './FileCard.tsx'
+import { ModeSwitch } from './ModeSwitch.tsx'
 import { useAnchoredPopover } from './popover.ts'
 import type { Attachment } from './turns.ts'
 import type { AttachmentsApi, Draft } from './useAttachments.ts'
@@ -44,6 +46,9 @@ interface Props {
   attachments: AttachmentsApi
   /** The server can transcribe (voice input). */
   transcription: boolean
+  /** Reasoning effort, picked as a mode (see `ModeSwitch`). */
+  effort: Settings['reasoningEffort']
+  onEffort: (effort: Settings['reasoningEffort']) => void
 }
 
 export function Composer({
@@ -54,6 +59,8 @@ export function Composer({
   tools,
   attachments,
   transcription,
+  effort,
+  onEffort,
 }: Props) {
   const [text, setText] = useState('')
   const [picked, setPicked] = useState<ToolOption | null>(null)
@@ -225,6 +232,7 @@ export function Composer({
           attachments.add(files)
         }}
       />
+      <ModeSwitch effort={effort} onChange={onEffort} />
       <button
         type="button"
         className={recording ? 'icon-button recording' : 'icon-button'}

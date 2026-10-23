@@ -1135,6 +1135,41 @@ body {
   cursor: default;
 }
 
+/* The mode chip (Auto / Fast / Thinking) left of the mic. */
+.mode-button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  align-self: center;
+  gap: 2px;
+  height: 36px;
+  padding: 0 8px 0 12px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.mode-button:hover {
+  background: var(--surface-muted);
+}
+
+/* Two lines (name and hint); .menu-item alone is one 36 px line. */
+.menu-item.mode-item {
+  height: auto;
+  min-height: 36px;
+  padding-block: 6px;
+}
+
+.mode-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
 /* The mic while recording. */
 .composer .icon-button.recording {
   color: var(--danger);

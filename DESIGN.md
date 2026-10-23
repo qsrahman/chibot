@@ -129,6 +129,11 @@ same thumbnails (up to 240 px, 16 px radius) and cards sit right-aligned above
 the bubble. Dragging files over the chat outlines it with a 2 px dashed
 `--accent` border.
 
+**Mode switch.** Left of the mic: a 36 px pill showing the mode ("Auto",
+"Fast", "Thinking", or an effort set elsewhere) in `--fg-muted` 14 px text
+with a chevron, `--surface-muted` on hover. It opens an upward menu of the
+three modes, each a name over a muted hint, with a check on the current one.
+
 **Jump to latest.** While the message list is scrolled up, a 36 px round
 `ArrowDown` button (`--surface-raised`, `--border` outline, `--composer-shadow`)
 sticks 12 px above the list's bottom, centred over the composer.

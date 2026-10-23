@@ -183,7 +183,10 @@ Then open http://127.0.0.1:3000.
   take. A message can be just files, with no text. Sending while they upload
   sends it once they're up; editing a message keeps them.
 - **Thinking:** reasoning models show "Thinking…" while they think; afterwards
-  the answer keeps a collapsed **Thoughts** section with their summary.
+  the answer keeps a collapsed **Thoughts** section with their summary. The
+  composer's mode chip picks **Auto** (the model's default), **Fast** (low
+  reasoning effort) or **Thinking** (high); every level is in the header's
+  model menu and in Settings.
 - **Settings** (sidebar gear, or ⌘/Ctrl+,):
   - *General:* theme (System, Light or Dark).
   - *Personalization:* what chibot should know about you, and how it should

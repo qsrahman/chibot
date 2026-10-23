@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Added
 
+- A mode switch in the composer: Auto (the model's default), Fast (`low` reasoning effort) or Thinking (`high`), the same setting as the header menu and Settings.
 - A "Jump to latest" ↓ button appears above the composer while the chat is scrolled up.
 
 ### Fixed

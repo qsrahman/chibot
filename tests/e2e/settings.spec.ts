@@ -69,6 +69,25 @@ test('picks the reasoning effort in the model menu', async ({ page }) => {
   await expect(dialog.getByLabel('Reasoning effort')).toHaveValue('high')
 })
 
+test('switches to Thinking mode in the composer', async ({ page }) => {
+  await page.goto('/')
+  await appReady(page)
+  await page.getByRole('button', { name: 'Mode: Auto' }).click()
+  await page.getByRole('menuitemradio', { name: /Thinking/ }).click()
+  await expect(
+    page.getByRole('button', { name: 'Mode: Thinking' }),
+  ).toBeVisible()
+
+  await send(page, 'Hello')
+  await answered(page)
+  expect((await lastRequest(page)).reasoning).toEqual({
+    summary: 'auto',
+    effort: 'high',
+  })
+  // One setting: the header's model menu shows it too.
+  await expect(page.locator('.model-button')).toContainText('high')
+})
+
 test('applies reasoning effort and custom instructions', async ({ page }) => {
   await page.goto('/')
   let dialog = await openSettings(page, 'Model')
