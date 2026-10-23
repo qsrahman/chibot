@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-23
+
 ### Added
 
 - Projects: chats grouped with their own files and instructions. The sidebar lists projects ("New project"); a project's page has its name (rename, delete), a composer that starts chats in it, its files, instructions and chats. Chats move in with "Move to project…" and out with "Remove from project"; project chats are listed only in their project and show "Project /" in the header. Deleting a project deletes its chats and files.

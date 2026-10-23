@@ -486,7 +486,7 @@ others): persistent prompt injection through memory. The sidebar search
   the injected page on `gpt-oss`); the model answers from a past chat found
   with `search_chats`, and Sources links to it.
 
-### Phase 8 — Projects
+### Phase 8 — Projects ✅
 Decisions (agreed after probing): hybrid search (keywords always, vectors when
 an embedding model is set); project chats listed only in their project; one
 global model (projects get no model or reasoning-effort override); PDF, Word
