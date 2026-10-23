@@ -16,6 +16,16 @@ describe('custom instructions', () => {
     expect(text).not.toContain('user')
   })
 
+  it('includes the current date and time', () => {
+    const text = chatInstructions(
+      { aboutUser: '', responseStyle: '' },
+      new Date(2026, 9, 23, 9, 30),
+    )
+    expect(text).toContain(
+      'The current date and time is Friday, October 23, 2026 at 9:30 AM (',
+    )
+  })
+
   it('adds what the user wrote, trimmed', () => {
     const text = chatInstructions({
       aboutUser: ' I write Rust. ',

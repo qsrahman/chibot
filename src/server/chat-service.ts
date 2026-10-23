@@ -362,13 +362,23 @@ export function fromLastCompaction(
   return last === -1 ? items : items.slice(last)
 }
 
-/** The built-in formatting line plus the user's custom instructions. */
-export function chatInstructions({
-  aboutUser,
-  responseStyle,
-}: Pick<Settings, 'aboutUser' | 'responseStyle'>): string {
+/**
+ * The built-in lines (math formatting, the current date and time) plus the
+ * user's custom instructions.
+ */
+export function chatInstructions(
+  { aboutUser, responseStyle }: Pick<Settings, 'aboutUser' | 'responseStyle'>,
+  now = new Date(),
+): string {
+  // The server's clock and timezone are the user's: chibot runs locally.
+  const date = new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'full',
+    timeStyle: 'short',
+  }).format(now)
+  const { timeZone } = Intl.DateTimeFormat().resolvedOptions()
   return [
     FORMAT_INSTRUCTIONS,
+    `The current date and time is ${date} (${timeZone}).`,
     aboutUser.trim() &&
       `What the user wants you to know about them:\n${aboutUser.trim()}`,
     responseStyle.trim() &&
