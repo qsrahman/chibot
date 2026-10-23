@@ -53,14 +53,15 @@ const envSchema = z
     BRAVE_API_KEY: optional,
     // Loopback by default: the app has no auth and spends the owner's API key.
     HOST: optional.transform((host) => host ?? '127.0.0.1'),
-    PORT: optional.pipe(
-      z.coerce
-        .number()
-        .int('must be an integer')
-        .min(1, 'must be in 1-65535')
-        .max(65535, 'must be in 1-65535')
-        .default(3000),
-    ),
+    PORT: optional
+      .transform((port) => port ?? '3000')
+      .pipe(
+        z.coerce
+          .number<string>()
+          .int('must be an integer')
+          .min(1, 'must be in 1-65535')
+          .max(65535, 'must be in 1-65535'),
+      ),
     CHIBOT_DATA_DIR: optional,
   })
   .superRefine((env, ctx) => {
