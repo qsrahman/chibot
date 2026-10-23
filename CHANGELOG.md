@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- Roadmap: Phase 7 detailed. Memory changes ask first in chats that read web content (a probe showed `gpt-oss` saving a memory planted in a page); the memory tool's switch is the memory switch; `search_chats` matches any word by relevance with an optional date range.
+
 ## [0.7.0] - 2026-10-23
 
 ### Added
