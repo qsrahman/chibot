@@ -1,4 +1,5 @@
 import { DatabaseSync } from 'node:sqlite'
+import { getLoadablePath } from 'sqlite-vec'
 import { messageText } from '../shared/messages.ts'
 
 // Applied in order; PRAGMA user_version records how many have run. A function
@@ -66,13 +67,17 @@ const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
 ]
 
 /**
- * Opens (or creates) the SQLite database and brings its schema up to date.
- * One connection is shared by the stores.
+ * Opens (or creates) the SQLite database, with sqlite-vec loaded, and brings
+ * its schema up to date. One connection is shared by the stores.
  *
  * @param path SQLite file, or `':memory:'` for tests.
  */
 export function openDatabase(path: string): DatabaseSync {
-  const db = new DatabaseSync(path)
+  const db = new DatabaseSync(path, { allowExtension: true })
+  // sqlite-vec adds vec0 tables (project file embeddings). Loading is then
+  // switched off again, so SQL can't load extensions of its own.
+  db.loadExtension(getLoadablePath())
+  db.enableLoadExtension(false)
   const { user_version: version } = db.prepare('PRAGMA user_version').get() as {
     user_version: number
   }
