@@ -113,6 +113,13 @@ transpiles it.
 - **Tools are our own function tools** (`Tool` subclasses). Don't put
   OpenAI-hosted tools (`web_search`, `file_search`, `image_generation`,
   `code_interpreter`, remote MCP) in a request's `tools`.
+- **Web data** comes through `api.ts` (`request` / `send` / `remove`, which
+  turn failures into `Error`s with the server's message). Lists and dialogs
+  load it with `useLoad`, whose `act` runs an action and reloads, putting
+  failures in `error`; don't hand-write that again.
+- **Store rows** come back as the shared types directly: select with column
+  aliases (`created_at AS createdAt`) and use `RETURNING` for inserts and
+  updates, rather than row interfaces and mapping functions.
 - **Styling** is plain CSS following [DESIGN.md](DESIGN.md), which sets out
   ChatGPT-like aesthetics, tokens and component specs. Use its CSS variables,
   never raw colours. Build menus and dialogs on native `<dialog>` and the

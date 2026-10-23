@@ -4,6 +4,22 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- Stored files (project uploads, generated images) are served with `nosniff`, and all but PDFs with `Content-Security-Policy: sandbox`: an uploaded HTML file opened from a project could otherwise run scripts with access to chibot's API.
+- Removing a project file (or its project) while it was being indexed left its chunks and vectors behind.
+- Renaming or deleting a project showed nothing when it failed.
+- 404s name what's missing; projects, files, memories and items all said "Conversation not found".
+
+### Changed
+
+- `GET /api/tools` no longer returns `enabled` (the web reads the `disabledTools` setting); the `Health` type is shared.
+- Internal simplifications: ChatService finds waiting tool calls itself; ProjectStore, MemoryStore and FileStore return shared types straight from SQL (aliases, `RETURNING`); the web API client has one request, JSON and delete helper each; lists and dialogs load through one `useLoad` hook; `TurnView` is split out of `ChatPage`; `REASONING_EFFORTS` is checked against the SDK's type.
+
+### Removed
+
+- The unused `highlight.js` dependency (`rehype-highlight` brings its own).
+
 ## [0.9.0] - 2026-10-23
 
 ### Added
