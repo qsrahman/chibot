@@ -6,13 +6,13 @@ It works with OpenAI and with OpenAI-compatible servers that implement the
 Responses API, such as [Ollama](https://docs.ollama.com/openai) and
 [LM Studio](https://lmstudio.ai/).
 
-> **Status: Phase 7 (memory).** ChatGPT-style chat with a sidebar, versions,
+> **Status: Phase 8 (projects).** ChatGPT-style chat with a sidebar, versions,
 > a model picker, visible reasoning, custom instructions, long-chat
-> compaction, export/import, a theme setting, a Settings dialog, and tools the
-> model can call: web search with sources, reading web pages, creating and
-> editing images, a calculator, memory across chats and searching past chats.
-> Projects, and then attachments and voice input follow. See
-> [PLAN.md](PLAN.md) for the roadmap.
+> compaction, export/import, a theme setting, a Settings dialog, tools the
+> model can call (web search with sources, reading web pages, creating and
+> editing images, a calculator, memory across chats, searching past chats),
+> and projects with their own files and instructions. Attachments and voice
+> input follow. See [PLAN.md](PLAN.md) for the roadmap.
 
 ## Requirements
 
@@ -46,6 +46,7 @@ chibot folder, so it finds its settings wherever you run it.
 | `HOST` | `127.0.0.1` | Interface to listen on (see below) |
 | `PORT` | `3000` | API server port |
 | `OPENAI_IMAGE_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Image generation; the model defaults to `gpt-image-2` on OpenAI, and must be named on other servers |
+| `OPENAI_EMBEDDING_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Project file search by meaning; the model defaults to `text-embedding-3-small` on OpenAI, and must be named on other servers (without one, project files are searched by keywords) |
 | `BRAVE_API_KEY` | — | Turns on web search ([Brave Search API](https://brave.com/search/api/)) |
 | `CHIBOT_DATA_DIR` | `<repo>/data` | Where the database and generated images are kept |
 
@@ -63,6 +64,9 @@ Ollama can't make images, so to keep image generation, point it at OpenAI:
 OPENAI_IMAGE_BASE_URL=https://api.openai.com/v1
 OPENAI_IMAGE_API_KEY=sk-…
 ```
+
+For project files, embeddings can stay local:
+`ollama pull nomic-embed-text`, then `OPENAI_EMBEDDING_MODEL=nomic-embed-text`.
 
 chibot has no login, and anyone who can reach it spends your API key. It
 therefore listens only on this machine by default. To use it from another
@@ -129,6 +133,13 @@ Then open http://127.0.0.1:3000.
   - **Past chats:** ask about something you discussed before ("what did we
     decide about…?"). chibot searches your other chats (on this machine) and
     links the ones it used under **Sources**.
+- **Projects** (sidebar → **New project**) group chats with their own files
+  and instructions. On a project's page, add files (PDF, Word, text, notes,
+  code, data; pick or drop them) and write instructions; chats started there
+  search the files (by keywords, and by meaning with an embedding model), cite
+  them under **Sources**, and follow the instructions. Project chats are listed
+  on their project's page; a chat's **…** menu moves it into a project or out.
+  Deleting a project deletes its chats and files.
 
   The composer's **+** menu makes the next message use **Search the web** or
   **Create an image**. Tools with side effects (none ship yet) ask first:

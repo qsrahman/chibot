@@ -23,12 +23,14 @@ src/shared/   used by both server and web: API record types, chibot's own SSE ev
               (requests, settings, export) and reasoning efforts (zod-free, so
               the web can import it)
 src/web/      Vite root: index.html, main.tsx, components, api.ts (fetch + SSE), hooks
-tests/        mirrors src/ (tests/server/*.test.ts, tests/web/*.test.ts)
+tests/        mirrors src/ (tests/server/*.test.ts, tests/web/*.test.ts);
+              tests/fixtures/ holds small documents (PDF, .docx)
 tests/e2e/    Playwright specs (*.spec.ts), fake-openai.ts, and server.ts
               (starts chibot with a fake web search, a page reader allowed on
               127.0.0.1, and a test-only tool that needs approval)
               tests/server/fakes.ts: fake OpenAI client + stream events
-data/         local SQLite database and files/ (git-ignored)
+data/         local SQLite database (with sqlite-vec loaded) and files/
+              (git-ignored)
 ```
 
 ## Commands
@@ -148,7 +150,8 @@ invariants, API quirks. No line-by-line narration.
 ## Testing
 
 - Every phase adds tests for what it adds. Run `pnpm test` before committing.
-- Routes: test through `createApp(deps).request(...)`.
+- Routes: test through `testApp(deps).request(...)` (`tests/server/fakes.ts`),
+  which builds `createApp` with fakes for every dependency you don't pass.
 - OpenAI: pass a fake client whose `responses.create` returns an async
   generator of `ResponseStreamEvent`s. Tests never hit the network.
 - SQLite: use `':memory:'` databases.
@@ -159,9 +162,9 @@ invariants, API quirks. No line-by-line narration.
   `Answer #n to: <question>`; a question containing "slow" streams slowly,
   "think" adds a reasoning summary, "compact" a compaction item, and
   "calculate", "approve", "search", "read <url>", "draw", "bluer",
-  "remember <fact>" and "earlier chats <words>" call a tool (see the top of
-  the file). It also fakes Brave and the images API and
-  serves a test page. `/debug/last-request` and `/debug/requests` show what
+  "remember <fact>", "earlier chats <words>" and "in my files <words>" call a
+  tool (see the top of the file). It also fakes Brave, the images API and
+  embeddings, and serves a test page. `/debug/last-request` and `/debug/requests` show what
   chibot sent. Shared steps live in
   `tests/e2e/helpers.ts` (`send`, `answered`, `appReady`, `lastRequest`,
   `resetSettings`, …). Wait for the app (e.g. a focused composer, or the empty

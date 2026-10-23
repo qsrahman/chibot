@@ -502,7 +502,8 @@ Models differ in dimensions, so a model change means re-embedding.
 
 - **Data.** Migration 7 adds `projects`, `conversations.project_id`,
   `project_files` (with indexing status), `chunks` with an FTS5 index, and a
-  `chunk_vectors` vec0 table created for the embedding model in use (§4). A
+  `chunk_vectors` vec0 table created for the embedding model in use (§4),
+  partitioned by project so nearest-neighbour search stays in one project. A
   `ProjectStore` handles projects, their files and their chats. Deleting a
   project deletes its chats and files (the confirm says so).
 - **Config.** `OPENAI_EMBEDDING_BASE_URL` / `_API_KEY` / `_MODEL`, inheriting
@@ -530,7 +531,8 @@ Models differ in dimensions, so a model change means re-embedding.
   status, delete) and an Instructions card. Project chats appear only there
   (search still finds them). A chat's "…" menu gains "Move to project" /
   "Remove from project". A project chat's header shows "Project name /"
-  linking back; temporary mode isn't offered in projects.
+  linking back; temporary mode isn't offered in projects. Moving the open
+  chat into a project shows the project's page (the chat left the sidebar).
 - **Routes.** `/api/projects[/:id]` (list, create, update name and
   instructions, delete), `/api/projects/:id/files[/:fileId]`,
   `POST /api/files`; conversation `PATCH` gains `projectId`.

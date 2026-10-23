@@ -186,6 +186,17 @@ host name.
 memory (14 px text, a `Trash2` delete button), and Delete all (danger, with a
 confirm dialog).
 
+**Projects.** The sidebar's Projects section ("New project", then a `Folder`
+row each) sits above the chats. A project's page: the name as a 28 px heading
+with a `Folder` icon and rename / delete icon buttons, the composer, then
+cards (like Settings cards) for Files (rows with name, a 12 px status, remove;
+the card takes drops) and Instructions (a textarea and Save), and the
+project's chats as sidebar-style rows. In a project chat the header starts
+with "Project name /" (muted, a link) before the model name.
+
+**Menus** open below their button, or above it when the button is in the
+lower 40% of the window.
+
 **Compaction note.** A 12 px muted line between hairlines: "Earlier messages
 were summarized to save context."
 
@@ -218,6 +229,7 @@ for the composer's "+". The lucide equivalents use a 1.5 px stroke:
 | Export as Markdown / JSON | `FileText` / `FileJson` |
 | Temporary chat / shortcuts | `MessageCircleDashed` / `Keyboard` |
 | Tool approval / Settings → Tools | `Wrench` |
+| Project / new project / move in / remove / add files | `Folder` / `FolderPlus` / `FolderInput` / `FolderMinus` / `Upload` |
 | Search the web / create an image / download | `Globe` / `ImagePlus` / `Download` |
 
 ## 6. Interaction

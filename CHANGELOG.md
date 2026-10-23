@@ -4,8 +4,19 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- Projects: chats grouped with their own files and instructions. The sidebar lists projects ("New project"); a project's page has its name (rename, delete), a composer that starts chats in it, its files, instructions and chats. Chats move in with "Move to project…" and out with "Remove from project"; project chats are listed only in their project and show "Project /" in the header. Deleting a project deletes its chats and files.
+- Project files: `POST /api/files` takes PDF, Word (`.docx`) and text files (≤ 50 MB); in a project they're indexed in the background (text via `unpdf`, `mammoth` and Readability, overlapping chunks, FTS5, and with `OPENAI_EMBEDDING_*` vectors in `sqlite-vec`), with their status shown. Indexing resumes after a restart and re-embeds when the embedding model changes.
+- `search_project_files`: in project chats with files, keyword and vector hits merged by reciprocal rank fusion; the project's instructions and file names go into the chat's instructions, and Sources lists the files used.
+- End-to-end tests for answering from project files with project instructions, and for moving chats in and out and deleting a project. The fake server embeds text.
+
 ### Changed
 
+- SQLite opens with `sqlite-vec` loaded (extension loading is then switched off).
+- Tools decide where they're offered (`offeredIn(conversation)`, replacing `inTemporaryChats`) and get the chat's project in their context.
+- The model's searches (`search_chats`, project files) match words under 4 letters only whole, so "do" no longer finds "door".
+- Menus low in the window open upward. Route tests build the app with `testApp()`.
 - Roadmap: Phase 8 detailed. Project files are searched by keywords always and by meaning when an embedding model is set (`sqlite-vec`, verified in `node:sqlite`); Word files are supported; projects get no model override (one global model); project chats are listed only in their project, and deleting a project deletes them.
 
 ## [0.8.0] - 2026-10-23
