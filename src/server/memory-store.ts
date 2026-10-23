@@ -4,12 +4,8 @@ import type { Memory } from '../shared/types.ts'
 export const MAX_MEMORIES = 100
 export const MAX_MEMORY_LENGTH = 300
 
-interface MemoryRow {
-  id: number
-  text: string
-  created_at: number
-  updated_at: number
-}
+// Rows as `Memory` objects.
+const MEMORY = 'id, text, created_at AS createdAt, updated_at AS updatedAt'
 
 /** What chibot remembers about the user across chats. */
 export class MemoryStore {
@@ -21,17 +17,17 @@ export class MemoryStore {
 
   /** Oldest first, the order the model reads them in. */
   list(): Memory[] {
-    const rows = this.#db
-      .prepare('SELECT * FROM memories ORDER BY id')
-      .all() as unknown as MemoryRow[]
-    return rows.map(toMemory)
+    return this.#db
+      .prepare(`SELECT ${MEMORY} FROM memories ORDER BY id`)
+      .all() as unknown as Memory[]
   }
 
   get(id: number): Memory | null {
-    const row = this.#db
-      .prepare('SELECT * FROM memories WHERE id = ?')
-      .get(id) as MemoryRow | undefined
-    return row ? toMemory(row) : null
+    return (
+      (this.#db
+        .prepare(`SELECT ${MEMORY} FROM memories WHERE id = ?`)
+        .get(id) as Memory | undefined) ?? null
+    )
   }
 
   get count(): number {
@@ -43,20 +39,24 @@ export class MemoryStore {
 
   save(text: string): Memory {
     const now = Date.now()
-    const { lastInsertRowid } = this.#db
+    return this.#db
       .prepare(
-        'INSERT INTO memories (text, created_at, updated_at) VALUES (?, ?, ?)',
+        `INSERT INTO memories (text, created_at, updated_at) VALUES (?, ?, ?)
+         RETURNING ${MEMORY}`,
       )
-      .run(text, now, now)
-    return this.get(Number(lastInsertRowid))!
+      .get(text, now, now) as unknown as Memory
   }
 
   /** @returns the updated memory, or `null` if there's none with `id` */
   update(id: number, text: string): Memory | null {
-    this.#db
-      .prepare('UPDATE memories SET text = ?, updated_at = ? WHERE id = ?')
-      .run(text, Date.now(), id)
-    return this.get(id)
+    return (
+      (this.#db
+        .prepare(
+          `UPDATE memories SET text = ?, updated_at = ? WHERE id = ?
+           RETURNING ${MEMORY}`,
+        )
+        .get(text, Date.now(), id) as Memory | undefined) ?? null
+    )
   }
 
   delete(id: number): boolean {
@@ -69,14 +69,5 @@ export class MemoryStore {
 
   clear(): void {
     this.#db.exec('DELETE FROM memories')
-  }
-}
-
-function toMemory(row: MemoryRow): Memory {
-  return {
-    id: row.id,
-    text: row.text,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
   }
 }

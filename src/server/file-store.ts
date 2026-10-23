@@ -4,16 +4,11 @@ import type { DatabaseSync } from 'node:sqlite'
 import type { StoredFile } from '../shared/types.ts'
 import { transaction } from './database.ts'
 
-interface FileRow {
-  id: string
-  conversation_id: string | null
-  name: string
-  mime: string
-  size: number
-  created_at: number
-}
+// Rows as `StoredFile` objects.
+const FILE =
+  'id, conversation_id AS conversationId, name, mime, size, created_at AS createdAt'
 
-/** Files chibot keeps (generated images): a row each, bytes on disk. */
+/** Files chibot keeps (generated images, uploads): a row each, bytes on disk. */
 export class FileStore {
   readonly #db: DatabaseSync
   readonly #dir: string
@@ -50,9 +45,10 @@ export class FileStore {
   }
 
   get(id: string): StoredFile | null {
-    const row = this.#db.prepare('SELECT * FROM files WHERE id = ?').get(id) as
-      FileRow | undefined
-    return row ? toFile(row) : null
+    return (
+      (this.#db.prepare(`SELECT ${FILE} FROM files WHERE id = ?`).get(id) as
+        StoredFile | undefined) ?? null
+    )
   }
 
   read(id: string) {
@@ -73,11 +69,11 @@ export class FileStore {
     const rows = this.#db
       .prepare(
         `SELECT id FROM files
-          WHERE conversation_id IS NOT NULL
-            AND conversation_id NOT IN (SELECT id FROM conversations)
-             OR conversation_id IS NULL
-            AND id NOT IN (SELECT file_id FROM project_files)
-            AND created_at < ?`,
+          WHERE (conversation_id IS NOT NULL
+                 AND conversation_id NOT IN (SELECT id FROM conversations))
+             OR (conversation_id IS NULL
+                 AND id NOT IN (SELECT file_id FROM project_files)
+                 AND created_at < ?)`,
       )
       .all(Date.now() - 24 * 60 * 60 * 1000) as { id: string }[]
     transaction(this.#db, () => {
@@ -93,16 +89,5 @@ export class FileStore {
   // Ids are our own UUIDs, never user input, so they're safe as file names.
   #path(id: string) {
     return join(this.#dir, id)
-  }
-}
-
-function toFile(row: FileRow): StoredFile {
-  return {
-    id: row.id,
-    conversationId: row.conversation_id,
-    name: row.name,
-    mime: row.mime,
-    size: row.size,
-    createdAt: row.created_at,
   }
 }

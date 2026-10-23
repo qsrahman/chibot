@@ -3,13 +3,9 @@ import type { Project, ProjectFile } from '../shared/types.ts'
 import { transaction } from './database.ts'
 import type { FileStore } from './file-store.ts'
 
-interface ProjectRow {
-  id: string
-  name: string
-  instructions: string
-  created_at: number
-  updated_at: number
-}
+// Rows as `Project` objects.
+const PROJECT =
+  'id, name, instructions, created_at AS createdAt, updated_at AS updatedAt'
 
 /**
  * Projects and their files. Chunks and vectors of a file (written by the
@@ -26,48 +22,46 @@ export class ProjectStore {
 
   create(name: string): Project {
     const now = Date.now()
-    const id = crypto.randomUUID()
-    this.#db
+    return this.#db
       .prepare(
         `INSERT INTO projects (id, name, created_at, updated_at)
-         VALUES (?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?) RETURNING ${PROJECT}`,
       )
-      .run(id, name, now, now)
-    return this.get(id)!
+      .get(crypto.randomUUID(), name, now, now) as unknown as Project
   }
 
   get(id: string): Project | null {
-    const row = this.#db
-      .prepare('SELECT * FROM projects WHERE id = ?')
-      .get(id) as ProjectRow | undefined
-    return row ? toProject(row) : null
+    return (
+      (this.#db
+        .prepare(`SELECT ${PROJECT} FROM projects WHERE id = ?`)
+        .get(id) as Project | undefined) ?? null
+    )
   }
 
   /** Most recently changed first. */
   list(): Project[] {
-    const rows = this.#db
-      .prepare('SELECT * FROM projects ORDER BY updated_at DESC')
-      .all() as unknown as ProjectRow[]
-    return rows.map(toProject)
+    return this.#db
+      .prepare(`SELECT ${PROJECT} FROM projects ORDER BY updated_at DESC`)
+      .all() as unknown as Project[]
   }
 
+  /** Changes what `patch` has; `null` if there's no such project. */
   update(
     id: string,
-    patch: { name?: string; instructions?: string },
+    { name, instructions }: { name?: string; instructions?: string },
   ): Project | null {
-    const project = this.get(id)
-    if (!project) return null
-    this.#db
-      .prepare(
-        'UPDATE projects SET name = ?, instructions = ?, updated_at = ? WHERE id = ?',
-      )
-      .run(
-        patch.name ?? project.name,
-        patch.instructions ?? project.instructions,
-        Date.now(),
-        id,
-      )
-    return this.get(id)
+    return (
+      (this.#db
+        .prepare(
+          `UPDATE projects
+              SET name = coalesce(?, name),
+                  instructions = coalesce(?, instructions),
+                  updated_at = ?
+            WHERE id = ? RETURNING ${PROJECT}`,
+        )
+        .get(name ?? null, instructions ?? null, Date.now(), id) as
+        Project | undefined) ?? null
+    )
   }
 
   /**
@@ -187,15 +181,5 @@ export class ProjectStore {
     this.#db
       .prepare('UPDATE projects SET updated_at = ? WHERE id = ?')
       .run(Date.now(), projectId)
-  }
-}
-
-function toProject(row: ProjectRow): Project {
-  return {
-    id: row.id,
-    name: row.name,
-    instructions: row.instructions,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
   }
 }
