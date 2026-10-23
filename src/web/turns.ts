@@ -123,6 +123,49 @@ export function waitingCalls(turns: Turn[]): ToolActivity[] {
   return turns.at(-1)?.answer?.tools.filter((t) => t.output === null) ?? []
 }
 
+/** A page an answer searched or read. */
+export interface Source {
+  url: string
+  title: string
+}
+
+/** The pages an answer found with `web_search` or read with `fetch_url`. */
+export function sourcesOf(answer: Answer): Source[] {
+  const found = new Map<string, Source>()
+  for (const tool of answer.tools) {
+    if (!tool.output || tool.output.startsWith('Error:')) continue
+    if (tool.name === 'web_search') {
+      const { results = [] } = parseJson<{ results?: Source[] }>(tool.output)
+      for (const { url, title } of results) found.set(url, { url, title })
+    } else if (tool.name === 'fetch_url') {
+      const { url } = parseJson<{ url?: string }>(tool.arguments)
+      if (url && !found.has(url)) found.set(url, { url, title: url })
+    }
+  }
+  return [...found.values()]
+}
+
+const IMAGE_TOOLS = ['generate_image', 'edit_image']
+
+/**
+ * The image an image tool made: its file id, `'pending'` while it's being
+ * made, or `null` (another tool, or it failed).
+ */
+export function imageOf(tool: ToolActivity): string | 'pending' | null {
+  if (!IMAGE_TOOLS.includes(tool.name)) return null
+  if (tool.output === null) return 'pending'
+  return parseJson<{ image_id?: string }>(tool.output).image_id ?? null
+}
+
+function parseJson<T extends object>(text: string): Partial<T> {
+  try {
+    const value: unknown = JSON.parse(text)
+    return value && typeof value === 'object' ? (value as T) : {}
+  } catch {
+    return {}
+  }
+}
+
 /** Joins paragraphs with a blank line. */
 const join = (text: string, more: string) =>
   text ? `${text}\n\n${more}` : more

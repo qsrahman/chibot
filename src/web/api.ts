@@ -11,6 +11,7 @@ import type {
   ConversationPatch,
   ConversationWithItems,
   ModelsResponse,
+  ToolInfo,
   TurnApprovalEvent,
   TurnErrorEvent,
   TurnRequest,
@@ -45,6 +46,8 @@ export const updateSettings = (patch: SettingsPatch) =>
   })
 
 export const listModels = () => request<ModelsResponse>('/api/models')
+
+export const listTools = () => request<{ tools: ToolInfo[] }>('/api/tools')
 
 export const listConversations = ({ archived = false } = {}) =>
   request<ConversationListItem[]>(

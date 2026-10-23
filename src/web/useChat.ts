@@ -274,10 +274,10 @@ export function useChat(
     versions: null,
   })
 
-  /** Sends a new message after the last turn. */
-  function send(text: string) {
+  /** Sends a new message after the last turn, optionally forcing `tool`. */
+  function send(text: string, tool?: string) {
     return run(
-      { text },
+      { text, ...(tool && { tool }) },
       { keep: turns.length, question: newQuestion(text, null) },
     )
   }

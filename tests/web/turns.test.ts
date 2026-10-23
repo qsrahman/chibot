@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { ResponseInputItem } from 'openai/resources/responses/responses'
 import type { StoredItem } from '../../src/shared/types.ts'
-import { toTurns, waitingCalls } from '../../src/web/turns.ts'
+import {
+  imageOf,
+  sourcesOf,
+  toTurns,
+  waitingCalls,
+} from '../../src/web/turns.ts'
 import { usage } from '../server/fakes.ts'
 
 const item = (
@@ -124,5 +129,56 @@ describe('toTurns', () => {
       expect.objectContaining({ callId: 'c2', output: null }),
     ])
     expect(waitingCalls(turns.slice(0, 1))).toEqual([])
+  })
+})
+
+describe('sourcesOf and imageOf', () => {
+  const tool = (name: string, args: unknown, output: string | null) => ({
+    callId: name,
+    name,
+    arguments: JSON.stringify(args),
+    output,
+  })
+
+  it('lists searched and read pages once each', () => {
+    const sources = sourcesOf({
+      itemId: 2,
+      text: '',
+      thinking: '',
+      usage: null,
+      model: null,
+      versions: null,
+      tools: [
+        tool(
+          'web_search',
+          { query: 'q' },
+          JSON.stringify({
+            query: 'q',
+            results: [
+              { title: 'A', url: 'https://a.test/', description: '' },
+              { title: 'B', url: 'https://b.test/', description: '' },
+            ],
+          }),
+        ),
+        tool('fetch_url', { url: 'https://a.test/' }, 'Content of …'),
+        tool('fetch_url', { url: 'https://c.test/x' }, 'Content of …'),
+        tool('fetch_url', { url: 'https://d.test/' }, 'Error: 404'),
+        tool('web_search', { query: 'r' }, null),
+      ],
+    })
+    expect(sources).toEqual([
+      { url: 'https://a.test/', title: 'A' },
+      { url: 'https://b.test/', title: 'B' },
+      { url: 'https://c.test/x', title: 'https://c.test/x' },
+    ])
+  })
+
+  it('finds images made by image tools', () => {
+    expect(imageOf(tool('generate_image', {}, null))).toBe('pending')
+    expect(imageOf(tool('edit_image', {}, '{"image_id":"img-1"}'))).toBe(
+      'img-1',
+    )
+    expect(imageOf(tool('generate_image', {}, 'Error: quota'))).toBeNull()
+    expect(imageOf(tool('calculator', {}, '{"image_id":"x"}'))).toBeNull()
   })
 })

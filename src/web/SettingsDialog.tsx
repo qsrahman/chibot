@@ -5,6 +5,7 @@ import {
   Settings as SettingsIcon,
   Sparkles,
   UserRound,
+  Wrench,
 } from 'lucide-react'
 import { REASONING_EFFORTS } from '../shared/reasoning.ts'
 import type { Settings } from '../shared/settings.ts'
@@ -17,6 +18,7 @@ const TABS = [
   { id: 'general', label: 'General', icon: <SettingsIcon /> },
   { id: 'personalization', label: 'Personalization', icon: <UserRound /> },
   { id: 'model', label: 'Model', icon: <Sparkles /> },
+  { id: 'tools', label: 'Tools', icon: <Wrench /> },
   { id: 'data', label: 'Data', icon: <Database /> },
 ] as const
 type Tab = (typeof TABS)[number]['id']
@@ -74,6 +76,13 @@ export function SettingsDialog({
             <Model
               settings={current}
               defaults={settings.defaults}
+              onChange={settings.update}
+            />
+          )}
+          {tab === 'tools' && current && (
+            <Tools
+              tools={settings.tools}
+              disabled={current.disabledTools}
               onChange={settings.update}
             />
           )}
@@ -306,6 +315,42 @@ function Model({
         )}
       </Section>
     </>
+  )
+}
+
+function Tools({
+  tools,
+  disabled,
+  onChange,
+}: {
+  tools: SettingsApi['tools']
+  disabled: string[]
+  onChange: SettingsApi['update']
+}) {
+  return (
+    <Section title="Tools chibot may use">
+      {tools.length === 0 && (
+        <p className="settings-empty">This server offers no tools.</p>
+      )}
+      {tools.map(({ name, label }) => (
+        <Row key={name} label={label} htmlFor={`setting-tool-${name}`}>
+          <input
+            id={`setting-tool-${name}`}
+            type="checkbox"
+            role="switch"
+            className="switch"
+            checked={!disabled.includes(name)}
+            onChange={(e) =>
+              void onChange({
+                disabledTools: e.target.checked
+                  ? disabled.filter((n) => n !== name)
+                  : [...disabled, name],
+              })
+            }
+          />
+        </Row>
+      ))}
+    </Section>
   )
 }
 

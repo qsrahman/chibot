@@ -6,17 +6,57 @@ import {
   type ReactNode,
 } from 'react'
 import { useNavigate, useParams } from 'react-router'
-import { MessageCircleDashed, Pencil, RefreshCw, Wrench } from 'lucide-react'
+import {
+  Download,
+  Globe,
+  ImagePlus,
+  MessageCircleDashed,
+  Pencil,
+  RefreshCw,
+  Wrench,
+} from 'lucide-react'
 import type { Health } from './api.ts'
-import { Composer } from './Composer.tsx'
+import { Composer, type ToolOption } from './Composer.tsx'
 import { Markdown } from './Markdown.tsx'
 import { ModelPicker } from './ModelPicker.tsx'
 import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
 import { SHORTCUTS, useShortcuts } from './shortcuts.ts'
-import { waitingCalls, type ToolActivity, type Turn } from './turns.ts'
+import {
+  imageOf,
+  sourcesOf,
+  waitingCalls,
+  type Answer,
+  type ToolActivity,
+  type Turn,
+} from './turns.ts'
 import { describeUsage } from './usage.ts'
 import { useChat } from './useChat.ts'
 import type { SettingsApi } from './useSettings.ts'
+
+/** Tools the composer's "+" menu offers, when the server has them. */
+const COMPOSER_TOOLS: ToolOption[] = [
+  {
+    name: 'web_search',
+    label: 'Search the web',
+    chip: 'Search',
+    icon: <Globe size={18} strokeWidth={1.5} aria-hidden />,
+  },
+  {
+    name: 'generate_image',
+    label: 'Create an image',
+    chip: 'Image',
+    icon: <ImagePlus size={18} strokeWidth={1.5} aria-hidden />,
+  },
+]
+
+/** What a tool call says while running and once done. */
+const TOOL_LABELS: Record<string, [running: string, done: string]> = {
+  web_search: ['Searching the web…', 'Searched the web'],
+  fetch_url: ['Reading a page…', 'Read a page'],
+  generate_image: ['Creating an image…', 'Created an image'],
+  edit_image: ['Editing the image…', 'Edited the image'],
+  calculator: ['Calculating…', 'Used calculator'],
+}
 
 interface Props {
   health: Health | undefined
@@ -36,6 +76,11 @@ export function ChatPage({ health, settings, onListChanged }: Props) {
   })
   const { turns, pending, error, isTemporary, busy } = chat
   const waiting = pending ? [] : waitingCalls(turns)
+  const toolOptions = COMPOSER_TOOLS.filter(
+    ({ name }) =>
+      settings.tools.some((tool) => tool.name === name) &&
+      !settings.settings?.disabledTools.includes(name),
+  )
   const chatUsage = describeUsage(chat.usage)
   const endRef = useRef<HTMLDivElement>(null)
   const composerRef = useRef<HTMLTextAreaElement>(null)
@@ -49,9 +94,10 @@ export function ChatPage({ health, settings, onListChanged }: Props) {
     if (!id) setTemporaryMode(false)
   }, [id])
 
-  useEffect(() => {
+  const follow = () => {
     if (followRef.current) endRef.current?.scrollIntoView({ block: 'end' })
-  }, [turns, pending])
+  }
+  useEffect(follow, [turns, pending])
 
   useShortcuts({
     [SHORTCUTS.focusComposer.keys]: (e) => {
@@ -161,6 +207,7 @@ export function ChatPage({ health, settings, onListChanged }: Props) {
                 onEdit={following((text: string) => chat.edit(i, text))}
                 onRegenerate={following(() => chat.regenerate(i))}
                 onSwitch={(itemId) => void chat.switchVersion(itemId)}
+                onImageLoad={follow}
               />
             ))}
             {pending && (
@@ -185,6 +232,7 @@ export function ChatPage({ health, settings, onListChanged }: Props) {
                       : null,
                 }}
                 pending
+                onImageLoad={follow}
               />
             )}
             {error && (
@@ -201,6 +249,7 @@ export function ChatPage({ health, settings, onListChanged }: Props) {
         onSend={following(chat.send)}
         onStop={chat.stop}
         inputRef={composerRef}
+        tools={toolOptions}
       />
       <p className="disclaimer">
         chibot can make mistakes. Check important info.
@@ -221,6 +270,8 @@ interface TurnViewProps {
   onEdit?: (text: string) => void
   onRegenerate?: () => void
   onSwitch?: (itemId: number) => void
+  /** An image loaded (and grew the page): keep following the answer. */
+  onImageLoad?: () => void
 }
 
 function TurnView({
@@ -232,6 +283,7 @@ function TurnView({
   onEdit,
   onRegenerate,
   onSwitch,
+  onImageLoad,
 }: TurnViewProps) {
   const [editing, setEditing] = useState(false)
   // Shown after a Stop before the server's ids are known: no edit/regenerate.
@@ -294,6 +346,7 @@ function TurnView({
             <ToolCall key={tool.callId} tool={tool} />
           ),
       )}
+      {answer && <Images answer={answer} onLoad={onImageLoad} />}
       {answer?.text ? (
         <div className="message assistant">
           <Markdown text={answer.text} />
@@ -305,6 +358,7 @@ function TurnView({
           <div className="thinking" aria-label="Waiting for answer" />
         )
       )}
+      {answer && <Sources answer={answer} />}
       {approval}
       {!pending && !approval && (
         <div className="actions answer-actions">
@@ -358,10 +412,14 @@ function Thoughts({ text, live }: { text: string; live?: boolean }) {
 /** A tool call in an answer: running, or collapsed with its result. */
 function ToolCall({ tool }: { tool: ToolActivity }) {
   const running = tool.output === null
+  const [busyLabel, doneLabel] = TOOL_LABELS[tool.name] ?? [
+    `Running ${tool.name}…`,
+    `Used ${tool.name}`,
+  ]
   return (
     <details className="thoughts tool-call">
       <summary className={running ? 'live' : undefined}>
-        {running ? `Running ${tool.name}…` : `Used ${tool.name}`}
+        {running ? busyLabel : doneLabel}
       </summary>
       <div className="thoughts-body">
         <ToolDetails tool={tool} />
@@ -386,6 +444,68 @@ function ToolDetails({ tool }: { tool: ToolActivity }) {
         </>
       )}
     </dl>
+  )
+}
+
+/** Images the answer's tools made, or placeholders while they're made. */
+function Images({ answer, onLoad }: { answer: Answer; onLoad?: () => void }) {
+  const images = answer.tools.flatMap((tool) => {
+    const image = imageOf(tool)
+    return image ? [{ key: tool.callId, image }] : []
+  })
+  if (images.length === 0) return null
+  return (
+    <div className="images">
+      {images.map(({ key, image }) =>
+        image === 'pending' ? (
+          <div
+            key={key}
+            className="image-placeholder"
+            aria-label="Creating image"
+          />
+        ) : (
+          <figure key={key} className="image">
+            <a href={`/api/files/${image}`} target="_blank" rel="noreferrer">
+              <img
+                src={`/api/files/${image}`}
+                alt="Generated image"
+                onLoad={onLoad}
+              />
+            </a>
+            <a
+              className="icon-button image-download"
+              href={`/api/files/${image}`}
+              download
+              aria-label="Download image"
+              title="Download"
+            >
+              <Download size={18} strokeWidth={1.5} />
+            </a>
+          </figure>
+        ),
+      )}
+    </div>
+  )
+}
+
+/** The pages the answer searched or read, collapsed under "Sources". */
+function Sources({ answer }: { answer: Answer }) {
+  const sources = sourcesOf(answer)
+  if (sources.length === 0) return null
+  return (
+    <details className="sources">
+      <summary>Sources · {sources.length}</summary>
+      <ul>
+        {sources.map(({ url, title }) => (
+          <li key={url}>
+            <a href={url} target="_blank" rel="noreferrer">
+              <span className="source-title">{title}</span>
+              <span className="source-host">{new URL(url).hostname}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </details>
   )
 }
 
