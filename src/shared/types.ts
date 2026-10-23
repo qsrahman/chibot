@@ -54,6 +54,18 @@ export interface ConversationWithItems {
   usage: ResponseUsage
 }
 
+/** A past chat's best matches for `search_chats`, in chat order. */
+export interface ChatMatch {
+  conversationId: string
+  title: string | null
+  messages: {
+    role: 'user' | 'assistant'
+    /** When it was written (ms). */
+    writtenAt: number
+    excerpt: string
+  }[]
+}
+
 /** A file chibot keeps (a generated image), served by `GET /api/files/:id`. */
 export interface StoredFile {
   id: string

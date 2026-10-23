@@ -18,17 +18,24 @@ import { CalculatorTool } from './tools/calculator.ts'
 import { FetchUrlTool } from './tools/fetch-url.ts'
 import { EditImageTool, GenerateImageTool } from './tools/images.ts'
 import { MemoryTool } from './tools/memory.ts'
+import { SearchChatsTool } from './tools/search-chats.ts'
 import { WebSearchTool } from './tools/web-search.ts'
 
 /** What tools may need to be built. */
 export interface ToolDeps {
   config: Config
+  store: ConversationStore
   files: FileStore
   memories: MemoryStore
 }
 
 /** The shipped tools whose setup exists (e.g. a Brave key for web search). */
-export function defaultTools({ config, files, memories }: ToolDeps): Tool[] {
+export function defaultTools({
+  config,
+  store,
+  files,
+  memories,
+}: ToolDeps): Tool[] {
   const image = config.image && {
     client: new OpenAI({
       baseURL: config.image.baseURL,
@@ -41,6 +48,7 @@ export function defaultTools({ config, files, memories }: ToolDeps): Tool[] {
     new CalculatorTool(),
     new FetchUrlTool(),
     new MemoryTool(memories),
+    new SearchChatsTool(store),
     ...(config.braveApiKey ? [new WebSearchTool(config.braveApiKey)] : []),
     ...(image ? [new GenerateImageTool(image), new EditImageTool(image)] : []),
   ]
@@ -70,7 +78,7 @@ export function start({
     baseURL: config.chat.baseURL,
     apiKey: config.chat.apiKey,
   })
-  const registry = new ToolRegistry(tools({ config, files, memories }))
+  const registry = new ToolRegistry(tools({ config, store, files, memories }))
   const chat = new ChatService(client, store, settings, registry)
   const app = createApp({ config, store, settings, chat, files, memories })
 
