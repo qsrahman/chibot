@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.10.3] - 2026-10-23
+
 ### Changed
 
 - Menus (model picker, the composer's "+", a chat's "…") are placed by CSS anchor positioning, Baseline since Firefox 147, instead of script measuring the button on each click. They follow their button on scroll and resize, flip when there's no room, and stay on screen in short windows.
