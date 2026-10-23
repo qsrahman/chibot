@@ -6,12 +6,13 @@ It works with OpenAI and with OpenAI-compatible servers that implement the
 Responses API, such as [Ollama](https://docs.ollama.com/openai) and
 [LM Studio](https://lmstudio.ai/).
 
-> **Status: Phase 5 (custom function tools).** ChatGPT-style chat with a
-> sidebar, versions, a model picker, visible reasoning, custom instructions,
-> long-chat compaction, export/import, a theme setting, a Settings dialog, and
-> tools the model can call (a calculator so far), with approval for tools that
-> have side effects. Web search, memory, projects, and then attachments and
-> voice input follow. See [PLAN.md](PLAN.md) for the roadmap.
+> **Status: Phase 6 (web search & image generation).** ChatGPT-style chat
+> with a sidebar, versions, a model picker, visible reasoning, custom
+> instructions, long-chat compaction, export/import, a theme setting, a
+> Settings dialog, and tools the model can call: web search with sources,
+> reading web pages, creating and editing images, and a calculator. Memory,
+> projects, and then attachments and voice input follow. See
+> [PLAN.md](PLAN.md) for the roadmap.
 
 ## Requirements
 
@@ -44,7 +45,9 @@ chibot folder, so it finds its settings wherever you run it.
 | `OPENAI_MODEL` | `gpt-6-astra` | Chat model; required with `OPENAI_BASE_URL` |
 | `HOST` | `127.0.0.1` | Interface to listen on (see below) |
 | `PORT` | `3000` | API server port |
-| `CHIBOT_DATA_DIR` | `<repo>/data` | Where the conversation database is kept |
+| `OPENAI_IMAGE_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Image generation; the model defaults to `gpt-image-2` on OpenAI, and must be named on other servers |
+| `BRAVE_API_KEY` | — | Turns on web search ([Brave Search API](https://brave.com/search/api/)) |
+| `CHIBOT_DATA_DIR` | `<repo>/data` | Where the database and generated images are kept |
 
 For example, to chat with a local Ollama model, put this in `.env`:
 
@@ -54,6 +57,12 @@ OPENAI_MODEL=gemma4:cloud
 ```
 
 Use any model Ollama can serve. `:cloud` models need `ollama signin` first.
+Ollama can't make images, so to keep image generation, point it at OpenAI:
+
+```bash
+OPENAI_IMAGE_BASE_URL=https://api.openai.com/v1
+OPENAI_IMAGE_API_KEY=sk-…
+```
 
 chibot has no login, and anyone who can reach it spends your API key. It
 therefore listens only on this machine by default. To use it from another
@@ -101,11 +110,21 @@ Then open http://127.0.0.1:3000.
 - **Model:** click the model name at the top to pick another model (searchable;
   type a name if your server can't list its models). Each answer shows the
   model that wrote it, so switching models and regenerating compares them.
-- **Tools:** the model can use chibot's tools mid-answer. So far that's a
-  **calculator** (exact arithmetic, functions and unit conversions). The answer
-  shows "Used calculator"; open it to see what was calculated. Tools with side
-  effects (none ship yet) ask first: **Approve** or **Deny**, or send a new
-  message to deny. A waiting approval survives a reload. Models also know
+- **Tools:** the model uses chibot's tools on its own when they help, and the
+  answer shows what it did ("Searched the web", "Used calculator"; open one to
+  see the details):
+  - **Web search** (with `BRAVE_API_KEY`): answers cite their sources, and a
+    **Sources** list under the answer links every page found or read.
+  - **Reading pages:** paste a URL and ask about it. chibot never reads
+    addresses on this machine or your network.
+  - **Images:** ask for a picture, then for changes ("make it bluer"). Images
+    open full size and can be downloaded. They're kept with the chat, and
+    deleted with it.
+  - **Calculator:** exact arithmetic, functions and unit conversions.
+
+  The composer's **+** menu makes the next message use **Search the web** or
+  **Create an image**. Tools with side effects (none ship yet) ask first:
+  **Approve** or **Deny**, or send a new message to deny. Models also know
   today's date and time.
 - **Thinking:** reasoning models show "Thinking…" while they think; afterwards
   the answer keeps a collapsed **Thoughts** section with their summary.
@@ -116,6 +135,8 @@ Then open http://127.0.0.1:3000.
   - *Model:* reasoning effort, and compaction for long chats (on by default at
     64,000 tokens; earlier messages are summarized and a divider marks the
     spot).
+  - *Tools:* switch each tool on or off (e.g. web search, which sends your
+    queries to Brave).
   - *Data:* import a chat from a JSON export, and archived chats to restore or
     delete.
 - **Export** a chat from its **…** menu as Markdown (what's shown) or JSON

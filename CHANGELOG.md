@@ -4,8 +4,19 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- Web search (`web_search`, Brave Search API with `BRAVE_API_KEY`): top results with snippets; answers cite sources, and a Sources list under the answer links every page searched or read.
+- Reading pages (`fetch_url`): main text through Readability (plain text, Markdown and JSON as is), capped and marked as untrusted. It refuses this machine and private networks (including IPv4-mapped IPv6), checked at connect time for every connection and redirect.
+- Images (`generate_image`, `edit_image`) through the image endpoint (`OPENAI_IMAGE_BASE_URL` / `_API_KEY` / `_MODEL`, defaulting to the chat endpoint and `gpt-image-2` on OpenAI), at medium quality. Images are stored in `data/files/`, served by `GET /api/files/:id`, shown in the answer (with a placeholder while made, full size and download) and deleted with their chat.
+- Settings → Tools switches each tool on or off (`disabledTools`; `GET /api/tools`), and the composer's "+" menu makes the next message search the web or create an image (`tool` in the turn request forces it on the first request).
+- Tools get a `ToolContext` (chat id, stop signal) and a `label`; `defaultTools()` builds the ones whose setup exists.
+- End-to-end tests for search and sources, reading a page and refusing a local one, creating and editing an image, the composer menu and switching a tool off. The fake server fakes Brave and the images API and serves a test page.
+
 ### Changed
 
+- `Config` validates the environment with zod, naming the variable in each error.
+- Tool activity has friendlier labels ("Searched the web", "Created an image").
 - Roadmap: Phase 6 detailed. Tools are used automatically, forced from a composer "+" menu and switched off in Settings (instead of per-chat toggles); `edit_image` joins `generate_image`, without streamed partial images; `fetch_url` guards addresses in an undici connector; generated images get `files.conversation_id` now.
 
 ## [0.6.0] - 2026-10-23

@@ -381,8 +381,9 @@ chat on Ollama, images need `OPENAI_IMAGE_BASE_URL` / `_API_KEY`.
 - **Config and tools list.** `Config` moves to zod and gains the image
   endpoint (`OPENAI_IMAGE_*`, inheriting the chat endpoint; off on a
   compatible endpoint without a model) and `BRAVE_API_KEY`. A tool is offered
-  only when its setup exists. `GET /api/tools` lists name, label, available and
-  enabled, never keys.
+  only when its setup exists. `GET /api/tools` lists the offered tools' names,
+  labels and on/off state, never keys (unconfigured tools aren't listed;
+  README says what each needs).
 - **Files.** Migration 5 adds `files` (§4; the original at
   `data/files/<id>`). `FileStore` saves, reads and deletes them;
   `GET /api/files/:id` serves them with immutable caching. Deleting a
@@ -395,7 +396,7 @@ chat on Ollama, images need `OPENAI_IMAGE_BASE_URL` / `_API_KEY`.
   though the query goes to Brave.
 - **`fetch_url`** reads a page through an undici connector that refuses
   blocked addresses for literal IPs and resolved names alike, on every
-  redirect; http(s) only, at most 5 redirects, 10 s timeout, 5 MB download
+  redirect; http(s) only, fetch's own redirect limit, 10 s timeout, 5 MB download
   cap. HTML goes through Readability (falling back to the whole page text);
   plain text, Markdown and JSON pass through; other types (e.g. PDF) are
   refused until Phase 9. The output is truncated to 40k characters and framed

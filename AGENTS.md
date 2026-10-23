@@ -15,9 +15,9 @@ phase roadmap live in [PLAN.md](PLAN.md). Usage lives in [README.md](README.md).
 ## Layout
 
 ```
-src/server/   main.ts (start(): wiring + listen), app.ts (Hono routes),
-              database.ts (one SQLite connection + migrations), one class per
-              file; tools/ holds the shipped Tool subclasses
+src/server/   main.ts (start(): wiring + listen, defaultTools()), app.ts (Hono
+              routes), database.ts (one SQLite connection + migrations), one
+              class per file; tools/ holds the shipped Tool subclasses
 src/shared/   used by both server and web: API record types, chibot's own SSE events,
               message text extraction, pending tool calls, zod schemas
               (requests, settings, export) and reasoning efforts (zod-free, so
@@ -25,9 +25,10 @@ src/shared/   used by both server and web: API record types, chibot's own SSE ev
 src/web/      Vite root: index.html, main.tsx, components, api.ts (fetch + SSE), hooks
 tests/        mirrors src/ (tests/server/*.test.ts, tests/web/*.test.ts)
 tests/e2e/    Playwright specs (*.spec.ts), fake-openai.ts, and server.ts
-              (starts chibot with a test-only tool that needs approval)
+              (starts chibot with a fake web search, a page reader allowed on
+              127.0.0.1, and a test-only tool that needs approval)
               tests/server/fakes.ts: fake OpenAI client + stream events
-data/         local SQLite database (git-ignored)
+data/         local SQLite database and files/ (git-ignored)
 ```
 
 ## Commands
@@ -117,17 +118,22 @@ transpiles it.
 
 ## Adding a tool
 
-1. Subclass `Tool` in `src/server/tools/<name>.ts`: a `name`, a
-   `description` that tells the model when to use it, zod `parameters`
-   (sent as a strict JSON Schema, so every field is required; use
-   `.nullable()` for optional ones), and `run(args, { signal })` returning the
-   text the model sees.
+1. Subclass `Tool` in `src/server/tools/<name>.ts`: a `name`, a `label` for
+   Settings, a `description` that tells the model when to use it, zod
+   `parameters` (sent as a strict JSON Schema, so every field is required;
+   use `.nullable()` for optional ones), and `run(args, context)` returning
+   the text the model sees. `context` has the `conversationId` (e.g. to keep
+   files with the chat in `FileStore`) and the stop `signal`. Return JSON when
+   the web app reads the output too (as for sources and images).
 2. Set `override readonly requiresApproval = true` if it has side effects
    (sends, writes, deletes, spends). The turn then waits for Approve / Deny.
 3. Throw for errors: `ToolRegistry` returns `Error: …` to the model, as it
    does for invalid arguments. Honour `signal` for anything slow.
-4. Register it in `start()`'s default `tools` (`main.ts`) and test `run`
-   directly, like `tests/server/calculator.test.ts`.
+4. Add it to `defaultTools()` (`main.ts`), only when its setup exists (keys,
+   endpoints, from `Config`). Take collaborators (clients, `FileStore`) in the
+   constructor, and test `run` directly, like `tests/server/calculator.test.ts`.
+5. Anything that reaches the network on the model's behalf must refuse private
+   addresses, like `fetch_url` (`tools/fetch-url.ts`).
 
 ## Comments
 
@@ -146,9 +152,11 @@ invariants, API quirks. No line-by-line narration.
   `tests/e2e/`, which drive a production build with the real SDK pointed at
   `tests/e2e/fake-openai.ts` via `OPENAI_BASE_URL`. The fake answers
   `Answer #n to: <question>`; a question containing "slow" streams slowly,
-  "think" adds a reasoning summary, "compact" a compaction item, "calculate"
-  a calculator call and "approve" a call to the test-only `e2e_note` tool. Its
-  `/debug/last-request` shows what chibot sent. Shared steps live in
+  "think" adds a reasoning summary, "compact" a compaction item, and
+  "calculate", "approve", "search", "read <url>", "draw" and "bluer" call a
+  tool (see the top of the file). It also fakes Brave and the images API and
+  serves a test page. `/debug/last-request` and `/debug/requests` show what
+  chibot sent. Shared steps live in
   `tests/e2e/helpers.ts` (`send`, `answered`, `appReady`, `lastRequest`,
   `resetSettings`, …). Wait for the app (e.g. a focused composer, or the empty
   new-chat page) before typing or pressing shortcuts, and for `answered` before

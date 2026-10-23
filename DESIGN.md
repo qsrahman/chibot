@@ -169,6 +169,19 @@ title "chibot wants to use <tool>" and a `Wrench` icon, each call's arguments,
 a 13 px muted hint that a new message denies it, and Deny (secondary) /
 Approve (primary) at the bottom right.
 
+**Composer tools.** A 24 px `Plus` button at the composer's left opens a menu
+above it (Search the web, Create an image). The picked tool shows as a pill
+chip (`--bubble-bg` / `--bubble-fg`, 36 px tall, icon + "Search"/"Image" +
+`X`) before the text; it applies to one message.
+
+**Images.** Generated images sit above the answer text, up to 400 px wide with
+16 px radius; a square shimmer placeholder stands in while one is made. A
+`Download` icon button appears over the top-right corner on hover.
+
+**Sources.** Below the answer, a `<details>` in 14 px muted text, "Sources ·
+n", listing each page as its title (`--fg`, one line, ellipsis) and a 12 px
+host name.
+
 **Compaction note.** A 12 px muted line between hairlines: "Earlier messages
 were summarized to save context."
 
@@ -200,7 +213,8 @@ for the composer's "+". The lucide equivalents use a 1.5 px stroke:
 | Model picker | `ChevronDown`, `Check` |
 | Export as Markdown / JSON | `FileText` / `FileJson` |
 | Temporary chat / shortcuts | `MessageCircleDashed` / `Keyboard` |
-| Tool approval | `Wrench` |
+| Tool approval / Settings → Tools | `Wrench` |
+| Search the web / create an image / download | `Globe` / `ImagePlus` / `Download` |
 
 ## 6. Interaction
 
