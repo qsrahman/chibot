@@ -712,7 +712,7 @@ Environment variables:
 | `OPENAI_IMAGE_MODEL` | `gpt-image-2` on OpenAI | Image generation tool (Phase 6) |
 | `OPENAI_EMBEDDING_MODEL` | `text-embedding-3-small` on OpenAI | Project file embeddings (Phase 8) |
 | `BRAVE_API_KEY` | — (optional) | Enables the web search tool (Phase 6) |
-| `HOST` | `127.0.0.1` | Interface to listen on; `0.0.0.0` exposes it on the LAN with no auth |
+| `HOST` | `127.0.0.1` | Interface to listen on; `0.0.0.0` exposes it on the LAN, so set `CHIBOT_TOKEN` too |
 | `PORT` | `3000` | API server port |
 | `CHIBOT_TOKEN` | — | Requires a token, remembered per browser in a cookie (v0.10.2) |
 | `CHIBOT_DATA_DIR` | `<repo>/data` | Holds `chibot.db` (Phase 1) and `files/` (Phase 6). The default is resolved from the package location, not the current directory. |
