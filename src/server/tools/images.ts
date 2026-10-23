@@ -102,8 +102,9 @@ export class EditImageTool extends Tool {
 /**
  * Runs an image API call; failures say which endpoint and model failed, so
  * the model (and the user) can tell a setup problem from a refused prompt.
- * Not found and unreachable usually mean the endpoint can't make images
- * (e.g. a chat model on Ollama), so those also say what to set.
+ * Not found usually means the server has no images endpoint at all (Ollama
+ * removed image generation in 0.32.6) and unreachable a wrong address, so
+ * those also say what to set.
  */
 async function fromImageService<T>(
   { client, model }: ImageDeps,
@@ -114,17 +115,21 @@ async function fromImageService<T>(
   } catch (err) {
     if (!(err instanceof OpenAI.APIError)) throw err
     console.error('Image request failed:', err)
-    const setup =
-      err instanceof OpenAI.NotFoundError ||
-      err instanceof OpenAI.APIConnectionError
-    throw new Error(
-      `the image service at ${client.baseURL} (model ${model}) failed: ` +
-        err.message.replace(/\.$/, '') +
-        (setup
+    const hint =
+      err instanceof OpenAI.NotFoundError
+        ? '. This server has no images endpoint (e.g. Ollama removed image ' +
+          'generation in 0.32.6), or doesn’t know this model: tell the user ' +
+          'to set OPENAI_IMAGE_BASE_URL=https://api.openai.com/v1 (with ' +
+          'OPENAI_IMAGE_API_KEY and an image model such as gpt-image-2) in .env.'
+        : err instanceof OpenAI.APIConnectionError
           ? '. Images need an image model (e.g. gpt-image-2) on a server ' +
             'that makes images: tell the user to check OPENAI_IMAGE_MODEL ' +
             'and OPENAI_IMAGE_BASE_URL in .env.'
-          : ''),
+          : ''
+    throw new Error(
+      `the image service at ${client.baseURL} (model ${model}) failed: ` +
+        err.message.replace(/\.$/, '') +
+        hint,
       { cause: err },
     )
   }

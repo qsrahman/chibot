@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- An image request answered 404 (a server without an images endpoint, such as Ollama, which removed image generation in 0.32.6) now says so and suggests pointing `OPENAI_IMAGE_BASE_URL` at OpenAI, instead of only asking to check the image model. README no longer suggests Ollama image models.
+
 ## [0.10.5] - 2026-10-23
 
 ### Added

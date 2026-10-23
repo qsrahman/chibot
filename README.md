@@ -69,10 +69,10 @@ OPENAI_IMAGE_BASE_URL=https://api.openai.com/v1
 OPENAI_IMAGE_API_KEY=sk-…
 ```
 
-(Ollama's own image generation is experimental and needs an image model
-pulled in Ollama; then set `OPENAI_IMAGE_MODEL` to that model instead.) If
-image generation is set up wrongly, the answer says which endpoint and model
-failed.
+(Ollama's own image generation was removed in Ollama 0.32.6, so pulled image
+models such as `x/z-image-turbo` can't be used: its images endpoint answers
+404.) If image generation is set up wrongly, the answer says which endpoint
+and model failed, and what to set.
 
 For project files, embeddings can stay local:
 `ollama pull nomic-embed-text`, then `OPENAI_EMBEDDING_MODEL=nomic-embed-text`.
