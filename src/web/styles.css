@@ -944,6 +944,21 @@ details[open] > summary > .disclosure-chevron {
   margin: 16px 0;
 }
 
+/* The rule an opened Thoughts uses, so quoted text reads as set apart. */
+.markdown blockquote {
+  margin: 16px 0;
+  padding-left: 12px;
+  border-left: 2px solid var(--border);
+}
+
+.markdown blockquote > :first-child {
+  margin-top: 0;
+}
+
+.markdown blockquote > :last-child {
+  margin-bottom: 0;
+}
+
 .markdown strong {
   font-weight: 600;
 }

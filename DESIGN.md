@@ -163,6 +163,9 @@ around them.
 - **Copy code** sits at the right of the label row (ChatGPT floats it at the
   block's top right).
 
+**Quotes.** A 2 px `--border` rule on the left with 12 px padding (the same
+rule as an opened Thoughts), body colour, 16 px block spacing.
+
 **Inline code.** `--code-chip` background, 4 px radius, 1×4 px padding,
 0.93 em monospace, weight 500.
 
