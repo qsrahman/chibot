@@ -2067,6 +2067,14 @@ label.button {
   }
 }
 
+/* Touch-only devices have no keyboard for shortcuts. (A touchscreen laptop
+   still has a fine pointer, so it keeps the entry.) */
+@media (hover: none) and (pointer: coarse) {
+  .keyboard-only {
+    display: none;
+  }
+}
+
 /* Touch screens have no hover, so controls that wait for one stay visible:
    a chat's "…" menu, message actions and image downloads. */
 @media (hover: none) {

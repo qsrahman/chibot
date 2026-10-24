@@ -53,4 +53,30 @@ test.describe('on a touch screen', () => {
     await page.getByRole('button', { name: 'Open sidebar' }).click()
     expect(await opacity('.row-menu-button')).toBe('1')
   })
+
+  test('hides keyboard shortcuts and keeps the Settings tab in view', async ({
+    page,
+  }) => {
+    await page.goto('/')
+    await appReady(page)
+    await page.getByRole('button', { name: 'Open sidebar' }).click()
+    await expect(
+      page.getByRole('button', { name: 'Keyboard shortcuts' }),
+    ).toBeHidden()
+
+    await page.getByRole('button', { name: 'Settings', exact: true }).click()
+    const tabs = page.getByRole('navigation', { name: 'Settings sections' })
+    await tabs.getByRole('button', { name: 'Data' }).click()
+    await page.keyboard.press('Escape')
+    // The drawer is still open behind it.
+    await page.getByRole('button', { name: 'Settings', exact: true }).click()
+    // The row scrolled to the selected tab, which is last.
+    const inView = await tabs.evaluate((row) => {
+      const current = row.querySelector('[aria-current="page"]')!
+      const a = row.getBoundingClientRect()
+      const b = current.getBoundingClientRect()
+      return b.left >= a.left - 1 && b.right <= a.right + 1
+    })
+    expect(inView).toBe(true)
+  })
 })

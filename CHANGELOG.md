@@ -11,6 +11,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Fixed
 
+- On phones, Settings keeps the selected tab in view in its scrolling tab row, and the sidebar no longer offers Keyboard shortcuts on touch-only devices.
 - Opening a chat briefly showed the new-chat page (greeting and centred composer) while its messages loaded; the message area now stays blank until they arrive.
 - On touch screens, a chat's "…" menu (rename, pin, archive, move, delete), copy / edit / regenerate on earlier messages and image downloads were invisible, since they waited for a hover. They're always shown there now.
 

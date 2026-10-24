@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import {
   Database,
@@ -44,12 +44,25 @@ export function SettingsDialog({
   onShowMemories,
 }: Props) {
   const [tab, setTab] = useState<Tab>('general')
+  const tabsRef = useRef<HTMLElement>(null)
+
+  // On a phone the tabs are a scrolling row: keep the current one in sight.
+  useEffect(() => {
+    if (!open) return
+    tabsRef.current
+      ?.querySelector('[aria-current="page"]')
+      ?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }, [open, tab])
   const current = settings.settings
 
   return (
     <Dialog open={open} onClose={onClose} title="Settings" className="settings">
       <div className="settings-layout">
-        <nav className="settings-tabs" aria-label="Settings sections">
+        <nav
+          ref={tabsRef}
+          className="settings-tabs"
+          aria-label="Settings sections"
+        >
           {TABS.map(({ id, label, icon }) => (
             <button
               key={id}

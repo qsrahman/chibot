@@ -193,6 +193,7 @@ export function Sidebar({
           <SidebarButton
             icon={<Keyboard />}
             label="Keyboard shortcuts"
+            className="keyboard-only"
             onClick={() => setShortcutsOpen(true)}
           />
         </div>
@@ -259,13 +260,16 @@ function SidebarButton({
   icon,
   label,
   to,
+  className,
   onClick,
 }: {
   icon: ReactElement
   label: string
   to?: string
+  className?: string
   onClick?: () => void
 }) {
+  const classes = className ? `sidebar-row ${className}` : 'sidebar-row'
   const content = (
     <>
       <span className="row-icon" aria-hidden>
@@ -275,13 +279,13 @@ function SidebarButton({
     </>
   )
   return to ? (
-    <Link to={to} className="sidebar-row" aria-label={label}>
+    <Link to={to} className={classes} aria-label={label}>
       {content}
     </Link>
   ) : (
     <button
       type="button"
-      className="sidebar-row"
+      className={classes}
       aria-label={label}
       onClick={onClick}
     >
