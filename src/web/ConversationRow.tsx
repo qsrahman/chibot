@@ -141,7 +141,8 @@ export function ConversationRow({
 }
 
 /** A menu row: a button, or a download link when `download` is set. */
-function MenuItem({
+/** A row in a "…" menu: an icon and a label, or a download link. */
+export function MenuItem({
   icon,
   danger,
   onClick,

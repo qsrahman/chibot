@@ -175,7 +175,8 @@ Then open http://127.0.0.1:3000.
   search the files (by keywords, and by meaning with an embedding model), cite
   them under **Sources**, and follow the instructions. Project chats are listed
   on their project's page; a chat's **…** menu moves it into a project or out.
-  Deleting a project deletes its chats and files.
+  Rename or delete a project from **…** next to its name; deleting it deletes
+  its chats and files.
 - **Voice input:** click the mic, speak, click again: the text appears at the
   cursor to check before sending. It needs a transcription model (see
   `OPENAI_TRANSCRIBE_*`); without one the mic is greyed out and says so.

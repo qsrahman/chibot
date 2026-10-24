@@ -242,7 +242,8 @@ confirm dialog).
 
 **Projects.** The sidebar's Projects section ("New project", then a `Folder`
 row each) sits above the chats. A project's page: the name as a 28 px heading
-with a `Folder` icon and rename / delete icon buttons, the composer, then
+with a `Folder` icon and a "…" button whose menu holds Rename and Delete project
+(in `--danger`), like a chat row's, the composer, then
 cards (like Settings cards) for Files (rows with name, a 12 px status, remove;
 the card takes drops) and Instructions (a textarea and Save), and the
 project's chats as sidebar-style rows. In a project chat the header starts

@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useState, type DragEvent } from 'react'
-import { FileText, Folder, Pencil, Trash2, Upload, X } from 'lucide-react'
+import {
+  Ellipsis,
+  FileText,
+  Folder,
+  Pencil,
+  Trash2,
+  Upload,
+  X,
+} from 'lucide-react'
 import { DOCUMENT_ACCEPT } from '../shared/documents.ts'
 import type {
   ConversationListItem,
@@ -15,8 +23,9 @@ import {
   updateConversation,
   updateProject,
 } from './api.ts'
-import { ConversationRow } from './ConversationRow.tsx'
+import { ConversationRow, MenuItem } from './ConversationRow.tsx'
 import { ConfirmDialog, DeleteChatDialog } from './Dialog.tsx'
+import { useAnchoredPopover } from './popover.ts'
 import { ProjectNameDialog } from './ProjectDialogs.tsx'
 import { useLoad } from './useLoad.ts'
 
@@ -32,6 +41,13 @@ export function ProjectHeading({
 }) {
   const [renaming, setRenaming] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const menu = useAnchoredPopover()
+  // Rename and delete wait in a menu, like a chat's, so the page's most
+  // visible control isn't a destructive one.
+  const act = (action: () => void) => () => {
+    menu.hide()
+    action()
+  }
   return (
     <div className="greeting project-heading">
       <h1>
@@ -41,21 +57,31 @@ export function ProjectHeading({
       <button
         type="button"
         className="icon-button"
-        aria-label="Rename project"
-        title="Rename"
-        onClick={() => setRenaming(true)}
+        aria-label="Project options"
+        title="Project options"
+        popoverTarget={menu.id}
+        style={menu.triggerStyle}
       >
-        <Pencil size={18} strokeWidth={1.5} />
+        <Ellipsis size={20} strokeWidth={1.5} />
       </button>
-      <button
-        type="button"
-        className="icon-button danger"
-        aria-label="Delete project"
-        title="Delete project"
-        onClick={() => setDeleting(true)}
+      <div
+        id={menu.id}
+        ref={menu.ref}
+        popover="auto"
+        className="menu"
+        style={menu.style}
       >
-        <Trash2 size={18} strokeWidth={1.5} />
-      </button>
+        <MenuItem icon={<Pencil />} onClick={act(() => setRenaming(true))}>
+          Rename
+        </MenuItem>
+        <MenuItem
+          icon={<Trash2 />}
+          danger
+          onClick={act(() => setDeleting(true))}
+        >
+          Delete project
+        </MenuItem>
+      </div>
       <ProjectNameDialog
         key={String(renaming)}
         open={renaming}
