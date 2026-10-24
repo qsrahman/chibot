@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.10.11] - 2026-10-24
+
 ### Added
 
 - ↑ in an empty message box opens your last message for editing (as in ChatGPT); the shortcuts list shows it. Only one message is open for editing at a time.
