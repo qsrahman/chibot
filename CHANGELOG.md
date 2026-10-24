@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.10.10] - 2026-10-24
+
 ### Added
 
 - Screen readers hear when an answer starts, when it's ready, and when a tool waits for approval (a polite live region; errors were already announced).
