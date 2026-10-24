@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- The browser tab is named after the chat on screen ("Faster SQLite writes – chibot", following renames), or the project on its page, instead of always "chibot", so tabs, history and bookmarks can be told apart.
+
 ### Fixed
 
 - An unsent message followed you to whichever chat you opened next, attached files included, which could then be sent to the wrong chat. Each chat now keeps its own draft (text, files and picked tool) while chibot is open.

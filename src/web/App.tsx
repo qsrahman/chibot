@@ -56,6 +56,7 @@ export function App() {
       settings={settings}
       projects={projects}
       onListChanged={conversations.refresh}
+      conversations={conversations.conversations}
       onOpenSidebar={
         narrow && !drawerOpen ? () => setDrawerOpen(true) : undefined
       }

@@ -56,6 +56,7 @@ export function useChat(
   // The chat whose history last arrived (or failed to). Compared during
   // render, so a chat being opened never shows as an empty new chat.
   const [loadedId, setLoadedId] = useState<string | null>(null)
+  const [title, setTitle] = useState<string | null>(null)
   // The run whose updates belong on screen. Cleared when the user switches
   // chats, so a run still going for the old chat can't touch the new one.
   const runRef = useRef<Run | null>(null)
@@ -91,6 +92,7 @@ export function useChat(
     setTemporaryId(null)
     setProjectId(null)
     setLoadedId(null)
+    setTitle(null)
     if (!conversationId) return
     let current = true
     getConversation(conversationId).then(
@@ -99,6 +101,7 @@ export function useChat(
         showItems(loaded)
         setLoadedId(conversationId)
         const { conversation } = loaded
+        setTitle(conversation.title)
         setTemporaryId(conversation.temporary ? conversationId : null)
         setProjectId(conversation.projectId)
       },
@@ -227,7 +230,10 @@ export function useChat(
         accepted = true
         // The sidebar shows every chat, so a title is news even after the
         // user has moved on. Everything else only matters while on screen.
-        if (event.type === 'chibot.title') onListChanged()
+        if (event.type === 'chibot.title') {
+          onListChanged()
+          if (live()) setTitle(event.title)
+        }
         if (!live()) continue
         if (event.type === 'response.output_text.delta') {
           answer += event.delta
@@ -399,6 +405,8 @@ export function useChat(
     /** The project of the conversation on screen, if any. */
     projectId,
     busy: pending !== null,
+    /** The chat's title as loaded or generated (`null`: untitled). */
+    title,
     /** The chat's history hasn't arrived yet. */
     loading: conversationId !== undefined && loadedId !== conversationId,
     send,

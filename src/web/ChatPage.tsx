@@ -7,7 +7,7 @@ import {
   MessageCircleDashed,
   PanelLeft,
 } from 'lucide-react'
-import type { Health } from '../shared/types.ts'
+import type { ConversationListItem, Health } from '../shared/types.ts'
 import { Composer, type ToolOption } from './Composer.tsx'
 import { ModelPicker } from './ModelPicker.tsx'
 import { ProjectDetails, ProjectHeading } from './ProjectHome.tsx'
@@ -18,6 +18,7 @@ import { ApprovalCard, TurnView } from './TurnView.tsx'
 import { describeUsage } from './usage.ts'
 import { useAttachments } from './useAttachments.ts'
 import { useChat } from './useChat.ts'
+import { UNTITLED } from './useConversations.ts'
 import type { ProjectsApi } from './useProjects.ts'
 import type { SettingsApi } from './useSettings.ts'
 
@@ -42,6 +43,8 @@ interface Props {
   settings: SettingsApi
   projects: ProjectsApi
   onListChanged: () => void
+  /** The sidebar's chats, whose titles follow renames. */
+  conversations: ConversationListItem[]
   /** On phones while the sidebar is hidden: a header button opens it. */
   onOpenSidebar?: () => void
 }
@@ -51,6 +54,7 @@ export function ChatPage({
   settings,
   projects,
   onListChanged,
+  conversations,
   onOpenSidebar,
 }: Props) {
   // `projectId`: a project's page, where a new chat starts in the project.
@@ -155,6 +159,22 @@ export function ChatPage({
   const temporary = id ? isTemporary : temporaryMode
   const projectId = id ? chat.projectId : (projectHome ?? null)
   const project = projects.projects.find((p) => p.id === projectId)
+  // The sidebar's copy follows renames; project chats aren't listed there.
+  const title = id
+    ? (conversations.find((c) => c.id === id)?.title ?? chat.title)
+    : null
+  const pageTitle = id
+    ? temporary
+      ? 'Temporary chat'
+      : (title ?? UNTITLED)
+    : projectHome
+      ? project?.name
+      : null
+
+  // Tabs, history and bookmarks name the chat (or project) on screen.
+  useEffect(() => {
+    document.title = pageTitle ? `${pageTitle} – chibot` : 'chibot'
+  }, [pageTitle])
 
   return (
     <main

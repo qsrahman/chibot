@@ -304,3 +304,29 @@ test('opening a chat never flashes the new-chat greeting', async ({ page }) => {
   expect(await page.locator('.greeting').count()).toBe(0)
   await expect(answer(page, 0)).toContainText('to: Gamma chat')
 })
+
+test('the tab title names the chat on screen', async ({ page }) => {
+  await page.goto('/')
+  await appReady(page)
+  await expect(page).toHaveTitle('chibot')
+  await send(page, 'Name this chat')
+  await answered(page)
+  // The fake server titles every chat "E2E Title".
+  await expect(page).toHaveTitle('E2E Title – chibot')
+
+  // A rename in the sidebar shows up too.
+  const { pathname } = new URL(page.url())
+  const row = page
+    .locator('nav .conversation-row')
+    .filter({ has: page.locator(`a[href="${pathname}"]`) })
+  await row.hover()
+  await row.getByRole('button', { name: /Options for/ }).click()
+  await page.getByRole('button', { name: 'Rename' }).click()
+  const field = page.getByRole('textbox', { name: 'Chat title' })
+  await field.fill('Renamed chat')
+  await field.press('Enter')
+  await expect(page).toHaveTitle('Renamed chat – chibot')
+
+  await newChat(page)
+  await expect(page).toHaveTitle('chibot')
+})
