@@ -1,4 +1,4 @@
-import type { ComponentProps } from 'react'
+import { memo, type ComponentProps } from 'react'
 import ReactMarkdown, { type Components, type ExtraProps } from 'react-markdown'
 import { toText } from 'hast-util-to-text'
 import rehypeHighlight from 'rehype-highlight'
@@ -13,8 +13,13 @@ const remarkPlugins = [remarkGfm, remarkMath]
 const rehypePlugins = [rehypeKatex, rehypeHighlight]
 const components: Components = { pre: CodeBlock, a: Link }
 
-/** Renders model output. Raw HTML in the text is not rendered. */
-export function Markdown({ text }: { text: string }) {
+/**
+ * Renders model output. Raw HTML in the text is not rendered. Memoized: a
+ * streamed answer re-renders the whole chat for every chunk, and parsing,
+ * highlighting and typesetting every earlier answer again made long chats
+ * stall; only a changed `text` renders again.
+ */
+export const Markdown = memo(function Markdown({ text }: { text: string }) {
   return (
     <div className="markdown">
       <ReactMarkdown
@@ -26,7 +31,7 @@ export function Markdown({ text }: { text: string }) {
       </ReactMarkdown>
     </div>
   )
-}
+})
 
 /** A fenced code block, labelled with its language when one is given. */
 function CodeBlock({ node, ...props }: ComponentProps<'pre'> & ExtraProps) {

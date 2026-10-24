@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- Long chats stalled while an answer streamed: every streamed chunk parsed, highlighted and typeset every earlier answer again. Answers now render only when their text changes (a 40-turn chat went from 3 s of a 5 s stream blocking the page to none).
+
 ## [0.10.10] - 2026-10-24
 
 ### Added
