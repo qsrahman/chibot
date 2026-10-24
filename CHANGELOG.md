@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- On touch screens, a chat's "…" menu (rename, pin, archive, move, delete), copy / edit / regenerate on earlier messages and image downloads were invisible, since they waited for a hover. They're always shown there now.
+
 ## [0.10.8] - 2026-10-24
 
 ### Fixed

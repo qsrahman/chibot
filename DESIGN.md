@@ -21,7 +21,8 @@ Components use the variables, never raw colours.
 - **One column.** The thread and composer share a centred column of at most
   48 rem (768 px).
 - **Quiet until needed.** Secondary actions (copy, edit, regenerate) appear on
-  hover or focus, and always for the last answer.
+  hover or focus, and always for the last answer. On touch screens (no hover)
+  they, a chat's "…" and image downloads are always shown.
 
 ## 2. Tokens
 

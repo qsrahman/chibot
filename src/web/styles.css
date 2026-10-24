@@ -2044,6 +2044,21 @@ label.button {
   }
 }
 
+/* Touch screens have no hover, so controls that wait for one stay visible:
+   a chat's "…" menu, message actions and image downloads. */
+@media (hover: none) {
+  .actions,
+  .row-menu-button,
+  .image-download {
+    opacity: 1;
+  }
+
+  /* Room for the always-visible "…", as on hover. */
+  .conversation-row .sidebar-row {
+    padding-right: 36px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation: none !important;

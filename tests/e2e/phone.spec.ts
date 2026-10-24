@@ -31,3 +31,26 @@ test('the chat fills a phone, and the sidebar is a drawer', async ({
   await expect(page).toHaveURL(/\/$/)
   await expect(sidebar).toBeHidden()
 })
+
+test.describe('on a touch screen', () => {
+  test.use({ hasTouch: true, isMobile: true })
+
+  test('shows controls that wait for a hover elsewhere', async ({ page }) => {
+    await page.goto('/')
+    await appReady(page)
+    await send(page, 'First question')
+    await answered(page)
+    await send(page, 'Second question')
+    await answered(page)
+
+    const opacity = (selector: string) =>
+      page
+        .locator(selector)
+        .first()
+        .evaluate((el) => getComputedStyle(el).opacity)
+    // Copy, edit and regenerate on an earlier turn, not just the latest.
+    expect(await opacity('.turn:first-child .answer-actions')).toBe('1')
+    await page.getByRole('button', { name: 'Open sidebar' }).click()
+    expect(await opacity('.row-menu-button')).toBe('1')
+  })
+})
