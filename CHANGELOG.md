@@ -7,6 +7,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 ### Changed
 
 - Opening a tool call shows what it did in plain terms (the search and the pages found, the calculation and its result, the memory change, the page read, the image prompt) instead of raw JSON, which stays under "Raw".
+- The Settings dialog is as tall as the tab shown (a short tab no longer sits in a mostly empty dialog), anchored near the top so switching tabs doesn't make it jump; on phones its tabs sit in a row above the content, which was squeezed to a word per line.
 - Settings → Tools groups the tools, says what each does and what leaves this machine, and lists tools that aren't set up (greyed out, with what to set). Web search is called "Search the web" there too, as in the "+" menu.
 - Quotes in answers have a rule on the left, instead of the browser's plain 40 px indent.
 - Thoughts, tool calls and Sources open with a turning chevron, like the rest of the icons, instead of the browser's default triangle.

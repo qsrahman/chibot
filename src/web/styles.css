@@ -1774,13 +1774,17 @@ kbd {
 
 .dialog.settings {
   width: min(100% - 32px, 760px);
+  /* Anchored near the top and as tall as its tab, so switching tabs only
+     grows or shrinks it downwards instead of jumping around the centre. */
+  margin-top: max(16px, 10vh);
 }
 
 .settings-layout {
   display: grid;
   grid-template-columns: 180px 1fr;
   gap: 16px;
-  height: min(70vh, 560px);
+  align-items: start;
+  min-height: 240px;
 }
 
 .settings-tabs {
@@ -1795,6 +1799,7 @@ kbd {
 }
 
 .settings-panel {
+  max-height: min(70vh, 560px);
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -2016,6 +2021,26 @@ label.button {
   .message.user p,
   .message-attachments {
     max-width: 85%;
+  }
+
+  /* Settings: the tabs become a scrolling row above the content. */
+  .dialog.settings {
+    margin-top: 16px;
+    padding-inline: 16px;
+  }
+
+  .settings-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-tabs {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .settings-tabs .sidebar-row {
+    flex: none;
+    width: auto;
   }
 }
 

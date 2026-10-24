@@ -180,7 +180,10 @@ title (18 px, 500), body (14 px muted), then right-aligned buttons. Buttons are
 pill-shaped: primary is `--button`, secondary is outlined, destructive is
 `--danger`. Used for confirmations such as "Delete chat?".
 
-**Settings (built).** A large dialog (max 760 px) with a vertical tab list on
+**Settings (built).** A large dialog (max 760 px), anchored 10 vh from the top
+and as tall as its tab (at least 240 px; the panel scrolls past
+`min(70vh, 560px)`), so switching tabs grows or shrinks it downwards. Below
+768 px the tabs become a scrolling row above the content. A vertical tab list on
 the left (General, Personalization, Model, Data; the current tab uses
 `--chip`) and content on the right. Content is
 grouped as section heading (16 px, 500) + card (`--surface`, 16 px radius,
