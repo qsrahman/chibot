@@ -2,6 +2,7 @@
 import { existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { serve } from '@hono/node-server'
+import type { Hono } from 'hono'
 import { serveStatic } from '@hono/node-server/serve-static'
 import OpenAI from 'openai'
 import { createApp } from './app.ts'
@@ -127,11 +128,7 @@ export function start({
 
   // In dev, Vite serves the web app. The production build only exists after `pnpm build`.
   const webRoot = join(import.meta.dirname, '../../dist/web')
-  if (existsSync(webRoot)) {
-    app.use('/*', serveStatic({ root: webRoot }))
-    // Client-side routes such as /c/:id all load the same page.
-    app.get('*', serveStatic({ root: webRoot, path: 'index.html' }))
-  }
+  if (existsSync(webRoot)) serveWebApp(app, webRoot)
 
   serve(
     { fetch: app.fetch, hostname: config.host, port: config.port },
@@ -148,6 +145,25 @@ export function start({
       }
     },
   )
+}
+
+/**
+ * Serves the built web app from `root`. Client-side routes such as /c/:id all
+ * load the same page.
+ */
+export function serveWebApp(app: Hono, root: string): void {
+  // The page names the build's content-hashed scripts, so browsers must check
+  // it on every load: a cached copy after an upgrade names scripts that the
+  // new build deleted, and the app stays blank until a hard reload. (Set
+  // after serving: serveStatic's onFound runs too late to add headers.)
+  app.use('/*', async (c, next) => {
+    await next()
+    if (c.res.headers.get('content-type')?.startsWith('text/html')) {
+      c.header('Cache-Control', 'no-cache')
+    }
+  })
+  app.use('/*', serveStatic({ root }))
+  app.get('*', serveStatic({ root, path: 'index.html' }))
 }
 
 if (import.meta.main) start()
