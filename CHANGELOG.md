@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Added
 
+- ↑ in an empty message box opens your last message for editing (as in ChatGPT); the shortcuts list shows it. Only one message is open for editing at a time.
 - Unsent message text survives a reload or a closed tab: each chat's draft is kept in this browser (`localStorage`) until it's sent or cleared. Attached files still last only while the page is open.
 
 ### Fixed

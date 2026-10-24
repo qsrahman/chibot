@@ -105,6 +105,15 @@ export function ChatPage({
     wasBusy.current = busy
   }, [busy, error, waiting.length])
   useEffect(() => setAnnouncement(''), [id])
+  // The turn whose question is open for editing (one at a time).
+  const [editingTurn, setEditingTurn] = useState<string | null>(null)
+  useEffect(() => setEditingTurn(null), [id])
+  const lastTurn = turns.at(-1)
+  // ↑ in an empty composer: the last message, once it's saved.
+  const editLast =
+    lastTurn && lastTurn.question.itemId !== null && !busy
+      ? () => setEditingTurn(lastTurn.key)
+      : undefined
   // Scrolled up: a button jumps back to the latest message.
   const [away, setAway] = useState(false)
 
@@ -320,6 +329,8 @@ export function ChatPage({
                     />
                   ) : undefined
                 }
+                editing={editingTurn === turn.key}
+                onEditingChange={(on) => setEditingTurn(on ? turn.key : null)}
                 onEdit={following((text: string) => chat.edit(i, text))}
                 onRegenerate={following(() => chat.regenerate(i))}
                 onSwitch={(itemId) => void chat.switchVersion(itemId)}
@@ -359,6 +370,7 @@ export function ChatPage({
         busy={busy}
         onSend={following(chat.send)}
         onStop={chat.stop}
+        onEditLast={editLast}
         inputRef={composerRef}
         tools={toolOptions}
         attachments={attachments}

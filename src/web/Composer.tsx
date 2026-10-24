@@ -46,6 +46,8 @@ interface Props {
     attachments?: Attachment[],
   ) => void | Promise<boolean>
   onStop: () => void
+  /** ↑ in an empty box: edit the last message, as in ChatGPT. */
+  onEditLast?: () => void
   /** The textarea, so the page can focus it (e.g. from a shortcut). */
   inputRef: RefObject<HTMLTextAreaElement | null>
   tools: ToolOption[]
@@ -64,6 +66,7 @@ export function Composer({
   busy,
   onSend,
   onStop,
+  onEditLast,
   inputRef,
   tools,
   attachments,
@@ -183,6 +186,16 @@ export function Composer({
   }, [queued, attachments.uploading])
 
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (
+      e.key === 'ArrowUp' &&
+      text === '' &&
+      attachments.drafts.length === 0 &&
+      onEditLast
+    ) {
+      e.preventDefault()
+      onEditLast()
+      return
+    }
     // isComposing: Enter confirms IME input (e.g. Japanese) rather than sending.
     // On touch-only devices (no Shift for a new line) Enter adds a line and
     // the send button sends.

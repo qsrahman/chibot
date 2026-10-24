@@ -349,3 +349,24 @@ test('an unsent message survives a reload', async ({ page }) => {
   await page.reload()
   await expect(box).toHaveValue('')
 })
+
+test('↑ in an empty message box edits your last message', async ({ page }) => {
+  await page.goto('/')
+  await appReady(page)
+  await send(page, 'Frist try')
+  await answered(page)
+  const box = page.getByRole('textbox', { name: 'Message' })
+  await box.press('ArrowUp')
+  const editor = page.getByRole('textbox', { name: 'Edit message' })
+  await expect(editor).toBeFocused()
+  await expect(editor).toHaveValue('Frist try')
+  await editor.fill('First try')
+  await editor.press('Enter')
+  await answered(page)
+  await expect(answer(page, 0)).toContainText('to: First try')
+
+  // Not while there's text in the box: ↑ moves the cursor as usual.
+  await box.fill('Something else')
+  await box.press('ArrowUp')
+  await expect(editor).toHaveCount(0)
+})

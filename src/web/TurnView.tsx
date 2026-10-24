@@ -40,6 +40,9 @@ interface TurnViewProps {
   busy?: boolean
   /** Shown instead of the answer's actions while tool calls wait for it. */
   approval?: ReactNode
+  /** Its question is open for editing (the page tracks which one is). */
+  editing?: boolean
+  onEditingChange?: (editing: boolean) => void
   onEdit?: (text: string) => void
   onRegenerate?: () => void
   onSwitch?: (itemId: number) => void
@@ -53,12 +56,14 @@ export function TurnView({
   latest,
   busy,
   approval,
+  editing = false,
+  onEditingChange,
   onEdit,
   onRegenerate,
   onSwitch,
   onImageLoad,
 }: TurnViewProps) {
-  const [editing, setEditing] = useState(false)
+  const setEditing = (on: boolean) => onEditingChange?.(on)
   const [viewing, setViewing] = useState<ViewedImage | null>(null)
   // Shown after a Stop before the server's ids are known: no edit/regenerate.
   const saved = question.itemId !== null

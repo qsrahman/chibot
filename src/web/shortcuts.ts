@@ -9,6 +9,8 @@ export const SHORTCUTS = {
   focusComposer: { keys: 'Shift+Escape', label: 'Focus the message box' },
   copyLastAnswer: { keys: '$mod+Shift+C', label: 'Copy the last answer' },
   stop: { keys: 'Escape', label: 'Stop the answer' },
+  // Handled by the composer itself (only when it's empty), not bound here.
+  editLast: { keys: 'ArrowUp', label: 'Edit your last message (empty box)' },
   settings: { keys: '$mod+,', label: 'Open settings' },
   showShortcuts: { keys: '$mod+/', label: 'Show keyboard shortcuts' },
 } as const
@@ -38,8 +40,8 @@ export function useShortcuts(bindings: KeybindingsMap) {
 // The same check tinykeys uses for `$mod`, so labels match the bindings.
 const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform)
 const KEY_NAMES: Record<string, string> = isMac
-  ? { $mod: '⌘', Shift: '⇧', Escape: 'Esc' }
-  : { $mod: 'Ctrl', Escape: 'Esc' }
+  ? { $mod: '⌘', Shift: '⇧', Escape: 'Esc', ArrowUp: '↑' }
+  : { $mod: 'Ctrl', Escape: 'Esc', ArrowUp: '↑' }
 
 /** The keys of a binding as shown to the user, e.g. ['⌘', '⇧', 'O']. */
 export function keyCaps(keys: string): string[] {

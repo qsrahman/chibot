@@ -222,7 +222,8 @@ Then open http://127.0.0.1:3000.
   chat's total across all versions. Hover for the input/output breakdown.
 - **Keyboard shortcuts:** ⌘/Ctrl+/ (or **Keyboard shortcuts** in the sidebar)
   lists them: new chat, search, toggle sidebar, focus the message box, copy
-  the last answer, and Esc to stop.
+  the last answer, Esc to stop, and ↑ in an empty message box to edit your
+  last message.
 - If the model server reports an error (e.g. a bad API key), it's shown with
   its status and request id. Your message is kept.
 
