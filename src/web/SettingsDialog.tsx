@@ -7,7 +7,7 @@ import {
   UserRound,
   Wrench,
 } from 'lucide-react'
-import { REASONING_EFFORTS } from '../shared/reasoning.ts'
+import { effortLabel, REASONING_EFFORTS } from '../shared/reasoning.ts'
 import type { Settings } from '../shared/settings.ts'
 import { importConversation } from './api.ts'
 import { Dialog } from './Dialog.tsx'
@@ -333,10 +333,10 @@ function Model({
               })
             }
           >
-            <option value="default">Model default</option>
+            <option value="default">{effortLabel(null)}</option>
             {REASONING_EFFORTS.map((effort) => (
               <option key={effort} value={effort}>
-                {effort}
+                {effortLabel(effort)}
               </option>
             ))}
           </select>

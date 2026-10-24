@@ -1,4 +1,5 @@
 import { Check, ChevronDown } from 'lucide-react'
+import { effortLabel } from '../shared/reasoning.ts'
 import type { Settings } from '../shared/settings.ts'
 import { useAnchoredPopover } from './popover.ts'
 
@@ -25,7 +26,8 @@ export function ModeSwitch({
 }) {
   const menu = useAnchoredPopover()
   // An effort chosen elsewhere that no mode names shows as itself.
-  const label = MODES.find((m) => m.effort === effort)?.label ?? effort
+  const label =
+    MODES.find((m) => m.effort === effort)?.label ?? effortLabel(effort)
   return (
     <>
       <button

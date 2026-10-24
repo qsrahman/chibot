@@ -105,8 +105,8 @@ Code uses `"SF Mono", SFMono-Regular, ui-monospace, Consolas, "Liberation Mono",
   popover with a search box over the model list (a name field when the
   server can't list models), then a divider and a "Reasoning effort" row
   showing the current effort (muted) and a `ChevronRight`. It opens a
-  sub-menu beside it (below it when there's no room, e.g. on a phone): Default,
-  then `none` … `max`, with a check on the current one. → opens it, ← and Esc
+  sub-menu beside it (below it when there's no room, e.g. on a phone): Auto (the
+  model's default), then None … Max, with a check on the current one. → opens it, ← and Esc
   close just the sub-menu. A chosen effort shows after the model name in
   `--fg-muted`. Page actions sit on the right.
 

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Check, ChevronDown, ChevronRight } from 'lucide-react'
-import { REASONING_EFFORTS } from '../shared/reasoning.ts'
+import { effortLabel, REASONING_EFFORTS } from '../shared/reasoning.ts'
 import type { Settings } from '../shared/settings.ts'
 import { listModels } from './api.ts'
 import { useAnchoredPopover } from './popover.ts'
@@ -64,7 +64,7 @@ export function ModelPicker({
         onClick={open}
       >
         {model}
-        {effort && <span className="model-effort">{effort}</span>}
+        {effort && <span className="model-effort">{effortLabel(effort)}</span>}
         <ChevronDown size={16} strokeWidth={1.5} />
       </button>
       <div
@@ -141,7 +141,7 @@ export function ModelPicker({
           }}
         >
           <span className="menu-item-text">Reasoning effort</span>
-          <span className="menu-hint">{effort ?? 'Default'}</span>
+          <span className="menu-hint">{effortLabel(effort)}</span>
           <ChevronRight size={16} strokeWidth={1.5} aria-hidden />
         </button>
         <div
@@ -175,7 +175,7 @@ export function ModelPicker({
                 if (option !== effort) onEffort(option)
               }}
             >
-              <span className="menu-item-text">{option ?? 'Default'}</span>
+              <span className="menu-item-text">{effortLabel(option)}</span>
               {option === effort && <Check size={16} strokeWidth={1.5} />}
             </button>
           ))}

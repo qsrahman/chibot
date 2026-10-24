@@ -50,20 +50,20 @@ test('picks the reasoning effort in the model menu', async ({ page }) => {
   await page.getByRole('button', { name: 'e2e-model' }).click()
   // A row in the model menu opens a sub-menu beside it.
   const row = page.getByRole('button', { name: /Reasoning effort/ })
-  await expect(row).toContainText('Default')
+  await expect(row).toContainText('Auto')
   await row.click()
   const efforts = page.getByRole('menu', { name: 'Reasoning effort' })
   await expect(
-    efforts.getByRole('menuitemradio', { name: 'Default' }),
+    efforts.getByRole('menuitemradio', { name: 'Auto' }),
   ).toHaveAttribute('aria-checked', 'true')
   await efforts
-    .getByRole('menuitemradio', { name: 'high', exact: true })
+    .getByRole('menuitemradio', { name: 'High', exact: true })
     .click()
   await expect(efforts).toBeHidden()
-  await expect(row).toContainText('high')
+  await expect(row).toContainText('High')
   await page.keyboard.press('Escape')
   // The header shows it.
-  await expect(page.locator('.model-button')).toHaveText('e2e-modelhigh')
+  await expect(page.locator('.model-button')).toHaveText('e2e-modelHigh')
 
   await send(page, 'Hello')
   await answered(page)
@@ -90,7 +90,7 @@ test('the effort sub-menu works from the keyboard', async ({ page }) => {
   const efforts = page.getByRole('menu', { name: 'Reasoning effort' })
   // Opens on its first item; ← goes back to the row, the model menu stays.
   await expect(
-    efforts.getByRole('menuitemradio', { name: 'Default' }),
+    efforts.getByRole('menuitemradio', { name: 'Auto' }),
   ).toBeFocused()
   await page.keyboard.press('ArrowLeft')
   await expect(efforts).toBeHidden()
@@ -119,7 +119,7 @@ test('switches to Thinking mode in the composer', async ({ page }) => {
     effort: 'high',
   })
   // One setting: the header's model menu shows it too.
-  await expect(page.locator('.model-button')).toContainText('high')
+  await expect(page.locator('.model-button')).toContainText('High')
 })
 
 test('applies reasoning effort and custom instructions', async ({ page }) => {

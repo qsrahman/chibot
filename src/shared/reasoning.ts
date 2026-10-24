@@ -11,3 +11,13 @@ export const REASONING_EFFORTS = [
   'xhigh',
   'max',
 ] as const satisfies readonly NonNullable<ReasoningEffort>[]
+
+/**
+ * An effort as the interface names it: `null` (the model's own default) is
+ * "Auto", as in the composer's mode switch; the levels are capitalized.
+ */
+export function effortLabel(
+  effort: ReasoningEffort | null | undefined,
+): string {
+  return effort ? effort[0]!.toUpperCase() + effort.slice(1) : 'Auto'
+}
