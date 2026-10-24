@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.10.9] - 2026-10-24
+
 ### Added
 
 - Images (generated or attached) open full size over the chat, with Download and Close, instead of in a new tab, which on a phone meant leaving chibot. ⌘/Ctrl-click still opens a tab.
