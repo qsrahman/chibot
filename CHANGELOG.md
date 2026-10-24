@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- Menus (the composer's "+" and mode switch, a chat's and a project's "…") work from the keyboard: they open on their first item, ↑ / ↓ move between items, Home / End jump to the ends, and Esc returns to the button.
+
 ### Fixed
 
 - Opening a chat briefly showed the new-chat page (greeting and centred composer) while its messages loaded; the message area now stays blank until they arrive.

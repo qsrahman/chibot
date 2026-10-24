@@ -123,7 +123,8 @@ transpiles it.
 - **Styling** is plain CSS following [DESIGN.md](DESIGN.md), which sets out
   ChatGPT-like aesthetics, tokens and component specs. Use its CSS variables,
   never raw colours. Build menus and dialogs on native `<dialog>` and the
-  Popover API, not a UI library. Icons come from `lucide-react`.
+  Popover API, not a UI library: menus use `useAnchoredPopover` (`popover.ts`)
+  and spread its `menuProps` for keyboard use. Icons come from `lucide-react`.
 
 ## Adding a tool
 

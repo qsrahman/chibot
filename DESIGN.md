@@ -173,7 +173,9 @@ rule as an opened Thoughts), body colour, 16 px block spacing.
 **Menus and popovers** (native Popover API). `--surface-raised`, 16 px radius,
 6 px padding and the dialog shadow. Items are 36 px rows with an icon and a
 label, 10 px radius, and a `--surface-muted` hover. Groups are separated by
-hairlines, with optional 12 px muted section labels.
+hairlines, with optional 12 px muted section labels. A menu opens with focus on
+its first item; ↑ / ↓ move between items (wrapping), Home / End jump to the
+ends, and Esc closes it, returning focus to its button.
 
 **Dialogs** (native `<dialog>`). `--surface-raised`, 20 px radius, width
 `min(100% - 32px, 448px)`, dialog shadow and a dimmed backdrop. Layout:

@@ -70,6 +70,7 @@ export function ProjectHeading({
         popover="auto"
         className="menu"
         style={menu.style}
+        {...menu.menuProps}
       >
         <MenuItem icon={<Pencil />} onClick={act(() => setRenaming(true))}>
           Rename

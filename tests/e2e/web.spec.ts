@@ -136,3 +136,27 @@ test('a tool switched off in Settings is greyed out and not sent', async ({
   expect(names).not.toContain('web_search')
   expect(names).toContain('generate_image')
 })
+
+test('menus move with the arrow keys', async ({ page }) => {
+  await page.goto('/')
+  await appReady(page)
+  const plus = page.getByRole('button', { name: 'Add files and more' })
+  await plus.focus()
+  await page.keyboard.press('Enter')
+  const item = (name: string | RegExp) => page.getByRole('menuitem', { name })
+  // Opens on its first item.
+  await expect(item(/Add photos & files/)).toBeFocused()
+  await page.keyboard.press('ArrowDown')
+  await expect(item(/Search the web/)).toBeFocused()
+  await page.keyboard.press('End')
+  await expect(item(/Create an image/)).toBeFocused()
+  await page.keyboard.press('ArrowDown') // wraps around
+  await expect(item(/Add photos & files/)).toBeFocused()
+  await page.keyboard.press('ArrowUp')
+  await expect(item(/Create an image/)).toBeFocused()
+  await page.keyboard.press('Home')
+  await expect(item(/Add photos & files/)).toBeFocused()
+  // Esc closes it and returns to the button.
+  await page.keyboard.press('Escape')
+  await expect(plus).toBeFocused()
+})

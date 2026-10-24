@@ -211,6 +211,7 @@ export function Composer({
         className="menu above"
         role="menu"
         style={menu.style}
+        {...menu.menuProps}
       >
         <button
           type="button"

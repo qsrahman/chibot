@@ -91,6 +91,7 @@ export function ConversationRow({
         popover="auto"
         className="menu"
         style={menu.style}
+        {...menu.menuProps}
       >
         <MenuItem icon={<Pencil />} onClick={() => act(() => setEditing(true))}>
           Rename

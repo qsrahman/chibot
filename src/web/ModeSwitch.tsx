@@ -45,6 +45,7 @@ export function ModeSwitch({
         className="menu above"
         role="menu"
         style={menu.style}
+        {...menu.menuProps}
       >
         {MODES.map((mode) => (
           <button
