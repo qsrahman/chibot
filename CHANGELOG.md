@@ -4,6 +4,12 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.10.13] - 2026-10-24
+
+### Changed
+
+- Reasoning effort levels read "Auto" (the model's default, as in the composer's mode switch) and "None" … "Max", capitalized, in the model menu, the header, Settings and the composer, instead of "Default" / "Model default" and lowercase names.
+
 ## [0.10.12] - 2026-10-24
 
 ### Changed
