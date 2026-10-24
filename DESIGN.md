@@ -188,7 +188,11 @@ hairline border). A card holds rows: 52 px tall, 0×16 px padding, a 14 px/500
 label (with an optional 12 px muted description) on the left, and the control
 on the right: a select showing its value and a chevron, or a 32×20 px switch
 (`--accent` when on).
-Hairline dividers separate rows.
+Hairline dividers separate rows. The Tools tab groups tools into sections (The
+web, Images, Your chats and files, Calculation, then Other), each row with a
+one-line description that says what leaves the machine; a tool that isn't set
+up stays listed with its label in `--fg-muted`, its setup hint as the
+description and its switch disabled at 40 % opacity.
 
 **Disclosures** (Thinking, tool calls, Sources) replace the browser's
 triangle with a 16 px `ChevronRight` before the label, turned 90° when open

@@ -196,8 +196,10 @@ Then open http://127.0.0.1:3000.
   - *Model:* reasoning effort, and compaction for long chats (on by default at
     64,000 tokens; earlier messages are summarized and a divider marks the
     spot).
-  - *Tools:* switch each tool on or off (e.g. web search, which sends your
-    queries to Brave).
+  - *Tools:* switch each tool on or off, grouped (the web, images, your chats
+    and files, calculation), each saying what it does and what leaves this
+    machine. Tools that aren't set up are listed greyed out, with what to set
+    in `.env`.
   - *Data:* import a chat from a JSON export, and archived chats to restore or
     delete.
 - **Export** a chat from its **…** menu as Markdown (what's shown, with

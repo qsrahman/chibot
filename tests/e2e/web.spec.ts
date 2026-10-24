@@ -116,7 +116,7 @@ test('a tool switched off in Settings is greyed out and not sent', async ({
   const dialog = page.getByRole('dialog', { name: 'Settings' })
   await dialog.getByRole('button', { name: 'Tools' }).click()
   // Saved first, then shown: click and wait rather than uncheck().
-  const webSearch = dialog.getByRole('switch', { name: 'Web search' })
+  const webSearch = dialog.getByRole('switch', { name: 'Search the web' })
   await webSearch.click()
   await expect(webSearch).not.toBeChecked()
   await page.keyboard.press('Escape')

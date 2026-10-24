@@ -12,6 +12,7 @@ import type { Settings } from '../shared/settings.ts'
 import { importConversation } from './api.ts'
 import { Dialog } from './Dialog.tsx'
 import { useColorScheme, type ColorScheme } from './theme.ts'
+import { TOOL_GROUPS, TOOL_TEXT } from './tools.ts'
 import type { SettingsApi } from './useSettings.ts'
 
 const TABS = [
@@ -132,15 +133,18 @@ function Row({
   label,
   description,
   htmlFor,
+  unavailable = false,
   children,
 }: {
   label: string
   description?: string
   htmlFor?: string
+  /** Greyed out: it can't be used (e.g. not set up). */
+  unavailable?: boolean
   children: ReactNode
 }) {
   return (
-    <div className="settings-row">
+    <div className={unavailable ? 'settings-row unavailable' : 'settings-row'}>
       <div className="settings-label">
         <label htmlFor={htmlFor}>{label}</label>
         {description && <p>{description}</p>}
@@ -379,30 +383,71 @@ function Tools({
   disabled: string[]
   onChange: SettingsApi['update']
 }) {
+  const offered = new Set(tools.map((tool) => tool.name))
+  // Known tools the server doesn't offer are listed too, saying what's
+  // missing, so they can be found.
+  const missing = Object.entries(TOOL_TEXT).flatMap(([name, text]) =>
+    !offered.has(name) && text.setup ? [{ name, text }] : [],
+  )
+  const order = Object.keys(TOOL_TEXT)
+  const rank = (name: string) =>
+    order.includes(name) ? order.indexOf(name) : order.length
+  const groups = [...TOOL_GROUPS, 'Other'].map((group) => ({
+    group,
+    rows: [
+      ...tools.flatMap((tool) =>
+        (TOOL_TEXT[tool.name]?.group ?? 'Other') === group ? [tool] : [],
+      ),
+      ...missing.flatMap(({ name, text }) =>
+        text.group === group ? [{ name, label: text.label }] : [],
+      ),
+    ].sort((a, b) => rank(a.name) - rank(b.name)),
+  }))
   return (
-    <Section title="Tools chibot may use">
-      {tools.length === 0 && (
+    <>
+      {tools.length === 0 && missing.length === 0 && (
         <p className="settings-empty">This server offers no tools.</p>
       )}
-      {tools.map(({ name, label }) => (
-        <Row key={name} label={label} htmlFor={`setting-tool-${name}`}>
-          <input
-            id={`setting-tool-${name}`}
-            type="checkbox"
-            role="switch"
-            className="switch"
-            checked={!disabled.includes(name)}
-            onChange={(e) =>
-              void onChange({
-                disabledTools: e.target.checked
-                  ? disabled.filter((n) => n !== name)
-                  : [...disabled, name],
-              })
-            }
-          />
-        </Row>
-      ))}
-    </Section>
+      {groups.map(
+        ({ group, rows }) =>
+          rows.length > 0 && (
+            <Section key={group} title={group}>
+              {rows.map(({ name, label }) => {
+                const available = offered.has(name)
+                return (
+                  <Row
+                    key={name}
+                    label={TOOL_TEXT[name]?.label ?? label}
+                    description={
+                      available
+                        ? TOOL_TEXT[name]?.description
+                        : TOOL_TEXT[name]?.setup
+                    }
+                    htmlFor={`setting-tool-${name}`}
+                    unavailable={!available}
+                  >
+                    <input
+                      id={`setting-tool-${name}`}
+                      type="checkbox"
+                      role="switch"
+                      className="switch"
+                      disabled={!available}
+                      checked={available && !disabled.includes(name)}
+                      onChange={(e) =>
+                        void onChange({
+                          disabledTools: e.target.checked
+                            ? disabled.filter((n) => n !== name)
+                            : [...disabled, name],
+                        })
+                      }
+                    />
+                  </Row>
+                )
+              })}
+            </Section>
+          ),
+      )}
+    </>
   )
 }
 

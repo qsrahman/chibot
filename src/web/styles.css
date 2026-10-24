@@ -1831,6 +1831,15 @@ kbd {
   padding: 8px 16px;
 }
 
+.settings-row.unavailable .settings-label {
+  color: var(--fg-muted);
+}
+
+.switch:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .settings-row + .settings-row,
 .settings-field + .settings-field {
   border-top: 1px solid var(--border);
