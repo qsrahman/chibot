@@ -23,6 +23,7 @@ import { useAnchoredPopover } from './popover.ts'
 import type { Attachment } from './turns.ts'
 import type { AttachmentsApi, Draft } from './useAttachments.ts'
 import { useDictation } from './useDictation.ts'
+import { TOUCH_ONLY, useMediaQuery } from './useMediaQuery.ts'
 
 /** A tool the user can pick for the next message ("+" menu). */
 export interface ToolOption {
@@ -78,6 +79,7 @@ export function Composer({
   draftsRef.current = attachments.drafts
   const menu = useAnchoredPopover()
   const pickerRef = useRef<HTMLInputElement>(null)
+  const touchOnly = useMediaQuery(TOUCH_ONLY)
   const dictation = useDictation((spoken) => {
     // At the cursor, for review before sending.
     const box = inputRef.current
@@ -155,7 +157,14 @@ export function Composer({
 
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     // isComposing: Enter confirms IME input (e.g. Japanese) rather than sending.
-    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+    // On touch-only devices (no Shift for a new line) Enter adds a line and
+    // the send button sends.
+    if (
+      e.key === 'Enter' &&
+      !e.shiftKey &&
+      !e.nativeEvent.isComposing &&
+      !touchOnly
+    ) {
       e.preventDefault()
       submit()
     }
@@ -273,6 +282,7 @@ export function Composer({
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={onKeyDown}
+        enterKeyHint={touchOnly ? 'enter' : 'send'}
         onPaste={(e) => {
           const files = [...e.clipboardData.files]
           if (files.length === 0) return

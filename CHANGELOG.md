@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- On phones and tablets a message couldn't have line breaks: Enter always sent, and touch keyboards have no Shift+Enter. On touch-only devices Enter now adds a line (the keyboard shows return) and the send button sends; the same in the edit box.
+
 ## [0.10.9] - 2026-10-24
 
 ### Added

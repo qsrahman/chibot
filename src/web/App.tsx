@@ -1,10 +1,11 @@
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useEffect, useState } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router'
 import type { Health } from '../shared/types.ts'
 import { getHealth } from './api.ts'
 import { ChatPage } from './ChatPage.tsx'
 import { Sidebar } from './Sidebar.tsx'
 import { useConversations } from './useConversations.ts'
+import { NARROW, useMediaQuery } from './useMediaQuery.ts'
 import { useProjects } from './useProjects.ts'
 import { useSettings } from './useSettings.ts'
 
@@ -26,20 +27,6 @@ function saveCollapsed(collapsed: boolean): void {
   } catch {
     // ignore
   }
-}
-
-// Phones: the sidebar becomes a drawer over the chat.
-const NARROW = '(max-width: 767px)'
-
-function useMediaQuery(query: string): boolean {
-  return useSyncExternalStore(
-    (onChange) => {
-      const media = matchMedia(query)
-      media.addEventListener('change', onChange)
-      return () => media.removeEventListener('change', onChange)
-    },
-    () => matchMedia(query).matches,
-  )
 }
 
 export function App() {

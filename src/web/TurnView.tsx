@@ -6,6 +6,7 @@ import { ChevronRight, Download, Pencil, RefreshCw, Wrench } from 'lucide-react'
 import { FileCard } from './FileCard.tsx'
 import { ImageViewer, opensViewer, type ViewedImage } from './ImageViewer.tsx'
 import { Markdown } from './Markdown.tsx'
+import { TOUCH_ONLY, useMediaQuery } from './useMediaQuery.ts'
 import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
 import {
   type Answer,
@@ -437,7 +438,10 @@ function prettyJson(text: string): string {
   }
 }
 
-/** Inline editor for a sent message. Enter sends, Esc cancels. */
+/**
+ * Inline editor for a sent message. Enter sends (on touch-only devices it adds
+ * a line, and the Send button sends), Esc cancels.
+ */
 function EditBox({
   initial,
   onCancel,
@@ -449,10 +453,16 @@ function EditBox({
 }) {
   const [text, setText] = useState(initial)
   const canSend = text.trim() !== '' && text !== initial
+  const touchOnly = useMediaQuery(TOUCH_ONLY)
 
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Escape') onCancel()
-    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+    if (
+      e.key === 'Enter' &&
+      !e.shiftKey &&
+      !e.nativeEvent.isComposing &&
+      !touchOnly
+    ) {
       e.preventDefault()
       if (canSend) onSend(text)
     }
@@ -462,6 +472,7 @@ function EditBox({
     <div className="edit-box">
       <textarea
         aria-label="Edit message"
+        enterKeyHint={touchOnly ? 'enter' : 'send'}
         autoFocus
         value={text}
         onChange={(e) => setText(e.target.value)}

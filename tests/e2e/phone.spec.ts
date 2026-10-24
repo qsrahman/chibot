@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test'
-import { answered, appReady, send } from './helpers.ts'
+import { expect, test, type Page } from '@playwright/test'
+import { answer, answered, appReady, lastRequest, send } from './helpers.ts'
 
 // Phones: the sidebar is a drawer over a full-width chat.
 
@@ -35,12 +35,18 @@ test('the chat fills a phone, and the sidebar is a drawer', async ({
 test.describe('on a touch screen', () => {
   test.use({ hasTouch: true, isMobile: true })
 
+  // Enter adds a line on touch screens, so messages go with the button.
+  const sendByTap = async (page: Page, text: string) => {
+    await page.getByRole('textbox', { name: 'Message' }).fill(text)
+    await page.getByRole('button', { name: 'Send' }).click()
+  }
+
   test('shows controls that wait for a hover elsewhere', async ({ page }) => {
     await page.goto('/')
     await appReady(page)
-    await send(page, 'First question')
+    await sendByTap(page, 'First question')
     await answered(page)
-    await send(page, 'Second question')
+    await sendByTap(page, 'Second question')
     await answered(page)
 
     const opacity = (selector: string) =>
@@ -52,6 +58,23 @@ test.describe('on a touch screen', () => {
     expect(await opacity('.turn:first-child .answer-actions')).toBe('1')
     await page.getByRole('button', { name: 'Open sidebar' }).click()
     expect(await opacity('.row-menu-button')).toBe('1')
+  })
+
+  test('Enter adds a line; the send button sends', async ({ page }) => {
+    await page.goto('/')
+    await appReady(page)
+    const box = page.getByRole('textbox', { name: 'Message' })
+    await expect(box).toHaveAttribute('enterkeyhint', 'enter')
+    await box.fill('First line')
+    await box.press('Enter')
+    await box.pressSequentially('Second line')
+    await expect(box).toHaveValue('First line\nSecond line')
+    await page.getByRole('button', { name: 'Send' }).click()
+    await answered(page)
+    await expect(answer(page, 0)).toContainText('First line')
+    expect(
+      (await lastRequest(page)).input.findLast((i) => i.role === 'user'),
+    ).toMatchObject({ content: 'First line\nSecond line' })
   })
 
   test('hides keyboard shortcuts and keeps the Settings tab in view', async ({
