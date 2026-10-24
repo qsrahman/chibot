@@ -671,6 +671,11 @@ details[open] > summary > .disclosure-chevron {
   margin-top: 8px;
 }
 
+/* Inside a group, the calls start right under its rule. */
+.tool-call-list > .tool-call:first-child {
+  margin-top: 0;
+}
+
 /* A tool call's details: what it was asked, then what came back. */
 .tool-summary {
   display: grid;

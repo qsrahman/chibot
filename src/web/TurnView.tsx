@@ -148,12 +148,11 @@ export function TurnView({
           live={pending && !answer.text && answer.tools.length === 0}
         />
       )}
-      {answer?.tools.map(
-        (tool) =>
+      {answer && (
+        <ToolCalls
           // Waiting calls are shown by the approval card instead.
-          (pending || tool.output !== null) && (
-            <ToolCall key={tool.callId} tool={tool} />
-          ),
+          tools={answer.tools.filter((tool) => pending || tool.output !== null)}
+        />
       )}
       {answer && (
         <Images
@@ -237,12 +236,37 @@ function Thoughts({ text, live }: { text: string; live?: boolean }) {
 }
 
 /** A tool call in an answer: running, or collapsed with its result. */
+/** What a tool call shows while it runs, and once it's done. */
+const labelsOf = (tool: ToolActivity) =>
+  TOOL_LABELS[tool.name] ?? [`Running ${tool.name}…`, `Used ${tool.name}`]
+
+/**
+ * An answer's tool calls. Several sit in one collapsed group, labelled with
+ * what they did ("Searched the web, Memory updated": a memory change stays
+ * visible) or, while one runs, with what it's doing; each opens on its own.
+ */
+function ToolCalls({ tools }: { tools: ToolActivity[] }) {
+  if (tools.length === 0) return null
+  if (tools.length === 1) return <ToolCall tool={tools[0]!} />
+  const running = tools.find((tool) => tool.output === null)
+  const label = running
+    ? labelsOf(running)[0]
+    : [...new Set(tools.map((tool) => labelsOf(tool)[1]))].join(', ')
+  return (
+    <details className="thoughts tool-calls">
+      <Summary live={running !== undefined}>{label}</Summary>
+      <div className="thoughts-body tool-call-list">
+        {tools.map((tool) => (
+          <ToolCall key={tool.callId} tool={tool} />
+        ))}
+      </div>
+    </details>
+  )
+}
+
 function ToolCall({ tool }: { tool: ToolActivity }) {
   const running = tool.output === null
-  const [busyLabel, doneLabel] = TOOL_LABELS[tool.name] ?? [
-    `Running ${tool.name}…`,
-    `Used ${tool.name}`,
-  ]
+  const [busyLabel, doneLabel] = labelsOf(tool)
   return (
     <details className="thoughts tool-call">
       <Summary live={running}>{running ? busyLabel : doneLabel}</Summary>

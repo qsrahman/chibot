@@ -214,7 +214,12 @@ triangle with a 16 px `ChevronRight` before the label, turned 90° when open
 "Thinking…" with a shimmer while the summary streams, "Thoughts" once the
 answer starts. Opened, the summary sits behind a 2 px `--border` rule.
 
-**Tool calls.** Like Thinking: a `<details>` in 14 px muted text above the
+**Tool calls.** Several calls in one answer sit in one collapsed group, a
+`<details>` labelled with what they did ("Searched the web, Memory updated";
+repeats listed once, so a memory change stays visible) or, while one runs, its
+live label; opened, its body (behind the same 2 px rule) lists each call. A
+single call isn't grouped. Each call is, like Thinking, a `<details>` in 14 px
+muted text above the
 answer, "Running calculator…" with the shimmer while a tool runs, "Used
 calculator" afterwards. Opened, it says what the tool did in plain terms:
 what it was asked (the query, calculation, page or prompt, in `--fg`), a short

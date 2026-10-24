@@ -150,8 +150,8 @@ Then open http://127.0.0.1:3000.
   default, or None to Max; also in Settings → Model), shown next to the model name
   when set.
 - **Tools:** the model uses chibot's tools on its own when they help, and the
-  answer shows what it did ("Searched the web", "Used calculator"; open one to
-  see the details):
+  answer shows what it did ("Searched the web", "Used calculator"; several
+  calls share one row, which opens to each; open one to see the details):
   - **Web search** (with `BRAVE_API_KEY`): answers cite their sources, and a
     **Sources** list under the answer links every page found or read.
   - **Reading pages:** paste a URL and ask about it. chibot never reads
