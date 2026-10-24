@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.10.7] - 2026-10-24
+
 ### Changed
 
 - Opening a tool call shows what it did in plain terms (the search and the pages found, the calculation and its result, the memory change, the page read, the image prompt) instead of raw JSON, which stays under "Raw".
