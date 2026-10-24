@@ -187,6 +187,10 @@ on the right: a select showing its value and a chevron, or a 32×20 px switch
 (`--accent` when on).
 Hairline dividers separate rows.
 
+**Disclosures** (Thinking, tool calls, Sources) replace the browser's
+triangle with a 16 px `ChevronRight` before the label, turned 90° when open
+(150 ms; none with reduced motion). The shimmer applies to the label only.
+
 **Thinking.** Above an answer, a native `<details>` in 14 px muted text:
 "Thinking…" with a shimmer while the summary streams, "Thoughts" once the
 answer starts. Opened, the summary sits behind a 2 px `--border` rule.

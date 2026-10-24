@@ -2,7 +2,7 @@
 // activity, images, sources and actions.
 import { useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Link } from 'react-router'
-import { Download, Pencil, RefreshCw, Wrench } from 'lucide-react'
+import { ChevronRight, Download, Pencil, RefreshCw, Wrench } from 'lucide-react'
 import { FileCard } from './FileCard.tsx'
 import { Markdown } from './Markdown.tsx'
 import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
@@ -187,13 +187,24 @@ export function TurnView({
   )
 }
 
+/**
+ * A disclosure's label with a chevron that turns when open. `live` shimmers
+ * the label while the model works.
+ */
+function Summary({ live, children }: { live?: boolean; children: ReactNode }) {
+  return (
+    <summary>
+      <ChevronRight className="disclosure-chevron" size={16} aria-hidden />
+      <span className={live ? 'live' : undefined}>{children}</span>
+    </summary>
+  )
+}
+
 /** The model's reasoning summary, collapsed (as on ChatGPT). */
 function Thoughts({ text, live }: { text: string; live?: boolean }) {
   return (
     <details className="thoughts">
-      <summary className={live ? 'live' : undefined}>
-        {live ? 'Thinking…' : 'Thoughts'}
-      </summary>
+      <Summary live={live}>{live ? 'Thinking…' : 'Thoughts'}</Summary>
       <div className="thoughts-body">
         <Markdown text={text} />
       </div>
@@ -210,9 +221,7 @@ function ToolCall({ tool }: { tool: ToolActivity }) {
   ]
   return (
     <details className="thoughts tool-call">
-      <summary className={running ? 'live' : undefined}>
-        {running ? busyLabel : doneLabel}
-      </summary>
+      <Summary live={running}>{running ? busyLabel : doneLabel}</Summary>
       <div className="thoughts-body">
         <ToolDetails tool={tool} />
       </div>
@@ -286,7 +295,7 @@ function Sources({ answer }: { answer: Answer }) {
   if (sources.length === 0) return null
   return (
     <details className="sources">
-      <summary>Sources · {sources.length}</summary>
+      <Summary>Sources · {sources.length}</Summary>
       <ul>
         {sources.map(({ url, title, kind }) => (
           <li key={url}>

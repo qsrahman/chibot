@@ -619,13 +619,35 @@ body {
   font-size: 14px;
 }
 
-.thoughts summary {
+/* Thoughts, tool calls and Sources: a label after a chevron that turns
+   when open, instead of the browser's own triangle. */
+.thoughts summary,
+.sources summary {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   width: fit-content;
+  list-style: none;
   cursor: pointer;
 }
 
-/* A gentle shimmer while the model is still thinking. */
-.thoughts summary.live {
+.thoughts summary::-webkit-details-marker,
+.sources summary::-webkit-details-marker {
+  display: none;
+}
+
+.disclosure-chevron {
+  flex: none;
+  transition: transform 150ms ease;
+}
+
+details[open] > summary > .disclosure-chevron {
+  transform: rotate(90deg);
+}
+
+/* A gentle shimmer while the model is still thinking (on the label only, so
+   the chevron stays visible). */
+.thoughts summary .live {
   background: linear-gradient(
       90deg,
       var(--fg-muted) 40%,
@@ -770,11 +792,6 @@ body {
   margin-top: 12px;
   color: var(--fg-muted);
   font-size: 14px;
-}
-
-.sources summary {
-  width: fit-content;
-  cursor: pointer;
 }
 
 .sources ul {
