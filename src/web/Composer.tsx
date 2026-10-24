@@ -51,6 +51,8 @@ interface Props {
   tools: ToolOption[]
   /** Owned by the page, which also attaches dropped files. */
   attachments: AttachmentsApi
+  /** The open chat's draft (its id, or the new chat's), kept per chat. */
+  draftKey: string
   /** The server can transcribe (voice input). */
   transcription: boolean
   /** Reasoning effort, picked as a mode (see `ModeSwitch`). */
@@ -65,14 +67,37 @@ export function Composer({
   inputRef,
   tools,
   attachments,
+  draftKey,
   transcription,
   effort,
   onEffort,
 }: Props) {
-  const [text, setText] = useState('')
-  const [picked, setPicked] = useState<ToolOption | null>(null)
+  // Each chat keeps its own unsent text and picked tool, so a draft doesn't
+  // follow you to another chat.
+  const [texts, setTexts] = useState<Record<string, string>>({})
+  const [pickedTools, setPickedTools] = useState<
+    Record<string, ToolOption | null>
+  >({})
+  const keyRef = useRef(draftKey)
+  keyRef.current = draftKey
+  const text = texts[draftKey] ?? ''
+  const picked = pickedTools[draftKey] ?? null
+  // `key`: the chat to change; a refused send is put back into the chat open
+  // by then (a new chat may have moved to its own URL meanwhile).
+  const setText = (
+    change: string | ((current: string) => string),
+    key = draftKey,
+  ) =>
+    setTexts((all) => ({
+      ...all,
+      [key]: typeof change === 'function' ? change(all[key] ?? '') : change,
+    }))
+  const setPicked = (option: ToolOption | null, key = draftKey) =>
+    setPickedTools((all) => ({ ...all, [key]: option }))
   // Sent while files were uploading: goes once they're all up.
   const [queued, setQueued] = useState(false)
+  // A queued send belongs to the chat it was made in.
+  useEffect(() => setQueued(false), [draftKey])
   const textRef = useRef(text)
   textRef.current = text
   const draftsRef = useRef(attachments.drafts)
@@ -139,8 +164,8 @@ export function Composer({
       void result.then((accepted) => {
         if (accepted || textRef.current !== '' || draftsRef.current.length > 0)
           return
-        setText(draft.text)
-        setPicked(draft.picked)
+        setText(draft.text, keyRef.current)
+        setPicked(draft.picked, keyRef.current)
         attachments.restore(draft.attachments)
       })
     }

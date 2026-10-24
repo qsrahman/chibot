@@ -65,7 +65,9 @@ export function ChatPage({
     projectId: projectHome,
   })
   const { turns, pending, error, isTemporary, busy } = chat
-  const attachments = useAttachments()
+  // Unsent text and files are kept per chat (a new chat per project).
+  const draftKey = id ?? `new:${projectHome ?? ''}`
+  const attachments = useAttachments(draftKey)
   const [dragging, setDragging] = useState(false)
   const waiting = pending ? [] : waitingCalls(turns)
   // Shown even when unavailable, saying why, so they can be found.
@@ -318,6 +320,7 @@ export function ChatPage({
         inputRef={composerRef}
         tools={toolOptions}
         attachments={attachments}
+        draftKey={draftKey}
         transcription={health?.features.transcription ?? false}
         effort={settings.settings?.reasoningEffort ?? null}
         onEffort={(reasoningEffort) =>

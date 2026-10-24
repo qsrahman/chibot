@@ -15,11 +15,20 @@ export interface Draft {
 }
 
 /**
- * The composer's attachments. Files upload as soon as they're added, so
- * sending only waits for the ones still on their way.
+ * The composer's attachments, kept per chat (`chat`: the open chat's draft
+ * key), so files added in one chat don't follow you to another. Files upload
+ * as soon as they're added, so sending only waits for the ones still on
+ * their way.
  */
-export function useAttachments() {
-  const [drafts, setDrafts] = useState<Draft[]>([])
+export function useAttachments(chat: string) {
+  const [byChat, setByChat] = useState<Record<string, Draft[]>>({})
+  const drafts = byChat[chat] ?? []
+  // Restoring a refused send goes to the chat open by then (a new chat may
+  // have moved to its own URL meanwhile).
+  const chatRef = useRef(chat)
+  chatRef.current = chat
+  const setDrafts = (change: (list: Draft[]) => Draft[], key = chat) =>
+    setByChat((all) => ({ ...all, [key]: change(all[key] ?? []) }))
   const uploads = useRef(new Map<string, AbortController>())
 
   // Unmounting abandons uploads; the server sweeps unsent files.
@@ -28,9 +37,16 @@ export function useAttachments() {
     return () => pending.forEach((upload) => upload.abort())
   }, [])
 
+  // An upload finishing updates its draft wherever it is, even in a chat
+  // the user has since left.
   const patch = (key: string, change: Partial<Draft>) =>
-    setDrafts((all) =>
-      all.map((d) => (d.key === key ? { ...d, ...change } : d)),
+    setByChat((all) =>
+      Object.fromEntries(
+        Object.entries(all).map(([chatKey, list]) => [
+          chatKey,
+          list.map((d) => (d.key === key ? { ...d, ...change } : d)),
+        ]),
+      ),
     )
 
   function add(files: File[]) {
@@ -39,8 +55,8 @@ export function useAttachments() {
       const image = fileKind(file.name)?.kind === 'image'
       const upload = new AbortController()
       uploads.current.set(key, upload)
-      setDrafts((all) => [
-        ...all,
+      setDrafts((list) => [
+        ...list,
         {
           key,
           name: file.name,
@@ -70,19 +86,22 @@ export function useAttachments() {
     uploads.current.get(key)?.abort()
     const preview = drafts.find((d) => d.key === key)?.preview
     if (preview) URL.revokeObjectURL(preview)
-    setDrafts((all) => all.filter((d) => d.key !== key))
+    setDrafts((list) => list.filter((d) => d.key !== key))
   }
 
   /** Empties the composer once its message is sent. */
   function clear() {
     for (const d of drafts) if (d.preview) URL.revokeObjectURL(d.preview)
-    setDrafts([])
+    setDrafts(() => [])
   }
 
   /** Puts back drafts after a send the server refused before saving them. */
   function restore(previous: Draft[]) {
     // Their preview URLs were revoked by `clear`.
-    setDrafts(previous.map((draft) => ({ ...draft, preview: null })))
+    setDrafts(
+      () => previous.map((draft) => ({ ...draft, preview: null })),
+      chatRef.current,
+    )
   }
 
   return {

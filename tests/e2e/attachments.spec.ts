@@ -325,3 +325,37 @@ test('keeps the message when a send fails', async ({ page }) => {
   await expect(box).toHaveValue('Keep this')
   await expect(page.getByText('notes.md')).toBeVisible()
 })
+
+test('a draft stays with its chat', async ({ page }) => {
+  await page.goto('/')
+  await appReady(page)
+  await send(page, 'Chat one')
+  await answered(page)
+  const one = page.url()
+  await page.goto('/')
+  await appReady(page)
+  await send(page, 'Chat two')
+  await answered(page)
+  const two = page.url()
+
+  // Half-written in chat two: text and a file.
+  const box = page.getByRole('textbox', { name: 'Message' })
+  await box.fill('Unsent in two')
+  await attach(page, [NOTES])
+  const chips = page
+    .locator('.composer')
+    .getByRole('list', { name: 'Attachments' })
+  await expect(chips.getByText('notes.md')).toBeVisible()
+
+  // Chat one has its own (empty) draft…
+  await page.locator(`nav a[href="${new URL(one).pathname}"]`).click()
+  await expect(page).toHaveURL(one)
+  await expect(box).toHaveValue('')
+  await expect(chips).toHaveCount(0)
+
+  // …and chat two's is still there.
+  await page.locator(`nav a[href="${new URL(two).pathname}"]`).click()
+  await expect(page).toHaveURL(two)
+  await expect(box).toHaveValue('Unsent in two')
+  await expect(chips.getByText('notes.md')).toBeVisible()
+})

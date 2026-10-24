@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Fixed
 
+- An unsent message followed you to whichever chat you opened next, attached files included, which could then be sent to the wrong chat. Each chat now keeps its own draft (text, files and picked tool) while chibot is open.
 - On phones and tablets a message couldn't have line breaks: Enter always sent, and touch keyboards have no Shift+Enter. On touch-only devices Enter now adds a line (the keyboard shows return) and the send button sends; the same in the edit box.
 
 ## [0.10.9] - 2026-10-24
