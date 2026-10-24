@@ -60,6 +60,15 @@ test('creates an image, keeps it, and edits it', async ({ page }) => {
     ),
   ).toBe('image/png')
 
+  // Opens full size over the chat, without leaving it.
+  await image.click()
+  const viewer = page.getByRole('dialog', { name: 'Generated image' })
+  await expect(viewer.getByRole('img')).toHaveAttribute('src', first!)
+  await expect(page).toHaveURL(/\/c\//)
+  expect(page.context().pages()).toHaveLength(1)
+  await viewer.getByRole('button', { name: 'Close' }).click()
+  await expect(viewer).toBeHidden()
+
   await page.reload()
   await expect(turns(page).first().locator('.image img')).toHaveAttribute(
     'src',

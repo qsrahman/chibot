@@ -1608,6 +1608,29 @@ a.menu-item {
   box-shadow: var(--dialog-shadow);
 }
 
+/* A full-size image over the chat; its actions sit beside the title. */
+.dialog.image-viewer {
+  width: min(100% - 32px, 1000px);
+  padding: 16px;
+}
+
+.image-viewer-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 4px;
+}
+
+.image-viewer img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100dvh - 140px);
+  margin: 0 auto;
+  border-radius: var(--radius-card);
+  object-fit: contain;
+}
+
 .dialog::backdrop {
   background: var(--scrim);
 }

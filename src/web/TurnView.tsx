@@ -4,6 +4,7 @@ import { useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { ChevronRight, Download, Pencil, RefreshCw, Wrench } from 'lucide-react'
 import { FileCard } from './FileCard.tsx'
+import { ImageViewer, opensViewer, type ViewedImage } from './ImageViewer.tsx'
 import { Markdown } from './Markdown.tsx'
 import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
 import {
@@ -57,6 +58,7 @@ export function TurnView({
   onImageLoad,
 }: TurnViewProps) {
   const [editing, setEditing] = useState(false)
+  const [viewing, setViewing] = useState<ViewedImage | null>(null)
   // Shown after a Stop before the server's ids are known: no edit/regenerate.
   const saved = question.itemId !== null
   const answerUsage = describeUsage(answer?.usage)
@@ -82,6 +84,13 @@ export function TurnView({
                     href={`/api/files/${fileId}`}
                     target="_blank"
                     rel="noreferrer"
+                    onClick={
+                      image
+                        ? opensViewer(() =>
+                            setViewing({ fileId, label: 'Attached image' }),
+                          )
+                        : undefined
+                    }
                   >
                     {image ? (
                       <img
@@ -140,7 +149,13 @@ export function TurnView({
             <ToolCall key={tool.callId} tool={tool} />
           ),
       )}
-      {answer && <Images answer={answer} onLoad={onImageLoad} />}
+      {answer && (
+        <Images
+          answer={answer}
+          onLoad={onImageLoad}
+          onView={(fileId) => setViewing({ fileId, label: 'Generated image' })}
+        />
+      )}
       {answer?.text ? (
         <div className="message assistant">
           <Markdown text={answer.text} />
@@ -185,6 +200,7 @@ export function TurnView({
           )}
         </div>
       )}
+      <ImageViewer image={viewing} onClose={() => setViewing(null)} />
     </div>
   )
 }
@@ -278,7 +294,15 @@ function RawToolCall({ tool }: { tool: ToolActivity }) {
 }
 
 /** Images the answer's tools made, or placeholders while they're made. */
-function Images({ answer, onLoad }: { answer: Answer; onLoad?: () => void }) {
+function Images({
+  answer,
+  onLoad,
+  onView,
+}: {
+  answer: Answer
+  onLoad?: () => void
+  onView: (fileId: string) => void
+}) {
   const images = answer.tools.flatMap((tool) => {
     const image = imageOf(tool)
     return image ? [{ key: tool.callId, image }] : []
@@ -295,7 +319,12 @@ function Images({ answer, onLoad }: { answer: Answer; onLoad?: () => void }) {
           />
         ) : (
           <figure key={key} className="image">
-            <a href={`/api/files/${image}`} target="_blank" rel="noreferrer">
+            <a
+              href={`/api/files/${image}`}
+              target="_blank"
+              rel="noreferrer"
+              onClick={opensViewer(() => onView(image))}
+            >
               <img
                 src={`/api/files/${image}`}
                 alt="Generated image"

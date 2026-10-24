@@ -235,6 +235,12 @@ chip (`--bubble-bg` / `--bubble-fg`, 36 px tall, icon + "Search"/"Image" +
 16 px radius; a square shimmer placeholder stands in while one is made. A
 `Download` icon button appears over the top-right corner on hover.
 
+**Image viewer.** Clicking a generated or attached image opens it in a dialog
+(up to 1000 px wide, 16 px padding) titled "Generated image" / "Attached
+image", with `Download` and `X` icon buttons at the top right and the image
+fitted to the window (16 px radius). Esc or a click outside closes it;
+⌘/Ctrl/Shift/middle clicks still open the image in a new tab.
+
 **Sources.** Below the answer, a `<details>` in 14 px muted text, "Sources ·
 n", listing each page as its title (`--fg`, one line, ellipsis) and a 12 px
 host name.

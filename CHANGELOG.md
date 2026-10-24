@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Added
 
+- Images (generated or attached) open full size over the chat, with Download and Close, instead of in a new tab, which on a phone meant leaving chibot. ⌘/Ctrl-click still opens a tab.
 - Menus (the composer's "+" and mode switch, a chat's and a project's "…") work from the keyboard: they open on their first item, ↑ / ↓ move between items, Home / End jump to the ends, and Esc returns to the button.
 
 ### Fixed

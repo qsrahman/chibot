@@ -151,8 +151,9 @@ Then open http://127.0.0.1:3000.
     **Sources** list under the answer links every page found or read.
   - **Reading pages:** paste a URL and ask about it. chibot never reads
     addresses on this machine or your network.
-  - **Images:** ask for a picture, then for changes ("make it bluer"). Images
-    open full size and can be downloaded. They're kept with the chat, and
+  - **Images:** ask for a picture, then for changes ("make it bluer"). Click an
+    image (or an attached photo) to see it full size over the chat, with
+    Download; ⌘/Ctrl-click opens it in a new tab. They're kept with the chat, and
     deleted with it.
   - **Calculator:** exact arithmetic, functions and unit conversions.
   - **Memory:** chibot remembers lasting facts and preferences you share
