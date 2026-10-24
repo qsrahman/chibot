@@ -97,7 +97,10 @@ Code uses `"SF Mono", SFMono-Regular, ui-monospace, Consolas, "Liberation Mono",
   Below 768 px (phones) it's a drawer instead: hidden by default, opened by a
   panel button at the header's left, `min(300px, 85vw)` wide over the chat
   with `--dialog-shadow` and a `--scrim` behind it; tapping the scrim or
-  opening a chat closes it. User bubbles may then take 85 % of the width.
+  opening a chat closes it. User bubbles may then take 85 % of the width. The
+  header then also shows the chat's title (500 weight, one line, ellipsis)
+  after the panel button and any project breadcrumb, with the model name in
+  `--fg-muted`; the header's token total is left to each answer.
 - **Header.** Model name with a chevron on the left: the model picker, a
   popover with a search box over the model list (a name field when the
   server can't list models), then a divider and "Reasoning effort": wrapping

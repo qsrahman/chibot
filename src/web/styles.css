@@ -107,6 +107,10 @@ body {
   padding: 0 8px 0 16px;
 }
 
+.topbar-title {
+  display: none;
+}
+
 .topbar-start {
   display: flex;
   align-items: center;
@@ -2039,6 +2043,28 @@ label.button {
 
   .topbar {
     padding-left: 8px;
+  }
+
+  /* The chat's name before the model, which then gives way to it. */
+  .topbar-title {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .topbar-start > :not(.topbar-title) {
+    flex: none;
+  }
+
+  .topbar-info .usage {
+    display: none;
+  }
+
+  .topbar-title ~ * .model-button {
+    color: var(--fg-muted);
   }
 
   .message.user p,

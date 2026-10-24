@@ -17,6 +17,8 @@ test('the chat fills a phone, and the sidebar is a drawer', async ({
 
   await send(page, 'Hello from a phone')
   await answered(page)
+  // With the sidebar hidden, the header says which chat this is.
+  await expect(page.locator('.topbar-title')).toHaveText('E2E Title')
 
   // Opened from the header; a tap beside it closes it.
   await page.getByRole('button', { name: 'Open sidebar' }).click()

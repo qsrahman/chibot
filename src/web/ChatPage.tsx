@@ -205,6 +205,12 @@ export function ChatPage({
               {project.name} /
             </Link>
           )}
+          {/* Phones only: with the sidebar hidden, say which chat this is. */}
+          {id && pageTitle && (
+            <span className="topbar-title" title={pageTitle}>
+              {pageTitle}
+            </span>
+          )}
           {!health ? (
             <span className="model">Server unreachable</span>
           ) : settings.settings && settings.defaults ? (

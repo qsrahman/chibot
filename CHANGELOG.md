@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Added
 
+- On phones, where the sidebar is hidden, the header shows the open chat's title before the model name.
 - The browser tab is named after the chat on screen ("Faster SQLite writes – chibot", following renames), or the project on its page, instead of always "chibot", so tabs, history and bookmarks can be told apart.
 
 ### Fixed
