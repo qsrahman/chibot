@@ -4,6 +4,12 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.10.12] - 2026-10-24
+
+### Changed
+
+- The model menu's reasoning effort is a sub-menu: a "Reasoning effort" row showing the current effort opens the levels beside it (below it on a phone), instead of a row of pills inside the model menu. It works from the keyboard (→ opens, ← and Esc close).
+
 ## [0.10.11] - 2026-10-24
 
 ### Added
