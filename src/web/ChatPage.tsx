@@ -149,7 +149,7 @@ export function ChatPage({
   // An empty chat centres the composer under a greeting, as ChatGPT does.
   // The composer stays the third child either way, so it keeps its focus
   // and text when the first message moves it to the bottom.
-  const empty = turns.length === 0 && !pending && !error
+  const empty = turns.length === 0 && !pending && !error && !chat.loading
   const temporary = id ? isTemporary : temporaryMode
   const projectId = id ? chat.projectId : (projectHome ?? null)
   const project = projects.projects.find((p) => p.id === projectId)

@@ -282,3 +282,25 @@ test('jumps back to the latest message after scrolling up', async ({
     ),
   ).toBeLessThan(40)
 })
+
+test('opening a chat never flashes the new-chat greeting', async ({ page }) => {
+  await page.goto('/')
+  await appReady(page)
+  await send(page, 'Gamma chat')
+  await answered(page)
+  const gammaUrl = page.url()
+  await newChat(page)
+
+  const gammaId = new URL(gammaUrl).pathname.slice('/c/'.length)
+  await page.route(`**/api/conversations/${gammaId}`, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 600))
+    await route.continue()
+  })
+  await openChat(page, gammaUrl)
+  // While it loads (the request is held 600 ms): not the empty page's
+  // greeting. A snapshot, not a retrying assertion, which would wait it out.
+  await expect(page).toHaveURL(gammaUrl)
+  await page.waitForTimeout(200)
+  expect(await page.locator('.greeting').count()).toBe(0)
+  await expect(answer(page, 0)).toContainText('to: Gamma chat')
+})

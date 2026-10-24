@@ -53,6 +53,9 @@ export function useChat(
   const [error, setError] = useState<string | null>(null)
   const [temporaryId, setTemporaryId] = useState<string | null>(null)
   const [projectId, setProjectId] = useState<string | null>(null)
+  // The chat whose history last arrived (or failed to). Compared during
+  // render, so a chat being opened never shows as an empty new chat.
+  const [loadedId, setLoadedId] = useState<string | null>(null)
   // The run whose updates belong on screen. Cleared when the user switches
   // chats, so a run still going for the old chat can't touch the new one.
   const runRef = useRef<Run | null>(null)
@@ -87,17 +90,23 @@ export function useChat(
     setError(null)
     setTemporaryId(null)
     setProjectId(null)
+    setLoadedId(null)
     if (!conversationId) return
     let current = true
     getConversation(conversationId).then(
       (loaded) => {
         if (!current) return
         showItems(loaded)
+        setLoadedId(conversationId)
         const { conversation } = loaded
         setTemporaryId(conversation.temporary ? conversationId : null)
         setProjectId(conversation.projectId)
       },
-      (err: Error) => current && setError(err.message),
+      (err: Error) => {
+        if (!current) return
+        setError(err.message)
+        setLoadedId(conversationId)
+      },
     )
     return () => {
       current = false
@@ -205,6 +214,7 @@ export function useChat(
         if (!created.temporary) onListChanged()
         if (!live()) return true
         createdIdRef.current = id
+        setLoadedId(id)
         setTemporaryId(created.temporary ? id : null)
         setProjectId(created.projectId)
         onCreated(id)
@@ -389,6 +399,8 @@ export function useChat(
     /** The project of the conversation on screen, if any. */
     projectId,
     busy: pending !== null,
+    /** The chat's history hasn't arrived yet. */
+    loading: conversationId !== undefined && loadedId !== conversationId,
     send,
     edit,
     regenerate,
