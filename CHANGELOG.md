@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.10.8] - 2026-10-24
+
 ### Fixed
 
 - After upgrading chibot, a browser could keep a cached copy of the page that named scripts the new build had deleted, leaving the app blank until a hard reload. The page is now served with `Cache-Control: no-cache` (scripts keep their content-hashed names and normal caching).
