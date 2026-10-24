@@ -688,7 +688,7 @@ Configuration lives in three layers, split by who changes it and how often:
 |---|---|---|---|
 | Startup & secrets | API keys, base URLs, `HOST`/`PORT`, data dir | Environment / `.env` | Owner, then restart |
 | User preferences | Chat model, custom instructions, reasoning effort, tool switches (memory's is the memory on/off) | SQLite `settings` table (`SettingsStore`, Phase 4) | Settings dialog, live |
-| Browser preferences | Theme, sidebar collapsed | `localStorage` | The UI, per browser |
+| Browser preferences | Theme, sidebar collapsed, unsent message drafts (text) | `localStorage` | The UI, per browser |
 
 - **Precedence:** user setting → environment default. (Projects add
   instructions on top of the custom instructions, but no setting overrides.)

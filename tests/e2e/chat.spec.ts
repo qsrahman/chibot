@@ -332,3 +332,20 @@ test('the tab title names the chat on screen', async ({ page }) => {
   await newChat(page)
   await expect(page).toHaveTitle('chibot')
 })
+
+test('an unsent message survives a reload', async ({ page }) => {
+  await page.goto('/')
+  await appReady(page)
+  await send(page, 'Keep my draft')
+  await answered(page)
+  const box = page.getByRole('textbox', { name: 'Message' })
+  await box.fill('Half-written thought')
+  await page.reload()
+  await expect(box).toHaveValue('Half-written thought')
+
+  // Sending it clears the saved draft.
+  await box.press('Enter')
+  await answered(page)
+  await page.reload()
+  await expect(box).toHaveValue('')
+})

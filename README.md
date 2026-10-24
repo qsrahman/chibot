@@ -124,8 +124,9 @@ Then open http://127.0.0.1:3000.
 
 - Type a message and press **Enter** to send. **Shift+Enter** adds a new line.
   On a phone or tablet, Enter adds a new line and the send button sends.
-  An unsent message (text and files) stays with its chat while chibot is
-  open, so switching chats doesn't carry it along.
+  An unsent message stays with its chat, so switching chats doesn't carry it
+  along; its text is also kept in this browser across reloads (attached files
+  only while the page is open).
 - Answers stream in as Markdown, with tables, syntax-highlighted code and
   math (`$…$` / `$$…$$`, or LaTeX's `\(…\)` / `\[…\]`).
 - **Stop** (■) ends an answer early. What arrived so far is kept, and the same

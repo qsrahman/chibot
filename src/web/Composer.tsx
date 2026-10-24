@@ -73,8 +73,10 @@ export function Composer({
   onEffort,
 }: Props) {
   // Each chat keeps its own unsent text and picked tool, so a draft doesn't
-  // follow you to another chat.
-  const [texts, setTexts] = useState<Record<string, string>>({})
+  // follow you to another chat. Texts are also kept in this browser, so a
+  // reload doesn't lose them (files can't be).
+  const [texts, setTexts] = useState(loadDrafts)
+  useEffect(() => saveDrafts(texts), [texts])
   const [pickedTools, setPickedTools] = useState<
     Record<string, ToolOption | null>
   >({})
@@ -372,6 +374,36 @@ export function Composer({
       )}
     </form>
   )
+}
+
+const DRAFTS_KEY = 'chibot.drafts'
+
+// Storage can throw (private windows, blocked site data). Drafts are a
+// convenience, so they just aren't kept then.
+function loadDrafts(): Record<string, string> {
+  try {
+    const stored: unknown = JSON.parse(localStorage.getItem(DRAFTS_KEY) ?? '{}')
+    if (!stored || typeof stored !== 'object') return {}
+    return Object.fromEntries(
+      Object.entries(stored).filter(
+        (entry): entry is [string, string] => typeof entry[1] === 'string',
+      ),
+    )
+  } catch {
+    return {}
+  }
+}
+
+function saveDrafts(texts: Record<string, string>): void {
+  // Sent or cleared drafts are dropped, so the store doesn't grow.
+  const kept = Object.entries(texts).filter(([, text]) => text.trim() !== '')
+  try {
+    if (kept.length === 0) localStorage.removeItem(DRAFTS_KEY)
+    else
+      localStorage.setItem(DRAFTS_KEY, JSON.stringify(Object.fromEntries(kept)))
+  } catch {
+    // Not kept this time.
+  }
 }
 
 /** An attachment in the composer: a thumbnail or a file card, with ×. */
