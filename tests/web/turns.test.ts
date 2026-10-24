@@ -4,6 +4,7 @@ import type { StoredItem } from '../../src/shared/types.ts'
 import {
   imageOf,
   sourcesOf,
+  summarizeTool,
   toTurns,
   waitingCalls,
 } from '../../src/web/turns.ts'
@@ -312,5 +313,71 @@ describe('attachments', () => {
         { fileId: 'doc', image: false, name: 'notes.pdf' },
       ],
     })
+  })
+})
+
+describe('summarizeTool', () => {
+  const call = (name: string, args: object, output: string | null) => ({
+    callId: 'c1',
+    name,
+    arguments: JSON.stringify(args),
+    output,
+  })
+
+  it('shows a search as its query and the results found', () => {
+    const output = JSON.stringify({
+      query: 'sqlite wal',
+      results: [
+        { title: 'WAL', url: 'https://sqlite.org/wal.html' },
+        { title: 'Bad', url: 'javascript:alert(1)' },
+      ],
+    })
+    expect(
+      summarizeTool(call('web_search', { query: 'sqlite wal' }, output)),
+    ).toEqual({
+      input: 'sqlite wal',
+      result: null,
+      links: [{ url: 'https://sqlite.org/wal.html', title: 'WAL' }],
+    })
+    expect(
+      summarizeTool(
+        call(
+          'search_chats',
+          { query: 'trip' },
+          '{"query":"trip","results":[]}',
+        ),
+      ),
+    ).toEqual({ input: 'trip', result: 'Nothing found', links: [] })
+  })
+
+  it('shows a calculation, a memory change and a page read', () => {
+    expect(
+      summarizeTool(call('calculator', { expression: '12 * 7' }, '84')),
+    ).toEqual({ input: '12 * 7', result: '84', links: [] })
+    expect(
+      summarizeTool(
+        call('memory', { action: 'save' }, 'Saved memory 3: "Vegetarian"'),
+      ),
+    ).toEqual({
+      input: null,
+      result: 'Saved memory 3: "Vegetarian"',
+      links: [],
+    })
+    expect(
+      summarizeTool(
+        call('fetch_url', { url: 'https://example.com/a' }, 'Page text…'),
+      ),
+    ).toMatchObject({ input: 'https://example.com/a', result: null })
+  })
+
+  it('shows errors, running calls and unknown tools sensibly', () => {
+    expect(
+      summarizeTool(call('web_search', { query: 'x' }, 'Error: quota')),
+    ).toEqual({ input: 'x', result: 'Error: quota', links: [] })
+    expect(
+      summarizeTool(call('calculator', { expression: '1+1' }, null)),
+    ).toEqual({ input: '1+1', result: null, links: [] })
+    // Unknown tools (e.g. the e2e test tool) show their raw call only.
+    expect(summarizeTool(call('e2e_note', { text: 'x' }, 'ok'))).toBeNull()
   })
 })

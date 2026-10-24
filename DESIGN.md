@@ -197,8 +197,12 @@ answer starts. Opened, the summary sits behind a 2 px `--border` rule.
 
 **Tool calls.** Like Thinking: a `<details>` in 14 px muted text above the
 answer, "Running calculator…" with the shimmer while a tool runs, "Used
-calculator" afterwards. Opened, it lists Arguments (indented JSON) and Result
-in 13 px monospace blocks on `--surface-muted` (10 px radius).
+calculator" afterwards. Opened, it says what the tool did in plain terms:
+what it was asked (the query, calculation, page or prompt, in `--fg`), a short
+result or error, and what it found as source links (title and domain, as in
+Sources). A nested "Raw" disclosure holds Arguments (indented JSON) and Result
+in 13 px monospace blocks on `--surface-muted` (10 px radius); tools without a
+plain summary show those directly.
 
 **Approval card.** In place of the answer's actions while tool calls wait: a
 card (`--surface`, hairline border, 16 px radius, 16 px padding) with a 15 px

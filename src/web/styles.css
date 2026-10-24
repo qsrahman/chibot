@@ -681,6 +681,34 @@ details[open] > summary > .disclosure-chevron {
   margin-top: 8px;
 }
 
+/* A tool call's details: what it was asked, then what came back. */
+.tool-summary {
+  display: grid;
+  gap: 6px;
+}
+
+.tool-summary p {
+  margin: 0;
+}
+
+.tool-input {
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+
+.tool-summary .source-list {
+  margin: 0;
+}
+
+.tool-raw {
+  margin-top: 2px;
+  font-size: 13px;
+}
+
+.tool-raw .tool-details {
+  margin-top: 6px;
+}
+
 .tool-details {
   display: grid;
   gap: 4px;
@@ -794,7 +822,7 @@ details[open] > summary > .disclosure-chevron {
   font-size: 14px;
 }
 
-.sources ul {
+.source-list {
   display: grid;
   gap: 4px;
   margin: 8px 0 0;
@@ -802,7 +830,7 @@ details[open] > summary > .disclosure-chevron {
   list-style: none;
 }
 
-.sources a {
+.source-list a {
   display: flex;
   gap: 8px;
   align-items: baseline;
@@ -811,7 +839,7 @@ details[open] > summary > .disclosure-chevron {
   text-decoration: none;
 }
 
-.sources a:hover .source-title {
+.source-list a:hover .source-title {
   text-decoration: underline;
 }
 

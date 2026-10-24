@@ -150,48 +150,102 @@ export interface Source {
 export function sourcesOf(answer: Answer): Source[] {
   const found = new Map<string, Source>()
   for (const tool of answer.tools) {
-    if (!tool.output || tool.output.startsWith('Error:')) continue
-    if (tool.name === 'web_search') {
-      const { results } = parseJson<{ results?: unknown }>(tool.output)
-      for (const row of rows(results)) {
-        const url = webUrl(row.url)
-        if (!url) continue
-        found.set(url.href, {
-          url: url.href,
-          title: sourceTitle(row.title, url.href),
-        })
-      }
-    } else if (tool.name === 'search_chats') {
-      const { results } = parseJson<{ results?: unknown }>(tool.output)
-      for (const row of rows(results)) {
-        if (typeof row.chat_id !== 'string' || !row.chat_id) continue
-        const url = `/c/${encodeURIComponent(row.chat_id)}`
-        found.set(url, {
-          url,
-          title: sourceTitle(row.title, 'Chat'),
-          kind: 'chat',
-        })
-      }
-    } else if (tool.name === 'search_project_files') {
-      const { results } = parseJson<{ results?: unknown }>(tool.output)
-      for (const row of rows(results)) {
-        if (typeof row.file_id !== 'string' || !row.file_id) continue
-        const url = `/api/files/${encodeURIComponent(row.file_id)}`
-        found.set(url, {
-          url,
-          title: sourceTitle(row.file, 'Project file'),
-          kind: 'file',
-        })
-      }
-    } else if (tool.name === 'fetch_url') {
-      const { url } = parseJson<{ url?: unknown }>(tool.arguments)
-      const parsed = webUrl(url)
-      if (parsed && !found.has(parsed.href)) {
-        found.set(parsed.href, { url: parsed.href, title: parsed.href })
+    for (const source of toolSources(tool)) {
+      // A page read after it was found keeps its search result's title.
+      if (tool.name !== 'fetch_url' || !found.has(source.url)) {
+        found.set(source.url, source)
       }
     }
   }
   return [...found.values()]
+}
+
+/** The sources one tool call found or read (see `sourcesOf`). */
+function toolSources(tool: ToolActivity): Source[] {
+  if (!tool.output || tool.output.startsWith('Error:')) return []
+  const found = new Map<string, Source>()
+  if (tool.name === 'web_search') {
+    const { results } = parseJson<{ results?: unknown }>(tool.output)
+    for (const row of rows(results)) {
+      const url = webUrl(row.url)
+      if (!url) continue
+      found.set(url.href, {
+        url: url.href,
+        title: sourceTitle(row.title, url.href),
+      })
+    }
+  } else if (tool.name === 'search_chats') {
+    const { results } = parseJson<{ results?: unknown }>(tool.output)
+    for (const row of rows(results)) {
+      if (typeof row.chat_id !== 'string' || !row.chat_id) continue
+      const url = `/c/${encodeURIComponent(row.chat_id)}`
+      found.set(url, {
+        url,
+        title: sourceTitle(row.title, 'Chat'),
+        kind: 'chat',
+      })
+    }
+  } else if (tool.name === 'search_project_files') {
+    const { results } = parseJson<{ results?: unknown }>(tool.output)
+    for (const row of rows(results)) {
+      if (typeof row.file_id !== 'string' || !row.file_id) continue
+      const url = `/api/files/${encodeURIComponent(row.file_id)}`
+      found.set(url, {
+        url,
+        title: sourceTitle(row.file, 'Project file'),
+        kind: 'file',
+      })
+    }
+  } else if (tool.name === 'fetch_url') {
+    const { url } = parseJson<{ url?: unknown }>(tool.arguments)
+    const parsed = webUrl(url)
+    if (parsed) found.set(parsed.href, { url: parsed.href, title: parsed.href })
+  }
+  return [...found.values()]
+}
+
+/** What a tool call did, in people's terms (its raw call stays available). */
+export interface ToolSummary {
+  /** What it was asked: the query, calculation, page or prompt. */
+  input: string | null
+  /** A short result: the answer, the change made, or the error. */
+  result: string | null
+  /** What it found. */
+  links: Source[]
+}
+
+const SEARCHES = ['web_search', 'search_chats', 'search_project_files']
+
+/** `tool` summarized for its details, or `null` for tools shown raw. */
+export function summarizeTool(tool: ToolActivity): ToolSummary | null {
+  const args = parseJson<Record<string, unknown>>(tool.arguments)
+  const arg = (key: string) => {
+    const value = args[key]
+    return typeof value === 'string' && value ? value : null
+  }
+  const error = tool.output?.startsWith('Error:') ? tool.output : null
+  if (SEARCHES.includes(tool.name)) {
+    const links = toolSources(tool)
+    const empty = tool.output !== null && !error && links.length === 0
+    return {
+      input: arg('query'),
+      result: error ?? (empty ? 'Nothing found' : null),
+      links,
+    }
+  }
+  switch (tool.name) {
+    case 'calculator':
+      return { input: arg('expression'), result: tool.output, links: [] }
+    case 'memory':
+      return { input: null, result: tool.output, links: [] }
+    case 'fetch_url':
+      return { input: arg('url'), result: error, links: [] }
+    case 'generate_image':
+    case 'edit_image':
+      return { input: arg('prompt'), result: error, links: [] }
+    default:
+      return null
+  }
 }
 
 function rows(value: unknown): Record<string, unknown>[] {

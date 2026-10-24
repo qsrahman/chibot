@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- Opening a tool call shows what it did in plain terms (the search and the pages found, the calculation and its result, the memory change, the page read, the image prompt) instead of raw JSON, which stays under "Raw".
 - Thoughts, tool calls and Sources open with a turning chevron, like the rest of the icons, instead of the browser's default triangle.
 
 ## [0.10.6] - 2026-10-23

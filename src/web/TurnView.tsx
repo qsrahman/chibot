@@ -7,9 +7,11 @@ import { FileCard } from './FileCard.tsx'
 import { Markdown } from './Markdown.tsx'
 import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
 import {
-  imageOf,
-  sourcesOf,
   type Answer,
+  imageOf,
+  type Source,
+  sourcesOf,
+  summarizeTool,
   type ToolActivity,
   type Turn,
 } from './turns.ts'
@@ -229,7 +231,34 @@ function ToolCall({ tool }: { tool: ToolActivity }) {
   )
 }
 
+/** What a tool did, in plain terms, with its raw call one click away. */
 function ToolDetails({ tool }: { tool: ToolActivity }) {
+  const summary = summarizeTool(tool)
+  if (!summary) return <RawToolCall tool={tool} />
+  const { input, result, links } = summary
+  return (
+    <div className="tool-summary">
+      {input && <p className="tool-input">{input}</p>}
+      {result && <p className="tool-result">{result}</p>}
+      {links.length > 0 && (
+        <ul className="source-list">
+          {links.map((source) => (
+            <li key={source.url}>
+              <SourceLink source={source} />
+            </li>
+          ))}
+        </ul>
+      )}
+      <details className="tool-raw">
+        <Summary>Raw</Summary>
+        <RawToolCall tool={tool} />
+      </details>
+    </div>
+  )
+}
+
+/** A tool call's arguments and output as they were sent. */
+function RawToolCall({ tool }: { tool: ToolActivity }) {
   return (
     <dl className="tool-details">
       <dt>Arguments</dt>
@@ -296,26 +325,34 @@ function Sources({ answer }: { answer: Answer }) {
   return (
     <details className="sources">
       <Summary>Sources · {sources.length}</Summary>
-      <ul>
-        {sources.map(({ url, title, kind }) => (
-          <li key={url}>
-            {kind === 'chat' ? (
-              <Link to={url}>
-                <span className="source-title">{title}</span>
-                <span className="source-host">Your chats</span>
-              </Link>
-            ) : (
-              <a href={url} target="_blank" rel="noreferrer">
-                <span className="source-title">{title}</span>
-                <span className="source-host">
-                  {kind === 'file' ? 'Project file' : new URL(url).hostname}
-                </span>
-              </a>
-            )}
+      <ul className="source-list">
+        {sources.map((source) => (
+          <li key={source.url}>
+            <SourceLink source={source} />
           </li>
         ))}
       </ul>
     </details>
+  )
+}
+
+/** A source: a chat in chibot, a project file or a web page (in a new tab). */
+function SourceLink({ source: { url, title, kind } }: { source: Source }) {
+  if (kind === 'chat') {
+    return (
+      <Link to={url}>
+        <span className="source-title">{title}</span>
+        <span className="source-host">Your chats</span>
+      </Link>
+    )
+  }
+  return (
+    <a href={url} target="_blank" rel="noreferrer">
+      <span className="source-title">{title}</span>
+      <span className="source-host">
+        {kind === 'file' ? 'Project file' : new URL(url).hostname}
+      </span>
+    </a>
   )
 }
 
