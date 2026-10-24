@@ -89,6 +89,22 @@ export function ChatPage({
   // Follow the answer only while the user is at the bottom, so scrolling up
   // to read isn't undone by every new token.
   const followRef = useRef(true)
+  // Read out by screen readers (a live region): an answer starting, then
+  // ready or waiting for approval. Errors announce themselves (alert).
+  const [announcement, setAnnouncement] = useState('')
+  const wasBusy = useRef(false)
+  useEffect(() => {
+    if (busy && !wasBusy.current) setAnnouncement('Answering…')
+    else if (!busy && wasBusy.current && !error) {
+      setAnnouncement(
+        waiting.length > 0
+          ? 'A tool is waiting for your approval'
+          : 'Answer ready',
+      )
+    }
+    wasBusy.current = busy
+  }, [busy, error, waiting.length])
+  useEffect(() => setAnnouncement(''), [id])
   // Scrolled up: a button jumps back to the latest message.
   const [away, setAway] = useState(false)
 
@@ -359,6 +375,9 @@ export function ChatPage({
           onChatsChanged={onListChanged}
         />
       )}
+      <p className="visually-hidden" role="status">
+        {announcement}
+      </p>
       <p className="disclaimer">
         chibot can make mistakes. Check important info.
       </p>

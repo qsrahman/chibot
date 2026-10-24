@@ -1694,7 +1694,8 @@ a.menu-item {
   padding: 0;
 }
 
-/* The search dialog keeps its title for screen readers only. */
+/* For screen readers only (e.g. the search dialog's title, announcements). */
+.visually-hidden,
 .dialog.search .dialog-title {
   position: absolute;
   width: 1px;

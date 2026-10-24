@@ -311,6 +311,8 @@ test('the tab title names the chat on screen', async ({ page }) => {
   await expect(page).toHaveTitle('chibot')
   await send(page, 'Name this chat')
   await answered(page)
+  // Screen readers hear that the answer arrived.
+  await expect(page.getByRole('status')).toHaveText('Answer ready')
   // The fake server titles every chat "E2E Title".
   await expect(page).toHaveTitle('E2E Title – chibot')
 

@@ -38,6 +38,10 @@ test('waits for approval, also across a reload, then runs the tool', async ({
   await send(page, 'Please approve a note')
   await expect(approvalCard(page)).toContainText('chibot wants to use e2e_note')
   await expect(approvalCard(page)).toContainText('"text": "hello"')
+  // Screen readers hear that it waits.
+  await expect(page.getByRole('status')).toHaveText(
+    'A tool is waiting for your approval',
+  )
 
   await page.reload()
   await approvalCard(page).getByRole('button', { name: 'Approve' }).click()
