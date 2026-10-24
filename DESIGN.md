@@ -103,10 +103,12 @@ Code uses `"SF Mono", SFMono-Regular, ui-monospace, Consolas, "Liberation Mono",
   `--fg-muted`; the header's token total is left to each answer.
 - **Header.** Model name with a chevron on the left: the model picker, a
   popover with a search box over the model list (a name field when the
-  server can't list models), then a divider and "Reasoning effort": wrapping
-  28 px pill buttons (Default, `none` … `max`, 13 px text, `--border`
-  outline; the chosen one filled `--button` / `--button-fg`). A chosen effort
-  shows after the model name in `--fg-muted`. Page actions sit on the right.
+  server can't list models), then a divider and a "Reasoning effort" row
+  showing the current effort (muted) and a `ChevronRight`. It opens a
+  sub-menu beside it (below it when there's no room, e.g. on a phone): Default,
+  then `none` … `max`, with a check on the current one. → opens it, ← and Esc
+  close just the sub-menu. A chosen effort shows after the model name in
+  `--fg-muted`. Page actions sit on the right.
 
 ## 4. Components
 

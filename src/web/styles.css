@@ -164,33 +164,19 @@ body {
   color: var(--fg-muted);
 }
 
-.effort-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding: 0 6px 4px;
+/* The model menu's "Reasoning effort" row and the sub-menu it opens to its
+   side (below on a phone, where there's no room beside it). */
+.submenu-row .menu-hint {
+  margin-left: auto;
 }
 
-.effort-option {
-  height: 28px;
-  padding: 0 10px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: none;
-  color: inherit;
-  font: inherit;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.effort-option:hover {
-  background: var(--chip);
-}
-
-.effort-option[aria-checked='true'] {
-  border-color: transparent;
-  background: var(--button);
-  color: var(--button-fg);
+.menu.submenu {
+  min-width: 160px;
+  margin: 0 4px;
+  position-area: inline-end span-block-end;
+  position-try-fallbacks:
+    flip-inline,
+    block-end span-inline-start;
 }
 
 .model-search {

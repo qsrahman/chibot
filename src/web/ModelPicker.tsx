@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Check, ChevronDown } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { Check, ChevronDown, ChevronRight } from 'lucide-react'
 import { REASONING_EFFORTS } from '../shared/reasoning.ts'
 import type { Settings } from '../shared/settings.ts'
 import { listModels } from './api.ts'
@@ -30,6 +30,8 @@ export function ModelPicker({
   onEffort,
 }: Props) {
   const popover = useAnchoredPopover()
+  const efforts = useAnchoredPopover()
+  const effortRow = useRef<HTMLButtonElement>(null)
   // undefined: not loaded yet; null: the server can't list models.
   const [models, setModels] = useState<string[] | null>()
   const [query, setQuery] = useState('')
@@ -72,6 +74,8 @@ export function ModelPicker({
         className="menu model-menu"
         style={popover.style}
         onToggle={(e) => {
+          // Not the effort sub-menu's toggle, which React passes up too.
+          if (e.target !== e.currentTarget) return
           if (e.newState === 'open') {
             e.currentTarget.querySelector('input')?.focus()
           }
@@ -121,24 +125,58 @@ export function ModelPicker({
           )}
         </div>
         <hr className="menu-divider" />
-        <p className="menu-note" id={`${popover.id}-effort`}>
-          Reasoning effort
-        </p>
+        {/* A sub-menu: a popover inside this one, so opening it keeps the
+            model menu open and Esc closes just the sub-menu. */}
+        <button
+          ref={effortRow}
+          type="button"
+          className="menu-item submenu-row"
+          aria-haspopup="menu"
+          popoverTarget={efforts.id}
+          style={efforts.triggerStyle}
+          onKeyDown={(e) => {
+            if (e.key !== 'ArrowRight') return
+            e.preventDefault()
+            efforts.ref.current?.showPopover()
+          }}
+        >
+          <span className="menu-item-text">Reasoning effort</span>
+          <span className="menu-hint">{effort ?? 'Default'}</span>
+          <ChevronRight size={16} strokeWidth={1.5} aria-hidden />
+        </button>
         <div
-          className="effort-options"
-          role="radiogroup"
-          aria-labelledby={`${popover.id}-effort`}
+          id={efforts.id}
+          ref={efforts.ref}
+          popover="auto"
+          className="menu submenu"
+          role="menu"
+          aria-label="Reasoning effort"
+          style={efforts.style}
+          onToggle={efforts.menuProps.onToggle}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowLeft') {
+              e.preventDefault()
+              efforts.hide()
+              effortRow.current?.focus()
+              return
+            }
+            efforts.menuProps.onKeyDown(e)
+          }}
         >
           {[null, ...REASONING_EFFORTS].map((option) => (
             <button
               key={option ?? 'default'}
               type="button"
-              role="radio"
+              role="menuitemradio"
               aria-checked={option === effort}
-              className="effort-option"
-              onClick={() => option !== effort && onEffort(option)}
+              className="menu-item"
+              onClick={() => {
+                efforts.hide()
+                if (option !== effort) onEffort(option)
+              }}
             >
-              {option ?? 'Default'}
+              <span className="menu-item-text">{option ?? 'Default'}</span>
+              {option === effort && <Check size={16} strokeWidth={1.5} />}
             </button>
           ))}
         </div>

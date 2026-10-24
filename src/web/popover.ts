@@ -31,6 +31,8 @@ const itemsOf = (menu: HTMLElement) => [
 // A menu opens on its first item, so the arrow keys work straight away.
 // (Closing it with Esc returns focus to its button: the Popover API does.)
 function focusFirstItem(e: ToggleEvent<HTMLElement>) {
+  // React passes a nested popover's toggle on to its ancestors too.
+  if (e.target !== e.currentTarget) return
   if (e.newState === 'open') itemsOf(e.currentTarget)[0]?.focus()
 }
 
