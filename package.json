@@ -1,6 +1,6 @@
 {
   "name": "chibot",
-  "version": "0.10.13",
+  "version": "0.10.14",
   "description": "Local ChatGPT-style chatbot on the OpenAI Responses API",
   "private": true,
   "bin": {

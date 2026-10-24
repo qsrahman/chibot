@@ -4,6 +4,12 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.10.14] - 2026-10-24
+
+### Changed
+
+- An answer's tool calls share one collapsible row, labelled with what they did ("Searched the web, Memory updated"; while one runs, what it's doing), which opens to each call and its own details. A single call shows as before.
+
 ## [0.10.13] - 2026-10-24
 
 ### Changed
