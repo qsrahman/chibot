@@ -1,11 +1,7 @@
 import { z } from 'zod'
-import {
-  MAX_MEMORIES,
-  MAX_MEMORY_LENGTH,
-  normalizeMemory,
-  type MemoryStore,
-} from '../memory-store.ts'
+import { MAX_MEMORIES, MAX_MEMORY_LENGTH } from '../../shared/memory.ts'
 import type { Conversation } from '../../shared/types.ts'
+import { normalizeMemory, type MemoryStore } from '../memory-store.ts'
 import { Tool } from '../tool.ts'
 
 /** Saves, updates and deletes what chibot remembers about the user. */

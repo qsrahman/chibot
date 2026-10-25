@@ -116,6 +116,10 @@ export const removeProjectFile = (projectId: string, fileId: string) =>
 
 export const listMemories = () => request<Memory[]>('/api/memories')
 
+/** Changes a memory's text. */
+export const updateMemory = (id: number, text: string) =>
+  request<Memory>(`/api/memories/${id}`, send('PATCH', { text }))
+
 /** Deletes one memory, or all without `id`. */
 export const deleteMemories = (id?: number) =>
   remove(`/api/memories${id === undefined ? '' : `/${id}`}`)

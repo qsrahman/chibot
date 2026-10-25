@@ -78,3 +78,9 @@ export const turnRequestSchema = z
 
 /** `PUT /api/conversations/:id/leaf`: show another version. */
 export const switchVersionSchema = z.object({ itemId: z.number().int() })
+
+/**
+ * `PATCH /api/memories/:id`: the memory's new text. Spacing is collapsed
+ * first, so the route checks the length the model would see.
+ */
+export const memoryPatchSchema = z.object({ text: z.string().max(10_000) })

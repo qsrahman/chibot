@@ -1,9 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 import type { Memory } from '../shared/types.ts'
 
-export const MAX_MEMORIES = 100
-export const MAX_MEMORY_LENGTH = 300
-
 /**
  * A memory is one line: runs of whitespace (newlines included) become single
  * spaces, so its text can't add lines to the instructions that list it.

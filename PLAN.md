@@ -186,7 +186,7 @@ tool payloads), written in the same transaction as the item.
 | `GET/PATCH /api/settings` | 4 | User settings and their defaults (never secrets) |
 | `GET /api/models` | 4 | The chat endpoint's models, or `null` if it can't list them |
 | `GET /api/files/:id` · `GET /api/tools` | 6 | Serve a stored file's original (generated images; Phase 9 attachments) / list tools with availability and on/off state (never keys) |
-| `GET /api/memories` · `DELETE /api/memories[/:id]` | 7 | View / delete one or all memories |
+| `GET /api/memories` · `PATCH/DELETE /api/memories/:id` · `DELETE /api/memories` | 7 | View / edit / delete one or all memories |
 | `/api/projects[/:id]` (CRUD) · `/api/projects/:id/files[/:fileId]` · `POST /api/files` | 8 | Projects; their files (list, attach, detach, with indexing status); upload a file (project files; Phase 9 attachments, ≤ 50 MB). Conversation `PATCH` gains `projectId`. |
 | `POST /api/transcriptions` | 9 | Transcribe a recording (≤ 25 MB). Phase 9 adds `fileIds` to turns and `features` to health. |
 | `GET /api/mcp` · `POST /api/mcp/:name/{reconnect,sign-in,sign-out}` · `GET /api/mcp/oauth/callback` | 10 | MCP servers' status and tools; reconnect; OAuth sign-in and sign-out (servers themselves are only set up in `mcp.json`) |
@@ -456,11 +456,14 @@ others): persistent prompt injection through memory. The sidebar search
 (every word must match, newest first) doesn't suit model queries.
 
 - **Storage.** Migration 6 adds `memories` (§4); `MemoryStore` lists, saves,
-  updates and deletes. At most 100 memories of 300 characters; when full, the
-  tool asks the model to update or delete instead.
+  updates and deletes. At most 100 memories of 300 characters, each stored on
+  one line (runs of whitespace collapsed); a save that repeats one (ignoring
+  case and spacing) is reported instead of added. When full, the tool asks
+  the model to update or delete instead.
 - **`memory` tool** (`action`: save/update/delete, `id`, `text`) returns what
   changed (`Saved memory 7: "…"`). With memory on, chat instructions list the
-  memories with their ids and how to use the tool: save lasting facts and
+  memories with their ids inside `<memories>`, as facts about the user rather
+  than instructions, and say how to use the tool: save lasting facts and
   preferences, update what changed, forget on request, no secrets or one-off
   details.
 - **Temporary chats** get no memories, no `memory` and no `search_chats` (a
@@ -468,7 +471,7 @@ others): persistent prompt injection through memory. The sidebar search
 - **One switch.** The memory tool's Settings → Tools switch turns memory off
   entirely (no tool, no memories in the instructions). Settings →
   Personalization shows the same switch in a Memory section, with Manage
-  memories.
+  memories: the count against the limit, and edit or delete.
 - **Injection guard.** `web_search` and `fetch_url` get `untrustedOutput`;
   `memory` gets `requiresApproval: 'after-untrusted'`: once a chat's history
   holds untrusted output, memory changes there wait for Approve / Deny. The

@@ -45,7 +45,7 @@ describe('MemoryStore', () => {
     expect(memories.find('Lives in Lahore.')).toBeNull()
   })
 
-  it('is served newest first and deleted through the API', async () => {
+  it('is served, edited and deleted through the API', async () => {
     const memories = testMemories()
     const store = memoryStore()
     const settings = testSettings()
@@ -58,11 +58,30 @@ describe('MemoryStore', () => {
     })
     const first = memories.save('First.')
     memories.save('Second.')
+    const patch = (id: number | string, body: unknown) =>
+      app.request(`/api/memories/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
 
     const listed = (await (
       await app.request('/api/memories')
     ).json()) as Memory[]
     expect(listed.map((m) => m.text)).toEqual(['Second.', 'First.'])
+
+    const edited = await patch(first.id, { text: ' First, edited. ' })
+    expect(edited.status).toBe(200)
+    expect(await edited.json()).toMatchObject({
+      id: first.id,
+      text: 'First, edited.',
+    })
+    expect((await patch(first.id, { text: ' ' })).status).toBe(400)
+    expect((await patch(first.id, { text: 'x'.repeat(301) })).status).toBe(400)
+    expect((await patch(999, { text: 'Other.' })).status).toBe(404)
+    expect((await patch('x', { text: 'Other.' })).status).toBe(404)
+    expect((await patch(first.id, { text: 'second.' })).status).toBe(409)
+
     const del = (path: string) => app.request(path, { method: 'DELETE' })
     expect((await del(`/api/memories/${first.id}`)).status).toBe(204)
     expect((await del(`/api/memories/${first.id}`)).status).toBe(404)

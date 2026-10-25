@@ -53,6 +53,28 @@ test('remembers a fact in a new chat, and forgets it from Settings', async ({
   expect(await memories(page)).toEqual([])
 })
 
+test('edits a memory and shows the count in Settings', async ({ page }) => {
+  await page.goto('/')
+  await send(page, 'Please remember I like tea')
+  await answered(page)
+
+  await page.keyboard.press('ControlOrMeta+,')
+  const settings = page.getByRole('dialog', { name: 'Settings' })
+  await settings.getByRole('button', { name: 'Personalization' }).click()
+  await settings.getByRole('button', { name: 'Manage' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Memories' })
+  await expect(dialog).toContainText('1 of 100 memories')
+
+  await dialog.getByRole('button', { name: 'Edit memory: I like tea' }).click()
+  const box = dialog.getByRole('textbox', { name: 'Memory' })
+  await box.fill('I prefer green tea')
+  await box.press('Enter')
+
+  await expect(dialog).toContainText('I prefer green tea')
+  await expect(dialog).toContainText('1 of 100 memories')
+  expect(await memories(page)).toEqual(['I prefer green tea'])
+})
+
 test('a temporary chat neither sees nor saves memories', async ({ page }) => {
   await page.goto('/')
   await send(page, 'Please remember I like tea')

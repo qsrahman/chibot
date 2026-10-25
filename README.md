@@ -204,8 +204,10 @@ Then open http://127.0.0.1:3000.
   - **Memory:** chibot remembers lasting facts and preferences you share
     ("remember that…", or things like "I'm vegetarian") and uses them in new
     chats; the answer says "Memory updated". Ask it to change or forget
-    something, or delete memories in Settings. In a chat that read web pages
-    or search results, memory changes ask first, so a page can't plant one.
+    something, or edit or delete memories in Settings → Personalization →
+    Memory (which shows how many of the 100 are used). It won't save the same
+    fact twice. In a chat that read web pages or search results, memory
+    changes ask first, so a page can't plant one.
   - **Past chats:** ask about something you discussed before ("what did we
     decide about…?"). chibot searches your other chats (on this machine) and
     links the ones it used under **Sources**.

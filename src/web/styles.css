@@ -2066,6 +2066,32 @@ label.button {
   font-size: 14px;
 }
 
+.memory-count {
+  margin: -12px 0 12px;
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.memory-edit {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 0;
+}
+
+.memory-edit-input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-row);
+  background: var(--bg);
+  color: inherit;
+  font: inherit;
+}
+
 .archived-title {
   flex: 1;
   min-width: 0;

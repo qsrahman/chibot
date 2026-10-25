@@ -273,9 +273,11 @@ fitted to the window (16 px radius). Esc or a click outside closes it;
 n", listing each page as its title (`--fg`, one line, ellipsis) and a 12 px
 host name.
 
-**Memories dialog.** Like Archived chats: a short explanation, one row per
-memory (14 px text, a `Trash2` delete button), and Delete all (danger, with a
-confirm dialog).
+**Memories dialog.** Like Archived chats: a short explanation, then the count
+("12 of 100 memories") in 12 px muted text, and one row per memory (14 px
+text, `Pencil` edit and `Trash2` delete icon buttons). Editing swaps the row
+for a text field with Save (primary) and Cancel, saved with Enter and
+cancelled with Esc. Delete all (danger) sits below, with a confirm dialog.
 
 **Projects.** The sidebar's Projects section ("New project", then a `Folder`
 row each) sits above the chats. A project's page: the name as a 28 px heading

@@ -14,12 +14,14 @@ import {
   replaceFileIds,
   type ConversationExport,
 } from '../shared/export.ts'
+import { MAX_MEMORY_LENGTH } from '../shared/memory.ts'
 import { messageText } from '../shared/messages.ts'
 import {
   conversationPatchSchema,
   createConversationSchema,
   addProjectFileSchema,
   createProjectSchema,
+  memoryPatchSchema,
   projectPatchSchema,
   switchVersionSchema,
   turnRequestSchema,
@@ -43,7 +45,7 @@ import type { Config } from './config.ts'
 import type { ConversationStore } from './conversation-store.ts'
 import type { FileStore } from './file-store.ts'
 import type { McpServers } from './mcp-servers.ts'
-import type { MemoryStore } from './memory-store.ts'
+import { normalizeMemory, type MemoryStore } from './memory-store.ts'
 import type { ProjectIndex } from './project-index.ts'
 import type { ProjectStore } from './project-store.ts'
 import { toMarkdown } from './markdown-export.ts'
@@ -344,6 +346,29 @@ export function createApp({
   })
 
   app.get('/api/memories', (c) => c.json(memories.list().reverse()))
+
+  app.patch('/api/memories/:id', json(memoryPatchSchema), (c) => {
+    const id = Number(c.req.param('id'))
+    if (!Number.isInteger(id) || !memories.get(id)) {
+      return notFound(c, 'Memory')
+    }
+    const text = normalizeMemory(c.req.valid('json').text)
+    if (!text) return c.json({ error: 'A memory needs its text' }, 400)
+    if (text.length > MAX_MEMORY_LENGTH) {
+      return c.json(
+        { error: `A memory can be at most ${MAX_MEMORY_LENGTH} characters` },
+        400,
+      )
+    }
+    const duplicate = memories.find(text)
+    if (duplicate && duplicate.id !== id) {
+      return c.json(
+        { error: `That is already remembered: "${duplicate.text}"` },
+        409,
+      )
+    }
+    return c.json(memories.update(id, text)!)
+  })
 
   app.delete('/api/memories/:id', (c) => {
     const id = Number(c.req.param('id'))
