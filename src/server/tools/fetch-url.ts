@@ -20,6 +20,8 @@ for (const [network, prefix, type] of [
   ['192.168.0.0', 16, 'ipv4'],
   ['::', 128, 'ipv6'],
   ['::1', 128, 'ipv6'],
+  ['64:ff9b::', 96, 'ipv6'], // NAT64: an IPv4 address behind the prefix
+  ['2002::', 16, 'ipv6'], // 6to4: an IPv4 address in the middle
   ['fc00::', 7, 'ipv6'], // unique local
   ['fe80::', 10, 'ipv6'], // link-local
 ] as const) {
@@ -31,8 +33,9 @@ export type AddressGuard = (address: string) => boolean
 
 /**
  * Only public addresses: never this machine or the local network (also as
- * IPv4-mapped IPv6), so a page or prompt can't make chibot read the router,
- * `localhost` services or cloud metadata.
+ * IPv4-mapped IPv6, or an IPv4 address behind NAT64 or 6to4), so a page or
+ * prompt can't make chibot read the router, `localhost` services or cloud
+ * metadata.
  */
 export const publicOnly: AddressGuard = (address) =>
   !PRIVATE.check(address, isIP(address) === 6 ? 'ipv6' : 'ipv4')

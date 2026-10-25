@@ -19,6 +19,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 - A web search that hangs gives up after 10 s, like `fetch_url`.
 - Images whose format chibot doesn't serve (anything but PNG, JPEG and WebP) are kept as PNG, rather than trusting the endpoint's `output_format` as the file's type.
 - Stopping an answer now cancels a running project file search's embedding request.
+- `fetch_url` also refuses the IPv4 addresses that NAT64 and 6to4 IPv6 addresses can carry, not only IPv4-mapped ones.
 
 ## [0.11.2] - 2026-10-25
 
