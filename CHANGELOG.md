@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- Roadmap: Phase 10 is now the MCP client (servers in `mcp.json` only, calls that never ask, local and remote servers with OAuth sign-in, a switch per server and tool); the code runner moves to Phase 11.
+
 ## [0.10.15] - 2026-10-25
 
 ### Changed

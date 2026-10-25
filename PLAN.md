@@ -189,6 +189,7 @@ tool payloads), written in the same transaction as the item.
 | `GET /api/memories` · `DELETE /api/memories[/:id]` | 7 | View / delete one or all memories |
 | `/api/projects[/:id]` (CRUD) · `/api/projects/:id/files[/:fileId]` · `POST /api/files` | 8 | Projects; their files (list, attach, detach, with indexing status); upload a file (project files; Phase 9 attachments, ≤ 50 MB). Conversation `PATCH` gains `projectId`. |
 | `POST /api/transcriptions` | 9 | Transcribe a recording (≤ 25 MB). Phase 9 adds `fileIds` to turns and `features` to health. |
+| `GET /api/mcp` · `POST /api/mcp/:name/{reconnect,sign-in,sign-out}` · `GET /api/mcp/oauth/callback` | 10 | MCP servers' status and tools; reconnect; OAuth sign-in and sign-out (servers themselves are only set up in `mcp.json`) |
 
 ## 5. Phases
 
@@ -625,12 +626,72 @@ available for `gemma4:cloud`.
   parts; Playwright covers attaching by menu, paste and drop, removing,
   rendering after reload, the text fallback, export/import and the mic.
 
-### Phase 10 — Code runner
+### Phase 10 — MCP client
+Decisions (agreed before building; revised from the first proposal): tools
+from MCP servers become chibot function tools; servers are set up only in
+`mcp.json`, never from the web; their calls never ask first; `local` and
+`remote` servers, the latter with OAuth sign-in; a switch per server and per
+tool in Settings; tools only. Built before the code runner (now Phase 11).
+
+- **Config.** `mcp.json` (git-ignored; `mcp.example.json` shows the format),
+  at `CHIBOT_MCP_CONFIG` or the chibot folder, in the common `mcpServers`
+  shape with a `type` per server: `local` (`command`, `args`, `env`, `cwd`)
+  or `remote` (`url`, optional `headers`). `${VAR}` is filled from the
+  environment, so secrets stay in `.env`. Validated with zod; errors name the
+  server and field, and a bad file disables MCP with a startup error rather
+  than stopping chibot. Servers run commands with the owner's rights and
+  chibot has no login, so the web app can never add or edit one.
+- **Connections.** `McpServers` connects every enabled server at startup, in
+  parallel (10 s timeout each), with `@modelcontextprotocol/client` (v2):
+  `StdioClientTransport` for `local`, `StreamableHTTPClientTransport` for
+  `remote`. Each has a status (connecting, connected with its tools, needs
+  sign-in, failed with the error, disabled). A failed or crashed server's
+  tools aren't offered; Reconnect retries it. `tools/list_changed` refreshes
+  the list.
+- **Tools.** Each MCP tool is an `McpTool` named `<server>__<tool>` (cut to
+  the 64-character limit), labelled with the tool's title, declared with the
+  server's own JSON Schema and `strict: false` (the server validates the
+  arguments). Calls never ask first; their output is `untrustedOutput`, so
+  memory changes in that chat still ask. Stop cancels a call (`AbortSignal`),
+  and calls time out after 60 s. `ToolRegistry` offers them beside chibot's
+  own tools; switches and `disabledTools` work the same.
+- **Results.** Text parts joined, `structuredContent` as JSON when there's no
+  text, cut at 40k characters; `isError` comes back to the model as
+  `Error: …`. Images are saved with the chat and shown in the answer; the
+  model gets a short note in their place.
+- **OAuth.** A remote server that answers 401 shows Sign in in Settings: an
+  `OAuthClientProvider` (dynamic client registration, PKCE) sends the browser
+  to the provider, which returns to `/api/mcp/oauth/callback` on 127.0.0.1;
+  chibot checks `state` (the SDK doesn't), finishes the flow and connects.
+  Tokens and client registrations are kept in `data/mcp-auth.json` (mode
+  0600), refreshed by the SDK, and removed by Sign out. Sign-in is done on
+  the machine running chibot (loopback redirect).
+- **Settings → Tools.** An "MCP servers" section: per server a switch
+  (`disabledMcpServers` setting; a disabled server is disconnected and a
+  local one's process stopped), its status, Reconnect, Sign in / Sign out,
+  and its tools with their own switches. Routes: `GET /api/mcp`,
+  `POST /api/mcp/:name/reconnect`, `POST /api/mcp/:name/sign-in`,
+  `POST /api/mcp/:name/sign-out`, `GET /api/mcp/oauth/callback`.
+- **Answers.** MCP calls show like other tool calls ("Used read_file · files")
+  with the plain summary (arguments and text result) and Raw.
+- **Out of scope:** resources, prompts, sampling, elicitation; approval
+  prompts for MCP calls.
+- **Commits.** PLAN → config (types, `${VAR}`) → connections and status →
+  `McpTool`, registry and results → OAuth → Settings UI and routes → e2e
+  (fixture servers, local and remote) → docs → release v0.11.0.
+- **Done when:** a local server (the official filesystem server) and a remote
+  one answer through chibot on `gemma4:cloud` and OpenAI; an OAuth-protected
+  remote server signs in and its tools work; Stop cancels a slow call; a
+  crashed server shows its error and Reconnect brings it back; a disabled
+  server's process stops and comes back when enabled. Unit tests use fixture
+  servers; Playwright covers the Settings section and a call in a chat.
+
+### Phase 11 — Code runner
 Decisions (agreed before building; the sandbox is probed on Node 26 first):
 a `run_python` function tool on Pyodide in a locked-down child process, a
 fresh interpreter per run with files persisting in `/mnt/data/`, a fixed
-package set cached locally, and `.xlsx` attachments for it to read. The
-MCP client follows as Phase 11.
+package set cached locally, and `.xlsx` attachments for it to read. Built
+after the MCP client (Phase 10).
 
 - **Engine.** [Pyodide](https://pyodide.org) (CPython on WebAssembly) from
   npm, pinned exactly. WebAssembly is the real sandbox: Python reaches the
@@ -671,7 +732,7 @@ MCP client follows as Phase 11.
   DESIGN.md gets the card spec.
 - **Commits.** Sandbox probe and runner → package setup → `run_python` tool →
   `.xlsx` attachments → UI → e2e specs (the fake server's "run code" calls
-  `run_python`) → docs → release v0.11.0.
+  `run_python`) → docs → release v0.12.0.
 - **Done when:** with `gemma4:cloud` and OpenAI, pandas reads an attached CSV
   and an `.xlsx`, matplotlib draws a chart that shows in the answer, and code
   that tries to fetch a URL or read `process.env` fails. Unit tests run real
@@ -715,6 +776,7 @@ Environment variables:
 | `HOST` | `127.0.0.1` | Interface to listen on; `0.0.0.0` exposes it on the LAN, so set `CHIBOT_TOKEN` too |
 | `PORT` | `3000` | API server port |
 | `CHIBOT_TOKEN` | — | Requires a token, remembered per browser in a cookie (v0.10.2) |
+| `CHIBOT_MCP_CONFIG` | `<repo>/mcp.json` | MCP servers' config file (Phase 10) |
 | `CHIBOT_DATA_DIR` | `<repo>/data` | Holds `chibot.db` (Phase 1) and `files/` (Phase 6). The default is resolved from the package location, not the current directory. |
 
 ## 7. Risks & open items
@@ -735,9 +797,8 @@ Environment variables:
   paging or "show more" if that limit is ever hit.
 - **Bundle size:** the web bundle is ~930 kB (highlight.js grammars, KaTeX).
   That's acceptable for a local app; code-split if it starts to matter.
-- **Future tools:** an MCP client that exposes local MCP servers' tools as
-  chibot function tools (approval required by default, since their side
-  effects are unknown) is planned as Phase 11. Deliberately out:
+- **Future tools:** MCP servers' tools come with Phase 10 and a code runner
+  with Phase 11. Deliberately out:
   shell/filesystem tools (too costly when mis-approved on an unauthenticated
   server) and narrow APIs like weather, which web search plus `fetch_url`
   cover.
