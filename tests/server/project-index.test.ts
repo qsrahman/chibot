@@ -145,6 +145,24 @@ describe('ProjectIndex', () => {
     ])
   })
 
+  it('keeps going when a status write fails', async () => {
+    const broken = {
+      setStatus: () => {
+        throw new Error('disk full')
+      },
+    } as unknown as ProjectStore
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      const index = new ProjectIndex(db, broken, files, null)
+      await index.index(add('a.md', 'Alpha.'))
+      // The queue isn't left rejected, so the next file is still indexed.
+      await index.index(add('b.md', 'Beta.'))
+      expect(logged).toHaveBeenCalledTimes(2)
+    } finally {
+      logged.mockRestore()
+    }
+  })
+
   it('resumes unfinished files and re-embeds for a new model', async () => {
     const first = new ProjectIndex(db, projects, files, {
       client: fakeEmbeddings([]),

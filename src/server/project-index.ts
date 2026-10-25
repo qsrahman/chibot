@@ -48,7 +48,13 @@ export class ProjectIndex {
 
   /** Queues a file for indexing; resolves once it's done (or failed). */
   index(fileId: string): Promise<void> {
-    const done = this.#queue.then(() => this.#index(fileId))
+    const done = this.#queue
+      .then(() => this.#index(fileId))
+      .catch((err: unknown) => {
+        // A failed status write (a database error) mustn't reject callers
+        // that fire and forget, or leave the queue rejected for good.
+        console.error(`Indexing ${fileId} failed:`, err)
+      })
     this.#queue = done
     return done
   }
