@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-10-25
+
 ### Added
 
 - MCP servers' config: `mcp.json` (path from `CHIBOT_MCP_CONFIG`, default the chibot folder; `mcp.example.json` shows the format), with `local` and `remote` servers and `${VAR}` filled from the environment. Errors name the server and field.
