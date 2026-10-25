@@ -8,8 +8,14 @@ export const TOOL_DENIED = 'The user denied this tool call.'
 /** The tools offered to the model, and running the calls it makes. */
 export class ToolRegistry {
   readonly #tools = new Map<string, Tool>()
+  readonly #more: () => Tool[]
 
-  constructor(tools: Tool[]) {
+  /**
+   * @param more tools that come and go (MCP servers'), asked for each time;
+   *   their names never clash with chibot's own (they hold `__`)
+   */
+  constructor(tools: Tool[], more: () => Tool[] = () => []) {
+    this.#more = more
     for (const tool of tools) {
       if (this.#tools.has(tool.name)) {
         throw new Error(`Duplicate tool name: ${tool.name}`)
@@ -19,11 +25,11 @@ export class ToolRegistry {
   }
 
   get tools(): Tool[] {
-    return [...this.#tools.values()]
+    return [...this.#tools.values(), ...this.#more()]
   }
 
   get(name: string): Tool | undefined {
-    return this.#tools.get(name)
+    return this.#tools.get(name) ?? this.#more().find((t) => t.name === name)
   }
 
   /**
@@ -39,7 +45,7 @@ export class ToolRegistry {
   ): Promise<string> {
     const { signal } = context
     if (signal?.aborted) return TOOL_STOPPED
-    const tool = this.#tools.get(call.name)
+    const tool = this.get(call.name)
     if (!tool || disabled.includes(tool.name))
       return `Error: there is no tool named "${call.name}".`
     let json: unknown

@@ -8,6 +8,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 - MCP servers' config: `mcp.json` (path from `CHIBOT_MCP_CONFIG`, default the chibot folder; `mcp.example.json` shows the format), with `local` and `remote` servers and `${VAR}` filled from the environment. Errors name the server and field.
 - MCP connections (`McpServers`): enabled servers connect in parallel at start (a local server runs as a child process with only safe environment defaults plus its own `env`), with a status per server, tool lists that follow the server's changes, a crash or dropped connection marked as failed (with the server's last error output), and calls that Stop cancels. A new setting, `disabledMcpServers`, switches servers off.
+- MCP tools: each connected server's tools are offered beside chibot's own as `<server>__<tool>`, with the server's JSON Schema (not strict) and without asking first; their output counts as untrusted. Results pass on the text (or `structuredContent` as JSON), cut at 40k characters; `isError` reaches the model as an error. Images (PNG, JPEG, GIF, WebP) are kept with the chat and shown in the answer, and the model gets a note in their place.
 
 ### Changed
 

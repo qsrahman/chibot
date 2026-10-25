@@ -274,13 +274,21 @@ function sourceTitle(value: unknown, fallback: string): string {
 const IMAGE_TOOLS = ['generate_image', 'edit_image']
 
 /**
- * The image an image tool made: its file id, `'pending'` while it's being
- * made, or `null` (another tool, or it failed).
+ * The images a tool made or returned (file ids), `['pending']` while an
+ * image tool is making one, or none (another tool, or it failed). MCP tools
+ * (`<server>__<tool>`) list theirs as `image_ids`.
  */
-export function imageOf(tool: ToolActivity): string | 'pending' | null {
-  if (!IMAGE_TOOLS.includes(tool.name)) return null
-  if (tool.output === null) return 'pending'
-  return parseJson<{ image_id?: string }>(tool.output).image_id ?? null
+export function imagesOf(tool: ToolActivity): (string | 'pending')[] {
+  if (IMAGE_TOOLS.includes(tool.name)) {
+    if (tool.output === null) return ['pending']
+    const id = parseJson<{ image_id?: string }>(tool.output).image_id
+    return id ? [id] : []
+  }
+  if (!tool.name.includes('__') || tool.output === null) return []
+  const ids = parseJson<{ image_ids?: unknown }>(tool.output).image_ids
+  return Array.isArray(ids)
+    ? ids.filter((id): id is string => typeof id === 'string')
+    : []
 }
 
 function parseJson<T extends object>(text: string): Partial<T> {

@@ -12,6 +12,8 @@ import { Config, loadEnvFiles } from './config.ts'
 import { ConversationStore } from './conversation-store.ts'
 import { openDatabase } from './database.ts'
 import { FileStore } from './file-store.ts'
+import { loadMcpConfig, type McpServerConfig } from './mcp-config.ts'
+import { McpServers } from './mcp-servers.ts'
 import { MemoryStore } from './memory-store.ts'
 import { ProjectIndex } from './project-index.ts'
 import { ProjectStore } from './project-store.ts'
@@ -22,6 +24,7 @@ import { Transcription } from './transcription.ts'
 import { CalculatorTool } from './tools/calculator.ts'
 import { FetchUrlTool } from './tools/fetch-url.ts'
 import { EditImageTool, GenerateImageTool } from './tools/images.ts'
+import { mcpTools } from './tools/mcp-tool.ts'
 import { MemoryTool } from './tools/memory.ts'
 import { SearchProjectFilesTool } from './tools/project-files.ts'
 import { SearchChatsTool } from './tools/search-chats.ts'
@@ -102,8 +105,13 @@ export function start({
     baseURL: config.chat.baseURL,
     apiKey: config.chat.apiKey,
   })
+  const mcp = new McpServers(mcpConfig(config), {
+    disabled: () => settings.get().disabledMcpServers,
+  })
+  void mcp.start()
   const registry = new ToolRegistry(
     tools({ config, store, files, memories, projects, index }),
+    mcpTools(mcp, files),
   )
   const attachments = new Attachments(client, files)
   attachments.deleteOrphans()
@@ -145,6 +153,16 @@ export function start({
       }
     },
   )
+}
+
+/** The MCP servers in `mcp.json`; none, with the error, if it's invalid. */
+function mcpConfig(config: Config): Record<string, McpServerConfig> {
+  try {
+    return loadMcpConfig(config.mcpConfigPath, process.env)
+  } catch (err) {
+    console.error(`MCP servers are off: ${(err as Error).message}`)
+    return {}
+  }
 }
 
 /**

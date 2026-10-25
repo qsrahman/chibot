@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { ResponseInputItem } from 'openai/resources/responses/responses'
 import type { StoredItem } from '../../src/shared/types.ts'
 import {
-  imageOf,
+  imagesOf,
   sourcesOf,
   summarizeTool,
   toTurns,
@@ -145,7 +145,7 @@ describe('toTurns', () => {
   })
 })
 
-describe('sourcesOf and imageOf', () => {
+describe('sourcesOf and imagesOf', () => {
   const tool = (name: string, args: unknown, output: string | null) => ({
     callId: name,
     name,
@@ -234,13 +234,18 @@ describe('sourcesOf and imageOf', () => {
     ])
   })
 
-  it('finds images made by image tools', () => {
-    expect(imageOf(tool('generate_image', {}, null))).toBe('pending')
-    expect(imageOf(tool('edit_image', {}, '{"image_id":"img-1"}'))).toBe(
+  it('finds images made by image tools and returned by MCP tools', () => {
+    expect(imagesOf(tool('generate_image', {}, null))).toEqual(['pending'])
+    expect(imagesOf(tool('edit_image', {}, '{"image_id":"img-1"}'))).toEqual([
       'img-1',
-    )
-    expect(imageOf(tool('generate_image', {}, 'Error: quota'))).toBeNull()
-    expect(imageOf(tool('calculator', {}, '{"image_id":"x"}'))).toBeNull()
+    ])
+    expect(imagesOf(tool('generate_image', {}, 'Error: quota'))).toEqual([])
+    expect(imagesOf(tool('calculator', {}, '{"image_ids":["x"]}'))).toEqual([])
+    expect(
+      imagesOf(tool('files__shot', {}, '{"result":"…","image_ids":["a","b"]}')),
+    ).toEqual(['a', 'b'])
+    expect(imagesOf(tool('files__shot', {}, null))).toEqual([])
+    expect(imagesOf(tool('files__read', {}, 'plain text'))).toEqual([])
   })
 })
 

@@ -10,7 +10,7 @@ import { TOUCH_ONLY, useMediaQuery } from './useMediaQuery.ts'
 import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
 import {
   type Answer,
-  imageOf,
+  imagesOf,
   type Source,
   sourcesOf,
   summarizeTool,
@@ -334,8 +334,10 @@ function Images({
   onView: (fileId: string) => void
 }) {
   const images = answer.tools.flatMap((tool) => {
-    const image = imageOf(tool)
-    return image ? [{ key: tool.callId, image }] : []
+    return imagesOf(tool).map((image, i) => ({
+      key: `${tool.callId}-${i}`,
+      image,
+    }))
   })
   if (images.length === 0) return null
   return (
