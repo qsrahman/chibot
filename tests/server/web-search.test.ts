@@ -61,4 +61,41 @@ describe('WebSearchTool', () => {
       new WebSearchTool('key').run({ query: 'q', freshness: null }, context),
     ).rejects.toThrow('Brave Search answered 429: quota exceeded')
   })
+
+  it('stops when the answer is stopped', async () => {
+    const stop = new AbortController()
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      (_input, init) =>
+        new Promise((_resolve, reject) => {
+          init!.signal!.addEventListener('abort', () =>
+            reject(new Error('stopped')),
+          )
+        }),
+    )
+    const search = new WebSearchTool('key').run(
+      { query: 'q', freshness: null },
+      { ...context, signal: stop.signal },
+    )
+    stop.abort()
+    await expect(search).rejects.toThrow('stopped')
+  })
+
+  it('gives up on a request that hangs', async () => {
+    const timeout = new AbortController()
+    vi.spyOn(AbortSignal, 'timeout').mockReturnValue(timeout.signal)
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      (_input, init) =>
+        new Promise((_resolve, reject) => {
+          init!.signal!.addEventListener('abort', () =>
+            reject(new Error('timed out')),
+          )
+        }),
+    )
+    const search = new WebSearchTool('key').run(
+      { query: 'q', freshness: null },
+      context,
+    )
+    timeout.abort()
+    await expect(search).rejects.toThrow('timed out')
+  })
 })

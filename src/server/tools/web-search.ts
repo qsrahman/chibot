@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { Tool, type ToolContext } from '../tool.ts'
 
 const FRESHNESS = { day: 'pd', week: 'pw', month: 'pm', year: 'py' } as const
+const TIMEOUT_MS = 10_000
 
 /** The part of Brave's web search response chibot reads. */
 interface BraveResponse {
@@ -61,12 +62,13 @@ export class WebSearchTool extends Tool {
     url.searchParams.set('q', query)
     url.searchParams.set('count', '5')
     if (freshness) url.searchParams.set('freshness', FRESHNESS[freshness])
+    const timeout = AbortSignal.timeout(TIMEOUT_MS)
     const res = await fetch(url, {
       headers: {
         Accept: 'application/json',
         'X-Subscription-Token': this.#apiKey,
       },
-      signal,
+      signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
     })
     if (!res.ok) {
       throw new Error(
