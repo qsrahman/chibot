@@ -76,6 +76,32 @@ test('picks the reasoning effort in the model menu', async ({ page }) => {
   await expect(dialog.getByLabel('Reasoning effort')).toHaveValue('high')
 })
 
+test('the effort sub-menu opens on hover', async ({ page }) => {
+  await page.goto('/')
+  await appReady(page)
+  await page.getByRole('button', { name: 'e2e-model' }).click()
+  const row = page.getByRole('button', { name: /Reasoning effort/ })
+  const efforts = page.getByRole('menu', { name: 'Reasoning effort' })
+
+  await row.hover()
+  await expect(efforts).toBeVisible()
+  // Moving into it keeps it open; a click on the row doesn't toggle it shut.
+  await efforts.getByRole('menuitemradio', { name: 'Medium' }).hover()
+  await page.waitForTimeout(400)
+  await expect(efforts).toBeVisible()
+  await row.click()
+  await expect(efforts).toBeVisible()
+
+  // Resting on another item closes it (the model menu stays).
+  await page.getByRole('option', { name: /e2e-other/ }).hover()
+  await expect(efforts).toBeHidden()
+  await expect(page.getByRole('listbox', { name: 'Models' })).toBeVisible()
+
+  await row.hover()
+  await efforts.getByRole('menuitemradio', { name: 'Medium' }).click()
+  await expect(row).toContainText('Medium')
+})
+
 test('the effort sub-menu works from the keyboard', async ({ page }) => {
   await page.goto('/')
   await appReady(page)

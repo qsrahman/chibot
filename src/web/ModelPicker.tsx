@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import { Check, ChevronDown, ChevronRight } from 'lucide-react'
 import { effortLabel, REASONING_EFFORTS } from '../shared/reasoning.ts'
 import type { Settings } from '../shared/settings.ts'
@@ -32,6 +32,26 @@ export function ModelPicker({
   const popover = useAnchoredPopover()
   const efforts = useAnchoredPopover()
   const effortRow = useRef<HTMLButtonElement>(null)
+  const closing = useRef<number>(undefined)
+  useEffect(() => () => clearTimeout(closing.current), [])
+
+  // With a mouse, resting on the "Reasoning effort" row opens its sub-menu,
+  // and resting elsewhere in the model menu closes it after a moment, time
+  // enough to cross into the sub-menu. (Its events bubble here: it's a child.)
+  function hoverEfforts(e: PointerEvent<HTMLDivElement>) {
+    const sub = efforts.ref.current
+    if (e.pointerType !== 'mouse' || !sub) return
+    const target = e.target as Node
+    if (sub.contains(target)) return clearTimeout(closing.current)
+    const open = sub.matches(':popover-open')
+    if (effortRow.current?.contains(target)) {
+      clearTimeout(closing.current)
+      if (!open) sub.showPopover()
+    } else if (open) {
+      clearTimeout(closing.current)
+      closing.current = window.setTimeout(() => sub.hidePopover(), 250)
+    }
+  }
   // undefined: not loaded yet; null: the server can't list models.
   const [models, setModels] = useState<string[] | null>()
   const [query, setQuery] = useState('')
@@ -73,6 +93,7 @@ export function ModelPicker({
         popover="auto"
         className="menu model-menu"
         style={popover.style}
+        onPointerOver={hoverEfforts}
         onToggle={(e) => {
           // Not the effort sub-menu's toggle, which React passes up too.
           if (e.target !== e.currentTarget) return
@@ -133,6 +154,8 @@ export function ModelPicker({
           className="menu-item submenu-row"
           aria-haspopup="menu"
           popoverTarget={efforts.id}
+          // Only opens: after a hover opened it, a click mustn't close it.
+          popoverTargetAction="show"
           style={efforts.triggerStyle}
           onKeyDown={(e) => {
             if (e.key !== 'ArrowRight') return

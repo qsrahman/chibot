@@ -106,7 +106,7 @@ Code uses `"SF Mono", SFMono-Regular, ui-monospace, Consolas, "Liberation Mono",
   server can't list models), then a divider and a "Reasoning effort" row
   showing the current effort (muted) and a `ChevronRight`. It opens a
   sub-menu beside it (below it when there's no room, e.g. on a phone): Auto (the
-  model's default), then None … Max, with a check on the current one. → opens it, ← and Esc
+  model's default), then None … Max, with a check on the current one. Resting the mouse on the row opens it (resting elsewhere in the model menu closes it after 250 ms, time to move into it); a click, Enter or → opens it too, ← and Esc
   close just the sub-menu. A chosen effort shows after the model name in
   `--fg-muted`. Page actions sit on the right.
 
