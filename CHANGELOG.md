@@ -4,6 +4,12 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.10.15] - 2026-10-25
+
+### Changed
+
+- The model menu's reasoning effort sub-menu opens when the mouse rests on its row, and closes when it rests elsewhere in the menu; clicking the row no longer closes a sub-menu that hovering opened.
+
 ## [0.10.14] - 2026-10-24
 
 ### Changed
