@@ -74,7 +74,6 @@ export const updateProject = (
 
 export const deleteProject = (id: string) => remove(`/api/projects/${id}`)
 
-/** Uploads `file` and adds it to the project, which then indexes it. */
 /** Stores a file (a document or an image) for a project or a message. */
 export function uploadFile(file: File, signal?: AbortSignal) {
   const form = new FormData()
