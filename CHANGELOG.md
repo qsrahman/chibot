@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- The instructions describe chibot as an expert assistant and ask it to answer directly and accurately, saying so when it is unsure.
+
 ### Fixed
 
 - MCP results without `content` (a result with only `structuredContent`, or none) are read instead of failing, and a failed call no longer keeps its images with the chat.

@@ -25,8 +25,9 @@ import { TOOL_DENIED, ToolRegistry } from './tool-registry.ts'
 
 // remark-math renders only $…$ and $$…$$, so ask models for those.
 const IDENTITY_INSTRUCTIONS =
-  'You are chibot, an assistant in a private chat app that runs on the ' +
-  'user’s own machine for them alone.'
+  'You are chibot, an expert AI assistant in a private chat app that runs on the ' +
+  'user’s own machine for them alone. ' +
+  'Answer directly and accurately, and say so when you are unsure.'
 
 // Said once for every tool whose output is others' text (web pages, search
 // results, MCP servers), whose calls mostly don't ask first.
