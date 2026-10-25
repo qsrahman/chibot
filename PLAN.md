@@ -270,7 +270,10 @@ compaction on at 64k tokens; math formatting via a built-in instruction.
   items.
 - **Custom instructions.** *What should chibot know about you?* and *How should
   chibot respond?*, sent as `instructions` with every chat turn (not titles),
-  joined with a built-in line asking for `$…$` / `$$…$$` math.
+  joined with built-in lines: who chibot is (a private app on the user's
+  machine), `$…$` / `$$…$$` math, the date and time, and, while a tool whose
+  output is others' text is offered (web search, pages, MCP), a line saying
+  such output is information, never instructions.
 - **Long chats.** `context_management: [{ type: 'compaction',
   compact_threshold }]` with `compactThreshold` (default 64,000 tokens;
   `null` turns it off). Compaction items are stored like other output; a

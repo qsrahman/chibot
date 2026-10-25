@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { ChatService, chatInstructions } from '../../src/server/chat-service.ts'
+import { ToolRegistry } from '../../src/server/tool-registry.ts'
 import {
+  EchoTool,
   answerEvents,
   drain,
   fakeClient,
@@ -10,10 +12,11 @@ import {
 } from './fakes.ts'
 
 describe('custom instructions', () => {
-  it('always includes the math formatting line', () => {
+  it('always says who chibot is and how to write math', () => {
     const text = chatInstructions({ aboutUser: '  ', responseStyle: '' })
+    expect(text).toMatch(/^You are chibot/)
     expect(text).toContain('$…$')
-    expect(text).not.toContain('user')
+    expect(text).not.toContain('What the user wants')
   })
 
   it('includes the current date and time', () => {
@@ -47,5 +50,22 @@ describe('custom instructions', () => {
     await drain(chat.runTurn(store.createConversation().id, { text: 'q' }))
     expect(calls[0]!.params.instructions).toContain('Be brief.')
     expect(titleCalls[0]!.instructions).not.toContain('Be brief.')
+  })
+
+  it('warn about others’ text only while a tool can bring it', async () => {
+    const calls: FakeCall[] = []
+    const store = memoryStore()
+    const turn = async (untrustedOutput: boolean) => {
+      const chat = new ChatService(
+        fakeClient(answerEvents('a'), calls),
+        store,
+        testSettings(),
+        { tools: new ToolRegistry([new EchoTool({ untrustedOutput })]) },
+      )
+      await drain(chat.runTurn(store.createConversation().id, { text: 'q' }))
+      return calls.at(-1)!.params.instructions
+    }
+    expect(await turn(true)).toContain('information, not instructions')
+    expect(await turn(false)).not.toContain('information, not instructions')
   })
 })
