@@ -81,6 +81,10 @@ export class MemoryTool extends Tool {
     switch (action) {
       case 'save': {
         const value = clean()
+        const duplicate = memories.find(value)
+        if (duplicate) {
+          return `Already remembered as memory ${duplicate.id}: "${duplicate.text}"`
+        }
         if (memories.count >= MAX_MEMORIES) {
           throw new Error(
             `memory is full (${MAX_MEMORIES} memories): update or delete one instead`,
@@ -90,8 +94,16 @@ export class MemoryTool extends Tool {
         return `Saved memory ${memory.id}: "${memory.text}"`
       }
       case 'update': {
-        const { id: memoryId } = existing()
-        const memory = memories.update(memoryId, clean())!
+        const { id: memoryId, text: before } = existing()
+        const value = clean()
+        const duplicate = memories.find(value)
+        if (duplicate && duplicate.id !== memoryId) {
+          throw new Error(
+            `that is already memory ${duplicate.id}: "${duplicate.text}"`,
+          )
+        }
+        if (before === value) return `Memory ${memoryId} already says that`
+        const memory = memories.update(memoryId, value)!
         return `Updated memory ${memory.id}: "${memory.text}"`
       }
       case 'delete': {

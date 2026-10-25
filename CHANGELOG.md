@@ -7,6 +7,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 ### Added
 
 - Send a message while an answer streams: it waits in a **Queued** row and goes once the answer is saved (or as soon as you stop it), and can be edited or cancelled first. Text only: files still need uploading before sending.
+- A memory that repeats one already saved (ignoring case and spacing) is reported to the model instead of stored twice; changing one memory to another's text is refused.
 - Each answer shows its context against the compaction threshold (`12.4K / 64K context`), red at 80 % of it, with the input/output breakdown in the tooltip.
 
 ### Changed

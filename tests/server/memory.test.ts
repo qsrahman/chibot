@@ -60,6 +60,29 @@ describe('MemoryTool', () => {
     ).toBe('Saved memory 1: "Prefers Rust. A lot."')
   })
 
+  it('reports a memory it already has instead of adding it again', async () => {
+    await tool.run({ action: 'save', id: null, text: 'Prefers Rust.' })
+    expect(
+      await tool.run({
+        action: 'save',
+        id: null,
+        text: '  prefers   RUST. ',
+      }),
+    ).toBe('Already remembered as memory 1: "Prefers Rust."')
+    expect(memories.count).toBe(1)
+  })
+
+  it('refuses to make two memories the same', async () => {
+    memories.save('Prefers Rust.')
+    memories.save('Lives in Lahore.')
+    await expect(
+      tool.run({ action: 'update', id: 2, text: 'prefers rust.' }),
+    ).rejects.toThrow('that is already memory 1: "Prefers Rust."')
+    expect(
+      await tool.run({ action: 'update', id: 1, text: 'Prefers Rust.' }),
+    ).toBe('Memory 1 already says that')
+  })
+
   it('lists the memories in its instructions', () => {
     expect(tool.instructions()).toContain('(nothing yet)')
     memories.save('Prefers Rust.')

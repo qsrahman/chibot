@@ -38,6 +38,15 @@ export class MemoryStore {
     )
   }
 
+  /** The memory whose text is `text` (ignoring case and spacing), if any. */
+  find(text: string): Memory | null {
+    return (
+      (this.#db
+        .prepare(`SELECT ${MEMORY} FROM memories WHERE lower(text) = lower(?)`)
+        .get(normalizeMemory(text)) as Memory | undefined) ?? null
+    )
+  }
+
   get count(): number {
     const { n } = this.#db
       .prepare('SELECT count(*) AS n FROM memories')

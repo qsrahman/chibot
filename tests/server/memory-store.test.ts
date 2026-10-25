@@ -40,6 +40,9 @@ describe('MemoryStore', () => {
     expect(memories.update(saved.id, 'Prefers\r\nGo.')?.text).toBe(
       'Prefers Go.',
     )
+    const rust = memories.save('Prefers Rust.')
+    expect(memories.find('  prefers   RUST. ')?.id).toBe(rust.id)
+    expect(memories.find('Lives in Lahore.')).toBeNull()
   })
 
   it('is served newest first and deleted through the API', async () => {
