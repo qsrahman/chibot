@@ -1436,7 +1436,23 @@ details[open] > summary > .disclosure-chevron {
 }
 
 .brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.brand-mark {
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+
+.brand-mark .bead {
+  fill: var(--accent);
+  stroke: none;
 }
 
 .sidebar-row {

@@ -304,9 +304,10 @@ Check important info."
 
 ## 5. Icons
 
-[`lucide-react`](https://lucide.dev), never hand-drawn SVG. ChatGPT uses thin
-line icons: 20 px in action rows and the header, 16 px on code blocks, 24 px
-for the composer's "+". The lucide equivalents use a 1.5 px stroke:
+[`lucide-react`](https://lucide.dev), never hand-drawn SVG — the logo is the
+one exception. ChatGPT uses thin line icons: 20 px in action rows and the
+header, 16 px on code blocks, 24 px for the composer's "+". The lucide
+equivalents use a 1.5 px stroke:
 
 | Action | lucide icon |
 |---|---|
@@ -326,6 +327,15 @@ for the composer's "+". The lucide equivalents use a 1.5 px stroke:
 | Tool approval / Settings → Tools | `Wrench` |
 | Project / new project / move in / remove / add files | `Folder` / `FolderPlus` / `FolderInput` / `FolderMinus` / `Upload` |
 | Search the web / create an image / download | `Globe` / `ImagePlus` / `Download` |
+
+**Brand.** The mark is a forked path whose right arm ends in the accent dot:
+drawn on a 32-unit grid with a 3.2-unit round stroke, the stem forks into two
+curved arms and the dot (`#3566f0`) closes the right one. The path takes
+`currentColor` — near-black in light mode, white in dark — and only the dot
+carries colour. In the sidebar it sits at 20 px beside `chibot` (system sans,
+18 px, 600, −0.01 em, 6 px apart). The favicon
+(`src/web/public/favicon.svg`) is the same drawing at a 3.6-unit stroke on a
+32 px `#0d0d0d` tile, so it holds up in a 16 px tab.
 
 ## 6. Interaction
 

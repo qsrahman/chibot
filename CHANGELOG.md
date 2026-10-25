@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Added
 
+- A logo: a forked path whose right arm ends in the accent dot, at 20 px beside the sidebar wordmark and as the browser tab's icon (`favicon.svg`), with a dark tile version for 16 px.
 - Send a message while an answer streams: it waits in a **Queued** row and goes once the answer is saved (or as soon as you stop it), and can be edited or cancelled first. Text only: files still need uploading before sending.
 - Memories can be edited in Settings → Personalization → Memory, which shows how many of the 100 are used.
 - A memory that repeats one already saved (ignoring case and spacing) is reported to the model instead of stored twice; changing one memory to another's text is refused.
