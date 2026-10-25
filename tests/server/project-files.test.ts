@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type OpenAI from 'openai'
+import type { ResponseFunctionToolCall } from 'openai/resources/responses/responses'
 import { ChatService } from '../../src/server/chat-service.ts'
 import type { ConversationStore } from '../../src/server/conversation-store.ts'
 import { openDatabase } from '../../src/server/database.ts'
 import type { FileStore } from '../../src/server/file-store.ts'
 import { ProjectIndex } from '../../src/server/project-index.ts'
 import { ProjectStore } from '../../src/server/project-store.ts'
-import { ToolRegistry } from '../../src/server/tool-registry.ts'
+import { TOOL_STOPPED, ToolRegistry } from '../../src/server/tool-registry.ts'
 import { SearchProjectFilesTool } from '../../src/server/tools/project-files.ts'
 import {
   answerEvents,
@@ -35,13 +36,14 @@ const fakeEmbeddings = {
 } as unknown as OpenAI
 
 describe('project file search', () => {
+  let db: ReturnType<typeof openDatabase>
   let store: ConversationStore
   let files: FileStore
   let projects: ProjectStore
   let index: ProjectIndex
   let projectId: string
   beforeEach(() => {
-    const db = openDatabase(':memory:')
+    db = openDatabase(':memory:')
     store = memoryStore(db)
     files = testFiles(db)
     projects = new ProjectStore(db, files)
@@ -96,6 +98,40 @@ describe('project file search', () => {
     expect(output.results).toEqual([
       { file: 'plan.md', file_id: expect.any(String), text: 'Kyoto.' },
     ])
+  })
+
+  it('stops a search whose embedding is still running', async () => {
+    await add('plan.md', 'Take the shinkansen to Kyoto.')
+    const hanging = {
+      embeddings: {
+        create: (_params: unknown, { signal }: { signal?: AbortSignal }) =>
+          new Promise((_resolve, reject) => {
+            signal!.addEventListener('abort', () => reject(signal!.reason))
+          }),
+      },
+    } as unknown as OpenAI
+    const slow = new ProjectIndex(db, projects, files, {
+      client: hanging,
+      model: 'emb',
+    })
+    const registry = new ToolRegistry([
+      new SearchProjectFilesTool(projects, slow),
+    ])
+    const stop = new AbortController()
+    const call: ResponseFunctionToolCall = {
+      type: 'function_call',
+      call_id: 'call_1',
+      name: 'search_project_files',
+      arguments: '{"query":"kyoto"}',
+    }
+
+    const run = registry.run(call, {
+      conversationId: 'chat-1',
+      projectId,
+      signal: stop.signal,
+    })
+    setTimeout(() => stop.abort(), 50)
+    expect(await run).toBe(TOOL_STOPPED)
   })
 
   it('gives project chats the project instructions and the tool', async () => {

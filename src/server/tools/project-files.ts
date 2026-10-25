@@ -41,9 +41,9 @@ export class SearchProjectFilesTool extends Tool {
     )
   }
 
-  async run({ query }: { query: string }, { projectId }: ToolContext) {
+  async run({ query }: { query: string }, { projectId, signal }: ToolContext) {
     if (!projectId) throw new Error('this chat is not in a project')
-    const results = (await this.#index.search(projectId, query)).map(
+    const results = (await this.#index.search(projectId, query, signal)).map(
       ({ fileId, name, text }) => ({ file: name, file_id: fileId, text }),
     )
     return JSON.stringify({ query, results })

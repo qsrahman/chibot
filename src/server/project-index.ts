@@ -14,6 +14,7 @@ const EMBED_BATCH = 64
 // Hits taken from each search before merging, and the usual RRF constant.
 const CANDIDATES = 30
 const RRF_K = 60
+const RESULTS = 6
 
 /** The embedding endpoint's client and model. */
 export interface EmbeddingDeps {
@@ -149,9 +150,15 @@ export class ProjectIndex {
   }
 
   /** Embeddings of `texts`, in order. */
-  async #vectors(texts: string[]): Promise<Float32Array[]> {
+  async #vectors(
+    texts: string[],
+    signal?: AbortSignal,
+  ): Promise<Float32Array[]> {
     const { client, model } = this.#embedding!
-    const { data } = await client.embeddings.create({ model, input: texts })
+    const { data } = await client.embeddings.create(
+      { model, input: texts },
+      { signal },
+    )
     return data
       .toSorted((a, b) => a.index - b.index)
       .map((d) => new Float32Array(d.embedding))
@@ -165,7 +172,7 @@ export class ProjectIndex {
   async search(
     projectId: string,
     query: string,
-    limit = 6,
+    signal?: AbortSignal,
   ): Promise<{ fileId: string; name: string; text: string }[]> {
     const lists = [this.#keywordHits(projectId, query)]
     if (
@@ -173,7 +180,7 @@ export class ProjectIndex {
       this.#vectorInfo()?.model === this.#embedding.model
     ) {
       try {
-        const [vector] = await this.#vectors([query])
+        const [vector] = await this.#vectors([query], signal)
         const nearest = this.#db
           .prepare(
             `SELECT rowid AS id FROM chunk_vectors
@@ -183,7 +190,8 @@ export class ProjectIndex {
           .all(vector!, CANDIDATES, projectId) as { id: number }[]
         lists.push(nearest.map(({ id }) => id))
       } catch (err) {
-        // The keyword hits still answer.
+        // A stop ends the call; any other failure still has the keyword hits.
+        if (signal?.aborted) throw err
         console.error('Embedding the search failed:', err)
       }
     }
@@ -199,7 +207,7 @@ export class ProjectIndex {
     )
     return [...scores]
       .sort((a, b) => b[1] - a[1])
-      .slice(0, limit)
+      .slice(0, RESULTS)
       .map(
         ([id]) => get.get(id) as { fileId: string; name: string; text: string },
       )
