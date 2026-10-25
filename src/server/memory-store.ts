@@ -4,6 +4,14 @@ import type { Memory } from '../shared/types.ts'
 export const MAX_MEMORIES = 100
 export const MAX_MEMORY_LENGTH = 300
 
+/**
+ * A memory is one line: runs of whitespace (newlines included) become single
+ * spaces, so its text can't add lines to the instructions that list it.
+ */
+export function normalizeMemory(text: string): string {
+  return text.replace(/\s+/g, ' ').trim()
+}
+
 // Rows as `Memory` objects.
 const MEMORY = 'id, text, created_at AS createdAt, updated_at AS updatedAt'
 
@@ -44,7 +52,7 @@ export class MemoryStore {
         `INSERT INTO memories (text, created_at, updated_at) VALUES (?, ?, ?)
          RETURNING ${MEMORY}`,
       )
-      .get(text, now, now) as unknown as Memory
+      .get(normalizeMemory(text), now, now) as unknown as Memory
   }
 
   /** @returns the updated memory, or `null` if there's none with `id` */
@@ -55,7 +63,8 @@ export class MemoryStore {
           `UPDATE memories SET text = ?, updated_at = ? WHERE id = ?
            RETURNING ${MEMORY}`,
         )
-        .get(text, Date.now(), id) as Memory | undefined) ?? null
+        .get(normalizeMemory(text), Date.now(), id) as Memory | undefined) ??
+      null
     )
   }
 

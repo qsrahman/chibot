@@ -31,6 +31,17 @@ describe('MemoryStore', () => {
     expect(memories.list()).toEqual([])
   })
 
+  it('keeps a memory on one line', () => {
+    const memories = testMemories()
+    expect(memories.save('  Prefers\nRust.\tA lot. ').text).toBe(
+      'Prefers Rust. A lot.',
+    )
+    const saved = memories.list()[0]!
+    expect(memories.update(saved.id, 'Prefers\r\nGo.')?.text).toBe(
+      'Prefers Go.',
+    )
+  })
+
   it('is served newest first and deleted through the API', async () => {
     const memories = testMemories()
     const store = memoryStore()
