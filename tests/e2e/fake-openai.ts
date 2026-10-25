@@ -6,7 +6,8 @@
 // (see server.ts), "earlier chats <words>" search_chats, "search" web_search,
 // "read <url>" fetch_url, "draw" generate_image, "bluer" edit_image (on the
 // chat's last image), "remember <fact>" saves a memory and "in my files
-// <words>" searches project files; a forced
+// <words>" searches project files, "mcp echo <text>" calls the MCP fixture's
+// echo and "mcp picture" its picture tool (see server.ts); a forced
 // tool_choice is followed. Once the tool's output arrives, the answer quotes
 // it. It also fakes the Brave Search API (/brave/…), serves a test page
 // (/pages/robots), makes 1×1 images (/v1/images/…), embeds text as counts
@@ -316,6 +317,9 @@ function pickTool(
   if (remember) {
     return call('memory', { action: 'save', id: null, text: remember })
   }
+  const echo = /mcp echo (.+)/.exec(question)?.[1]
+  if (echo) return call('fixture__echo', { text: echo })
+  if (question.includes('mcp picture')) return call('fixture__picture', {})
   const files = /in my files (.+)/.exec(question)?.[1]
   if (files) return call('search_project_files', { query: files })
   const earlier = /earlier chats (.+)/.exec(question)?.[1]
