@@ -3,6 +3,7 @@
 // and grow (adds an `extra` tool, so the server announces a changed list).
 import { McpServer } from '@modelcontextprotocol/server'
 import { StdioServerTransport } from '@modelcontextprotocol/server/stdio'
+import { writeFileSync } from 'node:fs'
 import { z } from 'zod'
 
 export const PNG =
@@ -26,6 +27,9 @@ export function fixtureServer(): McpServer {
     'slow',
     { description: 'Takes its time', inputSchema: z.object({}) },
     async (_args, ctx) => {
+      // A test sets this to know the call reached the server before cancelling.
+      const marker = process.env.CHIBOT_SLOW_MARKER
+      if (marker) writeFileSync(marker, '')
       await new Promise((resolve) => {
         const timer = setTimeout(resolve, 30_000)
         ctx.mcpReq.signal.addEventListener('abort', () => {

@@ -107,6 +107,8 @@ describe('project file search', () => {
         create: (_params: unknown, { signal }: { signal?: AbortSignal }) =>
           new Promise((_resolve, reject) => {
             signal!.addEventListener('abort', () => reject(signal!.reason))
+            // Cancel from inside the request: it's certainly in flight.
+            stop.abort()
           }),
       },
     } as unknown as OpenAI
@@ -130,7 +132,6 @@ describe('project file search', () => {
       projectId,
       signal: stop.signal,
     })
-    setTimeout(() => stop.abort(), 50)
     expect(await run).toBe(TOOL_STOPPED)
   })
 

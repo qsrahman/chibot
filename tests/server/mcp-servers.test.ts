@@ -1,4 +1,4 @@
-import { realpathSync } from 'node:fs'
+import { existsSync, mkdtempSync, realpathSync, rmSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -110,12 +110,23 @@ describe('MCP servers', () => {
   })
 
   it('cancels a call when the answer is stopped', async () => {
-    await start({ fixture })
-    const stop = new AbortController()
-    const call = servers.callTool('fixture__slow', {}, stop.signal)
-    setTimeout(() => stop.abort(), 100)
-    const started = Date.now()
-    await expect(call).rejects.toThrow()
-    expect(Date.now() - started).toBeLessThan(5000)
+    const dir = mkdtempSync(join(tmpdir(), 'chibot-slow-'))
+    const started = join(dir, 'started')
+    try {
+      await start({
+        fixture: { ...fixture, env: { CHIBOT_SLOW_MARKER: started } },
+      })
+      const stop = new AbortController()
+      const call = expect(
+        servers.callTool('fixture__slow', {}, stop.signal),
+      ).rejects.toThrow()
+      // Cancel once the server has the call, rather than on a timer that may
+      // fire before it starts.
+      await vi.waitFor(() => expect(existsSync(started)).toBe(true))
+      stop.abort()
+      await call
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
   })
 })

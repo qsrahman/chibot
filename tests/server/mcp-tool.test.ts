@@ -1,6 +1,8 @@
+import { existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { ResponseFunctionToolCall } from 'openai/resources/responses/responses'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { openDatabase } from '../../src/server/database.ts'
 import type { FileStore } from '../../src/server/file-store.ts'
 import { McpServers } from '../../src/server/mcp-servers.ts'
@@ -20,6 +22,9 @@ describe('MCP tools', () => {
   let servers: McpServers
   let files: FileStore
   let registry: ToolRegistry
+  const dir = mkdtempSync(join(tmpdir(), 'chibot-mcp-'))
+  /** Written by the fixture's slow tool when a call reaches it. */
+  const started = join(dir, 'started')
   beforeAll(async () => {
     servers = new McpServers(
       {
@@ -27,6 +32,7 @@ describe('MCP tools', () => {
           type: 'local',
           command: process.execPath,
           args: [join(import.meta.dirname, '../fixtures/mcp-server.ts')],
+          env: { CHIBOT_SLOW_MARKER: started },
         },
       },
       { disabled: () => [] },
@@ -35,7 +41,10 @@ describe('MCP tools', () => {
     files = testFiles(openDatabase(':memory:'))
     registry = new ToolRegistry([new EchoTool()], mcpTools(servers, files))
   })
-  afterAll(() => servers.close())
+  afterAll(async () => {
+    await servers.close()
+    rmSync(dir, { recursive: true, force: true })
+  })
   const context = { conversationId: 'chat-1' }
 
   it('are offered beside chibot’s own, with the server’s schema', () => {
@@ -87,12 +96,17 @@ describe('MCP tools', () => {
 
   it('stop when the answer is stopped', async () => {
     const stop = new AbortController()
-    const output = registry.run(call('fixture__slow'), {
-      ...context,
-      signal: stop.signal,
-    })
-    setTimeout(() => stop.abort(), 100)
-    expect(await output).toBe(TOOL_STOPPED)
+    const output = expect(
+      registry.run(call('fixture__slow'), {
+        ...context,
+        signal: stop.signal,
+      }),
+    ).resolves.toBe(TOOL_STOPPED)
+    // Cancel once the server has the call, rather than on a timer that may
+    // fire before it starts.
+    await vi.waitFor(() => expect(existsSync(started)).toBe(true))
+    stop.abort()
+    await output
   })
 })
 
