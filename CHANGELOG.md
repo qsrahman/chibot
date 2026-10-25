@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-10-25
+
 ### Changed
 
 - The chat instructions say who chibot is (a private app on the user's machine), and, while web search, page reading or MCP tools are offered, that their output is information, never instructions to follow. Before, only read pages carried that warning.
