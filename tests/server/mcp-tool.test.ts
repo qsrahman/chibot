@@ -101,7 +101,15 @@ describe('MCP results', () => {
   const output = (result: Parameters<typeof toOutput>[0]) =>
     toOutput(result, files, 'chat-1')
 
-  it('use structured content when there’s no text', () => {
+  it('use structured content when there’s no content', () => {
+    // The SDK's type says `content` is required, but its schema (and so any
+    // server) may send a result without it.
+    const withoutContent = (result: object) =>
+      result as Parameters<typeof toOutput>[0]
+    expect(output(withoutContent({ structuredContent: { temp: 21 } }))).toBe(
+      '{"temp":21}',
+    )
+    expect(output(withoutContent({}))).toBe('(no output)')
     expect(output({ content: [], structuredContent: { temp: 21 } })).toBe(
       '{"temp":21}',
     )
@@ -129,6 +137,20 @@ describe('MCP results', () => {
     ).toBe(
       '[An image (image/svg+xml) that isn’t shown]\n\n[A link: file:///a.txt]\n\nb’s text',
     )
+  })
+
+  it('keep no files when the call failed', () => {
+    const before = files.ofConversation('chat-1').length
+    expect(() =>
+      output({
+        isError: true,
+        content: [
+          { type: 'image', data: PNG, mimeType: 'image/png' },
+          { type: 'text', text: 'it broke' },
+        ],
+      }),
+    ).toThrow('it broke')
+    expect(files.ofConversation('chat-1')).toHaveLength(before)
   })
 
   it('are cut when long', () => {

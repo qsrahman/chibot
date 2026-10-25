@@ -89,21 +89,21 @@ export function toOutput(
   files: FileStore,
   conversationId: string,
 ): string {
-  const imageIds: string[] = []
-  const parts = result.content.map((part) => {
+  // `content` is optional in the protocol (a result may carry only
+  // `structuredContent`).
+  const content = result.content ?? []
+  // Kept until the call is known to have succeeded, so an error leaves no
+  // files behind (they'd stay with the chat, unreferenced, for good).
+  const images: { mimeType: string; data: string }[] = []
+  const parts = content.map((part) => {
     switch (part.type) {
       case 'text':
         return part.text
       case 'image': {
         const extension = SHOWN_IMAGES[part.mimeType]
         if (!extension) return `[An image (${part.mimeType}) that isn’t shown]`
-        const file = files.save(
-          conversationId,
-          `image.${extension}`,
-          part.mimeType,
-          Buffer.from(part.data, 'base64'),
-        )
-        imageIds.push(file.id)
+        if (result.isError) return '[An image]'
+        images.push(part)
         return '[An image, shown to the user]'
       }
       case 'resource':
@@ -117,7 +117,7 @@ export function toOutput(
     }
   })
   let text = parts.join('\n\n')
-  if (!result.content.some((part) => part.type === 'text')) {
+  if (!content.some((part) => part.type === 'text')) {
     if (result.structuredContent) {
       text = [JSON.stringify(result.structuredContent), text]
         .filter(Boolean)
@@ -127,6 +127,15 @@ export function toOutput(
   if (text.length > MAX_CHARS)
     text = `${text.slice(0, MAX_CHARS)}\n\n[truncated]`
   if (result.isError) throw new Error(text || 'the tool failed')
+  const imageIds = images.map(
+    (part) =>
+      files.save(
+        conversationId,
+        `image.${SHOWN_IMAGES[part.mimeType]}`,
+        part.mimeType,
+        Buffer.from(part.data, 'base64'),
+      ).id,
+  )
   return imageIds.length > 0
     ? JSON.stringify({ result: text, image_ids: imageIds })
     : text || '(no output)'
