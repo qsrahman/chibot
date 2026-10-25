@@ -11,12 +11,12 @@ import { testFiles } from './fakes.ts'
 const PNG = Buffer.from([137, 80, 78, 71])
 
 /** An images client that records its calls and returns `PNG`. */
-function fakeImages(calls: Record<string, unknown>[]) {
+function fakeImages(calls: Record<string, unknown>[], format = 'png') {
   const answer = async (params: Record<string, unknown>) => {
     calls.push(params)
     return {
       data: [{ b64_json: PNG.toString('base64') }],
-      output_format: 'png',
+      output_format: format,
     }
   }
   return { images: { generate: answer, edit: answer } } as unknown as OpenAI
@@ -69,6 +69,30 @@ describe('image tools', () => {
     const image = calls[0]!.image as File
     expect(image.name).toBe('image.png')
     expect(Buffer.from(await image.arrayBuffer())).toEqual(PNG)
+  })
+
+  it('names the image from the formats chibot serves', async () => {
+    const generate = (format: string) =>
+      new GenerateImageTool({
+        ...deps,
+        client: fakeImages(calls, format),
+      }).run({ prompt: 'x', size: 'square' }, { conversationId: 'chat-1' })
+    const saved = async (format: string) => {
+      const { image_id } = JSON.parse(await generate(format)) as {
+        image_id: string
+      }
+      return files.get(image_id)
+    }
+
+    expect(await saved('jpeg')).toMatchObject({
+      name: 'image.jpg',
+      mime: 'image/jpeg',
+    })
+    // Not a type chibot serves: kept as PNG.
+    expect(await saved('svg')).toMatchObject({
+      name: 'image.png',
+      mime: 'image/png',
+    })
   })
 
   it("refuses images that aren't in this chat", async () => {

@@ -14,6 +14,15 @@ const SIZES = {
 // Fixed: `high` is slower and about 4× the cost, `low` visibly rough.
 const QUALITY = 'medium'
 
+// The formats chibot serves back (as in mcp-tool's SHOWN_IMAGES). The
+// endpoint's `output_format` isn't trusted as a MIME type.
+const FORMATS: Record<string, { extension: string; mime: string }> = {
+  png: { extension: 'png', mime: 'image/png' },
+  jpeg: { extension: 'jpg', mime: 'image/jpeg' },
+  webp: { extension: 'webp', mime: 'image/webp' },
+}
+const DEFAULT_FORMAT = FORMATS.png!
+
 const SHOWN =
   'The image is shown to the user automatically: don’t link to it or ' +
   'describe the file, just say briefly what you made.'
@@ -142,11 +151,12 @@ function saveImage(
 ): string {
   const image = response.data?.[0]?.b64_json
   if (!image) throw new Error('the image service returned no image')
-  const format = response.output_format ?? 'png'
+  const { extension, mime } =
+    FORMATS[response.output_format ?? 'png'] ?? DEFAULT_FORMAT
   const file = files.save(
     conversationId,
-    `image.${format}`,
-    `image/${format}`,
+    `image.${extension}`,
+    mime,
     Buffer.from(image, 'base64'),
   )
   return JSON.stringify({ image_id: file.id })
