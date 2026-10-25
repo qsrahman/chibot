@@ -12,6 +12,7 @@ import { openDatabase } from '../../src/server/database.ts'
 import { FileStore } from '../../src/server/file-store.ts'
 import { MemoryStore } from '../../src/server/memory-store.ts'
 import { ProjectIndex } from '../../src/server/project-index.ts'
+import { McpServers } from '../../src/server/mcp-servers.ts'
 import { ProjectStore } from '../../src/server/project-store.ts'
 import {
   settingsDefaults,
@@ -240,6 +241,7 @@ export function testApp(deps: Partial<AppDeps> = {}) {
     index: new ProjectIndex(db, projects, files, null),
     attachments: new Attachments(fakeClient([]), files),
     transcription: null,
+    mcp: new McpServers({}, { disabled: () => [] }),
     ...deps,
     projects,
     store,

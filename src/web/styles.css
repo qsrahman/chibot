@@ -1875,11 +1875,30 @@ kbd {
   font-weight: 500;
 }
 
+.settings-label {
+  min-width: 0;
+}
+
 .settings-label p {
+  /* MCP servers write their own, sometimes paragraphs. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
   margin: 2px 0 0;
   color: var(--fg-muted);
   font-size: 12px;
   line-height: 16px;
+  overflow-wrap: anywhere;
+}
+
+/* Buttons beside a row's switch (MCP servers' Sign in, Reconnect). */
+.settings-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
 }
 
 .settings-panel select,

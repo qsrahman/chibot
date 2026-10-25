@@ -218,6 +218,10 @@ export class McpServers {
     Object.assign(server, { state: 'disabled', error: null, tools: [] })
   }
 
+  has(name: string): boolean {
+    return this.#servers.has(name)
+  }
+
   statuses(): McpServerStatus[] {
     return [...this.#servers].map(([name, server]) => ({
       name,

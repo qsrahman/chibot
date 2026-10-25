@@ -6,7 +6,7 @@ import { serve } from '@hono/node-server'
 import type { Hono } from 'hono'
 import { serveStatic } from '@hono/node-server/serve-static'
 import OpenAI from 'openai'
-import { createApp } from './app.ts'
+import { createApp, OAUTH_CALLBACK } from './app.ts'
 import { Attachments } from './attachments.ts'
 import { ChatService } from './chat-service.ts'
 import { Config, loadEnvFiles } from './config.ts'
@@ -136,6 +136,7 @@ export function start({
     projects,
     index,
     attachments,
+    mcp,
     transcription:
       config.transcription && Transcription.from(config.transcription),
   })
@@ -179,7 +180,7 @@ function mcpConfig(config: Config): Record<string, McpServerConfig> {
 function oauthRedirectUrl({ host, port }: Config): string {
   const name = ['0.0.0.0', '::'].includes(host) ? '127.0.0.1' : host
   const origin = `http://${isIP(name) === 6 ? `[${name}]` : name}:${port}`
-  return `${origin}/api/mcp/oauth/callback`
+  return origin + OAUTH_CALLBACK
 }
 
 /**

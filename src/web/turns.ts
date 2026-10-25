@@ -216,6 +216,12 @@ export interface ToolSummary {
 
 const SEARCHES = ['web_search', 'search_chats', 'search_project_files']
 
+/** An MCP server's tool (`<server>__<tool>`) by its parts, or `null`. */
+export function mcpToolName(name: string) {
+  const at = name.indexOf('__')
+  return at > 0 ? { server: name.slice(0, at), tool: name.slice(at + 2) } : null
+}
+
 /** `tool` summarized for its details, or `null` for tools shown raw. */
 export function summarizeTool(tool: ToolActivity): ToolSummary | null {
   const args = parseJson<Record<string, unknown>>(tool.arguments)
@@ -243,9 +249,21 @@ export function summarizeTool(tool: ToolActivity): ToolSummary | null {
     case 'generate_image':
     case 'edit_image':
       return { input: arg('prompt'), result: error, links: [] }
-    default:
-      return null
   }
+  if (mcpToolName(tool.name)) {
+    // The arguments as sent, and the text the model got (without the image
+    // ids, whose images show in the answer).
+    const { result } = parseJson<{ result?: unknown }>(tool.output ?? '')
+    return {
+      input: Object.keys(args).length > 0 ? JSON.stringify(args) : null,
+      result:
+        imagesOf(tool).length > 0 && typeof result === 'string'
+          ? result
+          : tool.output,
+      links: [],
+    }
+  }
+  return null
 }
 
 function rows(value: unknown): Record<string, unknown>[] {
@@ -284,7 +302,7 @@ export function imagesOf(tool: ToolActivity): (string | 'pending')[] {
     const id = parseJson<{ image_id?: string }>(tool.output).image_id
     return id ? [id] : []
   }
-  if (!tool.name.includes('__') || tool.output === null) return []
+  if (!mcpToolName(tool.name) || tool.output === null) return []
   const ids = parseJson<{ image_ids?: unknown }>(tool.output).image_ids
   return Array.isArray(ids)
     ? ids.filter((id): id is string => typeof id === 'string')

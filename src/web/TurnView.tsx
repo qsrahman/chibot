@@ -11,6 +11,7 @@ import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
 import {
   type Answer,
   imagesOf,
+  mcpToolName,
   type Source,
   sourcesOf,
   summarizeTool,
@@ -237,8 +238,13 @@ function Thoughts({ text, live }: { text: string; live?: boolean }) {
 
 /** A tool call in an answer: running, or collapsed with its result. */
 /** What a tool call shows while it runs, and once it's done. */
-const labelsOf = (tool: ToolActivity) =>
-  TOOL_LABELS[tool.name] ?? [`Running ${tool.name}…`, `Used ${tool.name}`]
+function labelsOf(tool: ToolActivity): [running: string, done: string] {
+  const labels = TOOL_LABELS[tool.name]
+  if (labels) return labels
+  const mcp = mcpToolName(tool.name)
+  const name = mcp ? `${mcp.tool} · ${mcp.server}` : tool.name
+  return [`Running ${name}…`, `Used ${name}`]
+}
 
 /**
  * An answer's tool calls. Several sit in one collapsed group, labelled with

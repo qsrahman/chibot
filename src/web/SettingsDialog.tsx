@@ -9,10 +9,19 @@ import {
 } from 'lucide-react'
 import { effortLabel, REASONING_EFFORTS } from '../shared/reasoning.ts'
 import type { Settings } from '../shared/settings.ts'
-import { importConversation } from './api.ts'
+import type { McpServerStatus } from '../shared/types.ts'
+import {
+  importConversation,
+  listMcpServers,
+  reconnectMcpServer,
+  signInToMcpServer,
+  signOutOfMcpServer,
+} from './api.ts'
 import { Dialog } from './Dialog.tsx'
 import { useColorScheme, type ColorScheme } from './theme.ts'
 import { TOOL_GROUPS, TOOL_TEXT } from './tools.ts'
+import { mcpToolName } from './turns.ts'
+import { useLoad } from './useLoad.ts'
 import type { SettingsApi } from './useSettings.ts'
 
 const TABS = [
@@ -22,10 +31,12 @@ const TABS = [
   { id: 'tools', label: 'Tools', icon: <Wrench /> },
   { id: 'data', label: 'Data', icon: <Database /> },
 ] as const
-type Tab = (typeof TABS)[number]['id']
+export type SettingsTab = (typeof TABS)[number]['id']
 
 interface Props {
   open: boolean
+  /** The tab to show on opening (else the last one). */
+  startTab?: SettingsTab
   onClose: () => void
   settings: SettingsApi
   /** A chat was imported, so the sidebar list should reload. */
@@ -37,14 +48,19 @@ interface Props {
 /** Settings (DESIGN.md §4): tabs on the left, cards of rows on the right. */
 export function SettingsDialog({
   open,
+  startTab,
   onClose,
   settings,
   onImported,
   onShowArchived,
   onShowMemories,
 }: Props) {
-  const [tab, setTab] = useState<Tab>('general')
+  const [tab, setTab] = useState<SettingsTab>('general')
   const tabsRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    if (open && startTab) setTab(startTab)
+  }, [open, startTab])
 
   // On a phone the tabs are a scrolling row: keep the current one in sight.
   useEffect(() => {
@@ -111,11 +127,14 @@ export function SettingsDialog({
             />
           )}
           {tab === 'tools' && current && (
-            <Tools
-              tools={settings.tools}
-              disabled={current.disabledTools}
-              onChange={settings.update}
-            />
+            <>
+              <Tools
+                tools={settings.tools}
+                disabled={current.disabledTools}
+                onChange={settings.update}
+              />
+              <McpServers settings={current} onChange={settings.update} />
+            </>
           )}
           {tab === 'data' && (
             <Data
@@ -396,6 +415,8 @@ function Tools({
   disabled: string[]
   onChange: SettingsApi['update']
 }) {
+  // MCP servers' tools (`<server>__<tool>`) are listed with their server.
+  tools = tools.filter((tool) => !mcpToolName(tool.name))
   const offered = new Set(tools.map((tool) => tool.name))
   // Known tools the server doesn't offer are listed too, saying what's
   // missing, so they can be found.
@@ -460,6 +481,160 @@ function Tools({
             </Section>
           ),
       )}
+    </>
+  )
+}
+
+const MCP_STATE: Record<McpServerStatus['state'], string> = {
+  disabled: 'Off',
+  connecting: 'Connecting…',
+  connected: 'Connected',
+  'needs-sign-in': 'Needs sign-in',
+  failed: 'Failed',
+}
+
+/** The servers in `mcp.json`: a switch, status and actions each, and tools. */
+function McpServers({
+  settings,
+  onChange,
+}: {
+  settings: Settings
+  onChange: SettingsApi['update']
+}) {
+  const { data, error, reload, act } = useLoad(listMcpServers)
+  const servers = data?.servers
+  // Connecting settles within the server's 10 s timeout: check back.
+  const connecting = servers?.some((s) => s.state === 'connecting')
+  useEffect(() => {
+    if (!connecting) return
+    const timer = setInterval(() => void reload(), 1000)
+    return () => clearInterval(timer)
+  }, [connecting, reload])
+
+  const { disabledMcpServers: off, disabledTools } = settings
+  const switchServer = (name: string, on: boolean) =>
+    act(() =>
+      onChange({
+        disabledMcpServers: on ? off.filter((n) => n !== name) : [...off, name],
+      }),
+    )
+  const signIn = (name: string) =>
+    act(async () => {
+      const { url } = await signInToMcpServer(name)
+      if (url) location.assign(url)
+    })
+
+  if (!servers) {
+    return error ? (
+      <p className="error" role="alert">
+        {error}
+      </p>
+    ) : null
+  }
+  if (servers.length === 0) {
+    return (
+      <Section title="MCP servers">
+        <p className="settings-empty">
+          Add servers to mcp.json in chibot’s folder (mcp.example.json shows
+          how), then restart chibot.
+        </p>
+      </Section>
+    )
+  }
+  return (
+    <>
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
+      {servers.map((server) => {
+        const status =
+          server.state === 'connected'
+            ? `Connected · ${server.tools.length} ${server.tools.length === 1 ? 'tool' : 'tools'}`
+            : server.state === 'failed' && server.error
+              ? `Failed: ${server.error}`
+              : MCP_STATE[server.state]
+        const kind = server.type === 'local' ? 'Local server' : 'Remote server'
+        return (
+          <Section key={server.name} title={`MCP · ${server.name}`}>
+            <Row
+              label={kind}
+              description={status}
+              htmlFor={`setting-mcp-${server.name}`}
+            >
+              <div className="settings-controls">
+                {server.state === 'needs-sign-in' && (
+                  <button
+                    type="button"
+                    className="button primary"
+                    onClick={() => void signIn(server.name)}
+                  >
+                    Sign in
+                  </button>
+                )}
+                {server.signedIn && (
+                  <button
+                    type="button"
+                    className="button"
+                    onClick={() =>
+                      void act(() => signOutOfMcpServer(server.name))
+                    }
+                  >
+                    Sign out
+                  </button>
+                )}
+                {(server.state === 'failed' ||
+                  server.state === 'connected') && (
+                  <button
+                    type="button"
+                    className="button"
+                    onClick={() =>
+                      void act(() => reconnectMcpServer(server.name))
+                    }
+                  >
+                    Reconnect
+                  </button>
+                )}
+                <input
+                  id={`setting-mcp-${server.name}`}
+                  type="checkbox"
+                  role="switch"
+                  className="switch"
+                  aria-label={`Use ${server.name}`}
+                  checked={server.state !== 'disabled'}
+                  onChange={(e) =>
+                    void switchServer(server.name, e.target.checked)
+                  }
+                />
+              </div>
+            </Row>
+            {server.tools.map((tool) => (
+              <Row
+                key={tool.name}
+                label={tool.title}
+                description={tool.description}
+                htmlFor={`setting-tool-${tool.name}`}
+              >
+                <input
+                  id={`setting-tool-${tool.name}`}
+                  type="checkbox"
+                  role="switch"
+                  className="switch"
+                  checked={!disabledTools.includes(tool.name)}
+                  onChange={(e) =>
+                    void onChange({
+                      disabledTools: e.target.checked
+                        ? disabledTools.filter((n) => n !== tool.name)
+                        : [...disabledTools, tool.name],
+                    })
+                  }
+                />
+              </Row>
+            ))}
+          </Section>
+        )
+      })}
     </>
   )
 }

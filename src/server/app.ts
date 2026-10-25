@@ -31,6 +31,7 @@ import {
 import type {
   ConversationWithItems,
   Health,
+  McpServerStatus,
   ModelsResponse,
   ProjectWithContents,
   ToolInfo,
@@ -41,6 +42,7 @@ import type { ChatService } from './chat-service.ts'
 import type { Config } from './config.ts'
 import type { ConversationStore } from './conversation-store.ts'
 import type { FileStore } from './file-store.ts'
+import type { McpServers } from './mcp-servers.ts'
 import type { MemoryStore } from './memory-store.ts'
 import type { ProjectIndex } from './project-index.ts'
 import type { ProjectStore } from './project-store.ts'
@@ -58,6 +60,7 @@ export interface AppDeps {
   projects: ProjectStore
   index: ProjectIndex
   attachments: Attachments
+  mcp: McpServers
   /** Voice input, or `null` without a transcription endpoint. */
   transcription: Transcription | null
 }
@@ -73,6 +76,7 @@ export function createApp({
   projects,
   index,
   attachments,
+  mcp,
   transcription,
 }: AppDeps) {
   const app = new Hono()
@@ -96,7 +100,14 @@ export function createApp({
     }
     await next()
   })
-  if (config.token) app.use(requireToken(config.token))
+  if (config.token) {
+    const tokenCheck = requireToken(config.token)
+    // The OAuth provider's redirect may come back on another of this
+    // machine's names, without the cookie; its `state` is checked instead.
+    app.use((c, next) =>
+      c.req.path === OAUTH_CALLBACK ? next() : tokenCheck(c, next),
+    )
+  }
   // Form posts (uploads) skip CORS preflight, so other sites could send them.
   // Browsers mark every post with Origin or Sec-Fetch-Site; requests with
   // neither come from tools like curl, which no site can drive.
@@ -129,9 +140,54 @@ export function createApp({
     c.json({ tools: chat.tools } satisfies { tools: ToolInfo[] }),
   )
 
-  app.patch('/api/settings', json(settingsPatchSchema), (c) =>
-    c.json(settings.update(c.req.valid('json'))),
+  app.patch('/api/settings', json(settingsPatchSchema), async (c) => {
+    const updated = settings.update(c.req.valid('json'))
+    // Switched MCP servers connect or stop.
+    await mcp.sync()
+    return c.json(updated)
+  })
+
+  const mcpStatus = (c: Context) =>
+    c.json({ servers: mcp.statuses() } satisfies {
+      servers: McpServerStatus[]
+    })
+  app.get('/api/mcp', mcpStatus)
+  app.use(
+    '/api/mcp/:name/:action{reconnect|sign-in|sign-out}',
+    async (c, next) => {
+      if (!mcp.has(c.req.param('name'))) return notFound(c, 'MCP server')
+      await next()
+    },
   )
+  app.post('/api/mcp/:name/reconnect', async (c) => {
+    await mcp.connect(c.req.param('name'))
+    return mcpStatus(c)
+  })
+  app.post('/api/mcp/:name/sign-in', async (c) => {
+    try {
+      // Back to the address the user is on, with Settings → Tools open.
+      const returnTo = new URL('/?settings=tools', c.req.url).href
+      const url = await mcp.signIn(c.req.param('name'), returnTo)
+      return c.json({ url: url?.href ?? null })
+    } catch (err) {
+      return c.json({ error: (err as Error).message }, 400)
+    }
+  })
+  app.post('/api/mcp/:name/sign-out', async (c) => {
+    try {
+      await mcp.signOut(c.req.param('name'))
+    } catch (err) {
+      return c.json({ error: (err as Error).message }, 400)
+    }
+    return mcpStatus(c)
+  })
+  app.get(OAUTH_CALLBACK, async (c) => {
+    try {
+      return c.redirect(await mcp.finishSignIn(new URL(c.req.url).searchParams))
+    } catch (err) {
+      return c.text((err as Error).message, 400)
+    }
+  })
 
   app.get('/api/models', async (c) =>
     c.json({ models: await chat.listModels() } satisfies ModelsResponse),
@@ -493,6 +549,8 @@ const form = <T extends z.ZodType>(schema: T) =>
   zValidator('form', schema, invalid)
 
 const TOKEN_COOKIE = 'chibot_token'
+/** Where OAuth providers send the browser back after an MCP sign-in. */
+export const OAUTH_CALLBACK = '/api/mcp/oauth/callback'
 
 /**
  * Lets in browsers that opened chibot once with `?token=<CHIBOT_TOKEN>`

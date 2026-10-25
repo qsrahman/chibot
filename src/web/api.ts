@@ -11,6 +11,7 @@ import type {
   ConversationPatch,
   ConversationWithItems,
   Health,
+  McpServerStatus,
   Memory,
   ModelsResponse,
   Project,
@@ -42,6 +43,21 @@ export const updateSettings = (patch: SettingsPatch) =>
 export const listModels = () => request<ModelsResponse>('/api/models')
 
 export const listTools = () => request<{ tools: ToolInfo[] }>('/api/tools')
+
+export const listMcpServers = () =>
+  request<{ servers: McpServerStatus[] }>('/api/mcp')
+
+export const reconnectMcpServer = (name: string) =>
+  request(`/api/mcp/${name}/reconnect`, { method: 'POST' })
+
+/** Where to send the browser to sign in, or `null` if it's signed in. */
+export const signInToMcpServer = (name: string) =>
+  request<{ url: string | null }>(`/api/mcp/${name}/sign-in`, {
+    method: 'POST',
+  })
+
+export const signOutOfMcpServer = (name: string) =>
+  request(`/api/mcp/${name}/sign-out`, { method: 'POST' })
 
 export const listProjects = () => request<Project[]>('/api/projects')
 

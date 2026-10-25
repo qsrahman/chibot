@@ -5,6 +5,7 @@ import {
   imagesOf,
   sourcesOf,
   summarizeTool,
+  mcpToolName,
   toTurns,
   waitingCalls,
 } from '../../src/web/turns.ts'
@@ -384,5 +385,23 @@ describe('summarizeTool', () => {
     ).toEqual({ input: '1+1', result: null, links: [] })
     // Unknown tools (e.g. the e2e test tool) show their raw call only.
     expect(summarizeTool(call('e2e_note', { text: 'x' }, 'ok'))).toBeNull()
+  })
+  it('shows an MCP tool’s arguments and the text the model got', () => {
+    expect(
+      summarizeTool(call('files__read', { path: '/a.txt' }, 'hello')),
+    ).toEqual({ input: '{"path":"/a.txt"}', result: 'hello', links: [] })
+    expect(
+      summarizeTool(
+        call('files__shot', {}, '{"result":"[An image]","image_ids":["i"]}'),
+      ),
+    ).toEqual({ input: null, result: '[An image]', links: [] })
+  })
+
+  it('splits MCP tool names', () => {
+    expect(mcpToolName('files__read__all')).toEqual({
+      server: 'files',
+      tool: 'read__all',
+    })
+    expect(mcpToolName('web_search')).toBeNull()
   })
 })

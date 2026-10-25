@@ -1,5 +1,12 @@
 import { useEffect, useState, type ReactElement } from 'react'
-import { Link, NavLink, useLocation, useMatch, useNavigate } from 'react-router'
+import {
+  Link,
+  NavLink,
+  useLocation,
+  useMatch,
+  useNavigate,
+  useSearchParams,
+} from 'react-router'
 import {
   Folder,
   FolderPlus,
@@ -17,7 +24,7 @@ import { groupConversations } from './dates.ts'
 import { DeleteChatDialog } from './Dialog.tsx'
 import { MoveToProjectDialog, ProjectNameDialog } from './ProjectDialogs.tsx'
 import { SearchDialog } from './SearchDialog.tsx'
-import { SettingsDialog } from './SettingsDialog.tsx'
+import { SettingsDialog, type SettingsTab } from './SettingsDialog.tsx'
 import { ShortcutsDialog } from './ShortcutsDialog.tsx'
 import { SHORTCUTS, useShortcuts } from './shortcuts.ts'
 import type { ConversationsApi } from './useConversations.ts'
@@ -56,6 +63,15 @@ export function Sidebar({
   const [archivedOpen, setArchivedOpen] = useState(false)
   const [memoriesOpen, setMemoriesOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>()
+  // Back from an MCP server's sign-in (`/?settings=tools`).
+  const [searchParams, setSearchParams] = useSearchParams()
+  useEffect(() => {
+    if (searchParams.get('settings') !== 'tools') return
+    setSettingsTab('tools')
+    setSettingsOpen(true)
+    setSearchParams({}, { replace: true })
+  }, [searchParams])
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
 
   useShortcuts({
@@ -205,7 +221,11 @@ export function Sidebar({
         />
         <SettingsDialog
           open={settingsOpen}
-          onClose={() => setSettingsOpen(false)}
+          startTab={settingsTab}
+          onClose={() => {
+            setSettingsOpen(false)
+            setSettingsTab(undefined)
+          }}
           settings={settings}
           onImported={conversations.refresh}
           onShowArchived={() => setArchivedOpen(true)}
