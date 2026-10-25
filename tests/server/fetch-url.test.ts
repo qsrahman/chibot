@@ -25,6 +25,14 @@ describe('FetchUrlTool', () => {
       } else if (req.url === '/text') {
         res.writeHead(200, { 'Content-Type': 'text/plain' })
         res.end('plain   text\n\n\n\nnext')
+      } else if (req.url === '/quoted-charset') {
+        res.writeHead(200, {
+          'Content-Type': 'text/plain; charset="utf-8"',
+        })
+        res.end('quoted charset')
+      } else if (req.url === '/unknown-charset') {
+        res.writeHead(200, { 'Content-Type': 'text/plain; charset=bogus' })
+        res.end('unknown charset')
       } else if (req.url === '/pdf') {
         res.writeHead(200, { 'Content-Type': 'application/pdf' })
         res.end('%PDF')
@@ -71,6 +79,15 @@ describe('FetchUrlTool', () => {
     await expect(
       local.run({ url: 'file:///etc/passwd' }, context),
     ).rejects.toThrow('only http and https')
+  })
+
+  it('reads a quoted or unknown charset as UTF-8 rather than failing', async () => {
+    expect(await local.run({ url: `${base}/quoted-charset` }, context)).toMatch(
+      /\n\nquoted charset$/,
+    )
+    expect(
+      await local.run({ url: `${base}/unknown-charset` }, context),
+    ).toMatch(/\n\nunknown charset$/)
   })
 
   it('refuses private addresses, by IP, by name and after a redirect', async () => {

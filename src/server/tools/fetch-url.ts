@@ -120,8 +120,12 @@ export class FetchUrlTool extends Tool {
         `can't read ${mime || 'this content'} (only web pages and text)`,
       )
     }
-    const charset = /charset=([^;]+)/i.exec(type)?.[1]?.trim() ?? 'utf-8'
-    const body = new TextDecoder(charset).decode(await readCapped(res.body))
+    const charset =
+      /charset=([^;]+)/i
+        .exec(type)?.[1]
+        ?.trim()
+        .replace(/^["']|["']$/g, '') ?? 'utf-8'
+    const body = decoder(charset).decode(await readCapped(res.body))
 
     const { title, text } = html
       ? htmlToText(body)
@@ -135,6 +139,15 @@ export class FetchUrlTool extends Tool {
       '',
       truncated ? `${text.slice(0, MAX_CHARS)}\n\n[truncated]` : text,
     ].join('\n')
+  }
+}
+
+/** Decodes with the page's charset, or UTF-8 when it's unknown. */
+function decoder(charset: string): TextDecoder {
+  try {
+    return new TextDecoder(charset)
+  } catch {
+    return new TextDecoder()
   }
 }
 
