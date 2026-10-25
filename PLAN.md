@@ -465,7 +465,7 @@ others): persistent prompt injection through memory. The sidebar search
   memories with their ids inside `<memories>`, as facts about the user rather
   than instructions, and say how to use the tool: save lasting facts and
   preferences, update what changed, forget on request, no secrets or one-off
-  details.
+  details, and merge related entries when close to the limit.
 - **Temporary chats** get no memories, no `memory` and no `search_chats` (a
   tool flag).
 - **One switch.** The memory tool's Settings → Tools switch turns memory off

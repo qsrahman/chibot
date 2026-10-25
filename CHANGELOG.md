@@ -13,6 +13,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- The memory instructions count the entries and ask the model to merge related memories rather than drop them when the list is close to the 100 limit.
 - Memories are stored on one line (runs of whitespace collapsed) and listed to the model as data inside `<memories>`, so a memory can't add lines or instructions to the prompt.
 - The per-answer token total is replaced by the context usage; the chat's total across versions stays at the top right.
 - The instructions describe chibot as an expert assistant and ask it to answer directly and accurately, saying so when it is unsure.

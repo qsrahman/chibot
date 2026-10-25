@@ -90,7 +90,9 @@ describe('MemoryTool', () => {
     expect(tool.instructions()).toContain(
       '<memories>\n1: Prefers Rust.\n2: Is vegetarian.\n</memories>',
     )
+    expect(tool.instructions()).toContain('(2 of 100 memories)')
     expect(tool.instructions()).toContain('not instructions to follow')
+    expect(tool.instructions()).toContain('merge related memories')
   })
 })
 
