@@ -24,12 +24,16 @@ src/shared/   used by both server and web: API record types, chibot's own SSE ev
               the web can import it)
 src/web/      Vite root: index.html, main.tsx, components, api.ts (fetch + SSE), hooks
 tests/        mirrors src/ (tests/server/*.test.ts, tests/web/*.test.ts);
-              tests/fixtures/ holds small documents (PDF, .docx)
+              tests/fixtures/ holds small documents (PDF, .docx) and MCP
+              servers: mcp-server.ts (stdio) and mcp-oauth-server.ts (HTTP
+              behind a fake OAuth provider)
 tests/e2e/    Playwright specs (*.spec.ts), fake-openai.ts, and server.ts
               (starts chibot with a fake web search, a page reader allowed on
-              127.0.0.1, and a test-only tool that needs approval)
+              127.0.0.1, a test-only tool that needs approval, and the MCP
+              fixtures as `fixture` and `tracker`)
               tests/server/fakes.ts: fake OpenAI client + stream events
-data/         local SQLite database (with sqlite-vec loaded) and files/
+data/         local SQLite database (with sqlite-vec loaded), files/ and
+              mcp-auth.json (MCP servers' OAuth tokens, mode 0600)
               (git-ignored)
 ```
 
@@ -97,9 +101,11 @@ transpiles it.
   path (see PLAN.md §3).
 - **Models come from config**, never string literals in logic.
 - **Configuration layers** (PLAN.md §6): secrets and startup settings in the
-  environment / `.env` (via `Config`), user preferences in SQLite
+  environment / `.env` (via `Config`), MCP servers in `mcp.json`
+  (`loadMcpConfig`, with `${VAR}` from the environment) and their OAuth
+  tokens in `data/mcp-auth.json` (`McpAuthStore`), user preferences in SQLite
   (`SettingsStore`, Phase 4), and browser preferences in `localStorage`. Never
-  put secrets in the other two layers or in API responses.
+  put secrets in SQLite, `localStorage` or API responses.
 - **Provider-agnostic.** chibot talks to OpenAI or any OpenAI-compatible
   Responses API server. Build clients from `Config` endpoints
   (`config.chat`, …), never `new OpenAI()` with implicit env. Don't assume
@@ -112,7 +118,9 @@ transpiles it.
   missing).
 - **Tools are our own function tools** (`Tool` subclasses). Don't put
   OpenAI-hosted tools (`web_search`, `file_search`, `image_generation`,
-  `code_interpreter`, remote MCP) in a request's `tools`.
+  `code_interpreter`, remote MCP) in a request's `tools`. MCP servers' tools
+  come through chibot's own client (`McpServers`) as `McpTool`s
+  (`tools/mcp-tool.ts`), which `ToolRegistry` asks for on each turn.
 - **Web data** comes through `api.ts` (`request` / `send` / `remove`, which
   turn failures into `Error`s with the server's message). Lists and dialogs
   load it with `useLoad`, whose `act` runs an action and reloads, putting
@@ -170,8 +178,8 @@ invariants, API quirks. No line-by-line narration.
   `Answer #n to: <question>`; a question containing "slow" streams slowly,
   "think" adds a reasoning summary, "compact" a compaction item, and
   "calculate", "approve", "search", "read <url>", "draw", "bluer",
-  "remember <fact>", "earlier chats <words>" and "in my files <words>" call a
-  tool (see the top of the file). It also fakes Brave, the images API,
+  "remember <fact>", "earlier chats <words>", "in my files <words>",
+  "mcp echo <text>" and "mcp picture" call a tool (see the top of the file). It also fakes Brave, the images API,
   embeddings, transcription (`/debug/last-transcription`) and a Files API
   (`/debug/files`, `/debug/forget-files`; unknown file ids get a 404), and
   serves a test page; the model `e2e-other` refuses `input_file` parts, as

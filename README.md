@@ -6,13 +6,13 @@ It works with OpenAI and with OpenAI-compatible servers that implement the
 Responses API, such as [Ollama](https://docs.ollama.com/openai) and
 [LM Studio](https://lmstudio.ai/).
 
-> **Status: Phase 9 (attachments & voice input).** ChatGPT-style chat with a
+> **Status: Phase 10 (MCP client).** ChatGPT-style chat with a
 > sidebar, versions, a model picker, visible reasoning, custom instructions,
 > long-chat compaction, export/import, a theme setting, a Settings dialog,
 > tools the model can call (web search with sources, reading web pages,
 > creating and editing images, a calculator, memory across chats, searching
 > past chats), projects with their own files and instructions, photo and file
-> attachments, and voice input. See [PLAN.md](PLAN.md) for the roadmap.
+> attachments, voice input, and tools from MCP servers. See [PLAN.md](PLAN.md) for the roadmap.
 
 ## Requirements
 
@@ -49,7 +49,8 @@ chibot folder, so it finds its settings wherever you run it.
 | `OPENAI_EMBEDDING_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Project file search by meaning; the model defaults to `text-embedding-3-small` on OpenAI, and must be named on other servers (without one, project files are searched by keywords) |
 | `OPENAI_TRANSCRIBE_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Voice input; the model defaults to `gpt-transcribe` on OpenAI, and must be named on other servers (without one, the mic is off). With chat on Ollama, point this at OpenAI |
 | `BRAVE_API_KEY` | — | Turns on web search ([Brave Search API](https://brave.com/search/api/)) |
-| `CHIBOT_DATA_DIR` | `<repo>/data` | Where the database and generated images are kept |
+| `CHIBOT_DATA_DIR` | `<repo>/data` | Where the database, generated images and MCP sign-ins are kept |
+| `CHIBOT_MCP_CONFIG` | `<repo>/mcp.json` | The MCP servers to use (see below) |
 | `CHIBOT_TOKEN` | — | Requires a token (16+ characters) to use chibot; set it when `HOST` exposes chibot |
 
 For example, to chat with a local Ollama model, put this in `.env`:
@@ -96,6 +97,42 @@ this machine's names (`localhost`, IP addresses, and `HOST` if it's a name),
 so a site can't point its own name at it, and it refuses uploads posted from
 other sites. From another device, open it by IP address, or set `HOST` to
 the name you use.
+
+### MCP servers
+
+chibot can use the tools of [MCP](https://modelcontextprotocol.io) servers.
+List them in `mcp.json` in chibot's folder (git-ignored;
+[mcp.example.json](mcp.example.json) shows the format), then restart chibot:
+
+```json
+{
+  "mcpServers": {
+    "files": {
+      "type": "local",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "${HOME}/Documents"]
+    },
+    "tracker": { "type": "remote", "url": "https://tracker.example/mcp" }
+  }
+}
+```
+
+- A **`local`** server is a command chibot runs (`command`, `args`, `env`,
+  `cwd`) with your rights. It gets only a safe environment (`PATH`, `HOME`, …)
+  plus its own `env`, never chibot's keys.
+- A **`remote`** server is a URL (`url`, optional `headers`). If it needs
+  signing in, Settings → Tools shows **Sign in**, which opens its provider's
+  page and comes back to chibot (sign in on the machine running chibot).
+  Tokens are kept in `data/mcp-auth.json`, readable only by you; **Sign out**
+  removes them. A server with its own `Authorization` header doesn't sign in.
+- `${VAR}` anywhere is filled from the environment (and `.env`), so secrets
+  stay out of `mcp.json`. Names may use letters, digits, `-` and `_`.
+
+Servers are only set up here, never from the web app. Their tools are offered
+as `<server>__<tool>` and run without asking first, so add only servers you
+trust: a server's output can't change memories without asking, as with web
+pages. A file with mistakes is reported at startup, and chibot runs without
+MCP.
 
 ## Running
 
@@ -169,6 +206,10 @@ Then open http://127.0.0.1:3000.
   - **Past chats:** ask about something you discussed before ("what did we
     decide about…?"). chibot searches your other chats (on this machine) and
     links the ones it used under **Sources**.
+  - **MCP servers' tools** (see [MCP servers](#mcp-servers)): shown as
+    "Used read_file · files", with the arguments and result. Images they
+    return appear in the answer and are kept with the chat. **Stop** cancels
+    a call; calls time out after a minute.
 
   The composer's **+** menu also makes the next message use **Search the web**
   or **Create an image**; one that isn't set up or is switched off shows
@@ -206,7 +247,8 @@ Then open http://127.0.0.1:3000.
   - *Tools:* switch each tool on or off, grouped (the web, images, your chats
     and files, calculation), each saying what it does and what leaves this
     machine. Tools that aren't set up are listed greyed out, with what to set
-    in `.env`.
+    in `.env`. Below, each MCP server: a switch (off stops it), its status or
+    error, **Reconnect**, **Sign in** / **Sign out**, and a switch per tool.
   - *Data:* import a chat from a JSON export, and archived chats to restore or
     delete.
 - **Export** a chat from its **…** menu as Markdown (what's shown, with

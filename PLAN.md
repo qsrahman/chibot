@@ -626,7 +626,7 @@ available for `gemma4:cloud`.
   parts; Playwright covers attaching by menu, paste and drop, removing,
   rendering after reload, the text fallback, export/import and the mic.
 
-### Phase 10 — MCP client
+### Phase 10 — MCP client ✅
 Decisions (agreed before building; revised from the first proposal): tools
 from MCP servers become chibot function tools; servers are set up only in
 `mcp.json`, never from the web; their calls never ask first; `local` and
@@ -644,7 +644,9 @@ tool in Settings; tools only. Built before the code runner (now Phase 11).
 - **Connections.** `McpServers` connects every enabled server at startup, in
   parallel (10 s timeout each), with `@modelcontextprotocol/client` (v2):
   `StdioClientTransport` for `local`, `StreamableHTTPClientTransport` for
-  `remote`. Each has a status (connecting, connected with its tools, needs
+  `remote`. A local server gets only the SDK's safe environment (`PATH`,
+  `HOME`, …) plus its own `env`, and its last stderr lines become its error.
+  Each has a status (connecting, connected with its tools, needs
   sign-in, failed with the error, disabled). A failed or crashed server's
   tools aren't offered; Reconnect retries it. `tools/list_changed` refreshes
   the list.
@@ -657,12 +659,18 @@ tool in Settings; tools only. Built before the code runner (now Phase 11).
   own tools; switches and `disabledTools` work the same.
 - **Results.** Text parts joined, `structuredContent` as JSON when there's no
   text, cut at 40k characters; `isError` comes back to the model as
-  `Error: …`. Images are saved with the chat and shown in the answer; the
-  model gets a short note in their place.
+  `Error: …`. Images (PNG, JPEG, GIF, WebP; never SVG, which can script) are
+  saved with the chat and listed as `image_ids` in the output JSON, which the
+  answer shows; the model gets a short note in their place.
 - **OAuth.** A remote server that answers 401 shows Sign in in Settings: an
   `OAuthClientProvider` (dynamic client registration, PKCE) sends the browser
-  to the provider, which returns to `/api/mcp/oauth/callback` on 127.0.0.1;
-  chibot checks `state` (the SDK doesn't), finishes the flow and connects.
+  to the provider, which returns to `/api/mcp/oauth/callback` on chibot's own
+  address (`HOST`, or 127.0.0.1 for all interfaces); chibot checks `state`
+  (the SDK doesn't; each is used once), finishes the flow, connects and sends
+  the browser back to Settings → Tools on the address it came from. The
+  callback skips `CHIBOT_TOKEN`'s cookie, which another of the machine's
+  names wouldn't carry. Servers with their own `Authorization` header don't
+  sign in.
   Tokens and client registrations are kept in `data/mcp-auth.json` (mode
   0600), refreshed by the SDK, and removed by Sign out. Sign-in is done on
   the machine running chibot (loopback redirect).
@@ -754,7 +762,8 @@ Configuration lives in three layers, split by who changes it and how often:
 - **Precedence:** user setting → environment default. (Projects add
   instructions on top of the custom instructions, but no setting overrides.)
 - **Secrets never leave layer 1:** no keys in SQLite, exports or API
-  responses. Settings shows only whether a key is configured.
+  responses. (MCP servers live in `mcp.json`, with `${VAR}` from the
+  environment, and their OAuth tokens in `data/mcp-auth.json`, mode 0600.) Settings shows only whether a key is configured.
 - **`.env` lookup:** real environment variables win, then `.env` in the current
   folder, then `<repo>/.env`, so `chibot` works from any folder.
 - **Validation:** zod from Phase 4 (settings, imports, route bodies). `Config`
@@ -777,7 +786,7 @@ Environment variables:
 | `PORT` | `3000` | API server port |
 | `CHIBOT_TOKEN` | — | Requires a token, remembered per browser in a cookie (v0.10.2) |
 | `CHIBOT_MCP_CONFIG` | `<repo>/mcp.json` | MCP servers' config file (Phase 10) |
-| `CHIBOT_DATA_DIR` | `<repo>/data` | Holds `chibot.db` (Phase 1) and `files/` (Phase 6). The default is resolved from the package location, not the current directory. |
+| `CHIBOT_DATA_DIR` | `<repo>/data` | Holds `chibot.db` (Phase 1), `files/` (Phase 6) and `mcp-auth.json` (Phase 10). The default is resolved from the package location, not the current directory. |
 
 ## 7. Risks & open items
 

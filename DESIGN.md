@@ -204,7 +204,12 @@ Hairline dividers separate rows. The Tools tab groups tools into sections (The
 web, Images, Your chats and files, Calculation, then Other), each row with a
 one-line description that says what leaves the machine; a tool that isn't set
 up stays listed with its label in `--fg-muted`, its setup hint as the
-description and its switch disabled at 40 % opacity.
+description and its switch disabled at 40 % opacity. Below them, a section
+per MCP server ("MCP · files"): a first row for the server ("Local server" /
+"Remote server", its status or error as the description, then Sign in
+(primary), Sign out, Reconnect and its switch on the right), then a row per
+tool with its title, the server's description (cut at three lines) and a
+switch.
 
 **Disclosures** (Thinking, tool calls, Sources) replace the browser's
 triangle with a 16 px `ChevronRight` before the label, turned 90° when open
