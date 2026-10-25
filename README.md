@@ -264,8 +264,11 @@ Then open http://127.0.0.1:3000.
   (the circular arrow). Either makes a new version; `< 2/3 >` switches
   between them, and each version keeps its own follow-up messages.
 - **Copy** buttons sit under messages and answers, and on code blocks.
-- **Token usage:** each answer shows its tokens; the top right shows the
-  chat's total across all versions. Hover for the input/output breakdown.
+- **Context usage:** each answer shows the context it sent against the
+  compaction threshold (e.g. `12.4K / 64K context`), turning red at 80 % of
+  it so long chats warn before older messages are summarized; hover for the
+  input/output breakdown. With compaction off it just counts the context. The
+  top right shows the chat's token total across all versions.
 - **Keyboard shortcuts:** ⌘/Ctrl+/ (or **Keyboard shortcuts** in the sidebar)
   lists them: new chat, search, toggle sidebar, focus the message box, copy
   the last answer, Esc to stop, and ↑ in an empty message box to edit your

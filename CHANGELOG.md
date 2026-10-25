@@ -7,9 +7,11 @@ All notable changes to the codebase are documented in this file. Format follows 
 ### Added
 
 - Send a message while an answer streams: it waits in a **Queued** row and goes once the answer is saved (or as soon as you stop it), and can be edited or cancelled first. Text only: files still need uploading before sending.
+- Each answer shows its context against the compaction threshold (`12.4K / 64K context`), red at 80 % of it, with the input/output breakdown in the tooltip.
 
 ### Changed
 
+- The per-answer token total is replaced by the context usage; the chat's total across versions stays at the top right.
 - The instructions describe chibot as an expert assistant and ask it to answer directly and accurately, saying so when it is unsure.
 
 ### Removed

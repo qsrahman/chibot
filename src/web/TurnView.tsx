@@ -18,7 +18,7 @@ import {
   type ToolActivity,
   type Turn,
 } from './turns.ts'
-import { describeUsage } from './usage.ts'
+import { describeContext, describeUsage } from './usage.ts'
 
 /** What a tool call says while running and once done. */
 const TOOL_LABELS: Record<string, [running: string, done: string]> = {
@@ -48,6 +48,8 @@ interface TurnViewProps {
   onSwitch?: (itemId: number) => void
   /** An image loaded (and grew the page): keep following the answer. */
   onImageLoad?: () => void
+  /** Tokens before chibot compacts the context; `null` turns it off. */
+  compactThreshold: number | null
 }
 
 export function TurnView({
@@ -62,12 +64,14 @@ export function TurnView({
   onRegenerate,
   onSwitch,
   onImageLoad,
+  compactThreshold,
 }: TurnViewProps) {
   const setEditing = (on: boolean) => onEditingChange?.(on)
   const [viewing, setViewing] = useState<ViewedImage | null>(null)
   // Shown after a Stop before the server's ids are known: no edit/regenerate.
   const saved = question.itemId !== null
   const answerUsage = describeUsage(answer?.usage)
+  const contextUsage = describeContext(answer?.usage, compactThreshold)
 
   return (
     <div className={latest ? 'turn latest' : 'turn'}>
@@ -198,9 +202,14 @@ export function TurnView({
               {answer.model}
             </span>
           )}
-          {answerUsage && (
-            <span className="usage" title={answerUsage.detail}>
-              {answerUsage.short}
+          {contextUsage && (
+            <span
+              className={contextUsage.nearLimit ? 'usage near-limit' : 'usage'}
+              title={[contextUsage.detail, answerUsage?.detail]
+                .filter(Boolean)
+                .join(' · ')}
+            >
+              {contextUsage.short}
             </span>
           )}
         </div>

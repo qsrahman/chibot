@@ -84,6 +84,11 @@ export function ChatPage({
         : null,
   }))
   const chatUsage = describeUsage(chat.usage)
+  // Each answer shows the context it sent against this limit.
+  const compactThreshold =
+    settings.settings?.compactThreshold ??
+    settings.defaults?.compactThreshold ??
+    null
   const endRef = useRef<HTMLDivElement>(null)
   const composerRef = useRef<HTMLTextAreaElement>(null)
   // Follow the answer only while the user is at the bottom, so scrolling up
@@ -335,6 +340,7 @@ export function ChatPage({
                 onRegenerate={following(() => chat.regenerate(i))}
                 onSwitch={(itemId) => void chat.switchVersion(itemId)}
                 onImageLoad={follow}
+                compactThreshold={compactThreshold}
               />
             ))}
             {pending && (
@@ -342,6 +348,7 @@ export function ChatPage({
                 turn={pending.turn}
                 pending
                 onImageLoad={follow}
+                compactThreshold={compactThreshold}
               />
             )}
             {error && (

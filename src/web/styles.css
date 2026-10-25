@@ -569,6 +569,12 @@ body {
   cursor: default;
 }
 
+/* The answer used most of the context: chibot will compact soon. */
+.usage.near-limit {
+  color: var(--danger);
+  font-weight: 500;
+}
+
 .topbar-info {
   display: flex;
   align-items: center;

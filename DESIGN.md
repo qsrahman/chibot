@@ -164,7 +164,12 @@ sticks 12 px above the list's bottom, centred over the composer.
   answer (ChatGPT uses a 44 px hit area and 20 px icons; chibot is a little
   denser):
   - Assistant: **Copy**, then **Regenerate**, version switcher `< 2/3 >` and
-    token usage. These show on hover and always on the latest answer.
+    context usage. These show on hover and always on the latest answer.
+    Context usage is 12 px tabular muted text (`12.4K / 64K context`, or
+    `12.4K context` with compaction off), with the full input/output count in
+    its tooltip. At 80 % of the compaction threshold it turns `--danger` at
+    500 weight — the one place besides errors that colour is used — because
+    older messages will be summarized next.
   - Measured logged out: Copy and Share. chibot has no sharing, so it omits
     Share.
 - *Thinking:* a pulsing dot before the first token arrives.

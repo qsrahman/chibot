@@ -10,6 +10,16 @@ export interface UsageLabel {
   detail: string
 }
 
+/** How much of the compaction threshold an answer's context used. */
+export interface ContextLabel {
+  /** e.g. "12.4K / 64K context" */
+  short: string
+  /** What was sent, and when chibot compacts. */
+  detail: string
+  /** At least 80 % of the threshold: compaction is close. */
+  nearLimit: boolean
+}
+
 /**
  * Describes token usage, or `null` when there's none to show. Compatible
  * servers may omit the detail fields, so they're treated as optional.
@@ -29,6 +39,31 @@ export function describeUsage(
   return {
     short: `${compact.format(usage.total_tokens)} tokens`,
     detail: `${input} · ${output}`,
+  }
+}
+
+/**
+ * Describes the context an answer sent against the compaction threshold, or
+ * `null` when the server gave no input count. The input is the context the
+ * model read; the output isn't part of it.
+ */
+export function describeContext(
+  usage: ResponseUsage | null | undefined,
+  threshold: number | null,
+): ContextLabel | null {
+  const input = usage?.input_tokens
+  if (!input) return null
+  if (threshold === null) {
+    return {
+      short: `${compact.format(input)} context`,
+      detail: `${full.format(input)} tokens of context sent with this answer. Compaction is off (Settings → Model).`,
+      nearLimit: false,
+    }
+  }
+  return {
+    short: `${compact.format(input)} / ${compact.format(threshold)} context`,
+    detail: `${full.format(input)} of ${full.format(threshold)} tokens of context sent with this answer. chibot compacts older turns past that (Settings → Model).`,
+    nearLimit: input >= threshold * 0.8,
   }
 }
 
