@@ -18,6 +18,7 @@ export function settingsDefaults(model: string): Settings {
     responseStyle: '',
     compactThreshold: DEFAULT_COMPACT_THRESHOLD,
     disabledTools: [],
+    disabledMcpServers: [],
   }
 }
 

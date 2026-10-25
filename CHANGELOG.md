@@ -7,6 +7,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 ### Added
 
 - MCP servers' config: `mcp.json` (path from `CHIBOT_MCP_CONFIG`, default the chibot folder; `mcp.example.json` shows the format), with `local` and `remote` servers and `${VAR}` filled from the environment. Errors name the server and field.
+- MCP connections (`McpServers`): enabled servers connect in parallel at start (a local server runs as a child process with only safe environment defaults plus its own `env`), with a status per server, tool lists that follow the server's changes, a crash or dropped connection marked as failed (with the server's last error output), and calls that Stop cancels. A new setting, `disabledMcpServers`, switches servers off.
 
 ### Changed
 

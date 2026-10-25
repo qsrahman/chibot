@@ -15,7 +15,9 @@ export const settingsSchema = z.object({
   /** Compact the context past this many tokens; `null` turns it off. */
   compactThreshold: z.number().int().min(1000).max(10_000_000).nullable(),
   /** Tools switched off in Settings: never offered to the model. */
-  disabledTools: z.array(z.string().max(100)).max(100),
+  disabledTools: z.array(z.string().max(100)).max(500),
+  /** MCP servers switched off in Settings: not connected (`mcp.json`). */
+  disabledMcpServers: z.array(z.string().max(100)).max(100),
 })
 
 export type Settings = z.infer<typeof settingsSchema>

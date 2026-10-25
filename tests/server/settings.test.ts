@@ -33,6 +33,7 @@ describe('SettingsStore', () => {
       responseStyle: '',
       compactThreshold: DEFAULT_COMPACT_THRESHOLD,
       disabledTools: [],
+      disabledMcpServers: [],
     })
     expect(DEFAULT_COMPACT_THRESHOLD).toBe(64_000)
   })

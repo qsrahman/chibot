@@ -172,3 +172,14 @@ export interface Health {
 export interface ModelsResponse {
   models: string[] | null
 }
+
+/** An MCP server from `mcp.json`, as `GET /api/mcp` reports it. */
+export interface McpServerStatus {
+  name: string
+  type: 'local' | 'remote'
+  state: 'disabled' | 'connecting' | 'connected' | 'needs-sign-in' | 'failed'
+  /** Why it failed, or `null`. */
+  error: string | null
+  /** Its tools while connected, by the names the model calls them. */
+  tools: { name: string; title: string; description: string }[]
+}
