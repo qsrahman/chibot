@@ -4,6 +4,14 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- MCP results without `content` (a result with only `structuredContent`, or none) are read instead of failing, and a failed call no longer keeps its images with the chat.
+- Pages whose `charset` is quoted or misspelled are read as UTF-8 instead of failing.
+- A web search that hangs gives up after 10 s, like `fetch_url`.
+- Images whose format chibot doesn't serve (anything but PNG, JPEG and WebP) are kept as PNG, rather than trusting the endpoint's `output_format` as the file's type.
+- Stopping an answer now cancels a running project file search's embedding request.
+
 ## [0.11.2] - 2026-10-25
 
 ### Fixed
