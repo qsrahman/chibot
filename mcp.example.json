@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "files": {
+      "type": "local",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "${HOME}/Documents"
+      ]
+    },
+    "tracker": {
+      "type": "remote",
+      "url": "http://localhost:8808/mcp",
+      "headers": { "Authorization": "Bearer ${TRACKER_TOKEN}" }
+    }
+  }
+}

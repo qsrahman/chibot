@@ -70,6 +70,7 @@ const envSchema = z
       ),
     CHIBOT_DATA_DIR: optional,
     // Required to use chibot (once per browser), e.g. when HOST exposes it.
+    CHIBOT_MCP_CONFIG: optional,
     CHIBOT_TOKEN: optional.refine(
       (token) => token === undefined || token.length >= 16,
       'must be at least 16 characters (e.g. `openssl rand -hex 16`)',
@@ -109,6 +110,8 @@ export class Config {
   readonly dataDir: string
   /** Required to use chibot, or `null`: no login. */
   readonly token: string | null
+  /** MCP servers' config file (`mcp.json`); it may not exist. */
+  readonly mcpConfigPath: string
 
   constructor(env: NodeJS.ProcessEnv) {
     const parsed = envSchema.safeParse(env)
@@ -148,6 +151,9 @@ export class Config {
       ? resolve(e.CHIBOT_DATA_DIR)
       : join(ROOT, 'data')
     this.token = e.CHIBOT_TOKEN ?? null
+    this.mcpConfigPath = e.CHIBOT_MCP_CONFIG
+      ? resolve(e.CHIBOT_MCP_CONFIG)
+      : join(ROOT, 'mcp.json')
   }
 
   get databasePath(): string {

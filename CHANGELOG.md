@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- MCP servers' config: `mcp.json` (path from `CHIBOT_MCP_CONFIG`, default the chibot folder; `mcp.example.json` shows the format), with `local` and `remote` servers and `${VAR}` filled from the environment. Errors name the server and field.
+
 ### Changed
 
 - Roadmap: Phase 10 is now the MCP client (servers in `mcp.json` only, calls that never ask, local and remote servers with OAuth sign-in, a switch per server and tool); the code runner moves to Phase 11.

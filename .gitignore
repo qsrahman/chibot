@@ -7,3 +7,6 @@ data/
 .e2e-data/
 test-results/
 playwright-report/
+
+# MCP servers (see mcp.example.json); may hold commands for this machine
+mcp.json

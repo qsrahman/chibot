@@ -139,6 +139,16 @@ describe('Config', () => {
     })
   })
 
+  it('finds mcp.json in the chibot folder unless told otherwise', () => {
+    expect(new Config({ OPENAI_API_KEY: 'k' }).mcpConfigPath).toMatch(
+      /[/\\]mcp\.json$/,
+    )
+    expect(
+      new Config({ OPENAI_API_KEY: 'k', CHIBOT_MCP_CONFIG: '/etc/chibot.json' })
+        .mcpConfigPath,
+    ).toBe('/etc/chibot.json')
+  })
+
   it('reads the Brave key, treating blank as unset', () => {
     expect(new Config({ OPENAI_API_KEY: 'k' }).braveApiKey).toBeNull()
     expect(
