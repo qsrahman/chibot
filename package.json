@@ -20,7 +20,6 @@
     "format:check": "prettier --check .",
     "test:e2e": "playwright test"
   },
-  "keywords": [],
   "author": "Qazi Sami ur Rahman <qsrahmans@gmail.com>",
   "license": "MIT",
   "devEngines": {
