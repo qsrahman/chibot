@@ -168,6 +168,10 @@ Then open http://127.0.0.1:3000.
   math (`$…$` / `$$…$$`, or LaTeX's `\(…\)` / `\[…\]`).
 - **Stop** (■) ends an answer early. What arrived so far is kept, and the same
   happens if you close the tab mid-answer.
+- While an answer streams, type the next message and press **Enter** to
+  **queue** it (text only, no attachments): it appears in a **Queued** row
+  above the message box and is sent once the answer is saved — or as soon as
+  you **Stop** it. Edit or cancel it from that row. Switching chats drops it.
 - Scroll up to read while an answer streams and the view stays put; the ↓
   button above the message box jumps back to the latest message.
 - The first message gives the chat its own URL (`/c/…`). Reloading reopens it.

@@ -8,9 +8,11 @@ import {
 } from 'react'
 import {
   ArrowUp,
+  Clock,
   LoaderCircle,
   Mic,
   Paperclip,
+  Pencil,
   Plus,
   Square,
   X,
@@ -46,6 +48,12 @@ interface Props {
     attachments?: Attachment[],
   ) => void | Promise<boolean>
   onStop: () => void
+  /** A message waiting for the current answer (text only). */
+  queued: string | null
+  onQueue: (text: string, tool?: string) => void
+  onCancelQueued: () => void
+  /** Takes the queued message back, to edit it; `null` if there is none. */
+  onTakeQueued: () => string | null
   /** ↑ in an empty box: edit the last message, as in ChatGPT. */
   onEditLast?: () => void
   /** The textarea, so the page can focus it (e.g. from a shortcut). */
@@ -66,6 +74,10 @@ export function Composer({
   busy,
   onSend,
   onStop,
+  queued,
+  onQueue,
+  onCancelQueued,
+  onTakeQueued,
   onEditLast,
   inputRef,
   tools,
@@ -100,9 +112,9 @@ export function Composer({
   const setPicked = (option: ToolOption | null, key = draftKey) =>
     setPickedTools((all) => ({ ...all, [key]: option }))
   // Sent while files were uploading: goes once they're all up.
-  const [queued, setQueued] = useState(false)
+  const [uploadQueued, setUploadQueued] = useState(false)
   // A queued send belongs to the chat it was made in.
-  useEffect(() => setQueued(false), [draftKey])
+  useEffect(() => setUploadQueued(false), [draftKey])
   const textRef = useRef(text)
   textRef.current = text
   const draftsRef = useRef(attachments.drafts)
@@ -127,18 +139,28 @@ export function Composer({
         ? 'Transcribing…'
         : 'Dictate'
   // Files alone are a message too.
-  const canSend =
-    !busy &&
-    !queued &&
-    (text.trim() !== '' || attachments.drafts.length > 0) &&
-    !attachments.failed
+  const hasMessage =
+    (text.trim() !== '' || attachments.drafts.length > 0) && !attachments.failed
+  const canSend = !busy && !uploadQueued && hasMessage
   // A tool switched off meanwhile can't be used any more.
   const tool =
     picked && tools.some((t) => t.name === picked.name && !t.unavailable)
       ? picked
       : null
+  // While an answer streams, only text can wait: files need uploading first.
+  const canQueue = busy && text.trim() !== '' && attachments.drafts.length === 0
 
   function submit({ force = false } = {}) {
+    // Busy: the answer is saved before the next turn starts, so the message
+    // waits for it instead of failing on a second run.
+    if (busy) {
+      if (!canQueue) return
+      onQueue(text, tool?.name)
+      setText('')
+      setPicked(null)
+      inputRef.current?.focus()
+      return
+    }
     // Files still uploading count (the send queues for them), but a queued
     // send can't go if its files were removed meanwhile.
     const sendable =
@@ -148,11 +170,11 @@ export function Composer({
           ? attachments.drafts.length > 0
           : attachments.ready.length > 0))
     if ((!force && !canSend) || !sendable) {
-      if (force) setQueued(false)
+      if (force) setUploadQueued(false)
       return
     }
     if (attachments.uploading) {
-      setQueued(true)
+      setUploadQueued(true)
       return
     }
     const draft = { text, picked, attachments: attachments.drafts }
@@ -180,10 +202,10 @@ export function Composer({
   // Re-run as uploads finish: send once the last one is up, or give up when
   // one fails (its chip shows why).
   useEffect(() => {
-    if (!queued || attachments.uploading) return
-    setQueued(false)
+    if (!uploadQueued || attachments.uploading) return
+    setUploadQueued(false)
     if (!attachments.failed) submit({ force: true })
-  }, [queued, attachments.uploading])
+  }, [uploadQueued, attachments.uploading])
 
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (
@@ -218,6 +240,38 @@ export function Composer({
         submit()
       }}
     >
+      {queued !== null && (
+        <div className="composer-queued">
+          <Clock size={15} strokeWidth={1.75} aria-hidden />
+          <span className="composer-queued-label">Queued</span>
+          <span className="composer-queued-text" title={queued}>
+            {queued}
+          </span>
+          <button
+            type="button"
+            className="composer-queued-action"
+            aria-label="Edit queued message"
+            title="Edit queued message"
+            onClick={() => {
+              const taken = onTakeQueued()
+              if (taken === null) return
+              setText(taken)
+              inputRef.current?.focus()
+            }}
+          >
+            <Pencil size={14} aria-hidden />
+          </button>
+          <button
+            type="button"
+            className="composer-queued-action"
+            aria-label="Cancel queued message"
+            title="Cancel queued message"
+            onClick={onCancelQueued}
+          >
+            <X size={14} aria-hidden />
+          </button>
+        </div>
+      )}
       {attachments.drafts.length > 0 && (
         <ul className="composer-attachments" aria-label="Attachments">
           {attachments.drafts.map((draft) => (
@@ -353,11 +407,12 @@ export function Composer({
           <Mic size={20} strokeWidth={1.5} />
         )}
       </button>
-      {busy ? (
+      {busy && canQueue && (
         <button
           type="button"
-          className="icon-button primary"
+          className="icon-button"
           aria-label="Stop"
+          title="Stop"
           onClick={() => {
             onStop()
             inputRef.current?.focus()
@@ -365,15 +420,44 @@ export function Composer({
         >
           <Square size={14} fill="currentColor" />
         </button>
+      )}
+      {busy ? (
+        canQueue ? (
+          <button
+            type="submit"
+            className="icon-button primary"
+            aria-label="Queue message"
+            title="Send after this answer"
+          >
+            <ArrowUp size={20} strokeWidth={2} />
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="icon-button primary"
+            aria-label="Stop"
+            title="Stop"
+            onClick={() => {
+              onStop()
+              inputRef.current?.focus()
+            }}
+          >
+            <Square size={14} fill="currentColor" />
+          </button>
+        )
       ) : (
         <button
           type="submit"
           className="icon-button primary"
-          aria-label={queued ? 'Sending when the files are uploaded' : 'Send'}
-          title={queued ? 'Sending when the files are uploaded' : undefined}
+          aria-label={
+            uploadQueued ? 'Sending when the files are uploaded' : 'Send'
+          }
+          title={
+            uploadQueued ? 'Sending when the files are uploaded' : undefined
+          }
           disabled={!canSend}
         >
-          {queued ? (
+          {uploadQueued ? (
             <LoaderCircle className="spin" size={20} strokeWidth={2} />
           ) : (
             <ArrowUp size={20} strokeWidth={2} />

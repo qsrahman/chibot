@@ -1,6 +1,7 @@
 // A stand-in for an OpenAI-compatible Responses API, for the e2e tests.
 // Streams `Answer #n to: <last user message>` word by word. A question that
-// contains "slow" streams a long answer slowly (to act mid-answer), "think"
+// contains "slow" streams a long answer slowly (to act mid-answer), "drip"
+// streams a normal one slowly (to queue a message), "think"
 // first streams a reasoning summary, and "compact" returns a compaction item.
 // "approve" calls the test-only e2e_note tool
 // (see server.ts), "earlier chats <words>" search_chats, "search" web_search,
@@ -210,6 +211,7 @@ app.post('/v1/responses', async (c) => {
       ? body.input
       : textOf(body.input.findLast((i) => i.role === 'user')?.content)
   const slow = question.includes('slow')
+  const drip = question.includes('drip')
   const text = slow
     ? Array.from({ length: 200 }, (_, i) => `word${i}`).join(' ')
     : `Answer #${++answers} to: ${question}`
@@ -284,7 +286,7 @@ app.post('/v1/responses', async (c) => {
         content_index: 0,
         delta: i === 0 ? word : ` ${word}`,
       })
-      await stream.sleep(slow ? 100 : 5)
+      await stream.sleep(slow ? 100 : drip ? 150 : 5)
     }
     await send({
       type: 'response.completed',

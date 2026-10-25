@@ -42,6 +42,13 @@ interface Run {
   answered: boolean
 }
 
+/** A message to send once the current answer is saved. */
+interface Queued {
+  text: string
+  /** A tool to force on that message. */
+  tool?: string
+}
+
 /** Chat state for the conversation on screen. */
 export function useChat(
   conversationId: string | undefined,
@@ -57,6 +64,13 @@ export function useChat(
   // render, so a chat being opened never shows as an empty new chat.
   const [loadedId, setLoadedId] = useState<string | null>(null)
   const [title, setTitle] = useState<string | null>(null)
+  // A message typed while an answer streams; it goes once that answer is
+  // saved (text only: files need uploading first).
+  const [queued, setQueued] = useState<Queued | null>(null)
+  // Read by `drain`, which a run calls from its async continuation, where
+  // the state variable would be stale.
+  const queuedRef = useRef<Queued | null>(null)
+  queuedRef.current = queued
   // The run whose updates belong on screen. Cleared when the user switches
   // chats, so a run still going for the old chat can't touch the new one.
   const runRef = useRef<Run | null>(null)
@@ -93,6 +107,7 @@ export function useChat(
     setProjectId(null)
     setLoadedId(null)
     setTitle(null)
+    setQueued(null)
     if (!conversationId) return
     let current = true
     getConversation(conversationId).then(
@@ -142,13 +157,18 @@ export function useChat(
       answer: before,
       ...display
     }: { keep: number; question: Question; answer?: Answer | null },
+    /** The chat to run in, when called from a run that started a new one. */
+    chatId = conversationId,
   ) {
     const run: Run = { controller: new AbortController(), answered: false }
     runRef.current = run
     const live = () => runRef.current === run
+    /** Reloads the chat; the number of turns it now has, or `null` after a switch. */
     const showHistory = async (id: string) => {
       const loaded = await getConversation(id)
-      if (live()) showItems(loaded)
+      if (!live()) return null
+      showItems(loaded)
+      return toTurns(loaded.items).length
     }
 
     let answer = before?.text ?? ''
@@ -181,13 +201,15 @@ export function useChat(
       show()
     }
     /** The answer is complete and saved (or waits for approval). */
-    const finish = async (id: string) => {
+    const finish = async (id: string, done = true) => {
       // Saved: from now on Stop or leaving mustn't abort the stream, which
       // may still carry the title.
       run.answered = true
       try {
-        await showHistory(id)
-        if (live()) setPending(null)
+        const kept = await showHistory(id)
+        if (!live()) return
+        setPending(null)
+        if (done) drain(id, kept ?? display.keep + 1)
       } catch (err) {
         if (!live()) return
         // The answer is saved even if fetching the updated history failed.
@@ -198,12 +220,13 @@ export function useChat(
           turnSoFar(crypto.randomUUID()),
         ])
         setPending(null)
+        if (done) drain(id, display.keep + 1)
       }
     }
 
     setError(null)
     show()
-    let id = conversationId
+    let id = chatId
     // Whether the question reached the server (so the composer may drop the
     // draft). Before that, a failed send should leave the draft in place.
     let accepted = false
@@ -281,7 +304,7 @@ export function useChat(
           if (!event.response.output.some((i) => i.type === 'function_call'))
             await finish(id)
         } else if (event.type === 'chibot.approval') {
-          await finish(id)
+          await finish(id, false)
         } else if (event.type === 'chibot.error') {
           setError(
             [event.message, event.requestId && `(request ${event.requestId})`]
@@ -307,6 +330,9 @@ export function useChat(
           turnSoFar(crypto.randomUUID()),
         ])
         accepted = true
+        // The saved partial becomes the new leaf, so a queued message can
+        // follow it (the server saves it as the aborted request unwinds).
+        if (id) drain(id, display.keep + 1)
       } else {
         setError((err as Error).message)
         if (id) await showHistory(id).catch(() => {})
@@ -338,6 +364,24 @@ export function useChat(
       { text, ...(tool && { tool }), ...fileIds(attachments) },
       { keep: turns.length, question: newQuestion(text, null, attachments) },
     )
+  }
+
+  /**
+   * Sends the message queued during the answer that just finished, if any.
+   * `keep` is how many turns the chat has now.
+   */
+  function drain(chatId: string, keep: number) {
+    const next = queuedRef.current
+    if (!next) return
+    setQueued(null)
+    void run(
+      { text: next.text, ...(next.tool && { tool: next.tool }) },
+      { keep, question: newQuestion(next.text, null, []) },
+      chatId,
+    ).then((accepted) => {
+      // Refused before it reached the server: keep it for another try.
+      if (!accepted) setQueued(next)
+    })
   }
 
   /**
@@ -393,6 +437,23 @@ export function useChat(
     if (run && !run.answered) run.controller.abort()
   }
 
+  /** Holds `text` until the current answer is saved, then sends it. */
+  function enqueue(text: string, tool?: string) {
+    setQueued({ text, ...(tool && { tool }) })
+  }
+
+  /** Takes the queued message out (to edit it); `null` if there is none. */
+  function takeQueued(): string | null {
+    const next = queuedRef.current
+    if (!next) return null
+    setQueued(null)
+    return next.text
+  }
+
+  function cancelQueued() {
+    setQueued(null)
+  }
+
   // While a turn is pending, the turns it replaces are hidden.
   const shown = pending ? turns.slice(0, pending.keep) : turns
 
@@ -409,11 +470,16 @@ export function useChat(
     title,
     /** The chat's history hasn't arrived yet. */
     loading: conversationId !== undefined && loadedId !== conversationId,
+    /** The message waiting for the current answer, if any. */
+    queued: queued?.text ?? null,
     send,
     edit,
     regenerate,
     approve,
     switchVersion,
     stop,
+    enqueue,
+    takeQueued,
+    cancelQueued,
   }
 }

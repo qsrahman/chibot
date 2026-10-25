@@ -175,8 +175,9 @@ invariants, API quirks. No line-by-line narration.
   get vitest tests. UI behaviour is covered by Playwright specs in
   `tests/e2e/`, which drive a production build with the real SDK pointed at
   `tests/e2e/fake-openai.ts` via `OPENAI_BASE_URL`. The fake answers
-  `Answer #n to: <question>`; a question containing "slow" streams slowly,
-  "think" adds a reasoning summary, "compact" a compaction item, and
+  `Answer #n to: <question>`; a question containing "slow" streams a long
+  answer slowly, "drip" a normal one slowly (to queue a message while it
+  streams), "think" adds a reasoning summary, "compact" a compaction item, and
   "approve", "search", "read <url>", "draw", "bluer",
   "remember <fact>", "earlier chats <words>", "in my files <words>",
   "mcp echo <text>" and "mcp picture" call a tool (see the top of the file). It also fakes Brave, the images API,

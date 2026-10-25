@@ -338,7 +338,11 @@ export function ChatPage({
               />
             ))}
             {pending && (
-              <TurnView turn={pending.turn} pending onImageLoad={follow} />
+              <TurnView
+                turn={pending.turn}
+                pending
+                onImageLoad={follow}
+              />
             )}
             {error && (
               <p className="error" role="alert">
@@ -370,6 +374,10 @@ export function ChatPage({
         busy={busy}
         onSend={following(chat.send)}
         onStop={chat.stop}
+        queued={chat.queued}
+        onQueue={chat.enqueue}
+        onCancelQueued={chat.cancelQueued}
+        onTakeQueued={chat.takeQueued}
         onEditLast={editLast}
         inputRef={composerRef}
         tools={toolOptions}

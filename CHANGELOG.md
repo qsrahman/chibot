@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- Send a message while an answer streams: it waits in a **Queued** row and goes once the answer is saved (or as soon as you stop it), and can be edited or cancelled first. Text only: files still need uploading before sending.
+
 ### Changed
 
 - The instructions describe chibot as an expert assistant and ask it to answer directly and accurately, saying so when it is unsure.

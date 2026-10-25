@@ -1138,6 +1138,51 @@ details[open] > summary > .disclosure-chevron {
   box-shadow: var(--composer-shadow);
 }
 
+/* A message waiting for the answer to finish (it can't go yet). */
+.composer-queued {
+  display: flex;
+  flex-basis: 100%;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 2px 4px 0;
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.composer-queued-label {
+  flex: none;
+  font-weight: 500;
+}
+
+.composer-queued-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composer-queued-action {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.composer-queued-action:hover {
+  background: var(--surface-muted);
+  color: var(--fg);
+}
+
 /* Attachments get a row of their own above the text. */
 .composer-attachments {
   display: flex;
