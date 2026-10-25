@@ -4,12 +4,14 @@ import {
   type CallToolResult,
   type Tool as McpToolDefinition,
   type Transport,
+  UnauthorizedError,
 } from '@modelcontextprotocol/client'
 import {
   getDefaultEnvironment,
   StdioClientTransport,
 } from '@modelcontextprotocol/client/stdio'
 import type { McpServerStatus } from '../shared/types.ts'
+import { McpSignIn, type McpAuthStore } from './mcp-auth.ts'
 import type { McpServerConfig } from './mcp-config.ts'
 
 const CONNECT_TIMEOUT = 10_000
@@ -31,6 +33,8 @@ interface Server {
   client: Client | null
   transport: Transport | null
   tools: McpServerTool[]
+  /** A remote server's OAuth sign-in (none with its own Authorization). */
+  signIn: McpSignIn | null
 }
 
 /**
@@ -44,13 +48,26 @@ export class McpServers {
   /**
    * @param options.disabled the servers switched off in Settings, read on
    *   `start()` and `sync()`
+   * @param options.auth where remote servers' sign-ins are kept, and the
+   *   OAuth callback's URL; without it they can't sign in
    */
   constructor(
     configs: Record<string, McpServerConfig>,
-    { disabled }: { disabled: () => readonly string[] },
+    {
+      disabled,
+      auth,
+    }: {
+      disabled: () => readonly string[]
+      auth?: { store: McpAuthStore; redirectUrl: string }
+    },
   ) {
     this.#disabled = disabled
     for (const [name, config] of Object.entries(configs)) {
+      const ownAuth =
+        config.type === 'remote' &&
+        Object.keys(config.headers ?? {}).some(
+          (header) => header.toLowerCase() === 'authorization',
+        )
       this.#servers.set(name, {
         config,
         state: 'disabled',
@@ -58,6 +75,10 @@ export class McpServers {
         client: null,
         transport: null,
         tools: [],
+        signIn:
+          auth && config.type === 'remote' && !ownAuth
+            ? new McpSignIn(name, auth.store, auth.redirectUrl)
+            : null,
       })
     }
   }
@@ -86,7 +107,7 @@ export class McpServers {
     await this.#close(server)
     Object.assign(server, { state: 'connecting', error: null, tools: [] })
     const client = new Client({ name: 'chibot', version: '1' })
-    const transport = transportFor(server.config)
+    const transport = transportFor(server.config, server.signIn)
     server.client = client
     server.transport = transport
     try {
@@ -114,11 +135,80 @@ export class McpServers {
     } catch (err) {
       if (server.client !== client) return
       await this.#close(server)
+      // The sign-in flow has started: its URL is in `signIn`.
+      if (err instanceof UnauthorizedError && server.signIn?.authorizationUrl) {
+        server.state = 'needs-sign-in'
+      } else {
+        Object.assign(server, {
+          state: 'failed',
+          error: stderrOf(transport) ?? (err as Error).message,
+        })
+      }
+    }
+  }
+
+  /**
+   * Starts signing in to `name`: the provider's URL to send the browser to,
+   * or `null` when it connected without one (e.g. its tokens were still
+   * good). `returnTo` is where the callback sends the browser back.
+   */
+  async signIn(name: string, returnTo: string): Promise<URL | null> {
+    const server = this.#get(name)
+    if (!server.signIn) throw new Error(`${name} doesn’t use sign-in`)
+    server.signIn.returnTo = returnTo
+    await this.connect(name)
+    if (server.state === 'failed') throw new Error(server.error!)
+    return server.state === 'needs-sign-in'
+      ? server.signIn.authorizationUrl
+      : null
+  }
+
+  /**
+   * Finishes a sign-in from the provider's redirect (`code`, `state`) and
+   * connects. Returns where to send the browser back.
+   *
+   * @throws Error for a `state` chibot didn't hand out (or used already)
+   */
+  async finishSignIn(params: URLSearchParams): Promise<string> {
+    // The SDK doesn't check `state`: it's what ties the redirect to a
+    // sign-in started here, rather than one another site sent the browser.
+    const found = [...this.#servers].find(([, s]) =>
+      s.signIn?.takeState(params.get('state')),
+    )
+    if (!found) throw new Error('This sign-in is unknown or was used already')
+    const [name, server] = found
+    const signIn = server.signIn!
+    if (params.has('error')) {
+      // The provider's text is the redirect's, so it isn't shown.
       Object.assign(server, {
         state: 'failed',
-        error: stderrOf(transport) ?? (err as Error).message,
+        error: 'Sign-in was cancelled or refused',
       })
+      return signIn.returnTo
     }
+    try {
+      const url = new URL((server.config as { url: string }).url)
+      await new StreamableHTTPClientTransport(url, {
+        authProvider: signIn,
+      }).finishAuth(params)
+    } catch (err) {
+      Object.assign(server, {
+        state: 'failed',
+        error: `Sign-in failed: ${(err as Error).message}`,
+      })
+      return signIn.returnTo
+    }
+    await this.connect(name)
+    return signIn.returnTo
+  }
+
+  /** Forgets `name`'s sign-in; it then needs signing in again. */
+  async signOut(name: string): Promise<void> {
+    const server = this.#get(name)
+    if (!server.signIn) throw new Error(`${name} doesn’t use sign-in`)
+    server.signIn.signOut()
+    await this.disconnect(name)
+    if (!this.#disabled().includes(name)) await this.connect(name)
   }
 
   /** Disconnects `name` (a local server's process stops). */
@@ -134,6 +224,7 @@ export class McpServers {
       type: server.config.type,
       state: server.state,
       error: server.error,
+      signedIn: server.signIn?.signedIn ?? null,
       tools: server.tools.map(({ name, definition }) => ({
         name,
         title:
@@ -189,10 +280,14 @@ export class McpServers {
   }
 }
 
-function transportFor(config: McpServerConfig): Transport {
+function transportFor(
+  config: McpServerConfig,
+  signIn: McpSignIn | null,
+): Transport {
   if (config.type === 'remote') {
     return new StreamableHTTPClientTransport(new URL(config.url), {
       requestInit: { headers: config.headers },
+      authProvider: signIn ?? undefined,
     })
   }
   const transport = new StdioClientTransport({

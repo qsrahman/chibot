@@ -180,6 +180,8 @@ export interface McpServerStatus {
   state: 'disabled' | 'connecting' | 'connected' | 'needs-sign-in' | 'failed'
   /** Why it failed, or `null`. */
   error: string | null
+  /** Whether a remote server's OAuth sign-in has tokens; `null` without one. */
+  signedIn: boolean | null
   /** Its tools while connected, by the names the model calls them. */
   tools: { name: string; title: string; description: string }[]
 }

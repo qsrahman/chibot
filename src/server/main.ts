@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { existsSync, mkdirSync } from 'node:fs'
+import { isIP } from 'node:net'
 import { join } from 'node:path'
 import { serve } from '@hono/node-server'
 import type { Hono } from 'hono'
@@ -12,6 +13,7 @@ import { Config, loadEnvFiles } from './config.ts'
 import { ConversationStore } from './conversation-store.ts'
 import { openDatabase } from './database.ts'
 import { FileStore } from './file-store.ts'
+import { McpAuthStore } from './mcp-auth.ts'
 import { loadMcpConfig, type McpServerConfig } from './mcp-config.ts'
 import { McpServers } from './mcp-servers.ts'
 import { MemoryStore } from './memory-store.ts'
@@ -107,6 +109,10 @@ export function start({
   })
   const mcp = new McpServers(mcpConfig(config), {
     disabled: () => settings.get().disabledMcpServers,
+    auth: {
+      store: new McpAuthStore(join(config.dataDir, 'mcp-auth.json')),
+      redirectUrl: oauthRedirectUrl(config),
+    },
   })
   void mcp.start()
   const registry = new ToolRegistry(
@@ -163,6 +169,17 @@ function mcpConfig(config: Config): Record<string, McpServerConfig> {
     console.error(`MCP servers are off: ${(err as Error).message}`)
     return {}
   }
+}
+
+/**
+ * Where OAuth providers send the browser back after an MCP server's sign-in:
+ * chibot's own address (loopback for all interfaces), so the sign-in is done
+ * on the machine running it.
+ */
+function oauthRedirectUrl({ host, port }: Config): string {
+  const name = ['0.0.0.0', '::'].includes(host) ? '127.0.0.1' : host
+  const origin = `http://${isIP(name) === 6 ? `[${name}]` : name}:${port}`
+  return `${origin}/api/mcp/oauth/callback`
 }
 
 /**
