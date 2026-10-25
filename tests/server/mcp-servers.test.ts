@@ -1,3 +1,5 @@
+import { realpathSync } from 'node:fs'
+import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { McpServerConfig } from '../../src/server/mcp-config.ts'
@@ -54,6 +56,19 @@ describe('MCP servers', () => {
     expect(status('fixture').state).toBe('connected')
     expect(status('broken')).toMatchObject({ state: 'failed', tools: [] })
     expect(status('broken').error).toMatch(/ENOENT|not found|spawn/i)
+  })
+
+  it('starts local servers in the home folder unless they set cwd', async () => {
+    // Prints where it runs, then fails, so it shows as the error.
+    const where = (cwd?: string): McpServerConfig => ({
+      type: 'local',
+      command: process.execPath,
+      args: ['-e', 'console.error(process.cwd()); process.exit(1)'],
+      cwd,
+    })
+    await start({ home: where(), tmp: where(realpathSync(tmpdir())) })
+    expect(status('home').error).toBe(homedir())
+    expect(status('tmp').error).toBe(realpathSync(tmpdir()))
   })
 
   it('notices a crash, and reconnects on request', async () => {

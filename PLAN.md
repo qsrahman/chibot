@@ -638,7 +638,8 @@ tool in Settings; tools only. Built before the code runner (now Phase 11).
 
 - **Config.** `mcp.json` (git-ignored; `mcp.example.json` shows the format),
   at `CHIBOT_MCP_CONFIG` or the chibot folder, in the common `mcpServers`
-  shape with a `type` per server: `local` (`command`, `args`, `env`, `cwd`)
+  shape with a `type` per server: `local` (`command`, `args`, `env`, `cwd`,
+  by default the home folder)
   or `remote` (`url`, optional `headers`). `${VAR}` is filled from the
   environment, so secrets stay in `.env`. Validated with zod; errors name the
   server and field, and a bad file disables MCP with a startup error rather

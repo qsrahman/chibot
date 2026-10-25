@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- Local MCP servers without a `cwd` start in the home folder instead of chibot's, where `npx` and npm refused to run (`EBADDEVENGINES`, from chibot's `devEngines`).
+
 ## [0.11.1] - 2026-10-25
 
 ### Changed

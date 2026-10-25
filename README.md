@@ -118,7 +118,7 @@ List them in `mcp.json` in chibot's folder (git-ignored;
 ```
 
 - A **`local`** server is a command chibot runs (`command`, `args`, `env`,
-  `cwd`) with your rights. It gets only a safe environment (`PATH`, `HOME`, …)
+  `cwd`, by default your home folder) with your rights. It gets only a safe environment (`PATH`, `HOME`, …)
   plus its own `env`, never chibot's keys.
 - A **`remote`** server is a URL (`url`, optional `headers`). If it needs
   signing in, Settings → Tools shows **Sign in**, which opens its provider's

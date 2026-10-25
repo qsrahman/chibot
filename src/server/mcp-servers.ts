@@ -10,6 +10,7 @@ import {
   getDefaultEnvironment,
   StdioClientTransport,
 } from '@modelcontextprotocol/client/stdio'
+import { homedir } from 'node:os'
 import type { McpServerStatus } from '../shared/types.ts'
 import { McpSignIn, type McpAuthStore } from './mcp-auth.ts'
 import type { McpServerConfig } from './mcp-config.ts'
@@ -299,7 +300,9 @@ function transportFor(
     args: config.args,
     // Only the safe defaults (PATH, HOME, …): never chibot's own keys.
     env: { ...getDefaultEnvironment(), ...config.env },
-    cwd: config.cwd,
+    // Not chibot's folder: npx and npm read its package.json there, whose
+    // devEngines (pnpm) makes them refuse to run.
+    cwd: config.cwd ?? homedir(),
     // Kept for error messages instead of mixing into chibot's output.
     stderr: 'pipe',
   })
