@@ -201,7 +201,7 @@ label (with an optional 12 px muted description) on the left, and the control
 on the right: a select showing its value and a chevron, or a 32×20 px switch
 (`--accent` when on).
 Hairline dividers separate rows. The Tools tab groups tools into sections (The
-web, Images, Your chats and files, Calculation, then Other), each row with a
+web, Images, Your chats and files, then Other), each row with a
 one-line description that says what leaves the machine; a tool that isn't set
 up stays listed with its label in `--fg-muted`, its setup hint as the
 description and its switch disabled at 40 % opacity. Below them, a section
@@ -225,9 +225,9 @@ repeats listed once, so a memory change stays visible) or, while one runs, its
 live label; opened, its body (behind the same 2 px rule) lists each call. A
 single call isn't grouped. Each call is, like Thinking, a `<details>` in 14 px
 muted text above the
-answer, "Running calculator…" with the shimmer while a tool runs, "Used
-calculator" afterwards. Opened, it says what the tool did in plain terms:
-what it was asked (the query, calculation, page or prompt, in `--fg`), a short
+answer, "Reading a page…" with the shimmer while a tool runs, "Read a page"
+afterwards. Opened, it says what the tool did in plain terms:
+what it was asked (the query, page or prompt, in `--fg`), a short
 result or error, and what it found as source links (title and domain, as in
 Sources). A nested "Raw" disclosure holds Arguments (indented JSON) and Result
 in 13 px monospace blocks on `--surface-muted` (10 px radius); tools without a

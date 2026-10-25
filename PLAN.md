@@ -338,12 +338,13 @@ support (`qwen2.5-coder:1.5b`) ignores tools rather than failing.
   `{ approvals: { [call_id]: boolean } }` runs the approved calls, answers
   denied ones with "The user denied this tool call." and continues the same
   answer. Sending a new message instead counts as Deny.
-- **Calculator.** `mathjs` `evaluate` with BigNumber (64 digits), so large
-  results are exact. No approval; an expression it can't evaluate is returned
-  as an error.
-- **Web.** Tool activity inline in the answer: "Calculating…" while running,
-  then a collapsed "Used calculator" disclosure with arguments and result (like
-  Thoughts). A pending approval shows the tool, its arguments and
+- **Calculator (removed after Phase 10).** Phase 5 shipped `mathjs` `evaluate`
+  with BigNumber (64 digits), so large results were exact. It was removed: the
+  model handles arithmetic itself, and `mathjs` brought a dependency and an
+  unbounded evaluation. Calls saved by older chats still render.
+- **Web.** Tool activity inline in the answer: "Searching the web…" while
+  running, then a collapsed "Searched the web" disclosure with arguments and
+  result (like Thoughts). A pending approval shows the tool, its arguments and
   Approve / Deny. A turn ends at a final answer, stop, error or pending
   approval, not at the first `response.completed`; `turns.ts` groups every item
   after the question into one answer.
@@ -357,8 +358,7 @@ support (`qwen2.5-coder:1.5b`) ignores tools rather than failing.
   stop and approval. Playwright starts chibot through `tests/e2e/server.ts`,
   which adds a test-only tool needing approval (`main.ts` exports
   `start({ tools })`); the fake server returns a `function_call` when the
-  question contains "calculate" or "approve". AGENTS.md documents adding a
-  tool.
+  question contains "approve". AGENTS.md documents adding a tool.
 - **Commits.** `Tool` + `ToolRegistry` → tool loop → approval → calculator →
   tool activity and approval UI → e2e specs → docs → release v0.6.0.
 - **Done when:** on OpenAI, `gemma4:cloud` and `gpt-oss:120b-cloud` the model

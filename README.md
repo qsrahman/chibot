@@ -10,7 +10,7 @@ Responses API, such as [Ollama](https://docs.ollama.com/openai) and
 > sidebar, versions, a model picker, visible reasoning, custom instructions,
 > long-chat compaction, export/import, a theme setting, a Settings dialog,
 > tools the model can call (web search with sources, reading web pages,
-> creating and editing images, a calculator, memory across chats, searching
+> creating and editing images, memory across chats, searching
 > past chats), projects with their own files and instructions, photo and file
 > attachments, voice input, and tools from MCP servers. See [PLAN.md](PLAN.md) for the roadmap.
 
@@ -187,7 +187,7 @@ Then open http://127.0.0.1:3000.
   default, or None to Max; also in Settings → Model), shown next to the model name
   when set.
 - **Tools:** the model uses chibot's tools on its own when they help, and the
-  answer shows what it did ("Searched the web", "Used calculator"; several
+  answer shows what it did ("Searched the web", "Memory updated"; several
   calls share one row, which opens to each; open one to see the details):
   - **Web search** (with `BRAVE_API_KEY`): answers cite their sources, and a
     **Sources** list under the answer links every page found or read.
@@ -197,7 +197,6 @@ Then open http://127.0.0.1:3000.
     image (or an attached photo) to see it full size over the chat, with
     Download; ⌘/Ctrl-click opens it in a new tab. They're kept with the chat, and
     deleted with it.
-  - **Calculator:** exact arithmetic, functions and unit conversions.
   - **Memory:** chibot remembers lasting facts and preferences you share
     ("remember that…", or things like "I'm vegetarian") and uses them in new
     chats; the answer says "Memory updated". Ask it to change or forget

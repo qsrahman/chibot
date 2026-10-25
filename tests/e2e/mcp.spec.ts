@@ -80,6 +80,10 @@ test('calls an MCP tool in a chat and shows its images', async ({ page }) => {
   await tool.getByText('Used echo · fixture').click()
   await expect(tool.locator('.tool-input')).toHaveText('{"text":"hi"}')
   await expect(tool.locator('.tool-result')).toHaveText('echo: hi')
+  // In plain terms first; the raw call is one click further.
+  await expect(tool.locator('.tool-details')).toBeHidden()
+  await tool.getByText('Raw').click()
+  await expect(tool.locator('.tool-details')).toContainText('"text": "hi"')
 
   await send(page, 'Show an mcp picture')
   await expect(turns(page).nth(1).locator('.image img')).toBeVisible()

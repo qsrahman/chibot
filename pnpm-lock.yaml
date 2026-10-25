@@ -199,9 +199,6 @@ importers:
       mammoth:
         specifier: 1.13.0
         version: 1.13.0
-      mathjs:
-        specifier: ^15.2.0
-        version: 15.2.0
       openai:
         specifier: ^7.39.0
         version: 7.39.0(undici@8.12.2)(zod@4.6.7)
@@ -277,10 +274,6 @@ importers:
         version: 5.0.5(@types/node@26.6.5)(vite@8.3.4(@types/node@26.6.5))
 
 packages:
-
-  '@babel/runtime@7.29.10':
-    resolution: {integrity: sha512-NpugTzbKgGrNe45Ui32cN8vCFFMxVtP/9rtfwv0nP5FRDAjvYBxJcLVpYA9mr1jxP6cnIT7x9LUzuDTbWYYNRA==}
-    engines: {node: '>=6.9.0'}
 
   '@hono/node-server@2.1.5':
     resolution: {integrity: sha512-MgP/I06GdvsilDspMk/qmRzpk8LOUStP6jFAbSRi40W09DhoyUn+Mj7eyKICPqeYKybOjVFLVIAQzvu1bfIa7Q==}
@@ -678,9 +671,6 @@ packages:
     resolution: {integrity: sha512-OkTL9umf+He2DZkUq8f8J9of7yL6RJKI24dVITBmNfZBmri9zYZQrKkuXiKhyfPSu8tUhnVBB1iKXevvnlR4Ww==}
     engines: {node: '>= 12'}
 
-  complex.js@2.4.3:
-    resolution: {integrity: sha512-UrQVSUur14tNX6tiP4y8T4w4FeJAX3bi2cIv0pu/DTLFNxoq7z2Yh83Vfzztj6Px3X/lubqQ9IrPp7Bpn6p4MQ==}
-
   cookie-es@3.1.1:
     resolution: {integrity: sha512-UaXxwISYJPTr9hwQxMFYZ7kNhSXboMXP+Z3TRX6f1/NyaGPfuNUZOWP1pUEb75B2HjfklIYLVRfWiFZJyC6Npg==}
 
@@ -713,9 +703,6 @@ packages:
     peerDependenciesMeta:
       supports-color:
         optional: true
-
-  decimal.js@10.6.0:
-    resolution: {integrity: sha512-YpgQiITW3JXGntzdUmyUR1V812Hn8T1YVXhCu+wO3OpS4eU9l4YdD3qjyiKdV6mvV29zapkMeD390UVEf2lkUg==}
 
   decode-named-character-reference@1.3.0:
     resolution: {integrity: sha512-GtpQYB283KrPp6nRw50q3U9/VfOutZOe103qlN7BPP6Ad27xYnOIWv4lPzo8HCAL+mMZofJ9KEy30fq6MfaK6Q==}
@@ -785,9 +772,6 @@ packages:
   es-module-lexer@2.3.2:
     resolution: {integrity: sha512-poHGpORABojJJucnV9KbOavETW8lBVnphkW77ER5/BQ5Fz7oXSoCNek7IH3vR5nRjdsEz926ibFYX8KtLQmdyw==}
 
-  escape-latex@1.2.0:
-    resolution: {integrity: sha512-nV5aVWW1K0wEiUIEdZ4erkGGH8mDxGyxSeqPzRNtWP7ataw+/olFObw7hujFWlVjNsaDFw5VZ5NzVSIqRgfTiw==}
-
   escape-string-regexp@5.0.0:
     resolution: {integrity: sha512-/veY75JbMK4j1yjvuUxuVsiS/hr/4iHs9FTT6cgTexxdE0Ly/glccBAkloH/DofkjRbZU3bnoj38mOmhkZ0lHw==}
     engines: {node: '>=12'}
@@ -825,9 +809,6 @@ packages:
     peerDependenciesMeta:
       picomatch:
         optional: true
-
-  fraction.js@5.3.4:
-    resolution: {integrity: sha512-1X1NTtiJphryn/uLQz3whtY6jK3fTqoE3ohKs0tT+Ujr1W59oopxmoEh7Lu5p6vBaPbgoM0bzveAW4Qi5RyWDQ==}
 
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
@@ -911,9 +892,6 @@ packages:
 
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
-
-  javascript-natural-sort@0.7.1:
-    resolution: {integrity: sha512-nO6jcEfZWQXDhOiBtG2KvKyEptz7RVbpGP4vTD2hLBdmNQSsCiicO2Ioinv6UI4y9ukqnBpy+XZ9H6uLNgJTlw==}
 
   jose@6.2.13:
     resolution: {integrity: sha512-7TIg10ZE1x82YediN+lcrPNvGMKge9yFHQD+Qho/b8y2adfugU3AsvvHfxV0fzyFllT6l9xCjf4RWY9g/Z9PJQ==}
@@ -1043,11 +1021,6 @@ packages:
 
   markdown-table@3.0.4:
     resolution: {integrity: sha512-wiYz4+JrLyb/DqW2hkFJxP7Vd7JuTDm77fvbM8VfEQdmSMqcImWeeRbHwZjBjIFki/VaMK2BhFi7oUUZeM5bqw==}
-
-  mathjs@15.2.0:
-    resolution: {integrity: sha512-UAQzSVob9rNLdGpqcFMYmSu9dkuLYy7Lr2hBEQS5SHQdknA9VppJz3cy2KkpMzTODunad6V6cNv+5kOLsePLow==}
-    engines: {node: '>= 18'}
-    hasBin: true
 
   mdast-util-find-and-replace@3.0.3:
     resolution: {integrity: sha512-xPgpDNl0/OXHsI7TlaIs22lWnH3KlpvZdXG1ET/m/YT2Hhdkx8lJV4kLphE6l9simyM4KPDFBwas08BgEob6Jw==}
@@ -1345,9 +1318,6 @@ packages:
   scheduler@0.28.0:
     resolution: {integrity: sha512-juorfCmIkIw8tT+p5BXSm6PJjQF/ycEYmKyzURCIt/RaZIhL+PulbQ9Yu2z1HdOJDdqDTlxA1+xKBmHXJsczAw==}
 
-  seedrandom@3.0.5:
-    resolution: {integrity: sha512-8OwmbklUNzwezjGInmZ+2clQmExQPvomqjL7LFqOYqtmuxRgQYqOD3mHaU+MvZn5FLUeVxVfQjwLZW/n/JFuqg==}
-
   setimmediate@1.0.5:
     resolution: {integrity: sha512-MATJdZp8sLqDl/68LfQmbP8zKPLQNV6BIZoIgrscFDQ+RsvK/BxeDQOgyxKKoh0y/8h3BqVFnCqQ/gd+reiIXA==}
 
@@ -1412,9 +1382,6 @@ packages:
   style-to-object@1.0.14:
     resolution: {integrity: sha512-LIN7rULI0jBscWQYaSswptyderlarFkjQ+t79nzty8tcIAceVomEVlLzH5VP4Cmsv6MtKhs7qaAiwlcp+Mgaxw==}
 
-  tiny-emitter@2.1.0:
-    resolution: {integrity: sha512-NB6Dk1A9xgQPMoGqC5CVXn123gWyte215ONT5Pp5a0yt4nlEoO1ZWeCwpncaekPHXO60i47ihFnZPiRPjRMq4Q==}
-
   tinybench@6.2.2:
     resolution: {integrity: sha512-nIZ2N2dFpjBsg2hgitKu7mA+FvsIJuGJOwysRngmVRRmWgR/UyPjwJj8c/fT/dhm8EkHnF5EOogRf+0Z2qrimA==}
     engines: {node: '>=20.0.0'}
@@ -1436,10 +1403,6 @@ packages:
 
   trough@2.2.0:
     resolution: {integrity: sha512-tmMpK00BjZiUyVyvrBK7knerNgmgvcV/KLVyuma/SC+TQN167GrMRciANTz09+k3zW8L8t60jWO1GpfkZdjTaw==}
-
-  typed-function@4.2.2:
-    resolution: {integrity: sha512-VwaXim9Gp1bngi/q3do8hgttYn2uC3MoT/gfuMWylnj1IeZBUAyPddHZlo1K05BDoj8DYPpMdiHqH1dDYdJf2A==}
-    engines: {node: '>= 18'}
 
   typescript@7.0.2:
     resolution: {integrity: sha512-8FYau96o3NKOhbjKi/qNvG/W5jhzxkbdm5sj9AbZ/5T5sWqn3hJgLfGx27sRKZWTvyzCP8dLRBTf5tBTSRVUNA==}
@@ -1612,8 +1575,6 @@ packages:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
 
 snapshots:
-
-  '@babel/runtime@7.29.10': {}
 
   '@hono/node-server@2.1.5(hono@4.13.13)':
     dependencies:
@@ -1864,8 +1825,6 @@ snapshots:
 
   commander@8.3.0: {}
 
-  complex.js@2.4.3: {}
-
   cookie-es@3.1.1: {}
 
   core-util-is@1.0.3: {}
@@ -1893,8 +1852,6 @@ snapshots:
   debug@4.4.3:
     dependencies:
       ms: 2.1.3
-
-  decimal.js@10.6.0: {}
 
   decode-named-character-reference@1.3.0:
     dependencies:
@@ -1960,8 +1917,6 @@ snapshots:
 
   es-module-lexer@2.3.2: {}
 
-  escape-latex@1.2.0: {}
-
   escape-string-regexp@5.0.0: {}
 
   estree-util-is-identifier-name@3.0.0: {}
@@ -1985,8 +1940,6 @@ snapshots:
   fdir@6.5.0(picomatch@4.0.7):
     optionalDependencies:
       picomatch: 4.0.7
-
-  fraction.js@5.3.4: {}
 
   fsevents@2.3.3:
     optional: true
@@ -2109,8 +2062,6 @@ snapshots:
 
   isexe@2.0.0: {}
 
-  javascript-natural-sort@0.7.1: {}
-
   jose@6.2.13: {}
 
   jszip@3.10.2:
@@ -2225,18 +2176,6 @@ snapshots:
       xmlbuilder: 10.1.1
 
   markdown-table@3.0.4: {}
-
-  mathjs@15.2.0:
-    dependencies:
-      '@babel/runtime': 7.29.10
-      complex.js: 2.4.3
-      decimal.js: 10.6.0
-      escape-latex: 1.2.0
-      fraction.js: 5.3.4
-      javascript-natural-sort: 0.7.1
-      seedrandom: 3.0.5
-      tiny-emitter: 2.1.0
-      typed-function: 4.2.2
 
   mdast-util-find-and-replace@3.0.3:
     dependencies:
@@ -2802,8 +2741,6 @@ snapshots:
 
   scheduler@0.28.0: {}
 
-  seedrandom@3.0.5: {}
-
   setimmediate@1.0.5: {}
 
   shebang-command@2.0.0:
@@ -2860,8 +2797,6 @@ snapshots:
     dependencies:
       inline-style-parser: 0.2.7
 
-  tiny-emitter@2.1.0: {}
-
   tinybench@6.2.2: {}
 
   tinyexec@1.3.1: {}
@@ -2876,8 +2811,6 @@ snapshots:
   trim-lines@3.0.1: {}
 
   trough@2.2.0: {}
-
-  typed-function@4.2.2: {}
 
   typescript@7.0.2:
     optionalDependencies:

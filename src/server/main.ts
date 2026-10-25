@@ -23,7 +23,6 @@ import { settingsDefaults, SettingsStore } from './settings-store.ts'
 import type { Tool } from './tool.ts'
 import { ToolRegistry } from './tool-registry.ts'
 import { Transcription } from './transcription.ts'
-import { CalculatorTool } from './tools/calculator.ts'
 import { FetchUrlTool } from './tools/fetch-url.ts'
 import { EditImageTool, GenerateImageTool } from './tools/images.ts'
 import { mcpTools } from './tools/mcp-tool.ts'
@@ -60,7 +59,6 @@ export function defaultTools({
     files,
   }
   return [
-    new CalculatorTool(),
     new FetchUrlTool(),
     new MemoryTool(memories),
     new SearchChatsTool(store),

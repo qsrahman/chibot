@@ -6,7 +6,6 @@ export const TOOL_GROUPS = [
   'The web',
   'Images',
   'Your chats and files',
-  'Calculation',
 ] as const
 
 export interface ToolText {
@@ -62,10 +61,5 @@ export const TOOL_TEXT: Record<string, ToolText> = {
     label: 'Search project files',
     group: 'Your chats and files',
     description: "Searches a project's files, in that project's chats.",
-  },
-  calculator: {
-    label: 'Calculator',
-    group: 'Calculation',
-    description: 'Exact arithmetic, functions and unit conversions.',
   },
 }

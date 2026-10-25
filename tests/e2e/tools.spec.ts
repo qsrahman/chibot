@@ -2,34 +2,11 @@ import { expect, test, type Page } from '@playwright/test'
 import { answer, answered, lastRequest, send, turns } from './helpers.ts'
 
 // Phase 5: tool calls and approvals, against tests/e2e/fake-openai.ts.
-// "calculate" makes the fake call the calculator, "approve" the test-only
-// e2e_note tool that needs approval (tests/e2e/server.ts).
+// "approve" makes the fake call the test-only e2e_note tool that needs
+// approval (tests/e2e/server.ts).
 
 const approvalCard = (page: Page) =>
   page.getByRole('region', { name: 'Tool approval' })
-
-test('runs the calculator and shows what it did', async ({ page }) => {
-  await page.goto('/')
-  await send(page, 'Please calculate this')
-  await answered(page)
-  await expect(answer(page, 0)).toHaveText('Tool said: 42')
-  expect((await lastRequest(page)).input.at(-1)).toMatchObject({
-    type: 'function_call_output',
-    output: '42',
-  })
-
-  await page.reload()
-  const tool = turns(page).first().locator('.tool-call')
-  await tool.getByText('Used calculator').click()
-  // In plain terms first; the raw call is one click further.
-  await expect(tool.locator('.tool-input')).toHaveText('6 * 7')
-  await expect(tool.locator('.tool-result')).toHaveText('42')
-  await expect(tool.locator('.tool-details')).toBeHidden()
-  await tool.getByText('Raw').click()
-  await expect(tool.locator('.tool-details')).toContainText(
-    '"expression": "6 * 7"',
-  )
-})
 
 test('waits for approval, also across a reload, then runs the tool', async ({
   page,

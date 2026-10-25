@@ -2,7 +2,7 @@
 // Streams `Answer #n to: <last user message>` word by word. A question that
 // contains "slow" streams a long answer slowly (to act mid-answer), "think"
 // first streams a reasoning summary, and "compact" returns a compaction item.
-// "calculate" calls the calculator tool, "approve" the test-only e2e_note tool
+// "approve" calls the test-only e2e_note tool
 // (see server.ts), "earlier chats <words>" search_chats, "search" web_search,
 // "read <url>" fetch_url, "draw" generate_image, "bluer" edit_image (on the
 // chat's last image), "remember <fact>" saves a memory and "in my files
@@ -351,9 +351,6 @@ function pickTool(
     return call('edit_image', { image_id: id, prompt: 'make it bluer' })
   }
   if (question.includes('read') && url) return call('fetch_url', { url })
-  if (question.includes('calculate')) {
-    return call('calculator', { expression: '6 * 7' })
-  }
   if (question.includes('approve')) return call('e2e_note', { text: 'hello' })
   return null
 }

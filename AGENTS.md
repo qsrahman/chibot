@@ -154,7 +154,7 @@ transpiles it.
    does for invalid arguments. Honour `signal` for anything slow.
 4. Add it to `defaultTools()` (`main.ts`), only when its setup exists (keys,
    endpoints, from `Config`). Take collaborators (clients, `FileStore`) in the
-   constructor, and test `run` directly, like `tests/server/calculator.test.ts`.
+   constructor, and test `run` directly, like `tests/server/memory.test.ts`.
 5. Anything that reaches the network on the model's behalf must refuse private
    addresses, like `fetch_url` (`tools/fetch-url.ts`).
 
@@ -177,7 +177,7 @@ invariants, API quirks. No line-by-line narration.
   `tests/e2e/fake-openai.ts` via `OPENAI_BASE_URL`. The fake answers
   `Answer #n to: <question>`; a question containing "slow" streams slowly,
   "think" adds a reasoning summary, "compact" a compaction item, and
-  "calculate", "approve", "search", "read <url>", "draw", "bluer",
+  "approve", "search", "read <url>", "draw", "bluer",
   "remember <fact>", "earlier chats <words>", "in my files <words>",
   "mcp echo <text>" and "mcp picture" call a tool (see the top of the file). It also fakes Brave, the images API,
   embeddings, transcription (`/debug/last-transcription`) and a Files API
