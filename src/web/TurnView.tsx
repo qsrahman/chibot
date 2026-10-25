@@ -26,7 +26,6 @@ const TOOL_LABELS: Record<string, [running: string, done: string]> = {
   fetch_url: ['Reading a page…', 'Read a page'],
   generate_image: ['Creating an image…', 'Created an image'],
   edit_image: ['Editing the image…', 'Edited the image'],
-  calculator: ['Calculating…', 'Used calculator'],
   memory: ['Updating memory…', 'Memory updated'],
   search_chats: ['Searching your chats…', 'Searched your chats'],
   search_project_files: ['Searching project files…', 'Searched project files'],

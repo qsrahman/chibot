@@ -341,7 +341,8 @@ support (`qwen2.5-coder:1.5b`) ignores tools rather than failing.
 - **Calculator (removed after Phase 10).** Phase 5 shipped `mathjs` `evaluate`
   with BigNumber (64 digits), so large results were exact. It was removed: the
   model handles arithmetic itself, and `mathjs` brought a dependency and an
-  unbounded evaluation. Calls saved by older chats still render.
+  unbounded evaluation. Calls saved by older chats show their raw arguments
+  and result.
 - **Web.** Tool activity inline in the answer: "Searching the web…" while
   running, then a collapsed "Searched the web" disclosure with arguments and
   result (like Thoughts). A pending approval shows the tool, its arguments and

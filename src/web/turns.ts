@@ -240,8 +240,6 @@ export function summarizeTool(tool: ToolActivity): ToolSummary | null {
     }
   }
   switch (tool.name) {
-    case 'calculator':
-      return { input: arg('expression'), result: tool.output, links: [] }
     case 'memory':
       return { input: null, result: tool.output, links: [] }
     case 'fetch_url':

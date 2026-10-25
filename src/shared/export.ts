@@ -123,7 +123,7 @@ export function replaceFileIds<T>(value: T, ids: Map<string, string>): T {
       typeof entry === 'string'
     ) {
       // Tool output and call arguments can be JSON with ids inside
-      // (image_id). Anything else, e.g. a calculator's "0.10", stays as is.
+      // (image_id). Output that isn't JSON stays as is.
       replaced[key] = entry
       try {
         const parsed: unknown = JSON.parse(entry)

@@ -145,8 +145,8 @@ describe('export and import', () => {
       {
         type: 'function_call',
         call_id: 'c1',
-        name: 'calculator',
-        arguments: '{"expression":"1+1"}',
+        name: 'web_search',
+        arguments: '{"query":"1+1"}',
       },
       { type: 'function_call_output', call_id: 'c1', output: '2\nexactly' },
       { role: 'assistant', content: 'Two.' },
@@ -154,7 +154,7 @@ describe('export and import', () => {
     const res = await app.request(`/api/conversations/${id}/export?format=md`)
     expect(await res.text()).toBe(
       '# Chat\n\n## You\n\nq\n\n' +
-        '> Used **calculator** with `{"expression":"1+1"}`:\n>\n> 2\n> exactly\n\n' +
+        '> Used **web_search** with `{"query":"1+1"}`:\n>\n> 2\n> exactly\n\n' +
         '## Assistant\n\nTwo.\n',
     )
   })

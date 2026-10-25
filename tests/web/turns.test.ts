@@ -119,8 +119,8 @@ describe('toTurns', () => {
     const call = (id: string) => ({
       type: 'function_call',
       call_id: id,
-      name: 'calculator',
-      arguments: '{"expression":"1+1"}',
+      name: 'web_search',
+      arguments: '{"query":"1+1"}',
     })
     const turns = toTurns([
       item(1, { role: 'user', content: 'q' }),
@@ -133,8 +133,8 @@ describe('toTurns', () => {
     expect(turns[0]!.answer!.tools).toEqual([
       {
         callId: 'c1',
-        name: 'calculator',
-        arguments: '{"expression":"1+1"}',
+        name: 'web_search',
+        arguments: '{"query":"1+1"}',
         output: '2',
       },
     ])
@@ -241,7 +241,7 @@ describe('sourcesOf and imagesOf', () => {
       'img-1',
     ])
     expect(imagesOf(tool('generate_image', {}, 'Error: quota'))).toEqual([])
-    expect(imagesOf(tool('calculator', {}, '{"image_ids":["x"]}'))).toEqual([])
+    expect(imagesOf(tool('memory', {}, '{"image_ids":["x"]}'))).toEqual([])
     expect(
       imagesOf(tool('files__shot', {}, '{"result":"…","image_ids":["a","b"]}')),
     ).toEqual(['a', 'b'])
@@ -356,10 +356,7 @@ describe('summarizeTool', () => {
     ).toEqual({ input: 'trip', result: 'Nothing found', links: [] })
   })
 
-  it('shows a calculation, a memory change and a page read', () => {
-    expect(
-      summarizeTool(call('calculator', { expression: '12 * 7' }, '84')),
-    ).toEqual({ input: '12 * 7', result: '84', links: [] })
+  it('shows a memory change and a page read', () => {
     expect(
       summarizeTool(
         call('memory', { action: 'save' }, 'Saved memory 3: "Vegetarian"'),
@@ -381,8 +378,8 @@ describe('summarizeTool', () => {
       summarizeTool(call('web_search', { query: 'x' }, 'Error: quota')),
     ).toEqual({ input: 'x', result: 'Error: quota', links: [] })
     expect(
-      summarizeTool(call('calculator', { expression: '1+1' }, null)),
-    ).toEqual({ input: '1+1', result: null, links: [] })
+      summarizeTool(call('fetch_url', { url: 'https://example.com/a' }, null)),
+    ).toEqual({ input: 'https://example.com/a', result: null, links: [] })
     // Unknown tools (e.g. the e2e test tool) show their raw call only.
     expect(summarizeTool(call('e2e_note', { text: 'x' }, 'ok'))).toBeNull()
   })

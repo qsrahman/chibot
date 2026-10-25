@@ -10,7 +10,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Removed
 
-- The calculator tool and its Settings row. Calls saved by older chats still render.
+- The calculator tool and its Settings row. Calls saved by older chats show their raw arguments and result.
 
 ### Fixed
 
