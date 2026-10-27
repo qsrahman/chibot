@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.11.6] - 2026-10-27
+
 ### Added
 
 - `pnpm release patch|minor|major|X.Y.Z` cuts a release: it bumps `package.json`, moves the CHANGELOG's `[Unreleased]` entries under the new version, runs the checks and commits. It needs a clean working tree.
