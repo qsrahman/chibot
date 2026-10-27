@@ -7,11 +7,12 @@ import {
   fakeClient,
   memoryStore,
   testSettings,
+  testChat,
 } from './fakes.ts'
 
 describe('models', () => {
   it('lists the endpoint models, sorted', async () => {
-    const chat = new ChatService(fakeClient([]), memoryStore(), testSettings())
+    const chat = testChat([])
     expect(await chat.listModels()).toEqual(['m-1', 'm-2'])
   })
 
@@ -28,7 +29,7 @@ describe('models', () => {
   it('records the model that wrote each answer', async () => {
     const store = memoryStore()
     const settings = testSettings('first')
-    const chat = new ChatService(fakeClient(answerEvents('a')), store, settings)
+    const chat = testChat(answerEvents('a'), { store, settings })
     const { id } = store.createConversation()
     await drain(chat.runTurn(id, { text: 'q' }))
     const question = store.getPath(id)[0]!
@@ -45,11 +46,7 @@ describe('models', () => {
     const events = answerEvents('a')
     const completed = events.at(-1) as { response: { model?: string } }
     completed.response.model = 'first-2026-10-01'
-    const chat = new ChatService(
-      fakeClient(events),
-      store,
-      testSettings('first'),
-    )
+    const chat = testChat(events, { store, model: 'first' })
     const { id } = store.createConversation()
     await drain(chat.runTurn(id, { text: 'q' }))
     expect(store.getPath(id).at(-1)!.model).toBe('first-2026-10-01')
@@ -57,11 +54,10 @@ describe('models', () => {
 
   it('records the model for a stopped answer too', async () => {
     const store = memoryStore()
-    const chat = new ChatService(
-      fakeClient(answerEvents('Par', 'tial', ' rest')),
+    const chat = testChat(answerEvents('Par', 'tial', ' rest'), {
       store,
-      testSettings('slow-model'),
-    )
+      model: 'slow-model',
+    })
     const { id } = store.createConversation()
     let n = 0
     for await (const _ of chat.runTurn(id, { text: 'q' })) if (++n === 2) break

@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type OpenAI from 'openai'
 import type { ResponseFunctionToolCall } from 'openai/resources/responses/responses'
-import { ChatService } from '../../src/server/chat-service.ts'
 import type { ConversationStore } from '../../src/server/conversation-store.ts'
 import { openDatabase } from '../../src/server/database.ts'
 import type { FileStore } from '../../src/server/file-store.ts'
@@ -12,11 +11,10 @@ import { SearchProjectFilesTool } from '../../src/server/tools/project-files.ts'
 import {
   answerEvents,
   drain,
-  fakeClient,
   memoryStore,
   testFiles,
-  testSettings,
   type FakeCall,
+  testChat,
 } from './fakes.ts'
 
 /**
@@ -148,15 +146,12 @@ describe('project file search', () => {
     projects.update(projectId, { instructions: 'Prices in yen.' })
     await add('plan.md', 'Kyoto.')
     const calls: FakeCall[] = []
-    const chat = new ChatService(
-      fakeClient(answerEvents('ok'), calls),
+    const chat = testChat(answerEvents('ok'), {
       store,
-      testSettings(),
-      {
-        tools: new ToolRegistry([new SearchProjectFilesTool(projects, index)]),
-        projects: projects,
-      },
-    )
+      calls,
+      tools: new ToolRegistry([new SearchProjectFilesTool(projects, index)]),
+      projects: projects,
+    })
     const { id } = store.createConversation({ projectId })
     await drain(chat.runTurn(id, { text: 'Hi' }))
 

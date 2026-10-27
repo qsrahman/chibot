@@ -1,16 +1,15 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { ChatService } from '../../src/server/chat-service.ts'
 import type { MemoryStore } from '../../src/server/memory-store.ts'
 import { ToolRegistry } from '../../src/server/tool-registry.ts'
 import { MemoryTool } from '../../src/server/tools/memory.ts'
 import {
   answerEvents,
   drain,
-  fakeClient,
   memoryStore,
   testMemories,
   testSettings,
   type FakeCall,
+  testChat,
 } from './fakes.ts'
 
 describe('MemoryTool', () => {
@@ -105,12 +104,12 @@ describe('memory in chats', () => {
     const memories = testMemories()
     memories.save('Prefers Rust.')
     const calls: FakeCall[] = []
-    const chat = new ChatService(
-      fakeClient(answerEvents('ok'), calls),
+    const chat = testChat(answerEvents('ok'), {
       store,
-      testSettings('m', { disabledTools }),
-      { tools: new ToolRegistry([new MemoryTool(memories)]) },
-    )
+      calls,
+      settings: testSettings('m', { disabledTools }),
+      tools: new ToolRegistry([new MemoryTool(memories)]),
+    })
     const { id } = store.createConversation({ temporary })
     await drain(chat.runTurn(id, { text: 'Hi' }, undefined))
     return calls[0]!.params

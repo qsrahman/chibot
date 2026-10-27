@@ -5,7 +5,6 @@ import {
   EventSourceParserStream,
   type EventSourceMessage,
 } from 'eventsource-parser/stream'
-import { ChatService } from '../../src/server/chat-service.ts'
 import { ToolRegistry } from '../../src/server/tool-registry.ts'
 import { Config } from '../../src/server/config.ts'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
@@ -16,10 +15,10 @@ import type {
 import {
   answerEvents,
   EchoTool,
-  fakeClient,
   memoryStore,
   testSettings,
   testApp,
+  testChat,
 } from './fakes.ts'
 
 const config = new Config({
@@ -45,7 +44,7 @@ describe('API', () => {
 
   function appWith(events: ResponseStreamEvent[] | Error) {
     const settings = testSettings('m-1')
-    const chat = new ChatService(fakeClient(events), store, settings)
+    const chat = testChat(events, { store, settings })
     return testApp({
       config,
       store,
@@ -85,7 +84,9 @@ describe('API', () => {
 
   it('GET /api/tools lists the tools with their labels', async () => {
     const settings = testSettings('m-1')
-    const chat = new ChatService(fakeClient([]), store, settings, {
+    const chat = testChat([], {
+      store,
+      settings,
       tools: new ToolRegistry([new EchoTool()]),
     })
     const app = testApp({

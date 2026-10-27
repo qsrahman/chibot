@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { DatabaseSync } from 'node:sqlite'
-import { ChatService } from '../../src/server/chat-service.ts'
 import { Config } from '../../src/server/config.ts'
 import { openDatabase } from '../../src/server/database.ts'
 import {
@@ -11,10 +10,10 @@ import {
 import {
   answerEvents,
   drain,
-  fakeClient,
   memoryStore,
   type FakeCall,
   testApp,
+  testChat,
 } from './fakes.ts'
 
 describe('SettingsStore', () => {
@@ -83,11 +82,7 @@ describe('settings routes and use', () => {
     )
     calls = []
     const store = memoryStore()
-    const chat = new ChatService(
-      fakeClient(answerEvents('a'), calls),
-      store,
-      settings,
-    )
+    const chat = testChat(answerEvents('a'), { store, calls, settings })
     app = testApp({
       config,
       store,
@@ -134,11 +129,7 @@ describe('settings routes and use', () => {
   it('uses the chosen model for new turns', async () => {
     settings.update({ model: 'picked' })
     const store = memoryStore()
-    const chat = new ChatService(
-      fakeClient(answerEvents('a'), calls),
-      store,
-      settings,
-    )
+    const chat = testChat(answerEvents('a'), { store, calls, settings })
     await drain(chat.runTurn(store.createConversation().id, { text: 'hi' }))
     expect(calls.at(-1)!.params.model).toBe('picked')
   })

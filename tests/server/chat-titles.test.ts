@@ -1,15 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import OpenAI from 'openai'
 import type { ResponseCreateParams } from 'openai/resources/responses/responses'
-import { ChatService } from '../../src/server/chat-service.ts'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
 import {
   answerEvents,
   drain,
-  fakeClient,
   type FakeOptions,
   memoryStore,
-  testSettings,
+  testChat,
 } from './fakes.ts'
 
 const eventTypes = async (stream: AsyncIterable<{ type: string }>) =>
@@ -30,11 +28,7 @@ describe('ChatService titles', () => {
   })
 
   function service(options: FakeOptions) {
-    return new ChatService(
-      fakeClient(answerEvents('A'), [], options),
-      store,
-      testSettings('m'),
-    )
+    return testChat(answerEvents('A'), { store, client: options })
   }
 
   it('titles a conversation once, from its opening messages', async () => {

@@ -11,6 +11,7 @@ import {
   memoryStore,
   testSettings,
   type FakeCall,
+  testChat,
 } from './fakes.ts'
 
 const compaction = (id: string) =>
@@ -34,11 +35,11 @@ describe('compaction', () => {
     const options = async (overrides = {}) => {
       const calls: FakeCall[] = []
       const store = memoryStore()
-      const chat = new ChatService(
-        fakeClient(answerEvents('a'), calls),
+      const chat = testChat(answerEvents('a'), {
         store,
-        testSettings('m', overrides),
-      )
+        calls,
+        settings: testSettings('m', overrides),
+      })
       await drain(
         chat.runTurn(store.createConversation({ temporary: true }).id, {
           text: 'q',

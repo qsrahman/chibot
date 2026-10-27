@@ -1,15 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import OpenAI from 'openai'
-import { ChatService } from '../../src/server/chat-service.ts'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
 import {
   answerEvents,
   drain,
-  fakeClient,
   usage,
   type FakeCall,
   memoryStore,
-  testSettings,
+  testChat,
 } from './fakes.ts'
 
 describe('ChatService', () => {
@@ -23,11 +21,7 @@ describe('ChatService', () => {
   it('streams events and persists the turn statelessly', async () => {
     const calls: FakeCall[] = []
     const events = answerEvents('Hel', 'lo')
-    const chat = new ChatService(
-      fakeClient(events, calls),
-      store,
-      testSettings('model-x'),
-    )
+    const chat = testChat(events, { store, calls, model: 'model-x' })
 
     expect(await drain(chat.runTurn(conversationId, { text: 'Hi' }))).toEqual([
       ...events,
@@ -50,11 +44,7 @@ describe('ChatService', () => {
   })
 
   it('persists the answer before yielding response.completed', async () => {
-    const chat = new ChatService(
-      fakeClient(answerEvents('ok')),
-      store,
-      testSettings('m'),
-    )
+    const chat = testChat(answerEvents('ok'), { store })
     for await (const event of chat.runTurn(conversationId, { text: 'Hi' })) {
       if (event.type === 'response.completed') {
         expect(store.getPath(conversationId)).toHaveLength(2)
@@ -64,11 +54,7 @@ describe('ChatService', () => {
 
   it('sends the full history on later turns', async () => {
     const calls: FakeCall[] = []
-    const chat = new ChatService(
-      fakeClient(answerEvents('A'), calls),
-      store,
-      testSettings('m'),
-    )
+    const chat = testChat(answerEvents('A'), { store, calls })
     await drain(chat.runTurn(conversationId, { text: 'one' }))
     await drain(chat.runTurn(conversationId, { text: 'two' }))
 
@@ -80,11 +66,7 @@ describe('ChatService', () => {
   })
 
   it('keeps the partial answer when the consumer stops early', async () => {
-    const chat = new ChatService(
-      fakeClient(answerEvents('Par', 'tial', ' rest')),
-      store,
-      testSettings('m'),
-    )
+    const chat = testChat(answerEvents('Par', 'tial', ' rest'), { store })
     let n = 0
     for await (const _ of chat.runTurn(conversationId, { text: 'Hi' })) {
       if (++n === 2) break
@@ -97,11 +79,7 @@ describe('ChatService', () => {
 
   it('keeps the partial answer when aborted', async () => {
     const controller = new AbortController()
-    const chat = new ChatService(
-      fakeClient(answerEvents('Par', 'tial', ' rest')),
-      store,
-      testSettings('m'),
-    )
+    const chat = testChat(answerEvents('Par', 'tial', ' rest'), { store })
     const run = async () => {
       for await (const event of chat.runTurn(
         conversationId,
@@ -125,7 +103,7 @@ describe('ChatService', () => {
       'bad key',
       new Headers(),
     )
-    const chat = new ChatService(fakeClient(error), store, testSettings('m'))
+    const chat = testChat(error, { store })
     await expect(
       drain(chat.runTurn(conversationId, { text: 'Hi' })),
     ).rejects.toBe(error)

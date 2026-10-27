@@ -175,6 +175,8 @@ invariants, API quirks. No line-by-line narration.
   which builds `createApp` with fakes for every dependency you don't pass.
 - OpenAI: pass a fake client whose `responses.create` returns an async
   generator of `ResponseStreamEvent`s. Tests never hit the network.
+  `testChat(events, { store, calls, tools, … })` builds a `ChatService` on
+  such a fake with default stores and settings.
 - SQLite: use `':memory:'` databases.
 - Web: no component unit tests; pure helpers (e.g. `turns.ts`, `usage.ts`)
   get vitest tests. UI behaviour is covered by Playwright specs in

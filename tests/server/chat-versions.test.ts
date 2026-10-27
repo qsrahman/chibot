@@ -7,11 +7,11 @@ import { messageText } from '../../src/shared/messages.ts'
 import {
   answerEvents,
   drain,
-  fakeClient,
   type FakeCall,
   memoryStore,
   testSettings,
   testApp,
+  testChat,
 } from './fakes.ts'
 
 describe('edit, regenerate and switch versions', () => {
@@ -24,11 +24,7 @@ describe('edit, regenerate and switch versions', () => {
     store = memoryStore()
     calls = []
     settings = testSettings('m')
-    chat = new ChatService(
-      fakeClient(answerEvents('ans'), calls),
-      store,
-      settings,
-    )
+    chat = testChat(answerEvents('ans'), { store, calls, settings })
     id = store.createConversation().id
   })
 

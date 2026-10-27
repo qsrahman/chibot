@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { ChatService } from '../../src/server/chat-service.ts'
 import { Config } from '../../src/server/config.ts'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
 import type {
@@ -9,11 +8,11 @@ import type {
 import { openDatabase } from '../../src/server/database.ts'
 import type { FileStore } from '../../src/server/file-store.ts'
 import {
-  fakeClient,
   memoryStore,
   testFiles,
   testSettings,
   testApp,
+  testChat,
 } from './fakes.ts'
 
 const config = new Config({ OPENAI_API_KEY: 'k' })
@@ -31,7 +30,7 @@ describe('conversation routes', () => {
       config,
       store,
       settings,
-      chat: new ChatService(fakeClient([]), store, settings),
+      chat: testChat([], { store, settings }),
       files,
     })
   })

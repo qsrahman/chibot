@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { ChatService } from '../../src/server/chat-service.ts'
 import {
   answerEvents,
   drain,
-  fakeClient,
   memoryStore,
   testSettings,
   type FakeCall,
+  testChat,
 } from './fakes.ts'
 
 describe('reasoning', () => {
@@ -17,11 +16,12 @@ describe('reasoning', () => {
   ) {
     const calls: FakeCall[] = []
     const store = memoryStore()
-    const chat = new ChatService(
-      fakeClient(answerEvents('a'), calls, options),
+    const chat = testChat(answerEvents('a'), {
       store,
+      calls,
+      client: options,
       settings,
-    )
+    })
     const { id } = store.createConversation({ temporary: true })
     for (let i = 0; i < count; i++) {
       await drain(chat.runTurn(id, { text: `q${i}` }))

@@ -18,6 +18,7 @@ import {
   memoryStore,
   testSettings,
   type FakeCall,
+  testChat,
 } from './fakes.ts'
 
 describe('ChatService tools', () => {
@@ -32,10 +33,7 @@ describe('ChatService tools', () => {
     events: Parameters<typeof fakeClient>[0],
     calls: FakeCall[],
     tools: Tool[] = [new EchoTool()],
-  ) =>
-    new ChatService(fakeClient(events, calls), store, testSettings(), {
-      tools: new ToolRegistry(tools),
-    })
+  ) => testChat(events, { store, calls, tools: new ToolRegistry(tools) })
 
   it('runs the calls and asks the model again with their outputs', async () => {
     const calls: FakeCall[] = []
@@ -81,12 +79,12 @@ describe('ChatService tools', () => {
 
   it('leaves out tools switched off in Settings', async () => {
     const calls: FakeCall[] = []
-    const chat = new ChatService(
-      fakeClient(answerEvents('Hi'), calls),
+    const chat = testChat(answerEvents('Hi'), {
       store,
-      testSettings('m', { disabledTools: ['echo'] }),
-      { tools: new ToolRegistry([new EchoTool()]) },
-    )
+      calls,
+      settings: testSettings('m', { disabledTools: ['echo'] }),
+      tools: new ToolRegistry([new EchoTool()]),
+    })
     await drain(chat.runTurn(conversationId, { text: 'Hi', tool: 'echo' }))
     expect(calls[0]!.params).not.toHaveProperty('tools')
     expect(calls[0]!.params).not.toHaveProperty('tool_choice')
@@ -189,20 +187,15 @@ describe('ChatService approvals', () => {
     conversationId = store.createConversation().id
     tool = new EchoTool({ requiresApproval: true })
     calls = []
-    chat = new ChatService(
-      fakeClient(
-        (n) =>
-          n === 0
-            ? callEvents(
-                { args: { text: 'a' }, callId: 'call_a' },
-                { args: { text: 'b' }, callId: 'call_b' },
-              )
-            : answerEvents('Done'),
-        calls,
-      ),
-      store,
-      testSettings(),
-      { tools: new ToolRegistry([tool]) },
+    chat = testChat(
+      (n) =>
+        n === 0
+          ? callEvents(
+              { args: { text: 'a' }, callId: 'call_a' },
+              { args: { text: 'b' }, callId: 'call_b' },
+            )
+          : answerEvents('Done'),
+      { store, calls, tools: new ToolRegistry([tool]) },
     )
   })
 
@@ -264,9 +257,7 @@ describe("approval 'after-untrusted'", () => {
   async function run(events: (call: number) => ResponseStreamEvent[]) {
     const store = memoryStore()
     const tools = [page(), remember()]
-    const chat = new ChatService(fakeClient(events), store, testSettings(), {
-      tools: new ToolRegistry(tools),
-    })
+    const chat = testChat(events, { store, tools: new ToolRegistry(tools) })
     const { id } = store.createConversation()
     const output = await drain(chat.runTurn(id, { text: 'Go' }))
     return { output, runs: tools.map((t) => t.runs) }

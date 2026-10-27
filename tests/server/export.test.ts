@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { ChatService } from '../../src/server/chat-service.ts'
 import { Config } from '../../src/server/config.ts'
 import type { ConversationStore } from '../../src/server/conversation-store.ts'
 import { openDatabase } from '../../src/server/database.ts'
@@ -7,12 +6,12 @@ import type { FileStore } from '../../src/server/file-store.ts'
 import type { ConversationExport } from '../../src/shared/export.ts'
 import type { Conversation } from '../../src/shared/types.ts'
 import {
-  fakeClient,
   memoryStore,
   testFiles,
   testSettings,
   usage,
   testApp,
+  testChat,
 } from './fakes.ts'
 
 describe('export and import', () => {
@@ -29,7 +28,7 @@ describe('export and import', () => {
       store,
       files,
       settings,
-      chat: new ChatService(fakeClient([]), store, settings),
+      chat: testChat([], { store, settings }),
     })
   })
 

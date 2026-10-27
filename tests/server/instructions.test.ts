@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { ChatService, chatInstructions } from '../../src/server/chat-service.ts'
+import { chatInstructions } from '../../src/server/chat-service.ts'
 import { ToolRegistry } from '../../src/server/tool-registry.ts'
 import {
   EchoTool,
   answerEvents,
   drain,
-  fakeClient,
   memoryStore,
   testSettings,
   type FakeCall,
+  testChat,
 } from './fakes.ts'
 
 describe('custom instructions', () => {
@@ -42,11 +42,12 @@ describe('custom instructions', () => {
     const calls: FakeCall[] = []
     const titleCalls: { instructions?: string | null }[] = []
     const store = memoryStore()
-    const chat = new ChatService(
-      fakeClient(answerEvents('a'), calls, { titleCalls }),
+    const chat = testChat(answerEvents('a'), {
       store,
-      testSettings('m', { responseStyle: 'Be brief.' }),
-    )
+      calls,
+      client: { titleCalls },
+      settings: testSettings('m', { responseStyle: 'Be brief.' }),
+    })
     await drain(chat.runTurn(store.createConversation().id, { text: 'q' }))
     expect(calls[0]!.params.instructions).toContain('Be brief.')
     expect(titleCalls[0]!.instructions).not.toContain('Be brief.')
@@ -56,12 +57,11 @@ describe('custom instructions', () => {
     const calls: FakeCall[] = []
     const store = memoryStore()
     const turn = async (untrustedOutput: boolean) => {
-      const chat = new ChatService(
-        fakeClient(answerEvents('a'), calls),
+      const chat = testChat(answerEvents('a'), {
         store,
-        testSettings(),
-        { tools: new ToolRegistry([new EchoTool({ untrustedOutput })]) },
-      )
+        calls,
+        tools: new ToolRegistry([new EchoTool({ untrustedOutput })]),
+      })
       await drain(chat.runTurn(store.createConversation().id, { text: 'q' }))
       return calls.at(-1)!.params.instructions
     }

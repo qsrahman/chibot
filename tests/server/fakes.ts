@@ -168,6 +168,37 @@ export const testMemories = (db = openDatabase(':memory:')) =>
 export const testFiles = (db = openDatabase(':memory:')) =>
   new FileStore(db, mkdtempSync(join(tmpdir(), 'chibot-files-')))
 
+/**
+ * A `ChatService` on fakes: `events` answer its streaming requests (see
+ * `fakeClient`; `calls` records them, `client` sets the fake's options).
+ * `store` and `settings` default to fresh ones (`settings` for `model`), and
+ * the rest are the service's own options (`tools`, `attachments`, …).
+ */
+export function testChat(
+  events: Parameters<typeof fakeClient>[0],
+  {
+    store = memoryStore(),
+    calls,
+    client,
+    model = 'm',
+    settings = testSettings(model),
+    ...options
+  }: {
+    store?: ConversationStore
+    calls?: FakeCall[]
+    client?: FakeOptions
+    model?: string
+    settings?: SettingsStore
+  } & NonNullable<ConstructorParameters<typeof ChatService>[3]> = {},
+) {
+  return new ChatService(
+    fakeClient(events, calls, client),
+    store,
+    settings,
+    options,
+  )
+}
+
 /** Settings with `model` (and any overrides), on their own in-memory database. */
 export function testSettings(model = 'm', overrides: Partial<Settings> = {}) {
   const settings = new SettingsStore(
