@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.11.9] - 2026-10-27
+
 ### Changed
 
 - The chat instructions follow OpenAI's and Anthropic's prompting guidance. They are laid out as an identity line, an `<instructions>` list, then named sections (`<user_profile>`, `<response_style>`, `<project>`, the tools' memories and file names, `<current_time>`), with the stable text first and the changing text last. The rules now say why (the chat renders Markdown and only `$…$` math), and add: reply in the user's language, match length to the question, ask one short question only when a wrong guess would cost the user, answer from your own knowledge before using a tool, and say when a tool fails. The user's own sections override the defaults, and the rule about others' text in tool results stays firm.
