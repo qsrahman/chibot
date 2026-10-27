@@ -47,6 +47,7 @@ pnpm typecheck    # server/tests, web and e2e tsconfigs
 pnpm format       # prettier --write
 pnpm build        # build the web app into dist/web
 pnpm start        # production: serves the API and dist/web
+pnpm release      # patch|minor|major|X.Y.Z: bump, CHANGELOG, checks, commit
 ```
 
 ## TypeScript constraints
@@ -208,6 +209,9 @@ invariants, API quirks. No line-by-line narration.
    It bumps the minor version in `package.json` ([SemVer](https://semver.org/))
    and moves the phase's CHANGELOG entries under that version.
    Fixes released between phases bump the patch version instead
-   (`chore: release vX.Y.Z`).
+   (`chore: release vX.Y.Z`). `pnpm release patch|minor|X.Y.Z` does the
+   bump, moves the CHANGELOG entries, runs the checks (`--e2e` adds the
+   Playwright specs) and makes the commit; it needs a clean working tree
+   (`--no-commit` leaves the commit to you).
 5. **Stop after each phase.** Report what works and how it was verified, then
    wait for the owner's go-ahead before starting the next phase.

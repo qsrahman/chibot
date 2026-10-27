@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- `pnpm release patch|minor|major|X.Y.Z` cuts a release: it bumps `package.json`, moves the CHANGELOG's `[Unreleased]` entries under the new version, runs the checks and commits. It needs a clean working tree.
+
 ### Changed
 
 - `fetch_url` also reads JSON and XML variants (`application/ld+json`, RSS and Atom feeds, `application/xml`), which it used to refuse.
