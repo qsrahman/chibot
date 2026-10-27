@@ -33,6 +33,12 @@ describe('FetchUrlTool', () => {
       } else if (req.url === '/unknown-charset') {
         res.writeHead(200, { 'Content-Type': 'text/plain; charset=bogus' })
         res.end('unknown charset')
+      } else if (req.url === '/ld-json') {
+        res.writeHead(200, { 'Content-Type': 'application/ld+json' })
+        res.end('{"@type":"Article"}')
+      } else if (req.url === '/feed') {
+        res.writeHead(200, { 'Content-Type': 'application/rss+xml' })
+        res.end('<rss><channel><title>News</title></channel></rss>')
       } else if (req.url === '/pdf') {
         res.writeHead(200, { 'Content-Type': 'application/pdf' })
         res.end('%PDF')
@@ -79,6 +85,15 @@ describe('FetchUrlTool', () => {
     await expect(
       local.run({ url: 'file:///etc/passwd' }, context),
     ).rejects.toThrow('only http and https')
+  })
+
+  it('reads JSON and XML variants, such as JSON-LD and feeds', async () => {
+    expect(await local.run({ url: `${base}/ld-json` }, context)).toMatch(
+      /\n\n\{"@type":"Article"\}$/,
+    )
+    expect(await local.run({ url: `${base}/feed` }, context)).toMatch(
+      /<title>News<\/title>/,
+    )
   })
 
   it('reads a quoted or unknown charset as UTF-8 rather than failing', async () => {

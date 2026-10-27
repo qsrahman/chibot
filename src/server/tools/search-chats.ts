@@ -59,10 +59,19 @@ export class SearchChatsTool extends Tool {
   }
 }
 
-/** Local midnight of a YYYY-MM-DD date (chibot runs where the user is). */
+/**
+ * Local midnight of a YYYY-MM-DD date (chibot runs where the user is). A
+ * blank one means none (models often send "" for null), and a day the month
+ * doesn't have (2026-02-31) is refused rather than rolled into March.
+ */
 function startOf(day: string | null): number | null {
-  if (day === null) return null
-  const time = new Date(`${day}T00:00`).getTime()
-  if (Number.isNaN(time)) throw new Error(`"${day}" is not a YYYY-MM-DD date`)
-  return time
+  if (day === null || day.trim() === '') return null
+  const date = new Date(`${day}T00:00`)
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(day) ||
+    date.toLocaleDateString('sv') !== day
+  ) {
+    throw new Error(`"${day}" is not a YYYY-MM-DD date`)
+  }
+  return date.getTime()
 }

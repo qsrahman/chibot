@@ -87,5 +87,15 @@ describe('SearchChatsTool', () => {
     await expect(
       search({ query: 'pasta', after: 'last week' }),
     ).rejects.toThrow('not a YYYY-MM-DD date')
+    // Not rolled over into March, and not read as a time of day.
+    for (const bad of ['2026-02-31', '2026-1-5', '2026-10-27T10:00']) {
+      await expect(search({ query: 'pasta', after: bad })).rejects.toThrow(
+        'not a YYYY-MM-DD date',
+      )
+    }
+    // Models send "" for "no date".
+    expect(
+      (await search({ query: 'pasta', after: '', before: ' ' })).results,
+    ).toHaveLength(1)
   })
 })

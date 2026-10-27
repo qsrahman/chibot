@@ -4,6 +4,9 @@ import type { ProjectIndex } from '../project-index.ts'
 import type { ProjectStore } from '../project-store.ts'
 import { Tool, type ToolContext } from '../tool.ts'
 
+// Every project file's name goes into the instructions of every request.
+const MAX_LISTED_FILES = 50
+
 /** Searches the files of the chat's project (local, hybrid search). */
 export class SearchProjectFilesTool extends Tool {
   readonly name = 'search_project_files'
@@ -33,7 +36,11 @@ export class SearchProjectFilesTool extends Tool {
   }
 
   override instructions({ projectId }: Conversation) {
-    const names = this.#searchable(projectId).map((f) => f.name)
+    const files = this.#searchable(projectId)
+    const names = files.slice(0, MAX_LISTED_FILES).map((f) => f.name)
+    if (files.length > names.length) {
+      names.push(`and ${files.length - names.length} more`)
+    }
     return (
       `The project's files, searchable with search_project_files: ${names.join(', ')}. ` +
       'When they cover a question, answer from them rather than from general ' +

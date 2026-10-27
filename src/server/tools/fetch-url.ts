@@ -3,7 +3,7 @@ import { BlockList, isIP } from 'node:net'
 import { Agent, buildConnector, fetch } from 'undici'
 import { z } from 'zod'
 import { htmlToText, tidy } from '../text.ts'
-import { Tool, type ToolContext } from '../tool.ts'
+import { abortAfter, Tool, type ToolContext } from '../tool.ts'
 
 const MAX_BYTES = 5 * 1024 * 1024
 const MAX_CHARS = 40_000
@@ -82,8 +82,8 @@ export class FetchUrlTool extends Tool {
   override readonly untrustedOutput = true
   readonly description =
     'Reads a web page and returns its main text: a search result to read in ' +
-    'full, or a URL the user gave. Works for HTML, plain text, Markdown and ' +
-    'JSON. Only public addresses.'
+    'full, or a URL the user gave. Works for HTML, plain text, Markdown, ' +
+    'JSON and XML (feeds). Only public addresses.'
   readonly parameters = z.object({
     url: z.string().describe('The http(s) URL to read'),
   })
@@ -105,9 +105,7 @@ export class FetchUrlTool extends Tool {
       res = await fetch(target, {
         dispatcher: this.#agent,
         headers: { 'User-Agent': 'Mozilla/5.0 (compatible; chibot)' },
-        signal: signal
-          ? AbortSignal.any([signal, AbortSignal.timeout(TIMEOUT_MS)])
-          : AbortSignal.timeout(TIMEOUT_MS),
+        signal: abortAfter(TIMEOUT_MS, signal),
       })
     } catch (err) {
       // undici reports connection failures (ours included) as the cause.
@@ -118,7 +116,7 @@ export class FetchUrlTool extends Tool {
     const type = res.headers.get('content-type') ?? ''
     const [mime = ''] = type.split(';').map((part) => part.trim().toLowerCase())
     const html = mime === 'text/html' || mime === 'application/xhtml+xml'
-    if (!html && !mime.startsWith('text/') && mime !== 'application/json') {
+    if (!html && !isText(mime)) {
       throw new Error(
         `can't read ${mime || 'this content'} (only web pages and text)`,
       )
@@ -144,6 +142,13 @@ export class FetchUrlTool extends Tool {
     ].join('\n')
   }
 }
+
+/** Text, JSON and XML (feeds, `application/ld+json`, …) read as they are. */
+const isText = (mime: string) =>
+  mime.startsWith('text/') ||
+  ['application/json', 'application/xml'].includes(mime) ||
+  mime.endsWith('+json') ||
+  mime.endsWith('+xml')
 
 /** Decodes with the page's charset, or UTF-8 when it's unknown. */
 function decoder(charset: string): TextDecoder {

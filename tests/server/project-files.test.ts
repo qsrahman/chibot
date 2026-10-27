@@ -60,6 +60,15 @@ describe('project file search', () => {
     await index.index(file.id)
   }
 
+  it('lists at most 50 file names in the instructions', async () => {
+    const tool = new SearchProjectFilesTool(projects, index)
+    const chat = store.createConversation({ projectId })
+    for (let n = 1; n <= 53; n++) await add(`f${n}.md`, `Note ${n}.`)
+    const text = tool.instructions(chat)!
+    expect(text).toContain('f50.md, and 3 more.')
+    expect(text).not.toContain('f51.md')
+  })
+
   it('finds passages by keyword and by meaning', async () => {
     await add('codes.md', 'The door code is KESTREL.')
     await add('plan.md', 'Take the shinkansen to Kyoto on day two.')

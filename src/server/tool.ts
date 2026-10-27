@@ -13,6 +13,12 @@ export interface ToolContext {
   signal?: AbortSignal
 }
 
+/** `signal` (the stop button), also aborting after `ms`, for slow requests. */
+export const abortAfter = (ms: number, signal?: AbortSignal) =>
+  signal
+    ? AbortSignal.any([signal, AbortSignal.timeout(ms)])
+    : AbortSignal.timeout(ms)
+
 /**
  * A function the model can call. Subclasses set the fields and implement
  * `run`; `ToolRegistry` validates the arguments against `parameters` first.

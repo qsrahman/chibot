@@ -4,6 +4,15 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- `fetch_url` also reads JSON and XML variants (`application/ld+json`, RSS and Atom feeds, `application/xml`), which it used to refuse.
+- A project chat's instructions list at most 50 file names ("and N more"), instead of every file's name on every request.
+
+### Fixed
+
+- `search_chats` dates: a day the month doesn't have (`2026-02-31`) is refused instead of silently meaning 3 March, and a blank date means none (models often send `""` for null) instead of an error.
+
 ## [0.11.5] - 2026-10-27
 
 ### Added
