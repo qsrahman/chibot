@@ -18,13 +18,15 @@ phase roadmap live in [PLAN.md](PLAN.md). Usage lives in [README.md](README.md).
 src/server/   main.ts (start(): wiring + listen, defaultTools()), app.ts (Hono
               app: access checks, health, mounts routes/*.ts, one file per
               area, each `xRoutes(deps)` returning a Hono app),
-              database.ts (one SQLite connection + migrations), one
+              prompts.ts (what chibot tells the model), database.ts (one
+              SQLite connection + migrations), one
               class per file; tools/ holds the shipped Tool subclasses
 src/shared/   used by both server and web: API record types, chibot's own SSE events,
               message text extraction, zod schemas
               (requests, settings, export) and reasoning efforts (zod-free, so
               the web can import it)
-src/web/      Vite root: index.html, main.tsx, components, api.ts (fetch + SSE), hooks;
+src/web/      Vite root: index.html, main.tsx, components (TurnView.tsx with
+              ToolCalls, Sources, AnswerImages), api.ts (fetch + SSE), hooks;
               styles.css imports styles/*.css, one file per area (order matters);
               settings/ holds one component per Settings tab
 tests/        mirrors src/ (tests/server/*.test.ts, tests/web/*.test.ts);
