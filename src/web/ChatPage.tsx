@@ -94,6 +94,8 @@ export function ChatPage({
   // Follow the answer only while the user is at the bottom, so scrolling up
   // to read isn't undone by every new token.
   const followRef = useRef(true)
+  const scrollTopRef = useRef(0)
+  const threadRef = useRef<HTMLDivElement>(null)
   // Read out by screen readers (a live region): an answer starting, then
   // ready or waiting for approval. Errors announce themselves (alert).
   const [announcement, setAnnouncement] = useState('')
@@ -186,6 +188,18 @@ export function ChatPage({
   // The composer stays the third child either way, so it keeps its focus
   // and text when the first message moves it to the bottom.
   const empty = turns.length === 0 && !pending && !error && !chat.loading
+
+  // Content that grows after the scroll (the saved answer's actions, images)
+  // must not leave the view short of the end.
+  useEffect(() => {
+    const thread = threadRef.current
+    if (!thread) return
+    const observer = new ResizeObserver(follow)
+    observer.observe(thread)
+    return () => observer.disconnect()
+    // `follow` only reads a ref, so it needn't be a dependency; the thread
+    // element exists once there are messages.
+  }, [empty])
   const temporary = id ? isTemporary : temporaryMode
   const projectId = id ? chat.projectId : (projectHome ?? null)
   const project = projects.projects.find((p) => p.id === projectId)
@@ -313,12 +327,17 @@ export function ChatPage({
           className="messages"
           onScroll={(e) => {
             const el = e.currentTarget
-            followRef.current =
-              el.scrollHeight - el.scrollTop - el.clientHeight < 40
-            setAway(!followRef.current)
+            const atEnd = el.scrollHeight - el.scrollTop - el.clientHeight < 40
+            // Only scrolling up leaves the end: a scroll event measured after
+            // the content grew (while following) isn't the user's.
+            const up = el.scrollTop < scrollTopRef.current
+            scrollTopRef.current = el.scrollTop
+            if (atEnd) followRef.current = true
+            else if (up) followRef.current = false
+            setAway(!atEnd)
           }}
         >
-          <div className="thread">
+          <div className="thread" ref={threadRef}>
             {turns.map((turn, i) => (
               <TurnView
                 key={turn.key}

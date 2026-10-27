@@ -4,6 +4,13 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- The "Jump to latest" button no longer appears (and following stops) after an answer whose content grows slightly after it scrolled: only scrolling up leaves the end of the chat, and the view follows the thread's growth.
+
+### Changed
+
+- The project uses pnpm 12.15.0 (`devEngines`, lockfile).
 ## [0.11.4] - 2026-10-27
 
 ### Added

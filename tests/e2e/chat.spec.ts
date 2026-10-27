@@ -323,7 +323,7 @@ test('the tab title names the chat on screen', async ({ page }) => {
     .filter({ has: page.locator(`a[href="${pathname}"]`) })
   await row.hover()
   await row.getByRole('button', { name: /Options for/ }).click()
-  await page.getByRole('button', { name: 'Rename' }).click()
+  await page.getByRole('button', { name: 'Rename', exact: true }).click()
   const field = page.getByRole('textbox', { name: 'Chat title' })
   await field.fill('Renamed chat')
   await field.press('Enter')
