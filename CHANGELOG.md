@@ -7,6 +7,11 @@ All notable changes to the codebase are documented in this file. Format follows 
 ### Changed
 
 - Dependencies updated: `openai` 7.39 → 7.44, `hono` 4.13.14, `vite` 8.3.5, `katex` 0.19.1, `eventsource-parser` 4.1.3, `hast-util-to-text` 4.0.3, and the exact-pinned `undici` 8.12.3, `unpdf` 1.9.1 and `linkedom` 0.18.14. The `openai` release notes' breaking changes are in APIs chibot doesn't use (Live decisions).
+- Code only: what chibot tells the model moved from `chat-service.ts` to `prompts.ts`, and `TurnView.tsx` lost its tool-call, sources and image parts to `ToolCalls.tsx`, `Sources.tsx`, `AnswerImages.tsx` and `Summary.tsx`.
+
+### Fixed
+
+- A failed or timed-out image request is no longer retried automatically by the SDK (two retries by default), which could have billed an image more than once; the model sees the error and decides whether to ask again.
 
 ## [0.11.7] - 2026-10-27
 

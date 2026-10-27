@@ -27,6 +27,22 @@ const SHOWN =
   'The image is shown to the user automatically: don’t link to it or ' +
   'describe the file, just say briefly what you made.'
 
+/**
+ * The image endpoint's client. It never retries by itself (the SDK default is
+ * two retries): a request that timed out or failed on the server's side may
+ * still have made, and billed, an image, so the model decides whether to ask
+ * again, after seeing the error.
+ */
+export function imageClient({
+  baseURL,
+  apiKey,
+}: {
+  baseURL?: string
+  apiKey: string
+}) {
+  return new OpenAI({ baseURL, apiKey, maxRetries: 0 })
+}
+
 /** The image endpoint's client and model, and where images are kept. */
 export interface ImageDeps {
   client: OpenAI

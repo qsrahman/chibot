@@ -1,9 +1,12 @@
+import { createServer } from 'node:http'
+import type { AddressInfo } from 'node:net'
 import { beforeEach, describe, expect, it } from 'vitest'
 import OpenAI from 'openai'
 import { openDatabase } from '../../src/server/database.ts'
 import type { FileStore } from '../../src/server/file-store.ts'
 import {
   EditImageTool,
+  imageClient,
   GenerateImageTool,
 } from '../../src/server/tools/images.ts'
 import { testFiles } from './fakes.ts'
@@ -147,5 +150,32 @@ describe('image tools', () => {
     )
     await expect(run(refused)).rejects.toThrow('Your request was rejected')
     await expect(run(refused)).rejects.not.toThrow('OPENAI_IMAGE_MODEL')
+  })
+
+  it('asks the image endpoint once, even when it answers with a server error', async () => {
+    let requests = 0
+    const server = createServer((_req, res) => {
+      requests++
+      res.writeHead(503, { 'Content-Type': 'application/json' })
+      res.end('{"error":{"message":"overloaded"}}')
+    })
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+    try {
+      const client = imageClient({
+        baseURL: `http://127.0.0.1:${(server.address() as AddressInfo).port}/v1`,
+        apiKey: 'k',
+      })
+      const tool = new GenerateImageTool({ client, model: 'img-1', files })
+      await expect(
+        tool.run(
+          { prompt: 'a robot', size: 'auto' },
+          { conversationId: 'chat-1' },
+        ),
+      ).rejects.toThrow(/overloaded/)
+      // The SDK's own default would send it three times (and bill each).
+      expect(requests).toBe(1)
+    } finally {
+      server.close()
+    }
   })
 })

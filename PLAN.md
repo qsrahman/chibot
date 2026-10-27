@@ -419,7 +419,10 @@ chat on Ollama, images need `OPENAI_IMAGE_BASE_URL` / `_API_KEY`.
   `images.edit` (on the stored file) with the image endpoint's model at
   `medium` quality, save the result to the `FileStore` and return
   `{"image_id": …}`; the model never receives image bytes. No approval: the
-  user asked for it, though it costs money.
+  user asked for it, though it costs money. The image client never
+  retries by itself (`maxRetries: 0`; the SDK's default is two): a request
+  that failed or timed out may still have made, and billed, an image, so the
+  model decides whether to ask again.
 - **Turning tools on and off.** A switch per tool in Settings → Tools
   (`disabledTools` setting); disabled tools aren't sent. The composer's "+"
   menu (Web search, Create image) forces one tool for the next message with

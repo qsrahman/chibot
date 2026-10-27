@@ -25,7 +25,11 @@ import type { Tool } from './tool.ts'
 import { ToolRegistry } from './tool-registry.ts'
 import { Transcription } from './transcription.ts'
 import { FetchUrlTool } from './tools/fetch-url.ts'
-import { EditImageTool, GenerateImageTool } from './tools/images.ts'
+import {
+  EditImageTool,
+  GenerateImageTool,
+  imageClient,
+} from './tools/images.ts'
 import { mcpTools } from './tools/mcp-tool.ts'
 import { MemoryTool } from './tools/memory.ts'
 import { SearchProjectFilesTool } from './tools/project-files.ts'
@@ -52,10 +56,7 @@ export function defaultTools({
   index,
 }: ToolDeps): Tool[] {
   const image = config.image && {
-    client: new OpenAI({
-      baseURL: config.image.baseURL,
-      apiKey: config.image.apiKey,
-    }),
+    client: imageClient(config.image),
     model: config.image.model,
     files,
   }
