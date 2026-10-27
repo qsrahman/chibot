@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.11.4] - 2026-10-27
+
 ### Added
 
 - Settings → Tools → each MCP server has **Ask before using its tools**: its calls then wait for Approve / Deny (the `askMcpServers` setting). Off by default.
