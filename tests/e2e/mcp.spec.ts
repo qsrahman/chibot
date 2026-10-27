@@ -57,6 +57,22 @@ test('lists the servers and their tools, with switches', async ({ page }) => {
   await expect(server(page, 'fixture')).toContainText('Connected · 6 tools')
 })
 
+test('asks before a server’s tools when set to', async ({ page }) => {
+  await page.goto('/')
+  const dialog = await openTools(page)
+  await dialog
+    .getByRole('switch', { name: 'Ask before using its tools' })
+    .first()
+    .click()
+  await page.keyboard.press('Escape')
+  await send(page, 'Please mcp echo hi')
+  const card = page.getByRole('region', { name: 'Tool approval' })
+  await expect(card).toContainText('fixture__echo')
+  await card.getByRole('button', { name: 'Approve' }).click()
+  await answered(page)
+  await expect(answer(page, 0)).toHaveText('Tool said: echo: hi')
+})
+
 test('signs in to a remote server and back out', async ({ page }) => {
   await page.goto('/')
   await openTools(page)

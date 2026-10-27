@@ -15,7 +15,8 @@ import type { McpServerStatus } from '../shared/types.ts'
 import { McpSignIn, type McpAuthStore } from './mcp-auth.ts'
 import type { McpServerConfig } from './mcp-config.ts'
 
-const CONNECT_TIMEOUT = 10_000
+// A local server may first have to download itself (`npx -y …`).
+const CONNECT_TIMEOUT = { local: 60_000, remote: 10_000 }
 const CALL_TIMEOUT = 60_000
 // Function names: ^[A-Za-z0-9_-]{1,64}$.
 const MAX_TOOL_NAME = 64
@@ -112,7 +113,9 @@ export class McpServers {
     server.client = client
     server.transport = transport
     try {
-      await client.connect(transport, { timeout: CONNECT_TIMEOUT })
+      await client.connect(transport, {
+        timeout: CONNECT_TIMEOUT[server.config.type],
+      })
       client.setNotificationHandler(
         'notifications/tools/list_changed',
         async () => {

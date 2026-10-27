@@ -636,7 +636,7 @@ available for `gemma4:cloud`.
 ### Phase 10 — MCP client ✅
 Decisions (agreed before building; revised from the first proposal): tools
 from MCP servers become chibot function tools; servers are set up only in
-`mcp.json`, never from the web; their calls never ask first; `local` and
+`mcp.json`, never from the web; their calls don't ask first unless a server is set to; `local` and
 `remote` servers, the latter with OAuth sign-in; a switch per server and per
 tool in Settings; tools only. Built before the code runner (now Phase 11).
 
@@ -650,7 +650,7 @@ tool in Settings; tools only. Built before the code runner (now Phase 11).
   than stopping chibot. Servers run commands with the owner's rights and
   chibot has no login, so the web app can never add or edit one.
 - **Connections.** `McpServers` connects every enabled server at startup, in
-  parallel (10 s timeout each), with `@modelcontextprotocol/client` (v2):
+  parallel (60 s timeout for `local`, which may download itself first; 10 s for `remote`), with `@modelcontextprotocol/client` (v2):
   `StdioClientTransport` for `local`, `StreamableHTTPClientTransport` for
   `remote`. A local server gets only the SDK's safe environment (`PATH`,
   `HOME`, …) plus its own `env`, and its last stderr lines become its error.
@@ -661,7 +661,7 @@ tool in Settings; tools only. Built before the code runner (now Phase 11).
 - **Tools.** Each MCP tool is an `McpTool` named `<server>__<tool>` (cut to
   the 64-character limit), labelled with the tool's title, declared with the
   server's own JSON Schema and `strict: false` (the server validates the
-  arguments). Calls never ask first; their output is `untrustedOutput`, so
+  arguments). Calls don't ask first, except for servers in the `askMcpServers` setting (Settings → Tools); their output is `untrustedOutput`, so
   memory changes in that chat still ask. Stop cancels a call (`AbortSignal`),
   and calls time out after 60 s. `ToolRegistry` offers them beside chibot's
   own tools; switches and `disabledTools` work the same.

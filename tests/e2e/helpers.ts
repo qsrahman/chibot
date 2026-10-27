@@ -56,6 +56,7 @@ export async function resetSettings(page: Page) {
       compactThreshold: 64_000,
       disabledTools: [],
       disabledMcpServers: [],
+      askMcpServers: [],
     },
   })
   expect(res.ok()).toBe(true)

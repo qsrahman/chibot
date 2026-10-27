@@ -19,6 +19,7 @@ export function settingsDefaults(model: string): Settings {
     compactThreshold: DEFAULT_COMPACT_THRESHOLD,
     disabledTools: [],
     disabledMcpServers: [],
+    askMcpServers: [],
   }
 }
 

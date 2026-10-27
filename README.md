@@ -130,7 +130,8 @@ List them in `mcp.json` in chibot's folder (git-ignored;
 
 Servers are only set up here, never from the web app. Their tools are offered
 as `<server>__<tool>` and run without asking first, so add only servers you
-trust: a server's output can't change memories without asking, as with web
+trust, or switch on **Ask before using its tools** for a server in Settings →
+Tools (worth it for one that can run commands or change files): a server's output can't change memories without asking, as with web
 pages. A file with mistakes is reported at startup, and chibot runs without
 MCP.
 

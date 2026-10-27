@@ -4,6 +4,13 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- Settings → Tools → each MCP server has **Ask before using its tools**: its calls then wait for Approve / Deny (the `askMcpServers` setting). Off by default.
+
+### Changed
+
+- Local MCP servers get 60 s to connect (remote ones keep 10 s), so a first `npx` download isn't reported as failed.
 ## [0.11.3] - 2026-10-27
 
 ### Added

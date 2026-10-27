@@ -511,7 +511,11 @@ function McpServers({
     return () => clearInterval(timer)
   }, [connecting, reload])
 
-  const { disabledMcpServers: off, disabledTools } = settings
+  const {
+    disabledMcpServers: off,
+    askMcpServers: asking,
+    disabledTools,
+  } = settings
   const switchServer = (name: string, on: boolean) =>
     act(() =>
       onChange({
@@ -609,6 +613,28 @@ function McpServers({
                 />
               </div>
             </Row>
+            {server.state !== 'disabled' && (
+              <Row
+                label="Ask before using its tools"
+                description="Each call waits for your Approve or Deny."
+                htmlFor={`setting-mcp-ask-${server.name}`}
+              >
+                <input
+                  id={`setting-mcp-ask-${server.name}`}
+                  type="checkbox"
+                  role="switch"
+                  className="switch"
+                  checked={asking.includes(server.name)}
+                  onChange={(e) =>
+                    void onChange({
+                      askMcpServers: e.target.checked
+                        ? [...asking, server.name]
+                        : asking.filter((n) => n !== server.name),
+                    })
+                  }
+                />
+              </Row>
+            )}
             {server.tools.map((tool) => (
               <Row
                 key={tool.name}

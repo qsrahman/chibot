@@ -18,6 +18,8 @@ export const settingsSchema = z.object({
   disabledTools: z.array(z.string().max(100)).max(500),
   /** MCP servers switched off in Settings: not connected (`mcp.json`). */
   disabledMcpServers: z.array(z.string().max(100)).max(100),
+  /** MCP servers whose tool calls wait for Approve / Deny. */
+  askMcpServers: z.array(z.string().max(100)).max(100),
 })
 
 export type Settings = z.infer<typeof settingsSchema>

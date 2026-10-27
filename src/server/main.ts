@@ -115,7 +115,7 @@ export function start({
   void mcp.start()
   const registry = new ToolRegistry(
     tools({ config, store, files, memories, projects, index }),
-    mcpTools(mcp, files),
+    mcpTools(mcp, files, () => settings.get().askMcpServers),
   )
   const attachments = new Attachments(client, files)
   attachments.deleteOrphans()

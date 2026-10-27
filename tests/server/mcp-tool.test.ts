@@ -22,6 +22,7 @@ describe('MCP tools', () => {
   let servers: McpServers
   let files: FileStore
   let registry: ToolRegistry
+  const asking: string[] = []
   const dir = mkdtempSync(join(tmpdir(), 'chibot-mcp-'))
   /** Written by the fixture's slow tool when a call reaches it. */
   const started = join(dir, 'started')
@@ -39,7 +40,10 @@ describe('MCP tools', () => {
     )
     await servers.start()
     files = testFiles(openDatabase(':memory:'))
-    registry = new ToolRegistry([new EchoTool()], mcpTools(servers, files))
+    registry = new ToolRegistry(
+      [new EchoTool()],
+      mcpTools(servers, files, () => asking),
+    )
   })
   afterAll(async () => {
     await servers.close()
@@ -65,6 +69,16 @@ describe('MCP tools', () => {
       }),
     })
     expect(echo.declaration.parameters).not.toHaveProperty('$schema')
+  })
+
+  it('ask first only for servers set to', () => {
+    const echo = registry.get('fixture__echo')!
+    expect(echo.requiresApproval).toBe(false)
+    asking.push('fixture')
+    expect(registry.get('fixture__echo')!.requiresApproval).toBe(true)
+    expect(registry.get('fixture__echo')).toBe(registry.get('fixture__echo'))
+    asking.length = 0
+    expect(registry.get('fixture__echo')!.requiresApproval).toBe(false)
   })
 
   it('run through the registry', async () => {

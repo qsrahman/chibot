@@ -17,7 +17,8 @@ const SHOWN_IMAGES: Record<string, string> = {
 
 /**
  * A tool of a connected MCP server, offered as `<server>__<tool>`. Calls
- * never ask first; the output is someone else's text.
+ * don't ask first unless its server is set to (`askMcpServers`); the output
+ * is someone else's text.
  */
 export class McpTool extends Tool {
   readonly name: string
@@ -26,12 +27,19 @@ export class McpTool extends Tool {
   // The server validates the arguments against its own schema.
   readonly parameters = z.looseObject({})
   override readonly untrustedOutput = true
+  override readonly requiresApproval: boolean
   readonly #tool: McpServerTool
   readonly #servers: McpServers
   readonly #files: FileStore
 
-  constructor(tool: McpServerTool, servers: McpServers, files: FileStore) {
+  constructor(
+    tool: McpServerTool,
+    servers: McpServers,
+    files: FileStore,
+    asks: boolean,
+  ) {
     super()
+    this.requiresApproval = asks
     const { definition } = tool
     this.name = tool.name
     this.label =
@@ -61,20 +69,29 @@ export class McpTool extends Tool {
 }
 
 // One instance per listed tool, so the same tool is the same object while
-// its server's list stays (ChatService compares them).
+// its server's list and approval setting stay (ChatService compares them).
 const instances = new WeakMap<McpServerTool, McpTool>()
 
-/** The connected servers' tools, for `ToolRegistry`. */
-export function mcpTools(servers: McpServers, files: FileStore) {
-  return (): Tool[] =>
-    servers.tools().map((tool) => {
+/**
+ * The connected servers' tools, for `ToolRegistry`. `asking` lists the
+ * servers whose calls wait for the user's approval, read on every call.
+ */
+export function mcpTools(
+  servers: McpServers,
+  files: FileStore,
+  asking: () => readonly string[],
+) {
+  return (): Tool[] => {
+    const asks = new Set(asking())
+    return servers.tools().map((tool) => {
       let instance = instances.get(tool)
-      if (!instance) {
-        instance = new McpTool(tool, servers, files)
+      if (instance?.requiresApproval !== asks.has(tool.server)) {
+        instance = new McpTool(tool, servers, files, asks.has(tool.server))
         instances.set(tool, instance)
       }
       return instance
     })
+  }
 }
 
 /**
