@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- Dependencies updated: `openai` 7.39 → 7.44, `hono` 4.13.14, `vite` 8.3.5, `katex` 0.19.1, `eventsource-parser` 4.1.3, `hast-util-to-text` 4.0.3, and the exact-pinned `undici` 8.12.3, `unpdf` 1.9.1 and `linkedom` 0.18.14. The `openai` release notes' breaking changes are in APIs chibot doesn't use (Live decisions).
+
 ## [0.11.7] - 2026-10-27
 
 ### Changed
