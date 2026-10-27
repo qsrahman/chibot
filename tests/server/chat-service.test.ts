@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import OpenAI from 'openai'
+import { messageText } from '../../src/shared/messages.ts'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
 import {
   answerEvents,
@@ -110,5 +111,90 @@ describe('ChatService', () => {
     expect(store.getPath(conversationId).map((i) => i.data)).toEqual([
       { role: 'user', content: 'Hi' },
     ])
+  })
+
+  describe('a message sent right after Stop', () => {
+    afterEach(() => vi.useRealTimers())
+
+    /** What the chat reads, in order: `role: text`. */
+    const said = () =>
+      store
+        .getPath(conversationId)
+        .flatMap((item) => messageText(item.data) ?? [])
+        .map(({ role, text }) => `${role}: ${text}`)
+
+    /** Stops a turn that is mid-answer, without it having unwound yet. */
+    async function stopped(chat: ReturnType<typeof testChat>) {
+      const controller = new AbortController()
+      const first = chat.runTurn(
+        conversationId,
+        { text: 'one' },
+        controller.signal,
+      )
+      await first.next() // 'Par' arrived
+      controller.abort() // Stop: the turn saves its partial only when it unwinds
+      return first
+    }
+
+    // The server learns of a disconnect a moment after a new request can
+    // arrive, so the new turn must not read the chat before the stopped one
+    // has saved what it got: it would answer from the wrong place, and the
+    // partial answer would end up on a branch of its own.
+    it('follows the partial answer the stopped turn saves', async () => {
+      const chat = testChat(answerEvents('Par', 'tial'), { store })
+      const first = await stopped(chat)
+
+      const second = chat.runTurn(conversationId, { text: 'two' })
+      const next = second.next()
+      await new Promise((resolve) => setImmediate(resolve))
+      // Held back, not yet read the chat or saved anything.
+      expect(said()).toEqual(['user: one'])
+
+      await first.return(undefined) // the stopped turn unwinds
+      await next
+      await drain(second)
+
+      expect(said()).toEqual([
+        'user: one',
+        'assistant: Par',
+        'user: two',
+        'assistant: Partial',
+      ])
+    })
+
+    it('does not wait for the previous turn’s title', async () => {
+      const release = Promise.withResolvers<string>()
+      const chat = testChat(answerEvents('A'), {
+        store,
+        client: { title: () => release.promise },
+      })
+      const first = chat.runTurn(conversationId, { text: 'one' })
+      for (;;) {
+        const { value } = await first.next()
+        if (value.type === 'response.completed') break
+      }
+      void first.next() // now generating the title, which is still pending
+
+      await chat.runTurn(conversationId, { text: 'two' }).next()
+      expect(said().slice(0, 3)).toEqual([
+        'user: one',
+        'assistant: A',
+        'user: two',
+      ])
+      release.resolve('Title')
+    })
+
+    it('does not wait for a turn that never unwinds', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+      const chat = testChat(answerEvents('Par', 'tial'), { store })
+      await stopped(chat) // never closed
+
+      const second = chat.runTurn(conversationId, { text: 'two' })
+      const done = drain(second)
+      await vi.advanceTimersByTimeAsync(10_000)
+      await done
+
+      expect(said().at(-2)).toBe('user: two')
+    })
   })
 })

@@ -4,6 +4,14 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- Code only: `app.ts` keeps the access checks and mounts one route file per area (`routes/*.ts`; the same 36 routes), the rule for when a tool call waits for approval is `ToolRegistry.needsApproval` (it was a private method of `ChatService`), and server tests build their `ChatService` with `testChat` (`tests/server/fakes.ts`).
+
+### Fixed
+
+- A message sent right after Stop (a queued one) follows the stopped answer's saved partial text instead of sometimes racing it: the server runs a chat's turns one after another, waiting up to 5 s for the previous one to finish unwinding. Before, the queued message could be answered from the wrong place and the partial answer could end up on a branch of its own.
+
 ## [0.11.6] - 2026-10-27
 
 ### Added
@@ -12,7 +20,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
-- Code only: server tests build their `ChatService` with `testChat` (`tests/server/fakes.ts`), the rule for when a tool call waits for approval is `ToolRegistry.needsApproval` (it was a private method of `ChatService`), `app.ts` keeps the access checks and mounts one route file per area (`routes/*.ts`; the same 36 routes), `styles.css` is split into one file per area (`styles/*.css`; the built stylesheet is identical), and `SettingsDialog.tsx` into one component per tab (`settings/*.tsx`).
+- Code only: `styles.css` is split into one file per area (`styles/*.css`; the built stylesheet is identical), and `SettingsDialog.tsx` into one component per tab (`settings/*.tsx`).
 - `fetch_url` also reads JSON and XML variants (`application/ld+json`, RSS and Atom feeds, `application/xml`), which it used to refuse.
 - A project chat's instructions list at most 50 file names ("and N more"), instead of every file's name on every request.
 

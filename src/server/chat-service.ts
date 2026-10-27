@@ -44,6 +44,9 @@ const TITLE_INSTRUCTIONS =
   'Write a short title (3 to 6 words) for the conversation below, in its ' +
   'language. Reply with the title only: no quotes, no trailing punctuation.'
 
+// How long a turn waits for the previous turn of its chat to unwind.
+const PREVIOUS_TURN_WAIT_MS = 5000
+
 /** Model requests per turn. The last one may not call tools. */
 export const MAX_STEPS = 10
 const STEP_LIMIT_OUTPUT = 'Error: too many tool calls in one answer.'
@@ -56,6 +59,8 @@ export class ChatService {
   readonly #tools: ToolRegistry
   readonly #projects: ProjectStore | null
   readonly #attachments: Attachments | null
+  // Each chat's latest turn, until it has finished unwinding.
+  readonly #turns = new Map<string, Promise<void>>()
   // Model + optional-feature combinations the server rejected (400) while
   // the same request without them worked. Kept until restart.
   readonly #unsupported = new Set<string>()
@@ -107,11 +112,42 @@ export class ChatService {
    *
    * After a completed answer in a saved conversation that has no title yet,
    * a title is generated and yielded as a `chibot.title` event.
+   *
+   * A chat's turns run one after another: a turn first waits (at most
+   * `PREVIOUS_TURN_WAIT_MS`) for the previous one to finish unwinding. A
+   * message sent right after Stop can arrive before the server has noticed the
+   * disconnect, and must follow the partial answer that turn is about to save.
    */
   async *runTurn(
     conversationId: string,
-    { text, parentId, approvals, tool, fileIds = [] }: TurnRequest,
+    request: TurnRequest,
     signal?: AbortSignal,
+  ): AsyncGenerator<
+    | ResponseStreamEvent
+    | TurnTitleEvent
+    | TurnToolOutputEvent
+    | TurnApprovalEvent
+  > {
+    const previous = this.#turns.get(conversationId)
+    const finished = Promise.withResolvers<void>()
+    this.#turns.set(conversationId, finished.promise)
+    try {
+      if (previous) await untilOrTimeout(previous, PREVIOUS_TURN_WAIT_MS)
+      yield* this.#runTurn(conversationId, request, signal, finished.resolve)
+    } finally {
+      finished.resolve()
+      if (this.#turns.get(conversationId) === finished.promise) {
+        this.#turns.delete(conversationId)
+      }
+    }
+  }
+
+  /** @param saved called once everything is saved, before the title */
+  async *#runTurn(
+    conversationId: string,
+    { text, parentId, approvals, tool, fileIds = [] }: TurnRequest,
+    signal: AbortSignal | undefined,
+    saved: () => void,
   ): AsyncGenerator<
     | ResponseStreamEvent
     | TurnTitleEvent
@@ -307,6 +343,8 @@ export class ChatService {
       }
     }
 
+    // The title may take a while, and the chat no longer changes meanwhile.
+    saved()
     // Read again: the title may have been set meanwhile.
     const current = this.#store.getConversation(conversationId)!
     if (answered && current.title === null && !current.temporary) {
@@ -562,6 +600,16 @@ function projectInstructions({ name, instructions }: Project): string {
   ]
     .filter(Boolean)
     .join('\n')
+}
+
+/** Resolves when `promise` does, or after `ms`, whichever comes first. */
+async function untilOrTimeout(promise: Promise<void>, ms: number) {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  await Promise.race([
+    promise,
+    new Promise((resolve) => (timer = setTimeout(resolve, ms))),
+  ])
+  clearTimeout(timer)
 }
 
 /** First line, without quotes, Markdown emphasis or a trailing full stop. */

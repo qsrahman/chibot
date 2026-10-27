@@ -66,7 +66,12 @@ export interface FakeCall {
 
 export interface FakeOptions {
   /** What the title request returns as `output_text`, or throws. */
-  title?: string | Error | ((params: ResponseCreateParams) => string | Error)
+  title?:
+    | string
+    | Error
+    | ((
+        params: ResponseCreateParams,
+      ) => string | Error | Promise<string | Error>)
   titleCalls?: ResponseCreateParams[]
   /** What `models.list()` yields, or the error it throws. */
   models?: string[] | Error
@@ -106,7 +111,7 @@ export function fakeClient(
   ) => {
     if (!params.stream) {
       titleCalls.push(structuredClone(params))
-      const result = typeof title === 'function' ? title(params) : title
+      const result = await (typeof title === 'function' ? title(params) : title)
       if (result instanceof Error) throw result
       return { output_text: result }
     }
