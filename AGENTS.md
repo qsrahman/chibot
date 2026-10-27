@@ -23,7 +23,8 @@ src/shared/   used by both server and web: API record types, chibot's own SSE ev
               (requests, settings, export) and reasoning efforts (zod-free, so
               the web can import it)
 src/web/      Vite root: index.html, main.tsx, components, api.ts (fetch + SSE), hooks;
-              styles.css imports styles/*.css, one file per area (order matters)
+              styles.css imports styles/*.css, one file per area (order matters);
+              settings/ holds one component per Settings tab
 tests/        mirrors src/ (tests/server/*.test.ts, tests/web/*.test.ts);
               tests/fixtures/ holds small documents (PDF, .docx) and MCP
               servers: mcp-server.ts (stdio) and mcp-oauth-server.ts (HTTP
