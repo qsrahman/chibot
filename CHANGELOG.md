@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.11.5] - 2026-10-27
+
 ### Added
 
 - Settings → Tools → MCP servers has **Reload**: it re-reads `mcp.json` without restarting chibot (new servers connect, removed ones stop, changed ones restart; a file with mistakes is reported and changes nothing). `.env` is still read at startup only.
