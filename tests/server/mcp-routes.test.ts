@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
+import type { McpServerConfig } from '../../src/server/mcp-config.ts'
 import { Config } from '../../src/server/config.ts'
 import { McpAuthStore } from '../../src/server/mcp-auth.ts'
 import { McpServers } from '../../src/server/mcp-servers.ts'
@@ -29,7 +30,10 @@ describe('MCP routes', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
-  const chibot = async (env: Record<string, string> = {}) => {
+  const chibot = async (
+    env: Record<string, string> = {},
+    load?: () => Record<string, McpServerConfig>,
+  ) => {
     const settings = testSettings()
     mcp = new McpServers(
       {
@@ -46,6 +50,7 @@ describe('MCP routes', () => {
           store: new McpAuthStore(join(dir, `${crypto.randomUUID()}.json`)),
           redirectUrl: CALLBACK,
         },
+        load,
       },
     )
     await mcp.start()
@@ -127,6 +132,28 @@ describe('MCP routes', () => {
     expect((await app.request('/api/mcp/fixture/sign-in', POST)).status).toBe(
       400,
     )
+  })
+
+  it('reload mcp.json, or say what is wrong with it', async () => {
+    let file: Record<string, McpServerConfig> | Error = {
+      tracker: { type: 'remote', url: provider.url },
+    }
+    const app = await chibot({}, () => {
+      if (file instanceof Error) throw file
+      return file
+    })
+    expect((await statuses(app.request('/api/mcp'))).fixture).toBeDefined()
+
+    const reloaded = await statuses(app.request('/api/mcp/reload', POST))
+    expect(Object.keys(reloaded)).toEqual(['tracker'])
+
+    file = new Error('mcp.json: no good')
+    const bad = await app.request('/api/mcp/reload', POST)
+    expect(bad.status).toBe(400)
+    expect(await bad.json()).toEqual({ error: 'mcp.json: no good' })
+    expect(Object.keys(await statuses(app.request('/api/mcp')))).toEqual([
+      'tracker',
+    ])
   })
 
   it('let the provider’s redirect in without the access token', async () => {

@@ -181,6 +181,7 @@ tool payloads), written in the same transaction as the item.
 | `POST /api/conversations/:id/turns` | 1 | Send a message; SSE stream of `ResponseStreamEvent`s plus `chibot.error`, and (Phase 2) `chibot.title` after `response.completed`. Phase 3 adds `parentId` for edit/regenerate. Phase 5 adds `approvals` and the `chibot.tool_output` / `chibot.approval` events. |
 | `GET /api/conversations?q=&archived=1` | 2 | List (pinned first, newest first), archived view, or search (titles + message text, with snippets) |
 | `PATCH/DELETE /api/conversations/:id` | 2 | Rename, pin, archive/restore / delete |
+| `POST /api/conversations/:id/title` | 10 | Have the model name the chat again (replaces the title); `{ title }` |
 | `PUT /api/conversations/:id/leaf` | 3 | Switch to a message version |
 | `GET /api/conversations/:id/export?format=md\|json` · `POST /api/conversations/import` | 4 | Export (download) / import (validated JSON, ≤ 200 MB since Phase 9 embeds files) |
 | `GET/PATCH /api/settings` | 4 | User settings and their defaults (never secrets) |
@@ -189,7 +190,7 @@ tool payloads), written in the same transaction as the item.
 | `GET /api/memories` · `PATCH/DELETE /api/memories/:id` · `DELETE /api/memories` | 7 | View / edit / delete one or all memories |
 | `/api/projects[/:id]` (CRUD) · `/api/projects/:id/files[/:fileId]` · `POST /api/files` | 8 | Projects; their files (list, attach, detach, with indexing status); upload a file (project files; Phase 9 attachments, ≤ 50 MB). Conversation `PATCH` gains `projectId`. |
 | `POST /api/transcriptions` | 9 | Transcribe a recording (≤ 25 MB). Phase 9 adds `fileIds` to turns and `features` to health. |
-| `GET /api/mcp` · `POST /api/mcp/:name/{reconnect,sign-in,sign-out}` · `GET /api/mcp/oauth/callback` | 10 | MCP servers' status and tools; reconnect; OAuth sign-in and sign-out (servers themselves are only set up in `mcp.json`) |
+| `GET /api/mcp` · `POST /api/mcp/reload` · `POST /api/mcp/:name/{reconnect,sign-in,sign-out}` · `GET /api/mcp/oauth/callback` | 10 | MCP servers' status and tools; reconnect; OAuth sign-in and sign-out (servers themselves are only set up in `mcp.json`) |
 
 ## 5. Phases
 
@@ -685,8 +686,10 @@ tool in Settings; tools only. Built before the code runner (now Phase 11).
 - **Settings → Tools.** An "MCP servers" section: per server a switch
   (`disabledMcpServers` setting; a disabled server is disconnected and a
   local one's process stopped), its status, Reconnect, Sign in / Sign out,
-  and its tools with their own switches. Routes: `GET /api/mcp`,
-  `POST /api/mcp/:name/reconnect`, `POST /api/mcp/:name/sign-in`,
+  "Ask before using its tools" (`askMcpServers`) and its tools with their own
+  switches; Reload re-reads `mcp.json` (new servers connect, removed ones
+  stop, changed ones restart, an invalid file changes nothing). Routes:
+  `GET /api/mcp`, `POST /api/mcp/reload`, `POST /api/mcp/:name/reconnect`, `POST /api/mcp/:name/sign-in`,
   `POST /api/mcp/:name/sign-out`, `GET /api/mcp/oauth/callback`.
 - **Answers.** MCP calls show like other tool calls ("Used read_file · files")
   with the plain summary (arguments and text result) and Raw.

@@ -333,6 +333,33 @@ test('the tab title names the chat on screen', async ({ page }) => {
   await expect(page).toHaveTitle('chibot')
 })
 
+test('names a chat again from its menu', async ({ page }) => {
+  await page.goto('/')
+  await appReady(page)
+  await send(page, 'Name me again')
+  await answered(page)
+  await expect(page).toHaveTitle('E2E Title – chibot')
+
+  const { pathname } = new URL(page.url())
+  const row = page
+    .locator('nav .conversation-row')
+    .filter({ has: page.locator(`a[href="${pathname}"]`) })
+  const menu = async (item: string) => {
+    await row.hover()
+    await row.getByRole('button', { name: /Options for/ }).click()
+    await page.getByRole('button', { name: item, exact: true }).click()
+  }
+  await menu('Rename')
+  const field = page.getByRole('textbox', { name: 'Chat title' })
+  await field.fill('My own name')
+  await field.press('Enter')
+  await expect(page).toHaveTitle('My own name – chibot')
+
+  // The fake server titles every chat "E2E Title".
+  await menu('Regenerate title')
+  await expect(page).toHaveTitle('E2E Title – chibot')
+})
+
 test('an unsent message survives a reload', async ({ page }) => {
   await page.goto('/')
   await appReady(page)

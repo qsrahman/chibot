@@ -203,6 +203,7 @@ export function Sidebar({
                     onRename={(title) =>
                       void conversations.update(item.id, { title })
                     }
+                    onRetitle={() => void conversations.retitle(item.id)}
                     onPin={() =>
                       void conversations.update(item.id, {
                         pinned: !item.pinned,

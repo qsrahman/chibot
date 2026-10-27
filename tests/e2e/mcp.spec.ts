@@ -1,3 +1,4 @@
+import { readFileSync, writeFileSync } from 'node:fs'
 import { expect, test, type Page } from '@playwright/test'
 import {
   answer,
@@ -11,6 +12,9 @@ import {
 
 // Phase 10: MCP servers (tests/e2e/server.ts): `fixture`, a local server,
 // and `tracker`, a remote one behind a fake OAuth provider.
+
+// What tests/e2e/server.ts wrote; the Reload test edits and restores it.
+const MCP_JSON = '.e2e-data/mcp.json'
 
 test.afterEach(async ({ page }) => {
   await resetSettings(page)
@@ -55,6 +59,39 @@ test('lists the servers and their tools, with switches', async ({ page }) => {
   await expect(server(page, 'fixture')).toContainText('Off')
   await page.getByRole('switch', { name: 'Use fixture' }).click()
   await expect(server(page, 'fixture')).toContainText('Connected · 6 tools')
+})
+
+test('reloads mcp.json after it was edited', async ({ page }) => {
+  const original = readFileSync(MCP_JSON, 'utf8')
+  try {
+    await page.goto('/')
+    const dialog = await openTools(page)
+    await expect(server(page, 'fixture')).toContainText('Connected')
+    await expect(server(page, 'broken')).toHaveCount(0)
+
+    const config = JSON.parse(original) as {
+      mcpServers: Record<string, unknown>
+    }
+    config.mcpServers.broken = { type: 'local', command: 'chibot-no-such-cmd' }
+    writeFileSync(MCP_JSON, JSON.stringify(config))
+    await dialog.getByRole('button', { name: 'Reload' }).click()
+    // The new server shows why it failed; the others stay connected.
+    await expect(server(page, 'broken')).toContainText('Failed')
+    await expect(server(page, 'fixture')).toContainText('Connected · 6 tools')
+
+    // A file with mistakes is reported, and nothing changes.
+    writeFileSync(MCP_JSON, '{ not json')
+    await dialog.getByRole('button', { name: 'Reload' }).click()
+    await expect(dialog.getByRole('alert')).toContainText('mcp.json')
+    await expect(server(page, 'broken')).toContainText('Failed')
+
+    writeFileSync(MCP_JSON, original)
+    await dialog.getByRole('button', { name: 'Reload' }).click()
+    await expect(server(page, 'broken')).toHaveCount(0)
+    await expect(server(page, 'fixture')).toContainText('Connected · 6 tools')
+  } finally {
+    writeFileSync(MCP_JSON, original)
+  }
 })
 
 test('asks before a server’s tools when set to', async ({ page }) => {

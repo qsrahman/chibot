@@ -107,6 +107,7 @@ export function start({
   })
   const mcp = new McpServers(mcpConfig(config), {
     disabled: () => settings.get().disabledMcpServers,
+    load: () => loadMcpConfig(config.mcpConfigPath, process.env),
     auth: {
       store: new McpAuthStore(join(config.dataDir, 'mcp-auth.json')),
       redirectUrl: oauthRedirectUrl(config),

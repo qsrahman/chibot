@@ -161,6 +161,15 @@ export function createApp({
       await next()
     },
   )
+  // mcp.json may have been edited since chibot started.
+  app.post('/api/mcp/reload', async (c) => {
+    try {
+      await mcp.reload()
+    } catch (err) {
+      return c.json({ error: (err as Error).message }, 400)
+    }
+    return mcpStatus(c)
+  })
   app.post('/api/mcp/:name/reconnect', async (c) => {
     await mcp.connect(c.req.param('name'))
     return mcpStatus(c)
@@ -224,6 +233,23 @@ export function createApp({
     const updated = store.updateConversation(c.req.param('id'), patch)
     if (!updated) return notFound(c)
     return c.json(updated)
+  })
+
+  app.post('/api/conversations/:id/title', async (c) => {
+    const id = c.req.param('id')
+    const conversation = store.getConversation(id)
+    if (!conversation) return notFound(c)
+    if (conversation.temporary) {
+      return c.json({ error: 'Temporary chats have no title' }, 400)
+    }
+    if (!store.getPath(id).some((item) => messageText(item.data))) {
+      return c.json({ error: 'There is nothing to title yet' }, 400)
+    }
+    const title = await chat.regenerateTitle(id, c.req.raw.signal)
+    if (!title) {
+      return c.json({ error: 'The model gave no title; try again' }, 502)
+    }
+    return c.json({ title })
   })
 
   app.delete('/api/conversations/:id', (c) => {

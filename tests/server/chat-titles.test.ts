@@ -59,6 +59,30 @@ describe('ChatService titles', () => {
     expect(titleCalls).toHaveLength(1)
   })
 
+  it('names a chat again on request, replacing even a typed title', async () => {
+    let n = 0
+    const chat = service({ title: () => `Title ${++n}` })
+    const { id } = store.createConversation()
+    await eventTypes(chat.runTurn(id, { text: 'Hi' }))
+    expect(store.getConversation(id)!.title).toBe('Title 1')
+
+    store.updateConversation(id, { title: 'My own name' })
+    expect(await chat.regenerateTitle(id)).toBe('Title 2')
+    expect(store.getConversation(id)!.title).toBe('Title 2')
+  })
+
+  it('keeps the title when regenerating fails', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    let fail = false
+    const chat = service({ title: () => (fail ? new Error('boom') : 'First') })
+    const { id } = store.createConversation()
+    await eventTypes(chat.runTurn(id, { text: 'Hi' }))
+    fail = true
+    expect(await chat.regenerateTitle(id)).toBeNull()
+    expect(store.getConversation(id)!.title).toBe('First')
+    vi.restoreAllMocks()
+  })
+
   it('retries without reasoning when the model rejects it', async () => {
     const titleCalls: ResponseCreateParams[] = []
     const chat = service({

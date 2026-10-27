@@ -3,6 +3,7 @@ import type { ConversationPatch } from '../shared/types.ts'
 import {
   deleteConversation,
   listConversations,
+  regenerateTitle,
   updateConversation,
 } from './api.ts'
 import { useLoad } from './useLoad.ts'
@@ -22,6 +23,11 @@ export function useConversations() {
     [act],
   )
 
+  const retitle = useCallback(
+    (id: string) => act(() => regenerateTitle(id)),
+    [act],
+  )
+
   const remove = useCallback(
     (id: string) => act(() => deleteConversation(id)),
     [act],
@@ -32,6 +38,7 @@ export function useConversations() {
     error,
     refresh: reload,
     update,
+    retitle,
     remove,
   }
 }

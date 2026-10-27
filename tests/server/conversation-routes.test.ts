@@ -86,6 +86,28 @@ describe('conversation routes', () => {
     expect(hits[0]!.snippet).toContain('walrus')
   })
 
+  it('has the model name a chat again', async () => {
+    const id = saved('Tell me about pangolins')
+    store.updateConversation(id, { title: 'Old' })
+    const res = await app.request(`/api/conversations/${id}/title`, {
+      method: 'POST',
+    })
+    expect(res.status).toBe(200)
+    // fakeClient's title request answers "Test Title".
+    expect(await res.json()).toEqual({ title: 'Test Title' })
+    expect(store.getConversation(id)!.title).toBe('Test Title')
+  })
+
+  it('has no title to regenerate for empty, temporary or missing chats', async () => {
+    const post = (id: string) =>
+      app.request(`/api/conversations/${id}/title`, { method: 'POST' })
+    expect((await post(store.createConversation().id)).status).toBe(400)
+    expect(
+      (await post(store.createConversation({ temporary: true }).id)).status,
+    ).toBe(400)
+    expect((await post('nope')).status).toBe(404)
+  })
+
   it('renames, pins and archives', async () => {
     const id = saved('hi')
     const res = await app.request(

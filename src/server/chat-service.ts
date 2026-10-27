@@ -376,6 +376,17 @@ export class ChatService {
     return items.at(-1)!.id
   }
 
+  /**
+   * Names the chat again from its first messages, replacing its title
+   * (also one the user typed). Null if the model gave none.
+   */
+  regenerateTitle(
+    conversationId: string,
+    signal?: AbortSignal,
+  ): Promise<string | null> {
+    return this.#generateTitle(conversationId, signal, true)
+  }
+
   /** The tools chibot offers (whatever the user switched off), for Settings. */
   get tools(): ToolInfo[] {
     return this.#tools.tools.map(({ name, label }) => ({ name, label }))
@@ -471,6 +482,7 @@ export class ChatService {
   async #generateTitle(
     conversationId: string,
     signal?: AbortSignal,
+    replace = false,
   ): Promise<string | null> {
     const transcript = this.#store
       .getPath(conversationId)
@@ -493,10 +505,12 @@ export class ChatService {
           this.#client.responses.create({ ...params, ...optional }, { signal }),
       )
       const title = cleanTitle(response.output_text)
-      if (title && this.#store.setTitleIfEmpty(conversationId, title)) {
+      if (!title) return null
+      if (replace) {
+        this.#store.updateConversation(conversationId, { title })
         return title
       }
-      return null
+      return this.#store.setTitleIfEmpty(conversationId, title) ? title : null
     } catch (err) {
       if (!signal?.aborted) console.error('Title generation failed:', err)
       return null

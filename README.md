@@ -102,7 +102,8 @@ the name you use.
 
 chibot can use the tools of [MCP](https://modelcontextprotocol.io) servers.
 List them in `mcp.json` in chibot's folder (git-ignored;
-[mcp.example.json](mcp.example.json) shows the format), then restart chibot:
+[mcp.example.json](mcp.example.json) shows the format), then **Reload** it in
+Settings → Tools (or restart chibot):
 
 ```json
 {
@@ -126,7 +127,8 @@ List them in `mcp.json` in chibot's folder (git-ignored;
   Tokens are kept in `data/mcp-auth.json`, readable only by you; **Sign out**
   removes them. A server with its own `Authorization` header doesn't sign in.
 - `${VAR}` anywhere is filled from the environment (and `.env`), so secrets
-  stay out of `mcp.json`. Names may use letters, digits, `-` and `_`.
+  stay out of `mcp.json`. Reload re-reads `mcp.json` only: a changed `.env`
+  needs a restart. Names may use letters, digits, `-` and `_`.
 
 Servers are only set up here, never from the web app. Their tools are offered
 as `<server>__<tool>` and run without asking first, so add only servers you
@@ -178,7 +180,8 @@ Then open http://127.0.0.1:3000.
 - The first message gives the chat its own URL (`/c/…`). Reloading reopens it.
 - **Sidebar:** chats are grouped as Pinned, Today, Yesterday, Previous 7 days,
   Previous 30 days, then by month. Each gets a short title once its first
-  answer arrives. Hover a chat and click **…** to rename, pin, archive or
+  answer arrives. Hover a chat and click **…** to rename it, have the model
+  **regenerate its title** (replacing any name you typed), pin, archive or
   delete it. The panel button collapses the sidebar to an icon rail, which is
   remembered. On a phone the sidebar slides over the chat: open it with the
   panel button at the top left.
@@ -254,8 +257,9 @@ Then open http://127.0.0.1:3000.
   - *Tools:* switch each tool on or off, grouped (the web, images, your chats
     and files, calculation), each saying what it does and what leaves this
     machine. Tools that aren't set up are listed greyed out, with what to set
-    in `.env`. Below, each MCP server: a switch (off stops it), its status or
-    error, **Reconnect**, **Sign in** / **Sign out**, and a switch per tool.
+    in `.env`. Below, **Reload** re-reads `mcp.json`, then each MCP server: a
+    switch (off stops it), its status or error, **Reconnect**, **Sign in** /
+    **Sign out**, **Ask before using its tools**, and a switch per tool.
   - *Data:* import a chat from a JSON export, and archived chats to restore or
     delete.
 - **Export** a chat from its **…** menu as Markdown (what's shown, with

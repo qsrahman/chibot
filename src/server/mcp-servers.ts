@@ -46,43 +46,79 @@ interface Server {
 export class McpServers {
   readonly #servers = new Map<string, Server>()
   readonly #disabled: () => readonly string[]
+  readonly #load: (() => Record<string, McpServerConfig>) | undefined
+  readonly #auth: { store: McpAuthStore; redirectUrl: string } | undefined
 
   /**
    * @param options.disabled the servers switched off in Settings, read on
    *   `start()` and `sync()`
    * @param options.auth where remote servers' sign-ins are kept, and the
    *   OAuth callback's URL; without it they can't sign in
+   * @param options.load reads the servers again for `reload()`
    */
   constructor(
     configs: Record<string, McpServerConfig>,
     {
       disabled,
       auth,
+      load,
     }: {
       disabled: () => readonly string[]
       auth?: { store: McpAuthStore; redirectUrl: string }
+      load?: () => Record<string, McpServerConfig>
     },
   ) {
     this.#disabled = disabled
+    this.#auth = auth
+    this.#load = load
     for (const [name, config] of Object.entries(configs)) {
-      const ownAuth =
-        config.type === 'remote' &&
-        Object.keys(config.headers ?? {}).some(
-          (header) => header.toLowerCase() === 'authorization',
-        )
-      this.#servers.set(name, {
-        config,
-        state: 'disabled',
-        error: null,
-        client: null,
-        transport: null,
-        tools: [],
-        signIn:
-          auth && config.type === 'remote' && !ownAuth
-            ? new McpSignIn(name, auth.store, auth.redirectUrl)
-            : null,
-      })
+      this.#servers.set(name, this.#create(name, config))
     }
+  }
+
+  #create(name: string, config: McpServerConfig): Server {
+    const ownAuth =
+      config.type === 'remote' &&
+      Object.keys(config.headers ?? {}).some(
+        (header) => header.toLowerCase() === 'authorization',
+      )
+    return {
+      config,
+      state: 'disabled',
+      error: null,
+      client: null,
+      transport: null,
+      tools: [],
+      signIn:
+        this.#auth && config.type === 'remote' && !ownAuth
+          ? new McpSignIn(name, this.#auth.store, this.#auth.redirectUrl)
+          : null,
+    }
+  }
+
+  /**
+   * Reads the servers again: new ones connect, removed ones stop, and ones
+   * whose settings changed restart. Untouched servers stay connected.
+   *
+   * @throws Error if the file is invalid (nothing then changes)
+   */
+  async reload(): Promise<void> {
+    if (!this.#load) throw new Error('This server has no mcp.json to reload')
+    const configs = this.#load()
+    for (const [name, server] of [...this.#servers]) {
+      const config = configs[name]
+      if (config && JSON.stringify(config) === JSON.stringify(server.config)) {
+        continue
+      }
+      await this.#close(server)
+      this.#servers.delete(name)
+    }
+    for (const [name, config] of Object.entries(configs)) {
+      if (!this.#servers.has(name)) {
+        this.#servers.set(name, this.#create(name, config))
+      }
+    }
+    await this.sync()
   }
 
   /** Connects every enabled server, in parallel; failures are recorded. */

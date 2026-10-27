@@ -10,6 +10,7 @@ import {
   Pencil,
   Pin,
   PinOff,
+  Sparkles,
   Trash2,
 } from 'lucide-react'
 import type { ConversationListItem } from '../shared/types.ts'
@@ -20,6 +21,8 @@ import { UNTITLED } from './useConversations.ts'
 interface Props {
   item: ConversationListItem
   onRename: (title: string) => void
+  /** Has the model name the chat again. */
+  onRetitle: () => void
   onPin: () => void
   onArchive: () => void
   onDelete: () => void
@@ -33,6 +36,7 @@ interface Props {
 export function ConversationRow({
   item,
   onRename,
+  onRetitle,
   onPin,
   onArchive,
   onDelete,
@@ -95,6 +99,9 @@ export function ConversationRow({
       >
         <MenuItem icon={<Pencil />} onClick={() => act(() => setEditing(true))}>
           Rename
+        </MenuItem>
+        <MenuItem icon={<Sparkles />} onClick={() => act(onRetitle)}>
+          Regenerate title
         </MenuItem>
         <MenuItem
           icon={item.pinned ? <PinOff /> : <Pin />}

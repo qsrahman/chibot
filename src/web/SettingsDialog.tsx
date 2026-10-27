@@ -9,11 +9,11 @@ import {
 } from 'lucide-react'
 import { effortLabel, REASONING_EFFORTS } from '../shared/reasoning.ts'
 import type { Settings } from '../shared/settings.ts'
-import type { McpServerStatus } from '../shared/types.ts'
 import {
   importConversation,
   listMcpServers,
   reconnectMcpServer,
+  reloadMcpServers,
   signInToMcpServer,
   signOutOfMcpServer,
 } from './api.ts'
@@ -21,6 +21,7 @@ import { Dialog } from './Dialog.tsx'
 import { useColorScheme, type ColorScheme } from './theme.ts'
 import { TOOL_GROUPS, TOOL_TEXT } from './tools.ts'
 import { mcpToolName } from './turns.ts'
+import { describeMcpServer, isConnecting, withMember } from './mcp.ts'
 import { useLoad } from './useLoad.ts'
 import type { SettingsApi } from './useSettings.ts'
 
@@ -109,9 +110,11 @@ export function SettingsDialog({
                   on={!current.disabledTools.includes('memory')}
                   onChange={(on) =>
                     void settings.update({
-                      disabledTools: on
-                        ? current.disabledTools.filter((n) => n !== 'memory')
-                        : [...current.disabledTools, 'memory'],
+                      disabledTools: withMember(
+                        current.disabledTools,
+                        'memory',
+                        !on,
+                      ),
                     })
                   }
                   onManage={onShowMemories}
@@ -469,9 +472,11 @@ function Tools({
                       checked={available && !disabled.includes(name)}
                       onChange={(e) =>
                         void onChange({
-                          disabledTools: e.target.checked
-                            ? disabled.filter((n) => n !== name)
-                            : [...disabled, name],
+                          disabledTools: withMember(
+                            disabled,
+                            name,
+                            !e.target.checked,
+                          ),
                         })
                       }
                     />
@@ -485,14 +490,6 @@ function Tools({
   )
 }
 
-const MCP_STATE: Record<McpServerStatus['state'], string> = {
-  disabled: 'Off',
-  connecting: 'Connecting…',
-  connected: 'Connected',
-  'needs-sign-in': 'Needs sign-in',
-  failed: 'Failed',
-}
-
 /** The servers in `mcp.json`: a switch, status and actions each, and tools. */
 function McpServers({
   settings,
@@ -504,7 +501,7 @@ function McpServers({
   const { data, error, reload, act } = useLoad(listMcpServers)
   const servers = data?.servers
   // Connecting settles within the server's 10 s timeout: check back.
-  const connecting = servers?.some((s) => s.state === 'connecting')
+  const connecting = isConnecting(servers)
   useEffect(() => {
     if (!connecting) return
     const timer = setInterval(() => void reload(), 1000)
@@ -519,7 +516,7 @@ function McpServers({
   const switchServer = (name: string, on: boolean) =>
     act(() =>
       onChange({
-        disabledMcpServers: on ? off.filter((n) => n !== name) : [...off, name],
+        disabledMcpServers: withMember(off, name, !on),
       }),
     )
   const signIn = (name: string) =>
@@ -535,31 +532,33 @@ function McpServers({
       </p>
     ) : null
   }
-  if (servers.length === 0) {
-    return (
-      <Section title="MCP servers">
-        <p className="settings-empty">
-          Add servers to mcp.json in chibot’s folder (mcp.example.json shows
-          how), then restart chibot.
-        </p>
-      </Section>
-    )
-  }
   return (
     <>
+      <Section title="MCP servers">
+        <Row
+          label="mcp.json"
+          description={
+            servers.length === 0
+              ? 'No servers yet. Add them to mcp.json in chibot’s folder (mcp.example.json shows how), then reload.'
+              : 'Servers are set up in this file, not here. After editing it, reload to apply the changes.'
+          }
+        >
+          <button
+            type="button"
+            className="button"
+            onClick={() => void act(reloadMcpServers)}
+          >
+            Reload
+          </button>
+        </Row>
+      </Section>
       {error && (
         <p className="error" role="alert">
           {error}
         </p>
       )}
       {servers.map((server) => {
-        const status =
-          server.state === 'connected'
-            ? `Connected · ${server.tools.length} ${server.tools.length === 1 ? 'tool' : 'tools'}`
-            : server.state === 'failed' && server.error
-              ? `Failed: ${server.error}`
-              : MCP_STATE[server.state]
-        const kind = server.type === 'local' ? 'Local server' : 'Remote server'
+        const { kind, status } = describeMcpServer(server)
         return (
           <Section key={server.name} title={`MCP · ${server.name}`}>
             <Row
@@ -627,9 +626,11 @@ function McpServers({
                   checked={asking.includes(server.name)}
                   onChange={(e) =>
                     void onChange({
-                      askMcpServers: e.target.checked
-                        ? [...asking, server.name]
-                        : asking.filter((n) => n !== server.name),
+                      askMcpServers: withMember(
+                        asking,
+                        server.name,
+                        e.target.checked,
+                      ),
                     })
                   }
                 />
@@ -650,9 +651,11 @@ function McpServers({
                   checked={!disabledTools.includes(tool.name)}
                   onChange={(e) =>
                     void onChange({
-                      disabledTools: e.target.checked
-                        ? disabledTools.filter((n) => n !== tool.name)
-                        : [...disabledTools, tool.name],
+                      disabledTools: withMember(
+                        disabledTools,
+                        tool.name,
+                        !e.target.checked,
+                      ),
                     })
                   }
                 />

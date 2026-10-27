@@ -47,6 +47,12 @@ export const listTools = () => request<{ tools: ToolInfo[] }>('/api/tools')
 export const listMcpServers = () =>
   request<{ servers: McpServerStatus[] }>('/api/mcp')
 
+/** Reads mcp.json again; the server answers with the new status. */
+export const reloadMcpServers = () =>
+  request<{ servers: McpServerStatus[] }>('/api/mcp/reload', {
+    method: 'POST',
+  })
+
 export const reconnectMcpServer = (name: string) =>
   request(`/api/mcp/${name}/reconnect`, { method: 'POST' })
 
@@ -151,6 +157,12 @@ export const deleteConversation = (id: string, { keepalive = false } = {}) =>
   remove(`/api/conversations/${id}`, { keepalive })
 
 /** Where to download a conversation as Markdown or JSON. */
+/** Has the model name the chat again; resolves to the new title. */
+export const regenerateTitle = (id: string) =>
+  request<{ title: string }>(`/api/conversations/${id}/title`, {
+    method: 'POST',
+  })
+
 export const exportUrl = (id: string, format: 'md' | 'json') =>
   `/api/conversations/${id}/export?format=${format}`
 

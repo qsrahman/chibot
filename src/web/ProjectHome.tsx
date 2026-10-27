@@ -20,6 +20,7 @@ import {
   deleteConversation,
   getProject,
   removeProjectFile,
+  regenerateTitle,
   updateConversation,
   updateProject,
 } from './api.ts'
@@ -168,6 +169,9 @@ export function ProjectDetails({
         onUpdate={(id, patch) =>
           void act(() => updateConversation(id, patch)).then(onChatsChanged)
         }
+        onRetitle={(id) =>
+          void act(() => regenerateTitle(id)).then(onChatsChanged)
+        }
         onDelete={(id) => void act(() => deleteConversation(id))}
       />
     </div>
@@ -301,10 +305,12 @@ function Instructions({
 function Chats({
   chats,
   onUpdate,
+  onRetitle,
   onDelete,
 }: {
   chats: ConversationListItem[]
   onUpdate: (id: string, patch: ConversationPatch) => void
+  onRetitle: (id: string) => void
   onDelete: (id: string) => void
 }) {
   const [toDelete, setToDelete] = useState<ConversationListItem | null>(null)
@@ -317,6 +323,7 @@ function Chats({
           key={item.id}
           item={item}
           onRename={(title) => onUpdate(item.id, { title })}
+          onRetitle={() => onRetitle(item.id)}
           onPin={() => onUpdate(item.id, { pinned: !item.pinned })}
           onArchive={() => onUpdate(item.id, { archived: true })}
           onDelete={() => setToDelete(item)}

@@ -27,6 +27,55 @@ describe('MCP servers', () => {
   const status = (name: string) =>
     servers.statuses().find((s) => s.name === name)!
 
+  it('reloads mcp.json: new servers connect, removed ones stop, changed ones restart', async () => {
+    let file: Record<string, McpServerConfig> = { fixture }
+    servers = new McpServers(file, {
+      disabled: () => [],
+      load: () => file,
+    })
+    await servers.start()
+    const pid = servers.pid('fixture')!
+
+    // Untouched servers aren't restarted.
+    file = { fixture, other: fixture }
+    await servers.reload()
+    expect(servers.pid('fixture')).toBe(pid)
+    expect(status('other').state).toBe('connected')
+    const otherPid = servers.pid('other')!
+
+    // A changed one restarts (its name is its identity); removed ones stop.
+    file = { other: { ...fixture, env: { CHANGED: '1' } } }
+    await servers.reload()
+    expect(servers.statuses().map((s) => s.name)).toEqual(['other'])
+    expect(servers.pid('other')).not.toBe(otherPid)
+    await vi.waitFor(() => expect(() => process.kill(pid, 0)).toThrow())
+    expect(servers.tools().map((t) => t.name)).toContain('other__echo')
+    expect(servers.tools().map((t) => t.name)).not.toContain('fixture__echo')
+  })
+
+  it('keeps everything as it was when the file is invalid', async () => {
+    let broken = false
+    servers = new McpServers(
+      { fixture },
+      {
+        disabled: () => [],
+        load: () => {
+          if (broken) throw new Error('mcp.json: bad')
+          return { fixture }
+        },
+      },
+    )
+    await servers.start()
+    broken = true
+    await expect(servers.reload()).rejects.toThrow('mcp.json: bad')
+    expect(status('fixture').state).toBe('connected')
+  })
+
+  it('has nothing to reload without a loader', async () => {
+    await start({ fixture })
+    await expect(servers.reload()).rejects.toThrow(/no mcp.json/)
+  })
+
   it('connects and lists each server’s tools, prefixed by its name', async () => {
     await start({ fixture })
     expect(status('fixture')).toMatchObject({

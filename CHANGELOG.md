@@ -4,6 +4,11 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- Settings → Tools → MCP servers has **Reload**: it re-reads `mcp.json` without restarting chibot (new servers connect, removed ones stop, changed ones restart; a file with mistakes is reported and changes nothing). `.env` is still read at startup only.
+- A chat's **…** menu has **Regenerate title**: the model names the chat again, replacing the current title, even one you typed (`POST /api/conversations/:id/title`).
+
 ### Fixed
 
 - The "Jump to latest" button no longer appears (and following stops) after an answer whose content grows slightly after it scrolled: only scrolling up leaves the end of the chat, and the view follows the thread's growth.
@@ -11,6 +16,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 ### Changed
 
 - The project uses pnpm 12.15.0 (`devEngines`, lockfile).
+
 ## [0.11.4] - 2026-10-27
 
 ### Added
