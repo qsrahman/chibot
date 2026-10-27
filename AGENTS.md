@@ -16,7 +16,9 @@ phase roadmap live in [PLAN.md](PLAN.md). Usage lives in [README.md](README.md).
 
 ```
 src/server/   main.ts (start(): wiring + listen, defaultTools()), app.ts (Hono
-              routes), database.ts (one SQLite connection + migrations), one
+              app: access checks, health, mounts routes/*.ts, one file per
+              area, each `xRoutes(deps)` returning a Hono app),
+              database.ts (one SQLite connection + migrations), one
               class per file; tools/ holds the shipped Tool subclasses
 src/shared/   used by both server and web: API record types, chibot's own SSE events,
               message text extraction, zod schemas

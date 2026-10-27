@@ -12,7 +12,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
-- Code only: `styles.css` is split into one file per area (`styles/*.css`; the built stylesheet is identical), and `SettingsDialog.tsx` into one component per tab (`settings/*.tsx`).
+- Code only: `app.ts` keeps the access checks and mounts one route file per area (`routes/*.ts`; the same 36 routes), `styles.css` is split into one file per area (`styles/*.css`; the built stylesheet is identical), and `SettingsDialog.tsx` into one component per tab (`settings/*.tsx`).
 - `fetch_url` also reads JSON and XML variants (`application/ld+json`, RSS and Atom feeds, `application/xml`), which it used to refuse.
 - A project chat's instructions list at most 50 file names ("and N more"), instead of every file's name on every request.
 
