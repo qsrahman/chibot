@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.11.3] - 2026-10-27
+
 ### Added
 
 - A logo: a forked path whose right arm ends in the accent dot, at 20 px beside the sidebar wordmark and as the browser tab's icon (`favicon.svg`), with a dark tile version for 16 px.
