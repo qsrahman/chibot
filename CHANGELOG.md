@@ -25,6 +25,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Fixed
 
+- The composer's mode chip (Auto / Fast / Thinking) stays on the bottom row with the other buttons when the message grows to several lines, instead of floating to the middle.
 - MCP results without `content` (a result with only `structuredContent`, or none) are read instead of failing, and a failed call no longer keeps its images with the chat.
 - Pages whose `charset` is quoted or misspelled are read as UTF-8 instead of failing.
 - A web search that hangs gives up after 10 s, like `fetch_url`.

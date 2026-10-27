@@ -1246,7 +1246,6 @@ details[open] > summary > .disclosure-chevron {
   display: inline-flex;
   flex: none;
   align-items: center;
-  align-self: center;
   gap: 2px;
   height: 36px;
   padding: 0 8px 0 12px;

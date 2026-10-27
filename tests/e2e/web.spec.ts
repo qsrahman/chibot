@@ -169,3 +169,21 @@ test('menus move with the arrow keys', async ({ page }) => {
   await page.keyboard.press('Escape')
   await expect(plus).toBeFocused()
 })
+
+test('the composer’s buttons stay on its bottom row as it grows', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  await page
+    .getByRole('textbox', { name: 'Message' })
+    .fill('one\ntwo\nthree\nfour\nfive')
+  const bottom = (name: string | RegExp) =>
+    page
+      .getByRole('button', { name })
+      .first()
+      .evaluate((el) => el.getBoundingClientRect().bottom)
+  const mode = await bottom(/^Mode:/)
+  expect(mode).toBe(await bottom('Add files and more'))
+  expect(mode).toBe(await bottom('Send'))
+})
