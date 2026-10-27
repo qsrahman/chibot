@@ -33,7 +33,8 @@ export abstract class Tool<Parameters extends z.ZodObject = z.ZodObject> {
   /**
    * Tools with side effects wait for the user's Approve / Deny: always, or
    * (`'after-untrusted'`) once the chat holds output of an `untrustedOutput`
-   * tool, which may carry instructions planted for the model.
+   * tool, which may carry instructions planted for the model. See
+   * `ToolRegistry.needsApproval`.
    */
   readonly requiresApproval: boolean | 'after-untrusted' = false
   /** The output holds text from others (web pages, search results). */

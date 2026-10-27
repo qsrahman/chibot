@@ -1,4 +1,7 @@
-import type { ResponseFunctionToolCall } from 'openai/resources/responses/responses'
+import type {
+  ResponseFunctionToolCall,
+  ResponseInputItem,
+} from 'openai/resources/responses/responses'
 import { z } from 'zod'
 import type { Tool, ToolContext } from './tool.ts'
 
@@ -30,6 +33,24 @@ export class ToolRegistry {
 
   get(name: string): Tool | undefined {
     return this.#tools.get(name) ?? this.#more().find((t) => t.name === name)
+  }
+
+  /**
+   * Whether `call` waits for the user's Approve / Deny: its tool always asks
+   * (`requiresApproval`), or asks once the chat's `history` holds a call to
+   * a tool whose output carries others' text (`untrustedOutput`), which may
+   * have planted instructions for the model.
+   */
+  needsApproval(
+    call: ResponseFunctionToolCall,
+    history: ResponseInputItem[],
+  ): boolean {
+    const rule = this.get(call.name)?.requiresApproval
+    if (rule !== 'after-untrusted') return rule === true
+    return history.some(
+      (item) =>
+        item.type === 'function_call' && this.get(item.name)?.untrustedOutput,
+    )
   }
 
   /**

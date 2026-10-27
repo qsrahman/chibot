@@ -71,4 +71,39 @@ describe('ToolRegistry', () => {
     ).toBe(TOOL_STOPPED)
     expect(tool.runs).toEqual([])
   })
+
+  describe('needsApproval', () => {
+    const registry = new ToolRegistry([
+      new EchoTool({ name: 'plain' }),
+      new EchoTool({ name: 'always', requiresApproval: true }),
+      new EchoTool({ name: 'later', requiresApproval: 'after-untrusted' }),
+      new EchoTool({ name: 'page', untrustedOutput: true }),
+    ])
+    const made = (name: string) => call(name, '{}')
+    const history = (...names: string[]) => names.map(made)
+
+    it('asks always for tools that always ask, never for plain ones', () => {
+      expect(registry.needsApproval(made('always'), [])).toBe(true)
+      expect(registry.needsApproval(made('always'), history('page'))).toBe(true)
+      expect(registry.needsApproval(made('plain'), history('page'))).toBe(false)
+      // Unknown tools never wait: running them just reports the error.
+      expect(registry.needsApproval(made('nope'), history('page'))).toBe(false)
+    })
+
+    it("asks for 'after-untrusted' tools only once untrusted output is in", () => {
+      expect(registry.needsApproval(made('later'), [])).toBe(false)
+      expect(registry.needsApproval(made('later'), history('plain'))).toBe(
+        false,
+      )
+      expect(
+        registry.needsApproval(made('later'), history('plain', 'page')),
+      ).toBe(true)
+      // Messages alone aren't tool calls.
+      expect(
+        registry.needsApproval(made('later'), [
+          { role: 'user', content: 'page' },
+        ]),
+      ).toBe(false)
+    })
+  })
 })

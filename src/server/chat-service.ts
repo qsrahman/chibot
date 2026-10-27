@@ -190,9 +190,9 @@ export class ChatService {
     let answered = false
     for (let step = 1; step <= MAX_STEPS; step++) {
       if (calls.length > 0) {
-        const asks = this.#approvalNeeded(conversationId, leafId)
+        const history = this.#history(conversationId, leafId)
         leafId = yield* this.#answer(conversationId, leafId, calls, (call) =>
-          !asks(call) || approvals?.[call.call_id]
+          !this.#tools.needsApproval(call, history) || approvals?.[call.call_id]
             ? this.#tools.run(
                 call,
                 { conversationId, projectId: conversation.projectId, signal },
@@ -300,7 +300,8 @@ export class ChatService {
         )
         break
       }
-      if (calls.some(this.#approvalNeeded(conversationId, leafId))) {
+      const history = this.#history(conversationId, leafId)
+      if (calls.some((call) => this.#tools.needsApproval(call, history))) {
         yield { type: 'chibot.approval', calls }
         break
       }
@@ -314,19 +315,9 @@ export class ChatService {
     }
   }
 
-  /** Which calls, made on the path to `leafId`, wait for the user's approval. */
-  #approvalNeeded(conversationId: string, leafId: number) {
-    const untrusted = this.#store
-      .getPath(conversationId, leafId)
-      .some(
-        ({ data }) =>
-          data.type === 'function_call' &&
-          this.#tools.get(data.name)?.untrustedOutput,
-      )
-    return (call: ResponseFunctionToolCall) => {
-      const rule = this.#tools.get(call.name)?.requiresApproval
-      return rule === true || (rule === 'after-untrusted' && untrusted)
-    }
+  /** The items on the path to `leafId`. */
+  #history(conversationId: string, leafId: number): ResponseInputItem[] {
+    return this.#store.getPath(conversationId, leafId).map((item) => item.data)
   }
 
   /**
