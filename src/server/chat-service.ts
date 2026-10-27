@@ -19,13 +19,7 @@ import { chatModels } from './chat-models.ts'
 import type { ConversationStore } from './conversation-store.ts'
 import type { ProjectStore } from './project-store.ts'
 import type { SettingsStore } from './settings-store.ts'
-import {
-  chatInstructions,
-  cleanTitle,
-  projectInstructions,
-  TITLE_INSTRUCTIONS,
-  UNTRUSTED_INSTRUCTIONS,
-} from './prompts.ts'
+import { chatInstructions, cleanTitle, TITLE_INSTRUCTIONS } from './prompts.ts'
 import { TOOL_DENIED, ToolRegistry } from './tool-registry.ts'
 
 // How long a turn waits for the previous turn of its chat to unwind.
@@ -193,16 +187,15 @@ export class ChatService {
       .filter((t) => !offered.includes(t))
       .map((t) => t.name)
     const tools = offered.map((t) => t.declaration)
-    const project =
-      conversation.projectId && this.#projects?.get(conversation.projectId)
-    const instructions = [
-      chatInstructions(settings),
-      project && projectInstructions(project),
-      offered.some((t) => t.untrustedOutput) && UNTRUSTED_INSTRUCTIONS,
-      ...offered.map((t) => t.instructions(conversation)),
-    ]
-      .filter(Boolean)
-      .join('\n\n')
+    const project = conversation.projectId
+      ? this.#projects?.get(conversation.projectId)
+      : null
+    const instructions = chatInstructions(settings, {
+      project,
+      tools: offered.length > 0,
+      untrusted: offered.some((t) => t.untrustedOutput),
+      toolInstructions: offered.map((t) => t.instructions(conversation)),
+    })
     // A tool the user picked is forced on the first request only; after
     // that the model decides (or it would call it forever).
     const forced = tools.find((t) => t.name === tool)

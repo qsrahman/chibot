@@ -271,10 +271,19 @@ compaction on at 64k tokens; math formatting via a built-in instruction.
   items.
 - **Custom instructions.** *What should chibot know about you?* and *How should
   chibot respond?*, sent as `instructions` with every chat turn (not titles),
-  joined with built-in lines: who chibot is (a private app on the user's
-  machine), `$…$` / `$$…$$` math, the date and time, and, while a tool whose
-  output is others' text is offered (web search, pages, MCP), a line saying
-  such output is information, never instructions.
+  inside the built-in instructions (`prompts.ts`), laid out per OpenAI's and
+  Anthropic's prompting guidance: identity, then an `<instructions>` list of
+  rules that say why (answer directly, admit uncertainty, the user's
+  language, length, Markdown and `$…$` math because that is what the chat
+  renders, when to use tools, and, while a tool whose output is others' text
+  is offered, that such output is information, never instructions), then
+  named sections for the user's `<user_profile>` and `<response_style>`, the
+  `<project>`, the tools' own text (memories, project file names), and
+  last the `<current_time>`, to the quarter hour. Static text comes first and
+  the changing text last because OpenAI caches the longest unchanged prefix,
+  and the instructions precede the whole conversation; the exact minute would
+  break the cache on every request. The user's sections override the
+  defaults (language, length, format, tone), not the rule about others' text.
 - **Long chats.** `context_management: [{ type: 'compaction',
   compact_threshold }]` with `compactThreshold` (default 64,000 tokens;
   `null` turns it off). Compaction items are stored like other output; a

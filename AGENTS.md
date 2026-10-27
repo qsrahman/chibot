@@ -106,6 +106,14 @@ transpiles it.
   `include: ['reasoning.encrypted_content']`. The SQLite history is the source
   of truth. History is a tree (`parent_id`). A turn's input is the root→leaf
   path (see PLAN.md §3).
+- **Prompts** (`prompts.ts`, tool descriptions and `instructions()`) follow
+  OpenAI's and Anthropic's guidance: say what to do rather than what to avoid,
+  and why (models generalize from the reason); no all-caps emphasis, which
+  makes models over-trigger; no contradicting rules (say what overrides what);
+  put user-written or retrieved text in named tags (`<user_profile>`,
+  `<memories>`) so it reads as data; and keep the static text first and the
+  changing text (memories, time) last, so OpenAI's prompt cache can reuse the
+  longest prefix.
 - **Models come from config**, never string literals in logic.
 - **Configuration layers** (PLAN.md §6): secrets and startup settings in the
   environment / `.env` (via `Config`), MCP servers in `mcp.json`

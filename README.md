@@ -225,7 +225,7 @@ Then open http://127.0.0.1:3000.
   or **Create an image**; one that isn't set up or is switched off shows
   greyed out with the reason. Tools with side effects (none ship yet) ask first:
   **Approve** or **Deny**, or send a new message to deny. Models also know
-  today's date and time.
+  today's date and the time to the quarter hour.
 - **Projects** (sidebar → **New project**) group chats with their own files
   and instructions. On a project's page, add files (PDF, Word, text, notes,
   code, data; pick or drop them) and write instructions; chats started there

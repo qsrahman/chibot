@@ -156,7 +156,9 @@ describe('project file search', () => {
     await drain(chat.runTurn(id, { text: 'Hi' }))
 
     const { instructions, tools } = calls[0]!.params
-    expect(instructions).toContain('in the user\'s project "Japan"')
+    expect(instructions).toContain(
+      '<project name="Japan">\nPrices in yen.\n</project>',
+    )
     expect(instructions).toContain('Prices in yen.')
     expect(tools).toEqual([
       expect.objectContaining({ name: 'search_project_files' }),
