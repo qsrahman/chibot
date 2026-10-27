@@ -1,0 +1,278 @@
+/* Composer */
+
+.composer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+  width: calc(100% - 32px);
+  max-width: calc(var(--column) - 32px);
+  min-height: 52px;
+  margin: 0 auto;
+  padding: 7px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-composer);
+  background: var(--surface);
+  box-shadow: var(--composer-shadow);
+}
+
+/* A message waiting for the answer to finish (it can't go yet). */
+.composer-queued {
+  display: flex;
+  flex-basis: 100%;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 2px 4px 0;
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.composer-queued-label {
+  flex: none;
+  font-weight: 500;
+}
+
+.composer-queued-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composer-queued-action {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.composer-queued-action:hover {
+  background: var(--surface-muted);
+  color: var(--fg);
+}
+
+/* Attachments get a row of their own above the text. */
+.composer-attachments {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 4px 0;
+  list-style: none;
+}
+
+.attachment {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+.attachment.image img {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.attachment.uploading > :first-child {
+  opacity: 0.5;
+}
+
+.attachment.failed .file-card {
+  border-color: var(--danger);
+}
+
+.attachment.failed .file-card-type {
+  color: var(--danger);
+}
+
+.attachment-spinner {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  animation: spin 1s linear infinite;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+.composer .icon-button[aria-disabled='true'] {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* The mode chip (Auto / Fast / Thinking) left of the mic. */
+.mode-button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  height: 36px;
+  padding: 0 8px 0 12px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.mode-button:hover {
+  background: var(--surface-muted);
+}
+
+/* The mic while recording. */
+.composer .icon-button.recording {
+  color: var(--danger);
+}
+
+.composer-error {
+  flex-basis: 100%;
+  margin: 0;
+  padding: 0 8px 4px;
+  color: var(--danger);
+  font-size: 14px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.attachment-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--surface);
+  border-radius: 50%;
+  background: var(--button);
+  color: var(--button-fg);
+  cursor: pointer;
+}
+
+/* A document: icon, name and type, in the composer and in messages. */
+.file-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  max-width: 260px;
+  padding: 8px 12px 8px 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--fg);
+}
+
+.file-card-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+.file-card-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.file-card-name {
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-card-type {
+  overflow: hidden;
+  color: var(--fg-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Dropping files anywhere on the chat attaches them. */
+.chat.dragging::after {
+  position: absolute;
+  inset: 8px;
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius-card);
+  content: '';
+  pointer-events: none;
+}
+
+.composer-chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  align-self: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 999px;
+  background: var(--bubble-bg);
+  color: var(--bubble-fg);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.composer textarea {
+  flex: 1;
+  align-self: center;
+  max-height: 40vh;
+  padding: 6px 0;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 17px;
+  line-height: 24px;
+  /* Grows with its content; supported in Chromium and Safari. */
+  field-sizing: content;
+}
+
+.composer textarea::placeholder {
+  color: var(--fg-muted);
+}
+
+.disclaimer {
+  margin: 0;
+  padding: 8px 16px;
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 16px;
+  text-align: center;
+}
+
+.chat.empty .disclaimer {
+  visibility: hidden;
+}

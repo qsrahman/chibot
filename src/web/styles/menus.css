@@ -1,0 +1,83 @@
+/* Menus (Popover API; placed by script, see Sidebar.tsx) */
+
+.menu {
+  position: fixed;
+  inset: auto;
+  min-width: 200px;
+  margin: 4px 0;
+  /* Under the button that opens it (useAnchoredPopover), left edges aligned;
+     flipped when that would run off the window. */
+  position-area: block-end span-inline-end;
+  position-try-fallbacks:
+    flip-block,
+    flip-inline,
+    flip-block flip-inline;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+  color: var(--fg);
+  box-shadow: var(--dialog-shadow);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--radius-row);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-item:hover,
+.menu-item:focus-visible {
+  /* --chip, not --surface-muted: in dark mode that equals the menu's own
+     --surface-raised background, so the highlight would be invisible. */
+  background: var(--chip);
+}
+
+/* The composer's menu opens upward, over the chat. */
+.menu.above {
+  position-area: block-start span-inline-end;
+}
+
+/* A name over a muted hint; .menu-item alone is one 36 px line. */
+.menu-item.has-hint {
+  height: auto;
+  min-height: 36px;
+  padding-block: 6px;
+}
+
+.menu-item-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.menu-item:disabled {
+  background: none;
+  color: var(--fg-muted);
+  cursor: default;
+}
+
+a.menu-item {
+  text-decoration: none;
+}
+
+.menu-item.danger {
+  color: var(--danger);
+}
+
+.menu-divider {
+  margin: 4px 6px;
+  border: none;
+  border-top: 1px solid var(--border);
+}

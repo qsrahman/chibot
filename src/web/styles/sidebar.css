@@ -1,0 +1,167 @@
+/* Sidebar (DESIGN.md §3) */
+
+.sidebar {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: var(--sidebar-width);
+  padding: 6px;
+  border-right: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.sidebar.collapsed {
+  width: var(--rail-width);
+  align-items: center;
+}
+
+.sidebar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 46px;
+  padding-left: 10px;
+}
+
+.sidebar.collapsed .sidebar-top {
+  padding: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.brand-mark {
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+
+.brand-mark .bead {
+  fill: var(--accent);
+  stroke: none;
+}
+
+.sidebar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 36px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: var(--radius-row);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.sidebar-row:hover,
+.sidebar-row.active {
+  background: var(--surface-muted);
+}
+
+.sidebar.collapsed .sidebar-row {
+  justify-content: center;
+  width: 36px;
+  padding: 0;
+}
+
+.sidebar.collapsed .row-label {
+  display: none;
+}
+
+.row-icon {
+  display: inline-grid;
+  flex: none;
+}
+
+.row-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.5;
+}
+
+.row-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-list {
+  flex: 1;
+  margin: 8px 0;
+  overflow-y: auto;
+}
+
+.sidebar-heading {
+  margin: 16px 10px 4px;
+  color: var(--fg-muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.sidebar-note {
+  padding: 0 10px;
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.sidebar-bottom {
+  margin-top: auto;
+}
+
+.conversation-row {
+  position: relative;
+}
+
+.conversation-row:hover .sidebar-row,
+.conversation-row:has(.menu:popover-open) .sidebar-row {
+  padding-right: 36px;
+}
+
+.row-menu-button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg-muted);
+  opacity: 0;
+  cursor: pointer;
+}
+
+.conversation-row:hover .row-menu-button,
+.conversation-row:has(.menu:popover-open) .row-menu-button,
+.row-menu-button:focus-visible {
+  opacity: 1;
+}
+
+.sidebar-rename {
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-row);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+}

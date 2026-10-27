@@ -1,0 +1,267 @@
+/* Settings (DESIGN.md §4) */
+
+.dialog.settings {
+  width: min(100% - 32px, 760px);
+  /* Anchored near the top and as tall as its tab, so switching tabs only
+     grows or shrinks it downwards instead of jumping around the centre. */
+  margin-top: max(16px, 10vh);
+}
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 16px;
+  align-items: start;
+  min-height: 240px;
+}
+
+.settings-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-tabs .sidebar-row:hover,
+.settings-tabs [aria-current='page'] {
+  background: var(--chip);
+}
+
+.settings-panel {
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.settings-section + .settings-section {
+  margin-top: 24px;
+}
+
+.settings-section h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.settings-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.settings-empty {
+  margin: 0;
+  padding: 16px;
+  color: var(--fg-muted);
+  font-size: 14px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 52px;
+  padding: 8px 16px;
+}
+
+.settings-row.unavailable .settings-label {
+  color: var(--fg-muted);
+}
+
+.switch:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.settings-row + .settings-row,
+.settings-field + .settings-field {
+  border-top: 1px solid var(--border);
+}
+
+.settings-label label,
+.settings-field label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.settings-label {
+  min-width: 0;
+}
+
+.settings-label p {
+  /* MCP servers write their own, sometimes paragraphs. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  margin: 2px 0 0;
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 16px;
+  overflow-wrap: anywhere;
+}
+
+/* Buttons beside a row's switch (MCP servers' Sign in, Reconnect). */
+.settings-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-panel select,
+.settings-number,
+.settings-field textarea {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-row);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+}
+
+.settings-panel select {
+  height: 32px;
+  padding: 0 8px;
+}
+
+.settings-number {
+  width: 120px;
+  height: 32px;
+  padding: 0 8px;
+  text-align: right;
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px;
+}
+
+.settings-field textarea {
+  min-height: 96px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.settings-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 0 16px 12px;
+}
+
+.settings-saved {
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+label.button {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* A 32×20 switch on a native checkbox (role="switch"). */
+.switch {
+  position: relative;
+  flex: none;
+  width: 32px;
+  height: 20px;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--chip);
+  appearance: none;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform 150ms ease;
+}
+
+.switch:checked {
+  background: var(--accent);
+}
+
+.switch:checked::after {
+  transform: translateX(12px);
+}
+
+.dialog.archived {
+  width: min(100% - 32px, 560px);
+}
+
+.archived-list {
+  max-height: 60vh;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.archived-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.memory-text {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 0;
+  font-size: 14px;
+}
+
+.memory-count {
+  margin: -12px 0 12px;
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.memory-edit {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 0;
+}
+
+.memory-edit-input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-row);
+  background: var(--bg);
+  color: inherit;
+  font: inherit;
+}
+
+.archived-title {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 0;
+  overflow: hidden;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}

@@ -1,0 +1,663 @@
+/* Chat layout */
+
+.chat {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Empty chat: the greeting and composer sit in the middle, the header stays
+   on top. */
+.chat.empty {
+  padding-bottom: 10vh;
+}
+
+.chat.empty .greeting {
+  margin-top: auto;
+}
+
+.chat.empty .disclaimer {
+  margin-bottom: auto;
+}
+
+/* A project's page: its heading and composer at the top, then its files,
+   instructions and chats, all scrolling together. */
+.chat.project-home {
+  overflow-y: auto;
+  padding-bottom: 24px;
+}
+
+.chat.project-home .greeting {
+  margin-top: 8vh;
+}
+
+.chat.project-home .disclaimer {
+  display: none;
+}
+
+.project-heading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.project-heading h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 8px;
+}
+
+.project-details {
+  display: grid;
+  gap: 16px;
+  width: calc(100% - 32px);
+  max-width: calc(var(--column) - 32px);
+  margin: 24px auto 0;
+}
+
+.project-card {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.project-card.dragging {
+  border-color: var(--accent);
+}
+
+.project-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.project-card h2,
+.project-chats h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.project-card .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.project-card textarea {
+  width: 100%;
+  min-height: 96px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-row);
+  background: var(--bg);
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  resize: vertical;
+}
+
+.project-hint {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 13px;
+}
+
+.project-files {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.project-files li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  border-top: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.project-files li:first-child {
+  border-top: none;
+}
+
+.project-file-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-file-name:hover {
+  text-decoration: underline;
+}
+
+.file-status {
+  flex: none;
+  max-width: 50%;
+  overflow: hidden;
+  color: var(--fg-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-status.failed {
+  color: var(--danger);
+}
+
+.project-chats {
+  display: grid;
+  gap: 2px;
+}
+
+.project-chats h2 {
+  margin: 8px 10px 4px;
+}
+
+.project-choices {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dialog-input {
+  width: 100%;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-row);
+  background: var(--bg);
+  color: inherit;
+  font: inherit;
+}
+
+.greeting {
+  margin-bottom: 28px;
+  padding: 0 16px;
+  text-align: center;
+}
+
+.greeting h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 34px;
+}
+
+.greeting p {
+  max-width: 28rem;
+  margin: 8px auto 0;
+  color: var(--fg-muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+/* Full-width scroller, so the scrollbar sits at the window edge. */
+.messages {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Sticks to the bottom of the scrolled list, just above the composer; the
+   negative margin keeps it from adding to the list's height. */
+.jump-latest {
+  position: sticky;
+  bottom: 12px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin: -48px auto 12px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface-raised);
+  color: var(--fg);
+  box-shadow: var(--composer-shadow);
+  cursor: pointer;
+}
+
+.thread {
+  max-width: var(--column);
+  margin: 0 auto;
+  padding: 16px 16px 24px;
+}
+
+/* A question, its answer and their action rows. */
+.turn {
+  margin: 24px 0;
+}
+
+.message {
+  overflow-wrap: anywhere;
+}
+
+.message.assistant {
+  margin-top: 16px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 32px;
+  margin-top: 4px;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.turn:hover .actions,
+.turn.latest .answer-actions,
+.actions:focus-within {
+  opacity: 1;
+}
+
+.user-actions {
+  justify-content: flex-end;
+}
+
+.action {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.action svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.5;
+}
+
+.action:hover:not(:disabled) {
+  background: var(--surface-muted);
+  color: var(--fg);
+}
+
+.action:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.usage {
+  margin-left: 8px;
+  color: var(--fg-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  cursor: default;
+}
+
+/* The answer used most of the context: chibot will compact soon. */
+.usage.near-limit {
+  color: var(--danger);
+  font-weight: 500;
+}
+
+.topbar-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.versions {
+  display: inline-flex;
+  align-items: center;
+  color: var(--fg-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.versions .action {
+  width: 24px;
+}
+
+.compaction-note {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 0;
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.compaction-note::before,
+.compaction-note::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--border);
+}
+
+.thoughts {
+  margin-top: 16px;
+  color: var(--fg-muted);
+  font-size: 14px;
+}
+
+/* Thoughts, tool calls and Sources: a label after a chevron that turns
+   when open, instead of the browser's own triangle. */
+.thoughts summary,
+.sources summary {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  list-style: none;
+  cursor: pointer;
+}
+
+.thoughts summary::-webkit-details-marker,
+.sources summary::-webkit-details-marker {
+  display: none;
+}
+
+.disclosure-chevron {
+  flex: none;
+  transition: transform 150ms ease;
+}
+
+details[open] > summary > .disclosure-chevron {
+  transform: rotate(90deg);
+}
+
+/* A gentle shimmer while the model is still thinking (on the label only, so
+   the chevron stays visible). */
+.thoughts summary .live {
+  background: linear-gradient(
+      90deg,
+      var(--fg-muted) 40%,
+      var(--fg) 50%,
+      var(--fg-muted) 60%
+    )
+    0 0 / 300% 100%;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -300% 0;
+  }
+}
+
+.thoughts-body {
+  margin-top: 8px;
+  padding-left: 12px;
+  border-left: 2px solid var(--border);
+}
+
+.thoughts-body .markdown {
+  line-height: 22px;
+}
+
+/* Consecutive tool calls sit closer together than other answer parts. */
+.tool-call + .tool-call {
+  margin-top: 8px;
+}
+
+/* Inside a group, the calls start right under its rule. */
+.tool-call-list > .tool-call:first-child {
+  margin-top: 0;
+}
+
+/* A tool call's details: what it was asked, then what came back. */
+.tool-summary {
+  display: grid;
+  gap: 6px;
+}
+
+.tool-summary p {
+  margin: 0;
+}
+
+.tool-input {
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+
+.tool-summary .source-list {
+  margin: 0;
+}
+
+.tool-raw {
+  margin-top: 2px;
+  font-size: 13px;
+}
+
+.tool-raw .tool-details {
+  margin-top: 6px;
+}
+
+.tool-details {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.tool-details dt {
+  font-weight: 500;
+}
+
+.tool-details dd {
+  margin: 0 0 8px;
+}
+
+.tool-details pre {
+  margin: 0;
+  padding: 8px 12px;
+  overflow-x: auto;
+  border-radius: var(--radius-row);
+  background: var(--surface-muted);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.approval {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.approval h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.approval p {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 13px;
+}
+
+.approval-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.image {
+  position: relative;
+  margin: 0;
+}
+
+.image img {
+  display: block;
+  max-width: min(100%, 400px);
+  height: auto;
+  border-radius: var(--radius-card);
+}
+
+.image-placeholder {
+  width: 400px;
+  max-width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-card);
+  background: linear-gradient(
+      90deg,
+      var(--surface-muted) 40%,
+      var(--chip) 50%,
+      var(--surface-muted) 60%
+    )
+    0 0 / 300% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+.image-download {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--surface-raised);
+  color: var(--fg);
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.image:hover .image-download,
+.image-download:focus-visible {
+  opacity: 1;
+}
+
+.sources {
+  margin-top: 12px;
+  color: var(--fg-muted);
+  font-size: 14px;
+}
+
+.source-list {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.source-list a {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.source-list a:hover .source-title {
+  text-decoration: underline;
+}
+
+.source-title {
+  overflow: hidden;
+  color: var(--fg);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-host {
+  flex: none;
+  font-size: 12px;
+}
+
+.edit-box {
+  padding: 12px 16px;
+  border-radius: var(--radius-bubble);
+  background: var(--surface-muted);
+}
+
+.edit-box textarea {
+  width: 100%;
+  max-height: 40vh;
+  padding: 0;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  field-sizing: content;
+}
+
+.edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.message.user {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.message-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: 70%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.message-attachments a {
+  display: block;
+  text-decoration: none;
+}
+
+.message-attachments img {
+  display: block;
+  max-width: 240px;
+  max-height: 240px;
+  border-radius: var(--radius-card);
+  object-fit: cover;
+}
+
+.message.user p {
+  max-width: 70%;
+  margin: 0;
+  padding: 10px 16px;
+  border-radius: var(--radius-bubble);
+  background: var(--bubble-bg);
+  color: var(--bubble-fg);
+  white-space: pre-wrap;
+}

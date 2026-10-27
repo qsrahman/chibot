@@ -1,0 +1,102 @@
+/* Phones: the sidebar is a drawer over the chat, which takes the full width. */
+@media (max-width: 767px) {
+  .sidebar.drawer {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 20;
+    width: min(300px, 85vw);
+    box-shadow: var(--dialog-shadow);
+  }
+
+  .sidebar.drawer.collapsed {
+    display: none;
+  }
+
+  .drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 19;
+    background: var(--scrim);
+  }
+
+  .topbar {
+    padding-left: 8px;
+  }
+
+  /* The chat's name before the model, which then gives way to it. */
+  .topbar-title {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .topbar-start > :not(.topbar-title) {
+    flex: none;
+  }
+
+  .topbar-info .usage {
+    display: none;
+  }
+
+  .topbar-title ~ * .model-button {
+    color: var(--fg-muted);
+  }
+
+  .message.user p,
+  .message-attachments {
+    max-width: 85%;
+  }
+
+  /* Settings: the tabs become a scrolling row above the content. */
+  .dialog.settings {
+    margin-top: 16px;
+    padding-inline: 16px;
+  }
+
+  .settings-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-tabs {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .settings-tabs .sidebar-row {
+    flex: none;
+    width: auto;
+  }
+}
+
+/* Touch-only devices have no keyboard for shortcuts. (A touchscreen laptop
+   still has a fine pointer, so it keeps the entry.) */
+@media (hover: none) and (pointer: coarse) {
+  .keyboard-only {
+    display: none;
+  }
+}
+
+/* Touch screens have no hover, so controls that wait for one stay visible:
+   a chat's "…" menu, message actions and image downloads. */
+@media (hover: none) {
+  .actions,
+  .row-menu-button,
+  .image-download {
+    opacity: 1;
+  }
+
+  /* Room for the always-visible "…", as on hover. */
+  .conversation-row .sidebar-row {
+    padding-right: 36px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
