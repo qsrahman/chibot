@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.11.7] - 2026-10-27
+
 ### Changed
 
 - Code only: `app.ts` keeps the access checks and mounts one route file per area (`routes/*.ts`; the same 36 routes), the rule for when a tool call waits for approval is `ToolRegistry.needsApproval` (it was a private method of `ChatService`), and server tests build their `ChatService` with `testChat` (`tests/server/fakes.ts`).
