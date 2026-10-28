@@ -724,8 +724,8 @@ runner (now Phase 11).
   server's process stops and comes back when enabled. Unit tests use fixture
   servers; Playwright covers the Settings section and a call in a chat.
 
-### Phase 11a — Multiple providers (proposed; before Phase 11)
-Proposed decisions (to agree before building): today's single-provider `.env`
+### Phase 11a — Multiple providers
+Decisions (agreed before building): today's single-provider `.env`
 setup keeps working unchanged; secrets never go in SQLite; the model picker
 groups models by provider; providers come from the environment first, then
 from Settings. Once built, this replaces the "one chat provider" non-goal
