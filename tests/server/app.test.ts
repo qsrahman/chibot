@@ -154,6 +154,20 @@ describe('API', () => {
     expect(body.items).toHaveLength(2)
   })
 
+  it('explains a 429 in the chibot.error event, keeping its status', async () => {
+    const message = 'you have reached your monthly usage limit'
+    const app = appWith(
+      new OpenAI.RateLimitError(429, { message }, message, new Headers()),
+    )
+    const { id } = await createConversation(app)
+    const [event] = await readEvents(await postTurn(app, id, { text: 'Hello' }))
+    expect(JSON.parse(event!.data)).toMatchObject({
+      type: 'chibot.error',
+      status: 429,
+      message: expect.stringContaining('reached its usage limit'),
+    })
+  })
+
   it('reports upstream errors as a chibot.error event', async () => {
     const error = new OpenAI.AuthenticationError(
       401,

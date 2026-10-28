@@ -21,6 +21,7 @@ import type {
 } from '../../shared/types.ts'
 import { toMarkdown } from '../markdown-export.ts'
 import type { AppDeps } from '../app.ts'
+import { explainApiError } from '../api-errors.ts'
 import { disposition, json, notFound } from './helpers.ts'
 
 export function conversationRoutes({
@@ -242,7 +243,7 @@ function toErrorEvent(err: unknown): TurnErrorEvent {
   if (err instanceof OpenAI.APIError) {
     return {
       type: 'chibot.error',
-      message: err.message,
+      message: explainApiError(err),
       status: err.status,
       requestId: err.requestID ?? undefined,
     }

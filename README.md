@@ -282,7 +282,10 @@ Then open http://127.0.0.1:3000.
   the last answer, Esc to stop, and ↑ in an empty message box to edit your
   last message.
 - If the model server reports an error (e.g. a bad API key), it's shown with
-  its status and request id. Your message is kept.
+  its status and request id. Your message is kept. A 429 says which kind it
+  is: you've used up the provider's plan (pick another model, or add credits),
+  or the server is only limiting requests for now (wait, with the time the
+  server gave).
 
 ## Other scripts
 
