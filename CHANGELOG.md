@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.11.10] - 2026-10-28
+
 ### Changed
 
 - The composer groups its buttons: the + button and a chosen tool's chip on the left, the mode, mic and send buttons on the right, all on the bottom row of the box as it grows.
