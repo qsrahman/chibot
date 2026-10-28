@@ -1,4 +1,5 @@
 import { join, resolve } from 'node:path'
+import type { ChatModel } from 'openai/resources/shared'
 import { z } from 'zod'
 
 /** The repo root, found from this file, so `chibot` works from any folder. */
@@ -34,6 +35,14 @@ export interface Endpoint {
   apiKey: string
   model: string
 }
+
+/**
+ * The chat model on OpenAI when `OPENAI_MODEL` isn't set. The SDK has no
+ * default of its own at runtime (a request has to name a model), only this
+ * type listing its models, newest first; typing the name with it makes a
+ * future SDK that drops or renames it fail the typecheck.
+ */
+const OPENAI_DEFAULT_MODEL: ChatModel = 'gpt-6-astra'
 
 /** Unset and blank (`FOO=`) both mean "not set". */
 const optional = z
@@ -125,7 +134,7 @@ export class Config {
     this.chat = endpoint(
       e.OPENAI_BASE_URL,
       e.OPENAI_API_KEY,
-      e.OPENAI_MODEL ?? (e.OPENAI_BASE_URL ? undefined : 'gpt-6-astra'),
+      e.OPENAI_MODEL ?? (e.OPENAI_BASE_URL ? undefined : OPENAI_DEFAULT_MODEL),
     )!
     // A feature's endpoint: each part not set (OPENAI_<FEATURE>_*) is the
     // chat endpoint's; the model defaults only on OpenAI.

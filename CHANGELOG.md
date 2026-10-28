@@ -11,6 +11,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 - Roadmap: Phase 11a, multiple providers, is planned (proposed, not yet agreed) before the code runner, which moves to v0.13.0. The plan's decision rows still describe the single provider that ships today.
 - Dependencies updated: `openai` 7.45 (a new model identifier; no breaking changes) and `lucide-react` 1.62.
 - A 429 from the model server says whether you have reached the provider's usage limit (with what to do: pick another model, or add credits) or the server is only limiting requests for now (with its retry time), instead of showing the raw error. Other errors are unchanged.
+- Code only: the default OpenAI model (`gpt-6-astra`, used when `OPENAI_MODEL` isn't set) is typed with the SDK's own `ChatModel`, so an SDK that drops or renames it fails the typecheck. The SDK has no default model at runtime, so chibot still sends the name.
 
 ### Fixed
 
