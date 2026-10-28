@@ -283,90 +283,96 @@ export function Composer({
           ))}
         </ul>
       )}
-      <button
-        type="button"
-        className="icon-button"
-        aria-label="Add files and more"
-        title="Add files and more"
-        popoverTarget={menu.id}
-        style={menu.triggerStyle}
-      >
-        <Plus size={24} strokeWidth={1.5} />
-      </button>
-      <input
-        ref={pickerRef}
-        type="file"
-        multiple
-        hidden
-        accept={ATTACHMENT_ACCEPT}
-        aria-label="Add photos & files"
-        onChange={(e) => {
-          const files = [...(e.target.files ?? [])]
-          e.target.value = ''
-          attachments.add(files)
-          inputRef.current?.focus()
-        }}
-      />
-      <div
-        id={menu.id}
-        ref={menu.ref}
-        popover="auto"
-        className="menu above"
-        role="menu"
-        style={menu.style}
-        {...menu.menuProps}
-      >
+      <div className="composer-left">
         <button
           type="button"
-          role="menuitem"
-          className="menu-item has-hint"
-          onClick={() => {
-            menu.hide()
-            pickerRef.current?.click()
-          }}
+          className="icon-button"
+          aria-label="Add files and more"
+          title="Add files and more"
+          popoverTarget={menu.id}
+          style={menu.triggerStyle}
         >
-          <Paperclip size={18} strokeWidth={1.5} aria-hidden />
-          <span className="menu-item-text">
-            Add photos & files
-            <span className="menu-hint">Images, PDF, Word, text and code</span>
-          </span>
+          <Plus size={24} strokeWidth={1.5} />
         </button>
-        {tools.map((option) => (
+        <input
+          ref={pickerRef}
+          type="file"
+          multiple
+          hidden
+          accept={ATTACHMENT_ACCEPT}
+          aria-label="Add photos & files"
+          onChange={(e) => {
+            const files = [...(e.target.files ?? [])]
+            e.target.value = ''
+            attachments.add(files)
+            inputRef.current?.focus()
+          }}
+        />
+        <div
+          id={menu.id}
+          ref={menu.ref}
+          popover="auto"
+          className="menu above"
+          role="menu"
+          style={menu.style}
+          {...menu.menuProps}
+        >
           <button
-            key={option.name}
             type="button"
             role="menuitem"
-            className={option.unavailable ? 'menu-item has-hint' : 'menu-item'}
-            disabled={option.unavailable !== null}
+            className="menu-item has-hint"
             onClick={() => {
-              setPicked(option)
               menu.hide()
-              inputRef.current?.focus()
+              pickerRef.current?.click()
             }}
           >
-            {option.icon}
+            <Paperclip size={18} strokeWidth={1.5} aria-hidden />
             <span className="menu-item-text">
-              {option.label}
-              {option.unavailable && (
-                <span className="menu-hint">{option.unavailable}</span>
-              )}
+              Add photos & files
+              <span className="menu-hint">
+                Images, PDF, Word, text and code
+              </span>
             </span>
           </button>
-        ))}
+          {tools.map((option) => (
+            <button
+              key={option.name}
+              type="button"
+              role="menuitem"
+              className={
+                option.unavailable ? 'menu-item has-hint' : 'menu-item'
+              }
+              disabled={option.unavailable !== null}
+              onClick={() => {
+                setPicked(option)
+                menu.hide()
+                inputRef.current?.focus()
+              }}
+            >
+              {option.icon}
+              <span className="menu-item-text">
+                {option.label}
+                {option.unavailable && (
+                  <span className="menu-hint">{option.unavailable}</span>
+                )}
+              </span>
+            </button>
+          ))}
+        </div>
+        {tool && (
+          <button
+            type="button"
+            className="composer-chip"
+            title={`${tool.label}: click to remove`}
+            aria-label={`Remove ${tool.label}`}
+            onClick={() => setPicked(null)}
+          >
+            {tool.icon}
+            {tool.chip}
+            <X size={14} aria-hidden />
+          </button>
+        )}
       </div>
-      {tool && (
-        <button
-          type="button"
-          className="composer-chip"
-          title={`${tool.label}: click to remove`}
-          aria-label={`Remove ${tool.label}`}
-          onClick={() => setPicked(null)}
-        >
-          {tool.icon}
-          {tool.chip}
-          <X size={14} aria-hidden />
-        </button>
-      )}
       <textarea
         ref={inputRef}
         aria-label="Message"
@@ -384,57 +390,34 @@ export function Composer({
           attachments.add(files)
         }}
       />
-      <ModeSwitch effort={effort} onChange={onEffort} />
-      <button
-        type="button"
-        className={recording ? 'icon-button recording' : 'icon-button'}
-        aria-label={micLabel}
-        title={micLabel}
-        // aria-disabled rather than disabled, so the tooltip still shows.
-        aria-disabled={!transcription || dictation.state === 'transcribing'}
-        aria-pressed={recording}
-        onClick={() => {
-          if (!transcription) return
-          if (recording) dictation.stop()
-          else if (dictation.state === 'idle') void dictation.start()
-        }}
-      >
-        {dictation.state === 'transcribing' ? (
-          <LoaderCircle className="spin" size={20} strokeWidth={1.5} />
-        ) : recording ? (
-          <Square size={14} fill="currentColor" />
-        ) : (
-          <Mic size={20} strokeWidth={1.5} />
-        )}
-      </button>
-      {busy && canQueue && (
+      <div className="composer-actions">
+        <ModeSwitch effort={effort} onChange={onEffort} />
         <button
           type="button"
-          className="icon-button"
-          aria-label="Stop"
-          title="Stop"
+          className={recording ? 'icon-button recording' : 'icon-button'}
+          aria-label={micLabel}
+          title={micLabel}
+          // aria-disabled rather than disabled, so the tooltip still shows.
+          aria-disabled={!transcription || dictation.state === 'transcribing'}
+          aria-pressed={recording}
           onClick={() => {
-            onStop()
-            inputRef.current?.focus()
+            if (!transcription) return
+            if (recording) dictation.stop()
+            else if (dictation.state === 'idle') void dictation.start()
           }}
         >
-          <Square size={14} fill="currentColor" />
+          {dictation.state === 'transcribing' ? (
+            <LoaderCircle className="spin" size={20} strokeWidth={1.5} />
+          ) : recording ? (
+            <Square size={14} fill="currentColor" />
+          ) : (
+            <Mic size={20} strokeWidth={1.5} />
+          )}
         </button>
-      )}
-      {busy ? (
-        canQueue ? (
-          <button
-            type="submit"
-            className="icon-button primary"
-            aria-label="Queue message"
-            title="Send after this answer"
-          >
-            <ArrowUp size={20} strokeWidth={2} />
-          </button>
-        ) : (
+        {busy && canQueue && (
           <button
             type="button"
-            className="icon-button primary"
+            className="icon-button"
             aria-label="Stop"
             title="Stop"
             onClick={() => {
@@ -444,26 +427,51 @@ export function Composer({
           >
             <Square size={14} fill="currentColor" />
           </button>
-        )
-      ) : (
-        <button
-          type="submit"
-          className="icon-button primary"
-          aria-label={
-            uploadQueued ? 'Sending when the files are uploaded' : 'Send'
-          }
-          title={
-            uploadQueued ? 'Sending when the files are uploaded' : undefined
-          }
-          disabled={!canSend}
-        >
-          {uploadQueued ? (
-            <LoaderCircle className="spin" size={20} strokeWidth={2} />
+        )}
+        {busy ? (
+          canQueue ? (
+            <button
+              type="submit"
+              className="icon-button primary"
+              aria-label="Queue message"
+              title="Send after this answer"
+            >
+              <ArrowUp size={20} strokeWidth={2} />
+            </button>
           ) : (
-            <ArrowUp size={20} strokeWidth={2} />
-          )}
-        </button>
-      )}
+            <button
+              type="button"
+              className="icon-button primary"
+              aria-label="Stop"
+              title="Stop"
+              onClick={() => {
+                onStop()
+                inputRef.current?.focus()
+              }}
+            >
+              <Square size={14} fill="currentColor" />
+            </button>
+          )
+        ) : (
+          <button
+            type="submit"
+            className="icon-button primary"
+            aria-label={
+              uploadQueued ? 'Sending when the files are uploaded' : 'Send'
+            }
+            title={
+              uploadQueued ? 'Sending when the files are uploaded' : undefined
+            }
+            disabled={!canSend}
+          >
+            {uploadQueued ? (
+              <LoaderCircle className="spin" size={20} strokeWidth={2} />
+            ) : (
+              <ArrowUp size={20} strokeWidth={2} />
+            )}
+          </button>
+        )}
+      </div>
       {dictation.error && (
         <p className="composer-error" role="alert">
           {dictation.error}

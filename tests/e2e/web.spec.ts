@@ -170,20 +170,45 @@ test('menus move with the arrow keys', async ({ page }) => {
   await expect(plus).toBeFocused()
 })
 
-test('the composer’s buttons stay on its bottom row as it grows', async ({
-  page,
-}) => {
-  await page.goto('/')
-  await appReady(page)
-  await page
-    .getByRole('textbox', { name: 'Message' })
-    .fill('one\ntwo\nthree\nfour\nfive')
-  const bottom = (name: string | RegExp) =>
-    page
-      .getByRole('button', { name })
-      .first()
-      .evaluate((el) => el.getBoundingClientRect().bottom)
-  const mode = await bottom(/^Mode:/)
-  expect(mode).toBe(await bottom('Add files and more'))
-  expect(mode).toBe(await bottom('Send'))
-})
+// A phone's composer is narrow: text that needs more than the free width must
+// wrap inside the box, not push the + button onto a row of its own.
+for (const [device, viewport] of [
+  ['desktop', { width: 1280, height: 720 }],
+  ['phone', { width: 375, height: 812 }],
+] as const) {
+  test(`the composer’s buttons stay on its bottom row as it grows (${device})`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport)
+    await page.goto('/')
+    await appReady(page)
+    const box = page.getByRole('textbox', { name: 'Message' })
+    const bottoms = () =>
+      page.evaluate(() => {
+        const bottom = (selector: string) =>
+          document.querySelector(selector)!.getBoundingClientRect().bottom
+        return {
+          plus: bottom('.composer-left .icon-button'),
+          mode: bottom('.mode-button'),
+          mic: bottom('.composer-actions .icon-button'),
+          send: bottom('.icon-button.primary'),
+        }
+      })
+    const sentence = 'hello world how are you today my friend, '
+    for (const text of [
+      'Hi',
+      sentence,
+      sentence.repeat(6),
+      'one\ntwo\nthree\nfour\nfive',
+    ]) {
+      await box.fill(text)
+      const { plus, mode, mic, send } = await bottoms()
+      expect({ text, mode, mic, send }).toEqual({
+        text,
+        mode: plus,
+        mic: plus,
+        send: plus,
+      })
+    }
+  })
+}

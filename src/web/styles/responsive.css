@@ -50,6 +50,13 @@
     max-width: 85%;
   }
 
+  /* A chosen tool's chip and the + button take a row of their own, as the
+     attachments do: beside the message box and the buttons, the chip leaves
+     the box a few pixels wide. */
+  .composer-left:has(.composer-chip) {
+    flex-basis: 100%;
+  }
+
   /* Settings: the tabs become a scrolling row above the content. */
   .dialog.settings {
     margin-top: 16px;

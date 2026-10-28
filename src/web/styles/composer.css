@@ -4,6 +4,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
+  align-content: flex-end;
   gap: 8px;
   width: calc(100% - 32px);
   max-width: calc(var(--column) - 32px);
@@ -108,6 +109,26 @@
   animation: spin 1s linear infinite;
 }
 
+.composer .icon-button,
+.composer-chip {
+  align-self: flex-end;
+}
+
+.composer-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-end;
+}
+
+.composer-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  align-self: flex-end;
+}
+
 .composer .icon-button[aria-disabled='true'] {
   opacity: 0.4;
   cursor: default;
@@ -118,13 +139,14 @@
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 2px;
+  justify-content: center;
+  gap: 4px;
   height: 36px;
-  padding: 0 8px 0 12px;
+  padding: 0 10px 0 12px;
   border: none;
-  border-radius: 999px;
-  background: none;
-  color: var(--fg-muted);
+  border-radius: 50px;
+  background: transparent;
+  color: var(--fg);
   font: inherit;
   font-size: 14px;
   cursor: pointer;
@@ -230,7 +252,6 @@
   display: inline-flex;
   flex: none;
   align-items: center;
-  align-self: center;
   gap: 6px;
   height: 36px;
   padding: 0 10px;
@@ -244,10 +265,16 @@
 }
 
 .composer textarea {
-  flex: 1;
-  align-self: center;
+  /* Basis 0: the box shares the row with the buttons and wraps its text
+     inside. With `auto`, its width follows the text (field-sizing), and text
+     wider than the free space wraps the box onto a row of its own, leaving
+     the + button alone above it. */
+  flex: 1 1 0;
+  min-width: 0;
+  align-self: flex-end;
   max-height: 40vh;
   padding: 6px 0;
+  margin: 0;
   border: none;
   outline: none;
   resize: none;

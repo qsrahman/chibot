@@ -6,7 +6,12 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- The composer groups its buttons: the + button and a chosen tool's chip on the left, the mode, mic and send buttons on the right, all on the bottom row of the box as it grows.
 - The gap between the logo and the wordmark in the sidebar is 4 px (was 6).
+
+### Fixed
+
+- On a phone, the message box no longer wraps onto a row of its own once its text is wider than the free space, which left the + button alone above it. The box shares the row with the buttons and wraps its text inside. A chosen tool's chip (Search the web, Create an image) and the + button now take a row above the box on a phone, where the chip used to squeeze the message box to a few pixels.
 
 ## [0.11.9] - 2026-10-27
 

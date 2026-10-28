@@ -34,6 +34,33 @@ test('the chat fills a phone, and the sidebar is a drawer', async ({
   await expect(sidebar).toBeHidden()
 })
 
+test('a chosen tool’s chip leaves room to type', async ({ page }) => {
+  await page.goto('/')
+  await appReady(page)
+  await page.getByRole('button', { name: 'Add files and more' }).click()
+  await page.getByRole('menuitem', { name: /Search the web/ }).click()
+  await expect(page.locator('.composer-chip')).toBeVisible()
+
+  const box = page.getByRole('textbox', { name: 'Message' })
+  await box.fill('latest news')
+  // Beside the + and the buttons the chip would leave the box a few pixels
+  // wide, and the text would run one letter to a line.
+  const { width, height, overflows } = await page.evaluate(() => {
+    const field = document.querySelector('.composer textarea')!
+    const composer = document
+      .querySelector('.composer')!
+      .getBoundingClientRect()
+    return {
+      width: field.getBoundingClientRect().width,
+      height: composer.height,
+      overflows: document.documentElement.scrollWidth > innerWidth,
+    }
+  })
+  expect(width).toBeGreaterThan(100)
+  expect(height).toBeLessThan(150)
+  expect(overflows).toBe(false)
+})
+
 test.describe('on a touch screen', () => {
   test.use({ hasTouch: true, isMobile: true })
 
