@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- The gap between the logo and the wordmark in the sidebar is 4 px (was 6).
+
 ## [0.11.9] - 2026-10-27
 
 ### Changed
