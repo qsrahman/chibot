@@ -18,9 +18,10 @@ const ANSWERING = [
 ]
 
 // The chat renders Markdown, and (remark-math) only $…$ and $$…$$ for math.
+// Simple arithmetic as LaTeX (`$17 \times 23 = 391$`) was seen from gpt-5.4-mini.
 const FORMATTING = [
   'The chat renders Markdown. Use it where it helps reading (short lists, tables for comparisons, fenced code blocks with a language tag) and write plain paragraphs otherwise.',
-  'The chat renders math only between $…$ (inline) and $$…$$ (display), so write math that way, not with \\(…\\) or \\[…\\].',
+  'Put formulas and equations between $…$ (inline) or $$…$$ (display): the chat renders math only that way, not with \\(…\\) or \\[…\\]. Write plain numbers and simple arithmetic as ordinary text (391, not $391$).',
 ]
 
 const TOOLS = [

@@ -12,6 +12,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 - Dependencies updated: `openai` 7.45 (a new model identifier; no breaking changes) and `lucide-react` 1.62.
 - A 429 from the model server says whether you have reached the provider's usage limit (with what to do: pick another model, or add credits) or the server is only limiting requests for now (with its retry time), instead of showing the raw error. Other errors are unchanged.
 - Code only: the default OpenAI model (`gpt-6-astra`, used when `OPENAI_MODEL` isn't set) is typed with the SDK's own `ChatModel`, so an SDK that drops or renames it fails the typecheck. The SDK has no default model at runtime, so chibot still sends the name.
+- The chat instructions say to typeset formulas and equations in `$…$` / `$$…$$` but write plain numbers and simple arithmetic as ordinary text. On `gpt-5.4-mini`, "17 times 23" came back as `$17 \times 23 = 391$`; it now answers "391", and formulas stay math. Checked live: 6 of 6 derivation answers used `$` delimiters, against `\[ … \]` in 2 of 2 with the previous wording.
 
 ### Fixed
 

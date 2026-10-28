@@ -22,7 +22,10 @@ describe('custom instructions', () => {
       text.indexOf('</instructions>'),
     )
     expect(rules).toContain('say so instead of guessing')
-    expect(rules).toContain('The chat renders math only between $…$')
+    expect(rules).toContain('Put formulas and equations between $…$')
+    expect(rules).toContain(
+      'plain numbers and simple arithmetic as ordinary text',
+    )
     expect(rules).toContain('The chat renders Markdown')
     // Nothing the user didn't write or the app didn't offer.
     expect(text).not.toContain('<user_profile>')

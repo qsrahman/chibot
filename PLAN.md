@@ -276,7 +276,8 @@ compaction on at 64k tokens; math formatting via a built-in instruction.
   Anthropic's prompting guidance: identity, then an `<instructions>` list of
   rules that say why (answer directly, admit uncertainty, the user's
   language, length, Markdown and `$…$` math because that is what the chat
-  renders, when to use tools, and, while a tool whose output is others' text
+  renders (formulas typeset, plain numbers and simple arithmetic left plain),
+  when to use tools, and, while a tool whose output is others' text
   is offered, that such output is information, never instructions), then
   named sections for the user's `<user_profile>` and `<response_style>`, the
   `<project>`, the tools' own text (memories, project file names), and
