@@ -260,9 +260,10 @@ compaction on at 64k tokens; math formatting via a built-in instruction.
   over the chat endpoint's chat models, falling back to a text field when
   listing fails. (`models.list()` mixes chat, embedding, image and audio
   models; since v0.9.x chibot keeps the chat ones: by Ollama's `/api/show`
-  capabilities, or elsewhere by leaving out non-chat families by name.) The choice is the `model` setting and applies to new turns,
-  edits and regenerations. Each answer stores and shows the model that wrote
-  it, so regenerating after switching works like "Try again with…".
+  capabilities, or elsewhere by leaving out non-chat families by name.) The
+  choice is the `model` setting and applies to new turns, edits and
+  regenerations. Each answer stores and shows the model that wrote it, so
+  regenerating after switching works like "Try again with…".
 - **Reasoning.** `reasoningEffort` setting: unset sends nothing, otherwise
   the SDK's `none`…`max`. Chat requests ask for `summary: 'auto'`; models that
   reject `reasoning` (400) are retried without it, in one helper shared with
@@ -359,9 +360,10 @@ support (`qwen2.5-coder:1.5b`) ignores tools rather than failing.
   Approve / Deny. A turn ends at a final answer, stop, error or pending
   approval, not at the first `response.completed`; `turns.ts` groups every item
   after the question into one answer.
-- **Current date.** Not a tool: `chatInstructions` gains a line with the
-  current date, time and timezone (the server's, which is the user's for a
-  local app), so relative dates ("next Friday") work without a round trip.
+- **Current date.** Not a tool: the chat instructions gain the current date,
+  time and timezone (the server's, which is the user's for a local app), so
+  relative dates ("next Friday") work without a round trip. Since v0.11.9 the
+  time is to the quarter hour, in `<current_time>` (see Phase 4).
 - **Export, search, titles.** Markdown export quotes each tool call with its
   result; the JSON export schema accepts call and output items. Search and
   titles keep ignoring tool payloads.
@@ -649,21 +651,23 @@ available for `gemma4:cloud`.
 ### Phase 10 — MCP client ✅
 Decisions (agreed before building; revised from the first proposal): tools
 from MCP servers become chibot function tools; servers are set up only in
-`mcp.json`, never from the web; their calls don't ask first unless a server is set to; `local` and
-`remote` servers, the latter with OAuth sign-in; a switch per server and per
-tool in Settings; tools only. Built before the code runner (now Phase 11).
+`mcp.json`, never from the web; their calls don't ask first unless a server
+is set to; `local` and `remote` servers, the latter with OAuth sign-in; a
+switch per server and per tool in Settings; tools only. Built before the code
+runner (now Phase 11).
 
 - **Config.** `mcp.json` (git-ignored; `mcp.example.json` shows the format),
   at `CHIBOT_MCP_CONFIG` or the chibot folder, in the common `mcpServers`
   shape with a `type` per server: `local` (`command`, `args`, `env`, `cwd`,
-  by default the home folder)
-  or `remote` (`url`, optional `headers`). `${VAR}` is filled from the
-  environment, so secrets stay in `.env`. Validated with zod; errors name the
-  server and field, and a bad file disables MCP with a startup error rather
-  than stopping chibot. Servers run commands with the owner's rights and
-  chibot has no login, so the web app can never add or edit one.
+  by default the home folder) or `remote` (`url`, optional `headers`).
+  `${VAR}` is filled from the environment, so secrets stay in `.env`.
+  Validated with zod; errors name the server and field, and a bad file
+  disables MCP with a startup error rather than stopping chibot. Servers run
+  commands with the owner's rights and chibot has no login, so the web app can
+  never add or edit one.
 - **Connections.** `McpServers` connects every enabled server at startup, in
-  parallel (60 s timeout for `local`, which may download itself first; 10 s for `remote`), with `@modelcontextprotocol/client` (v2):
+  parallel (60 s timeout for `local`, which may download itself first; 10 s
+  for `remote`), with `@modelcontextprotocol/client` (v2):
   `StdioClientTransport` for `local`, `StreamableHTTPClientTransport` for
   `remote`. A local server gets only the SDK's safe environment (`PATH`,
   `HOME`, …) plus its own `env`, and its last stderr lines become its error.
@@ -674,10 +678,11 @@ tool in Settings; tools only. Built before the code runner (now Phase 11).
 - **Tools.** Each MCP tool is an `McpTool` named `<server>__<tool>` (cut to
   the 64-character limit), labelled with the tool's title, declared with the
   server's own JSON Schema and `strict: false` (the server validates the
-  arguments). Calls don't ask first, except for servers in the `askMcpServers` setting (Settings → Tools); their output is `untrustedOutput`, so
-  memory changes in that chat still ask. Stop cancels a call (`AbortSignal`),
-  and calls time out after 60 s. `ToolRegistry` offers them beside chibot's
-  own tools; switches and `disabledTools` work the same.
+  arguments). Calls don't ask first, except for servers in the
+  `askMcpServers` setting (Settings → Tools); their output is
+  `untrustedOutput`, so memory changes in that chat still ask. Stop cancels
+  a call (`AbortSignal`), and calls time out after 60 s. `ToolRegistry` offers
+  them beside chibot's own tools; switches and `disabledTools` work the same.
 - **Results.** Text parts joined, `structuredContent` as JSON when there's no
   text, cut at 40k characters; `isError` comes back to the model as
   `Error: …`. Images (PNG, JPEG, GIF, WebP; never SVG, which can script) are
@@ -701,12 +706,14 @@ tool in Settings; tools only. Built before the code runner (now Phase 11).
   "Ask before using its tools" (`askMcpServers`) and its tools with their own
   switches; Reload re-reads `mcp.json` (new servers connect, removed ones
   stop, changed ones restart, an invalid file changes nothing). Routes:
-  `GET /api/mcp`, `POST /api/mcp/reload`, `POST /api/mcp/:name/reconnect`, `POST /api/mcp/:name/sign-in`,
-  `POST /api/mcp/:name/sign-out`, `GET /api/mcp/oauth/callback`.
+  `GET /api/mcp`, `POST /api/mcp/reload`, `POST /api/mcp/:name/reconnect`,
+  `POST /api/mcp/:name/sign-in`, `POST /api/mcp/:name/sign-out`,
+  `GET /api/mcp/oauth/callback`.
 - **Answers.** MCP calls show like other tool calls ("Used read_file · files")
   with the plain summary (arguments and text result) and Raw.
-- **Out of scope:** resources, prompts, sampling, elicitation; approval
-  prompts for MCP calls.
+- **Out of scope:** resources, prompts, sampling, elicitation. (Approval
+  prompts for MCP calls were left out at first and added later as the per-server
+  "Ask before using its tools" switch.)
 - **Commits.** PLAN → config (types, `${VAR}`) → connections and status →
   `McpTool`, registry and results → OAuth → Settings UI and routes → e2e
   (fixture servers, local and remote) → docs → release v0.11.0.
@@ -717,12 +724,74 @@ tool in Settings; tools only. Built before the code runner (now Phase 11).
   server's process stops and comes back when enabled. Unit tests use fixture
   servers; Playwright covers the Settings section and a call in a chat.
 
+### Phase 11a — Multiple providers (proposed; before Phase 11)
+Proposed decisions (to agree before building): today's single-provider `.env`
+setup keeps working unchanged; secrets never go in SQLite; the model picker
+groups models by provider; providers come from the environment first, then
+from Settings. Once built, this replaces the "one chat provider" non-goal
+(§2) and the Providers and Feature endpoints decisions (§3).
+
+- **Config.** `Config` also reads providers from the environment (a
+  `PROVIDERS` JSON value, or `PROVIDER_<ID>_*` variables). The existing
+  `OPENAI_*` variables stay one provider, created as `default` when no others
+  are set. A provider has an id, a name, a base URL, an API key, an enabled
+  flag and an optional cached model list.
+- **Registry.** A `ProviderRegistry` (`src/server/providers.ts`) holds an
+  `OpenAI` client per provider, built lazily. It is a lookup, not a `Provider`
+  abstraction: the SDK client stays the abstraction (§4). `ChatService` takes
+  it (or a resolver) instead of one client and sends each request through the
+  client of the selected provider; `main.ts` builds it from `Config`.
+- **Secrets.** Keys come from the environment (referenced by name) or, when
+  entered in Settings, are kept in `data/providers.json` (mode 0600, like
+  `mcp-auth.json`). They never go in the `settings` table, exports or API
+  responses: the web app can write a key but never read it back.
+- **Models and settings.** `GET /api/models` returns models grouped by
+  provider; a provider that can't list models falls back to the free-text
+  field. Settings gains `providers` (non-secret metadata),
+  `selectedProviderId`, `selectedModel` and per-feature overrides
+  (`providerOverrides` for images, embeddings and transcription, which
+  otherwise inherit the chat provider). `GET`/`PATCH /api/settings` strip
+  secrets.
+- **Routes.** `GET`/`POST`/`PUT`/`DELETE /api/providers`, and
+  `POST /api/providers/:id/test` (a connection check that returns a status,
+  never a response body).
+- **Web.** Settings → Providers: add, remove, enable, test, and set the
+  default for chat and for features, with keys shown masked (and a note when
+  one comes from the environment). `ModelPicker.tsx` groups models by provider
+  with a badge and searches across all of them; choosing one sets provider and
+  model together. Feature routing sits in Settings → Model while several
+  providers are configured.
+- **Compatibility.** A setup with only the legacy variables behaves exactly as
+  before, and feature endpoints still inherit from the chat provider unless
+  overridden.
+- **Risk.** Providers set in Settings let the web app point chibot at any
+  endpoint. By default only the owner's browser reaches it (host and
+  cross-site checks, `CHIBOT_TOKEN` for the LAN), and unlike an MCP server a
+  provider runs no commands, but the connection test connects wherever it is
+  told, so it gets the same checks as every other route.
+- **Testing.** Unit tests: config parsing (legacy and several providers), the
+  registry, `ChatService` routing to different clients, and keys never
+  leaking. Playwright: a second fake provider, switching in the picker, and
+  requests reaching the right endpoint.
+- **Docs.** README (setup examples such as OpenRouter, Groq and two Ollama
+  instances), DESIGN.md if the UI patterns change, the CHANGELOG, and the
+  places that describe one provider: this plan's §2, §3, §4 and §6, and
+  AGENTS.md's configuration layers.
+- **Commits.** Config and registry → server routing → routes and settings →
+  web (providers tab, grouped picker) → feature overrides → tests and docs →
+  release v0.12.0.
+- **Done when:** two providers (say OpenAI and Ollama) can be added in
+  Settings and switched between in the model picker; chat and images can use
+  different providers; existing single-provider `.env` setups work unchanged;
+  API keys never appear in API responses or SQLite exports; and all tests
+  pass.
+
 ### Phase 11 — Code runner
 Decisions (agreed before building; the sandbox is probed on Node 26 first):
 a `run_python` function tool on Pyodide in a locked-down child process, a
 fresh interpreter per run with files persisting in `/mnt/data/`, a fixed
 package set cached locally, and `.xlsx` attachments for it to read. Built
-after the MCP client (Phase 10).
+after the MCP client (Phase 10) and multiple providers (Phase 11a).
 
 - **Engine.** [Pyodide](https://pyodide.org) (CPython on WebAssembly) from
   npm, pinned exactly. WebAssembly is the real sandbox: Python reaches the
@@ -763,7 +832,7 @@ after the MCP client (Phase 10).
   DESIGN.md gets the card spec.
 - **Commits.** Sandbox probe and runner → package setup → `run_python` tool →
   `.xlsx` attachments → UI → e2e specs (the fake server's "run code" calls
-  `run_python`) → docs → release v0.12.0.
+  `run_python`) → docs → release v0.13.0.
 - **Done when:** with `gemma4:cloud` and OpenAI, pandas reads an attached CSV
   and an `.xlsx`, matplotlib draws a chart that shows in the answer, and code
   that tries to fetch a URL or read `process.env` fails. Unit tests run real
@@ -786,7 +855,8 @@ Configuration lives in three layers, split by who changes it and how often:
   instructions on top of the custom instructions, but no setting overrides.)
 - **Secrets never leave layer 1:** no keys in SQLite, exports or API
   responses. (MCP servers live in `mcp.json`, with `${VAR}` from the
-  environment, and their OAuth tokens in `data/mcp-auth.json`, mode 0600.) Settings shows only whether a key is configured.
+  environment, and their OAuth tokens in `data/mcp-auth.json`, mode 0600.)
+  Settings shows only whether a key is configured.
 - **`.env` lookup:** real environment variables win, then `.env` in the current
   folder, then `<repo>/.env`, so `chibot` works from any folder.
 - **Validation:** zod from Phase 4 (settings, imports, route bodies). `Config`

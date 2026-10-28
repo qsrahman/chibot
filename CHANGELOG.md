@@ -8,6 +8,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 - The composer groups its buttons: the + button and a chosen tool's chip on the left, the mode, mic and send buttons on the right, all on the bottom row of the box as it grows.
 - The gap between the logo and the wordmark in the sidebar is 4 px (was 6).
+- Roadmap: Phase 11a, multiple providers, is planned (proposed, not yet agreed) before the code runner, which moves to v0.13.0. The plan's decision rows still describe the single provider that ships today.
 
 ### Fixed
 
