@@ -119,12 +119,26 @@ dimmed while the input is empty, and shows a spinning `LoaderCircle` while a
 message waits for its attachments to upload. While an answer streams it becomes
 **stop** (square icon); once there is text to send, a muted stop button sits
 left of it and the primary button turns back into an arrow-up that **queues**
-the message for after the answer. A "+" button sits on the left (attachments and tools, see
-*Composer tools*); a 36 px `Mic` icon button sits left of send. While
-recording it shows a stop square in `--danger`, then a spinning
+the message for after the answer. A "+" button sits on the left (attachments
+and tools, see *Composer tools*); a 36 px `Mic` icon button sits left of send.
+While recording it shows a stop square in `--danger`, then a spinning
 `LoaderCircle` while transcribing. Without transcription it's dimmed to 40 %
 (`aria-disabled`, so its tooltip still says why). Errors show in `--danger`
 14 px text under the composer's row.
+
+*Layout.* Two groups share the row with the message box: on the left the "+"
+button and a chosen tool's chip, on the right the mode chip, mic, stop and
+send, 4 px apart. Both groups, and the box, align to the bottom of the pill, so
+they stay on its last row as the text grows. The box has flex basis 0: it
+shares the row and wraps its text inside, never onto a row of its own (which
+would leave the "+" alone above it). Below 768 px a chosen tool's chip and the
+"+" take a row above the box, like attachments, because beside the buttons the
+chip would leave the box a few pixels wide.
+
+*Mode chip.* A transparent 36 px pill (12 px left, 10 px right padding) with
+14 px `--fg` text, the mode's name (Auto, Fast or Thinking) and a 16 px
+`ChevronDown`; `--surface-muted` on hover. It opens a menu above it and sits
+left of the mic.
 
 **Queued message.** A row above the text, like attachments: a 15 px muted
 `Clock`, the label **Queued** (500 weight), the text in `--fg` on one
