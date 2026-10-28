@@ -6,6 +6,10 @@ via the official `openai` Node SDK. It works with OpenAI and with any
 OpenAI-compatible server that implements the Responses API (e.g. Ollama,
 LM Studio).
 
+**Status:** phases 0–10 are complete (v0.11.x). Next: Phase 11a (multiple
+providers, agreed) and Phase 11 (code runner). Releases between phases bump
+the patch version; see [CHANGELOG.md](CHANGELOG.md).
+
 ## 1. Goals
 
 - A chat experience that feels like ChatGPT: streaming answers, Markdown and
@@ -49,6 +53,7 @@ LM Studio).
 | Tools | Our own function tools only, no OpenAI-hosted tools | Full control over behaviour, storage and what leaves the machine. Web search uses Brave; project files use local RAG. |
 | Tool approval | Per-tool `requiresApproval` flag (`true`, or `'after-untrusted'` from Phase 7); a call needing approval ends the turn, and Approve/Deny resumes it with a new request | Read-only tools run automatically; tools with side effects wait for Approve/Deny in the chat. `'after-untrusted'` asks only in chats whose history holds output of a tool marked `untrustedOutput` (web content), against prompt injection. A pending approval is stored state (the path ends in an unanswered call), so it survives a reload and needs no in-memory wait. |
 | Tool loop | chibot's own loop in `ChatService`; tools declared with the SDK's `zodResponsesFunction` | The SDK's `ResponsesToolRunner` was tested: it fails on Ollama `gpt-oss` (its stream accumulator, with the cause hidden), runs the whole loop in one call (no approval across requests) and doesn't let chibot persist each step before relaying `response.completed`. |
+| MCP | chibot's own client (`@modelcontextprotocol/client`); servers only in `mcp.json`, and their tools become function tools | The tool loop, approvals and Settings switches apply unchanged. A server runs commands with the owner's rights, and chibot has no login, so the web app never adds one. |
 | Attachments | Original kept in `data/files/`; stored messages reference it by chibot's own file id. Each request sends it by Files API `file_id` where the endpoint supports it (uploaded once, expiring after 30 days), otherwise inline as base64, or as its extracted text when the model rejects files | Requests stay small on OpenAI (stateless chats would otherwise re-send every attachment each turn), compatible servers without a Files API still work, and the local copy is the source of truth: a file the provider no longer has gets re-uploaded. |
 | Providers | One Responses-API endpoint for chat, set by `OPENAI_BASE_URL` / `OPENAI_API_KEY` / `OPENAI_MODEL` | The SDK's own env names, and the same code path for OpenAI, Ollama, LM Studio and other Open Responses servers. The key is optional when a base URL is set, since local servers ignore it. |
 | Feature endpoints | Transcription, images and embeddings each have an optional endpoint override, inheriting the chat endpoint | Lets chat run locally while, say, images use OpenAI. With a compatible endpoint and no model configured, the feature is off with a clear message. |
@@ -128,7 +133,10 @@ Browser (React + Vite)                        Node server (Hono)
 - **ChatService:** turns (path + new input + settings) into a
   `responses.create({ stream: true })` call. It yields the SDK events and
   persists the outcome. Phase 5 adds the function-calling loop here.
-- **`createApp(deps)`:** the Hono app. It's a factory so tests can inject fakes.
+- **`createApp(deps)`:** the Hono app: access checks, then one route file per
+  area (`routes/`). It's a factory so tests can inject fakes.
+- **`prompts.ts`:** what chibot tells the model: its instructions, a project's,
+  and the title request.
 - **`main.ts`:** wires the real dependencies together and starts the server.
 
 Dependencies go in through constructors, so tests pass a fake `OpenAI` client
@@ -198,6 +206,22 @@ Each phase is built as small commits, one per step, and ends with tests green,
 `pnpm typecheck` clean, docs + CHANGELOG updated, and a release commit that
 bumps the minor version. Work stops after each phase for review.
 
+| Phase | Scope | Release | Status |
+|---|---|---|---|
+| 0 | Foundations: config, Hono app, Vite + React shell | v0.1.0 | ✅ |
+| 1 | Minimal chatbot: streaming, stateless history tree, Stop | v0.2.0 | ✅ |
+| 2 | Conversations: sidebar, search, pin, archive, temporary chats, titles | v0.3.0 | ✅ |
+| 3 | Edit and regenerate with versions, shortcuts, token usage | v0.4.0 | ✅ |
+| 4 | Models and settings: picker, reasoning, instructions, compaction, export/import, theme | v0.5.0 | ✅ |
+| 5 | Function tools: registry, tool loop, approval | v0.6.0 | ✅ |
+| 6 | Web search, page reading, image generation | v0.7.0 | ✅ |
+| 7 | Memory and past-chat search | v0.8.0 | ✅ |
+| 8 | Projects with files and local search | v0.9.0 | ✅ |
+| 9 | Attachments and voice input | v0.10.0 | ✅ |
+| 10 | MCP client | v0.11.0 | ✅ |
+| 11a | Multiple providers | v0.12.0 | agreed, not built |
+| 11 | Code runner | v0.13.0 | planned |
+
 ### Phase 0 — Foundations ✅
 - Dependencies, `Config` (OpenAI or compatible endpoint), Hono app with
   `GET /api/health`, `main.ts`.
@@ -214,11 +238,6 @@ bumps the minor version. Work stops after each phase for review.
   reopens it, and the production server falls back to `index.html` for
   client routes.
 - Readable errors that surface `APIError` status and request id.
-- **Done when:** a multi-turn chat streams and remembers earlier turns; Stop
-  and closing the tab both keep the partial answer; a reload reopens the chat;
-  a bad API key shows a readable error; it works against both OpenAI and
-  Ollama (`gemma4:cloud`); unit tests cover the store, the service (fake client) and the
-  routes.
 
 ### Phase 2 — Conversations ✅
 - Sidebar: list, new chat, select, rename, delete.
@@ -228,9 +247,6 @@ bumps the minor version. Work stops after each phase for review.
 - Temporary chat: a toggle on a new chat; see §3.
 - Automatic title after the first exchange from the chat model, in the
   background, using low reasoning effort if the model supports it.
-- **Done when:** conversations survive a server restart and can be reopened,
-  renamed, pinned, archived/restored, deleted and found by search; a temporary
-  chat leaves nothing behind.
 
 ### Phase 3 — Edit & versions ✅
 - Regenerate an answer, edit a user message, `< 2/3 >` version switching.
@@ -243,11 +259,9 @@ bumps the minor version. Work stops after each phase for review.
 - Playwright smoke test against a fake OpenAI backend, including regressions
   found in review: switching chats mid-answer, and returning to a just-created
   chat via New chat.
-- **Done when:** editing and regenerating create versions you can switch
-  between, each keeping its own follow-ups, and the e2e test passes.
 
 ### Phase 4 — Models & settings ✅
-Decisions (agreed after probing OpenAI and Ollama): one global model chosen
+Decisions: one global model chosen
 in the header, answers labelled with their model; one phase; zod adopted now;
 compaction on at 64k tokens; math formatting via a built-in instruction.
 
@@ -303,28 +317,17 @@ compaction on at 64k tokens; math formatting via a built-in instruction.
 - **Settings dialog** (DESIGN.md §4): General (theme), Personalization
   (instructions), Model (reasoning effort, compaction), Data (import, archived
   chats). Opens from a sidebar gear and ⌘/Ctrl+,.
-- **Done when:** the model and settings apply to new turns and survive a
-  restart; reasoning summaries show live and after reload; a chat past the
-  compaction threshold keeps working and recalls early facts; exported JSON
-  imports back unchanged; the theme toggle works and is remembered. Unit tests
-  cover the server parts; Playwright covers picker, settings, thinking, theme,
-  export/import and compaction (the fake server gains summary and compaction
-  events).
 
 ### Phase 5 — Custom function tools ✅
-Decisions (agreed after probing OpenAI and Ollama): chibot's own tool loop
+Decisions: chibot's own tool loop
 rather than the SDK's `ResponsesToolRunner`; approval ends the turn and a new
 request resumes it; e2e approval through a test-only tool; no tool toggles yet
 (Phase 6 adds Settings switches and a composer menu).
 
-Probe results: streamed function calling with `store: false` works on OpenAI
-`gpt-6-astra`, Ollama `gemma4:cloud` and `gpt-oss:120b-cloud`
-(`output_item.added`/`done` with a `function_call`, then
-`function_call_arguments.delta`/`done`), with tools declared by
-`zodResponsesFunction` (zod 4, `strict: true`) and history containing id-less
-assistant messages. `ResponsesToolRunner` passes on OpenAI and `gemma4` but
-fails on `gpt-oss`. Ollama honours `tool_choice: 'none'`; a model without tool
-support (`qwen2.5-coder:1.5b`) ignores tools rather than failing.
+Findings: streamed function calling with `store: false` works on OpenAI and on
+Ollama `gemma4:cloud` and `gpt-oss:120b-cloud`, with tools declared by
+`zodResponsesFunction` (`strict: true`). Ollama honours `tool_choice: 'none'`,
+and a model without tool support ignores tools rather than failing.
 
 - **`Tool` and `ToolRegistry`.** Abstract `Tool`: `name`, `description`, zod
   `parameters`, `requiresApproval = false`, `run(args, { signal })` returning
@@ -350,11 +353,9 @@ support (`qwen2.5-coder:1.5b`) ignores tools rather than failing.
   `{ approvals: { [call_id]: boolean } }` runs the approved calls, answers
   denied ones with "The user denied this tool call." and continues the same
   answer. Sending a new message instead counts as Deny.
-- **Calculator (removed after Phase 10).** Phase 5 shipped `mathjs` `evaluate`
-  with BigNumber (64 digits), so large results were exact. It was removed: the
-  model handles arithmetic itself, and `mathjs` brought a dependency and an
-  unbounded evaluation. Calls saved by older chats show their raw arguments
-  and result.
+- **Calculator.** Shipped in Phase 5 and removed later: the model does
+  arithmetic itself, and `mathjs` was a dependency with unbounded evaluation.
+  Saved calls still show their raw arguments and result.
 - **Web.** Tool activity inline in the answer: "Searching the web…" while
   running, then a collapsed "Searched the web" disclosure with arguments and
   result (like Thoughts). A pending approval shows the tool, its arguments and
@@ -373,33 +374,24 @@ support (`qwen2.5-coder:1.5b`) ignores tools rather than failing.
   which adds a test-only tool needing approval (`main.ts` exports
   `start({ tools })`); the fake server returns a `function_call` when the
   question contains "approve". AGENTS.md documents adding a tool.
-- **Commits.** `Tool` + `ToolRegistry` → tool loop → approval → calculator →
-  tool activity and approval UI → e2e specs → docs → release v0.6.0.
-- **Done when:** on OpenAI, `gemma4:cloud` and `gpt-oss:120b-cloud` the model
-  calls the calculator mid-answer and uses its exact result; activity shows
-  live and after a reload; Approve and Deny both continue the answer (also
-  after a reload); stopping during a tool leaves a chat that keeps working;
-  the model knows today's date.
 
 ### Phase 6 — Web search & image generation ✅
-Decisions (agreed after probing Brave, OpenAI and Ollama): the model uses
+Decisions: the model uses
 available tools on its own, a composer "+" menu forces one for the next
 message and Settings switches turn tools off; no streamed partial images; an
 `edit_image` tool for follow-ups; image quality fixed at `medium`; generated
 images join JSON exports in Phase 9.
 
-Probe results: Brave returns `title`, `url`, `description` (with `<strong>`
-tags), `age`, `page_age` and `extra_snippets` per result. Node's
-`net.BlockList` flags loopback, private, CGNAT, link-local/metadata and IPv6
-ULA/link-local addresses, IPv4-mapped IPv6 included. An undici `Agent` that
-checks resolved addresses at connect time blocks `localhost` and redirects to
-it, but literal-IP URLs skip DNS and got through, so the check belongs in the
-connector itself. Node's built-in `fetch` ignores `http.Agent`, hence the
-`undici` dependency. Readability + linkedom extract clean main text. OpenAI
-`gpt-image-2` streams, but at low quality the one partial image came only
-2.4 s before the final one (12.7 s, ~850 KB PNG, no revised prompt); newer
-`gpt-image-2.5-*` models exist. Ollama has no images endpoint (404), so with
-chat on Ollama, images need `OPENAI_IMAGE_BASE_URL` / `_API_KEY`.
+Findings: Brave returns title, URL, description (with `<strong>` tags), age
+and extra snippets per result. `net.BlockList` flags loopback, private, CGNAT,
+link-local/metadata and IPv6 ULA/link-local addresses, IPv4-mapped IPv6
+included. An undici `Agent` that checks resolved addresses at connect time
+blocks `localhost` and redirects to it, but literal-IP URLs skip DNS, so the
+check belongs in the connector itself; Node's built-in `fetch` ignores
+`http.Agent`, hence the `undici` dependency. Readability + linkedom extract
+clean main text. `gpt-image-2` streams, but its one partial image came only
+2.4 s before the final one. Ollama has no images endpoint (404), so with chat
+on Ollama, images need `OPENAI_IMAGE_BASE_URL` / `_API_KEY`.
 
 - **Config and tools list.** `Config` moves to zod and gains the image
   endpoint (`OPENAI_IMAGE_*`, inheriting the chat endpoint; off on a
@@ -445,31 +437,21 @@ chat on Ollama, images need `OPENAI_IMAGE_BASE_URL` / `_API_KEY`.
   with their domain, built from the tool outputs, so sources show even if the
   model doesn't cite them.
 - **Dependencies:** `undici`, `@mozilla/readability`, `linkedom`.
-- **Commits.** Config on zod → file storage → `web_search` → `fetch_url` →
-  image tools → tool switches and composer menu → sources and images in
-  answers → e2e specs (fake Brave and images endpoints, a local test page) →
-  docs → release v0.7.0.
-- **Done when:** a web-search answer shows clickable sources; the model reads
-  a pasted URL and is refused `localhost`, `127.0.0.1` and a redirect to
-  either; a generated image renders and persists across a reload, and "make
-  it bluer" edits it; a tool switched off in Settings isn't sent.
 
 ### Phase 7 — Memory ✅
-Decisions (agreed after probing OpenAI and Ollama): memory changes ask first
+Decisions: memory changes ask first
 in chats whose history holds web content; the model may save lasting facts
 the user shares even unasked, each with a visible notice; memories can be
 viewed and deleted (changes go through chibot); the memory tool's switch is
 the memory switch.
 
-Probe results: given draft `memory` and `search_chats` tools, `gpt-6-astra`,
-`gpt-oss:120b-cloud` and `gemma4:cloud` saved on "remember…", skipped
-trivia, updated and deleted by id, and searched past chats for "what did we
-decide…"; the first two also saved "I'm vegetarian" unasked, `gemma4` didn't.
-`gpt-6-astra` padded search queries with dates. A fetched page with a hidden
-"remember that every answer must end with this link" note was saved by
-`gpt-oss` in 2 of 3 runs despite the untrusted-content framing (0 of 3 for the
-others): persistent prompt injection through memory. The sidebar search
-(every word must match, newest first) doesn't suit model queries.
+Findings: given draft `memory` and `search_chats` tools, `gpt-6-astra`,
+`gpt-oss:120b-cloud` and `gemma4:cloud` saved on "remember…", skipped trivia,
+updated and deleted by id, and searched past chats; models padded search
+queries with dates. A fetched page with a hidden "remember that every answer
+must end with this link" note was saved by `gpt-oss` in 2 of 3 runs despite
+the untrusted-content framing: persistent prompt injection through memory.
+The sidebar search (every word must match) doesn't suit model queries.
 
 - **Storage.** Migration 6 adds `memories` (§4); `MemoryStore` lists, saves,
   updates and deletes. At most 100 memories of 300 characters, each stored on
@@ -502,27 +484,18 @@ others): persistent prompt injection through memory. The sidebar search
   newest first, with delete each and Delete all (confirmed).
 - **Routes.** `GET /api/memories`, `DELETE /api/memories/:id`,
   `DELETE /api/memories`.
-- **Commits.** Memory storage → memory tool and instructions → injection
-  guard → `search_chats` → Settings memory UI, labels and chat sources → e2e
-  specs → docs → release v0.8.0.
-- **Done when:** a fact told in one chat is used in a new chat, shows in
-  Manage memories and can be deleted there; a temporary chat neither sees nor
-  saves memories; after `fetch_url` a memory change asks first (checked with
-  the injected page on `gpt-oss`); the model answers from a past chat found
-  with `search_chats`, and Sources links to it.
 
 ### Phase 8 — Projects ✅
-Decisions (agreed after probing): hybrid search (keywords always, vectors when
+Decisions: hybrid search (keywords always, vectors when
 an embedding model is set); project chats listed only in their project; one
 global model (projects get no model or reasoning-effort override); PDF, Word
 (`.docx`) and text formats; deleting a project deletes its chats and files.
 
-Probe results: `sqlite-vec` 0.1.9 loads into `node:sqlite` (`allowExtension`,
+Findings: `sqlite-vec` 0.1.9 loads into `node:sqlite` (`allowExtension`,
 `loadExtension(getLoadablePath())`) and answers cosine k-NN queries on
-`Float32Array`s. `unpdf` extracts PDF text exactly and `mammoth` extracts
-`.docx` text. Embeddings: OpenAI `text-embedding-3-small` (1536 dims, related
-0.63 / unrelated 0.05) and Ollama `nomic-embed-text`, already installed
-(768 dims, 0.70 / 0.29), so with chat on Ollama embeddings can stay local.
+`Float32Array`s. `unpdf` extracts PDF text exactly and `mammoth` `.docx` text.
+Embeddings: OpenAI `text-embedding-3-small` (1536 dimensions) and Ollama
+`nomic-embed-text` (768), so with chat on Ollama embeddings can stay local.
 Models differ in dimensions, so a model change means re-embedding.
 
 - **Data.** Migration 7 adds `projects`, `conversations.project_id`,
@@ -562,34 +535,22 @@ Models differ in dimensions, so a model change means re-embedding.
   instructions, delete), `/api/projects/:id/files[/:fileId]`,
   `POST /api/files`; conversation `PATCH` gains `projectId`.
 - **Dependencies:** `sqlite-vec` (pinned), `unpdf`, `mammoth`.
-- **Commits.** Open SQLite with extensions and load `sqlite-vec` → projects
-  and moving chats → file upload and indexing (extraction, chunks, FTS,
-  embedding endpoint, vectors, resume) → `search_project_files` and project
-  instructions → sidebar projects and the project page → e2e specs (the fake
-  server gains a deterministic `/v1/embeddings`) → docs → release v0.9.0.
-- **Done when:** an answer in a project cites content from its files (the
-  PDF's secret code, a `.docx` note, and a Markdown note found by meaning
-  rather than wording) and follows the project's instructions; indexing status
-  shows; moving chats in and out works; deleting a project removes its chats
-  and files; checked with OpenAI embeddings and Ollama `nomic-embed-text`.
 
 ### Phase 9 — Attachments & voice input ✅
-Decisions (agreed after probing OpenAI and Ollama; revised after Phases 5–8
-landed): Files API where available, inline otherwise, uploads expiring after
+Decisions: Files API where available, inline otherwise, uploads expiring after
 30 days; documents go as their extracted text to models that reject files;
 images plus the project document types; attaching lives in the composer's
 "+" menu (plus paste and drop); JSON export embeds attachments and generated
 images; the owner's `.env` transcription setting is pointed at OpenAI when
 this phase is built.
 
-Probe results: OpenAI answers about an image and a PDF sent by `file_id` or
-inline; a deleted `file_id` fails the turn with a 404 `NotFoundError` ("Files
-[file-…] were not found"); `gpt-transcribe` transcribes m4a exactly. Ollama
-0.40.9 (re-probed): no `/v1/files` (404); inline images work on vision models
-(`gemma4:cloud`, `gemma4:e4b`, `qwen3.5:9b`; `gpt-oss` answers 400 "this model
-does not support image input"); every model rejects `input_file` (400 "file
-inputs are not currently supported"); `/v1/audio/transcriptions` isn't
-available for `gemma4:cloud`.
+Findings: OpenAI answers about an image and a PDF sent by `file_id` or
+inline; a deleted `file_id` fails the turn with a 404 `NotFoundError`.
+`gpt-transcribe` transcribes m4a exactly. Ollama has no `/v1/files` (404) and
+no `/v1/audio/transcriptions` for `gemma4:cloud`; inline images work on vision
+models (`gemma4:cloud`, `gemma4:e4b`, `qwen3.5:9b`; `gpt-oss` answers 400
+"this model does not support image input"); every model rejects `input_file`
+(400).
 
 - **Config.** `OPENAI_TRANSCRIBE_BASE_URL` / `_API_KEY` / `_MODEL`,
   inheriting the chat endpoint like images and embeddings; the model defaults
@@ -635,22 +596,9 @@ available for `gemma4:cloud`.
   default format (webm/opus in Chrome and Firefox, mp4 in Safari); the text
   is inserted at the cursor for review before sending. With transcription
   off, the button is disabled with a tooltip saying why.
-- **Commits.** Transcription endpoint → attachment storage and routes →
-  sending (Files API, inline, text fallback, 404 re-upload) → clear errors →
-  deletion → composer and message UI → export/import v2 → dictation → e2e
-  specs (the fake server gains `/v1/files`, a switch to reject files,
-  `/v1/audio/transcriptions`; Chromium uses a fake microphone) → docs →
-  release v0.10.0.
-- **Done when:** on OpenAI the model answers about an attached image and an
-  attached PDF, including after the uploaded copy was deleted at OpenAI; on
-  Ollama `gemma4:cloud` answers about an image and about a PDF (through its
-  text); `gpt-oss` with an image shows the clear message; dictation fills the
-  composer in a real browser (webm included). Unit tests cover the server
-  parts; Playwright covers attaching by menu, paste and drop, removing,
-  rendering after reload, the text fallback, export/import and the mic.
 
 ### Phase 10 — MCP client ✅
-Decisions (agreed before building; revised from the first proposal): tools
+Decisions: tools
 from MCP servers become chibot function tools; servers are set up only in
 `mcp.json`, never from the web; their calls don't ask first unless a server
 is set to; `local` and `remote` servers, the latter with OAuth sign-in; a
@@ -715,17 +663,27 @@ runner (now Phase 11).
 - **Out of scope:** resources, prompts, sampling, elicitation. (Approval
   prompts for MCP calls were left out at first and added later as the per-server
   "Ask before using its tools" switch.)
-- **Commits.** PLAN → config (types, `${VAR}`) → connections and status →
-  `McpTool`, registry and results → OAuth → Settings UI and routes → e2e
-  (fixture servers, local and remote) → docs → release v0.11.0.
-- **Done when:** a local server (the official filesystem server) and a remote
-  one answer through chibot on `gemma4:cloud` and OpenAI; an OAuth-protected
-  remote server signs in and its tools work; Stop cancels a slow call; a
-  crashed server shows its error and Reconnect brings it back; a disabled
-  server's process stops and comes back when enabled. Unit tests use fixture
-  servers; Playwright covers the Settings section and a call in a chat.
 
-### Phase 11a — Multiple providers
+### Between phases ✅
+Shipped as patch releases (details in the CHANGELOG):
+
+- **After Phase 9 (v0.10.x).** Host and cross-site checks and `CHIBOT_TOKEN`
+  for LAN use (0.10.2); math delimiter conversion and CSS anchor positioning
+  (0.10.3); reasoning effort in the model menu, as a sub-menu that opens on
+  hover (0.10.4, 0.10.12–15); a phone layout, "Jump to latest" and the
+  composer's mode switch (0.10.5); an image viewer (0.10.9); Enter on touch
+  screens and per-chat drafts that survive a reload (0.10.10–11).
+- **After Phase 10 (v0.11.x).** Local MCP servers start in the home folder
+  (0.11.2); queued messages, context usage per answer, memory editing and
+  de-duplication, and the logo (0.11.3); per-server "Ask before using its
+  tools" (0.11.4); MCP Reload and Regenerate title (0.11.5); `pnpm release`
+  (0.11.6); a chat's turns run one after another (0.11.7); chat instructions
+  laid out per OpenAI's and Anthropic's guidance (0.11.9); a clearer 429
+  message and plain arithmetic (0.11.10). Code only: `app.ts`, `styles.css`,
+  `SettingsDialog.tsx`, `TurnView.tsx` and `chat-service.ts` were split into
+  smaller files.
+
+### Phase 11a — Multiple providers (agreed, not built)
 Decisions (agreed before building): today's single-provider `.env`
 setup keeps working unchanged; secrets never go in SQLite; the model picker
 groups models by provider; providers come from the environment first, then
@@ -787,7 +745,7 @@ from Settings. Once built, this replaces the "one chat provider" non-goal
   API keys never appear in API responses or SQLite exports; and all tests
   pass.
 
-### Phase 11 — Code runner
+### Phase 11 — Code runner (planned)
 Decisions (agreed before building; the sandbox is probed on Node 26 first):
 a `run_python` function tool on Pyodide in a locked-down child process, a
 fresh interpreter per run with files persisting in `/mnt/data/`, a fixed
@@ -898,10 +856,9 @@ Environment variables:
 - **Sidebar size:** the list shows the 200 most recent chats (pinned first)
   and search returns 50 hits. Older chats are reachable through search. Add
   paging or "show more" if that limit is ever hit.
-- **Bundle size:** the web bundle is ~930 kB (highlight.js grammars, KaTeX).
+- **Bundle size:** the web bundle is ~960 kB (highlight.js grammars, KaTeX).
   That's acceptable for a local app; code-split if it starts to matter.
-- **Future tools:** MCP servers' tools come with Phase 10 and a code runner
-  with Phase 11. Deliberately out:
+- **Future tools:** a code runner comes with Phase 11. Deliberately out:
   shell/filesystem tools (too costly when mis-approved on an unauthenticated
   server) and narrow APIs like weather, which web search plus `fetch_url`
   cover.

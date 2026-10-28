@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- Docs only: README, PLAN, DESIGN and AGENTS are synced with the code (status, the Settings tabs, the tokens file, `scripts/`, `pnpm release`, the logo spacing). PLAN gains a status table with each phase's release and a record of the patch releases between phases, marks Phases 11a and 11 as not built, and drops finished phases' commit lists, "Done when" notes and research narration.
+
 ## [0.11.10] - 2026-10-28
 
 ### Changed

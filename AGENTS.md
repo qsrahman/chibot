@@ -17,27 +17,28 @@ phase roadmap live in [PLAN.md](PLAN.md). Usage lives in [README.md](README.md).
 ```
 src/server/   main.ts (start(): wiring + listen, defaultTools()), app.ts (Hono
               app: access checks, health, mounts routes/*.ts, one file per
-              area, each `xRoutes(deps)` returning a Hono app),
-              prompts.ts (what chibot tells the model), database.ts (one
-              SQLite connection + migrations), one
-              class per file; tools/ holds the shipped Tool subclasses
-src/shared/   used by both server and web: API record types, chibot's own SSE events,
-              message text extraction, zod schemas
-              (requests, settings, export) and reasoning efforts (zod-free, so
-              the web can import it)
+              area, each `xRoutes(deps)` returning a Hono app), prompts.ts
+              (what chibot tells the model), database.ts (one SQLite
+              connection + migrations), one class per file; tools/ holds the
+              shipped Tool subclasses
+src/shared/   used by both server and web: API record types, chibot's own SSE
+              events, message text extraction, zod schemas (requests,
+              settings, export) and reasoning efforts (zod-free, so the web
+              can import it)
 src/web/      Vite root: index.html, main.tsx, components (TurnView.tsx with
               ToolCalls, Sources, AnswerImages), api.ts (fetch + SSE), hooks;
-              styles.css imports styles/*.css, one file per area (order matters);
-              settings/ holds one component per Settings tab
+              styles.css imports styles/*.css, one file per area (order
+              matters); settings/ holds one component per Settings tab
 tests/        mirrors src/ (tests/server/*.test.ts, tests/web/*.test.ts);
               tests/fixtures/ holds small documents (PDF, .docx) and MCP
               servers: mcp-server.ts (stdio) and mcp-oauth-server.ts (HTTP
               behind a fake OAuth provider)
+              tests/server/fakes.ts: fake OpenAI client + stream events
 tests/e2e/    Playwright specs (*.spec.ts), fake-openai.ts, and server.ts
               (starts chibot with a fake web search, a page reader allowed on
               127.0.0.1, a test-only tool that needs approval, and the MCP
               fixtures as `fixture` and `tracker`)
-              tests/server/fakes.ts: fake OpenAI client + stream events
+scripts/      release.ts (`pnpm release`)
 data/         local SQLite database (with sqlite-vec loaded), files/ and
               mcp-auth.json (MCP servers' OAuth tokens, mode 0600)
               (git-ignored)
@@ -195,18 +196,19 @@ invariants, API quirks. No line-by-line narration.
   `Answer #n to: <question>`; a question containing "slow" streams a long
   answer slowly, "drip" a normal one slowly (to queue a message while it
   streams), "think" adds a reasoning summary, "compact" a compaction item, and
-  "approve", "search", "read <url>", "draw", "bluer",
-  "remember <fact>", "earlier chats <words>", "in my files <words>",
-  "mcp echo <text>" and "mcp picture" call a tool (see the top of the file). It also fakes Brave, the images API,
-  embeddings, transcription (`/debug/last-transcription`) and a Files API
-  (`/debug/files`, `/debug/forget-files`; unknown file ids get a 404), and
-  serves a test page; the model `e2e-other` refuses `input_file` parts, as
-  Ollama does. Chromium runs with a fake microphone. `/debug/last-request` and `/debug/requests` show what
-  chibot sent. Shared steps live in
-  `tests/e2e/helpers.ts` (`send`, `answered`, `appReady`, `lastRequest`,
-  `resetSettings`, …). Wait for the app (e.g. a focused composer, or the empty
-  new-chat page) before typing or pressing shortcuts, and for `answered` before
-  copying. Specs that change settings reset them afterwards. First run:
+  "approve", "search", "read <url>", "draw", "bluer", "remember <fact>",
+  "earlier chats <words>", "in my files <words>", "mcp echo <text>" and
+  "mcp picture" call a tool (the top of the file lists them). It also fakes
+  Brave, the images API, embeddings, transcription
+  (`/debug/last-transcription`) and a Files API (`/debug/files`,
+  `/debug/forget-files`; unknown file ids get a 404), and serves a test page;
+  the model `e2e-other` refuses `input_file` parts, as Ollama does. Chromium
+  runs with a fake microphone. `/debug/last-request` and `/debug/requests`
+  show what chibot sent. Shared steps live in `tests/e2e/helpers.ts` (`send`,
+  `answered`, `appReady`, `lastRequest`, `resetSettings`, …). Wait for the app
+  (e.g. a focused composer, or the empty new-chat page) before typing or
+  pressing shortcuts, and for `answered` before copying. Specs that change
+  settings reset them afterwards. First run:
   `pnpm exec playwright install chromium`.
 
 ## Workflow

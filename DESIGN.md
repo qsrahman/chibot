@@ -3,11 +3,13 @@
 chibot's UI follows the look and feel of ChatGPT's web app: a calm,
 near-monochrome, content-first chat with one rounded composer and a single blue
 accent. This guide records what was measured on chatgpt.com (22 Oct 2026,
-logged out, 1024×768, one test conversation) and how chibot applies it. It borrows **aesthetics only**: no ChatGPT name, logo,
-icons or copy.
+logged out, 1024×768) and how chibot applies it. It borrows **aesthetics
+only**: no ChatGPT name, logo, icons or copy.
 
-All values live as CSS variables in [`src/web/styles.css`](src/web/styles.css).
-Components use the variables, never raw colours.
+The tokens are CSS variables in
+[`src/web/styles/base.css`](src/web/styles/base.css); the other files in
+`src/web/styles/` hold one area each. Components use the variables, never raw
+colours.
 
 ## 1. Principles
 
@@ -28,10 +30,9 @@ Components use the variables, never raw colours.
 
 Measured on chatgpt.com: page, surfaces, text, muted text, borders, the blue
 accent, bubble and inline-code colours, shadows, radii and sizes. Chosen by
-chibot to fit: light-mode `--surface-muted` and `--chip`, and `--danger` in both
-themes. The logged-out
-dark theme uses a pure black page, which chibot follows. Changing `--bg` is
-enough to switch to a dark-grey page.
+chibot to fit: light-mode `--surface-muted` and `--chip`, and `--danger` in
+both themes. The logged-out dark theme uses a pure black page, which chibot
+follows; changing `--bg` switches to a dark-grey page.
 
 | Token | Light | Dark | Used for |
 |---|---|---|---|
@@ -78,7 +79,7 @@ Code uses `"SF Mono", SFMono-Regular, ui-monospace, Consolas, "Liberation Mono",
 ┌──────────┬─────────────────────────────────────────────┐
 │ sidebar  │ header: model name ▾                  …     │
 │ 260 px   │                                             │
-│ (Ph. 2)  │        ┌─ thread, max 48rem ─┐              │
+│          │        ┌─ thread, max 48rem ─┐              │
 │          │        │        user bubble ▸│              │
 │ New chat │        │ assistant text …    │              │
 │ Search   │        └─────────────────────┘              │
@@ -90,7 +91,7 @@ Code uses `"SF Mono", SFMono-Regular, ui-monospace, Consolas, "Liberation Mono",
 - **Empty state.** A heading ("What's on your mind?") with the composer
   directly below it, both vertically centred. After the first message the
   composer docks to the bottom and the thread scrolls above it.
-- **Sidebar (Phase 2, built).** 260 px, with a hairline right border. Rows are 36 px
+- **Sidebar.** 260 px, with a hairline right border. Rows are 36 px
   tall, 8×10 px padding, 10 px radius, 6 px icon gap. The hover/active fill is
   `--surface-muted`. Groups have 12 px muted headings (Today, Yesterday, …).
   It collapses to a 56 px icon rail, and the collapsed state is remembered.
@@ -173,7 +174,7 @@ sticks 12 px above the list's bottom, centred over the composer.
   with Cancel and a primary Send.
 - *Assistant:* full-width Markdown with no background, 16/26 px text, 16 px
   between blocks.
-- *Action rows (built).* 32 px icon buttons with 18 px icons, muted
+- *Action rows.* 32 px icon buttons with 18 px icons, muted
   (`--fg-muted`), 2 px apart, 8 px radius hover fill, directly under the
   answer (ChatGPT uses a 44 px hit area and 20 px icons; chibot is a little
   denser):
@@ -184,8 +185,6 @@ sticks 12 px above the list's bottom, centred over the composer.
     its tooltip. At 80 % of the compaction threshold it turns `--danger` at
     500 weight — the one place besides errors that colour is used — because
     older messages will be summarized next.
-  - Measured logged out: Copy and Share. chibot has no sharing, so it omits
-    Share.
 - *Thinking:* a pulsing dot before the first token arrives.
 
 **Code blocks.** No box: no background, border or radius, just like the text
@@ -214,13 +213,13 @@ title (18 px, 500), body (14 px muted), then right-aligned buttons. Buttons are
 pill-shaped: primary is `--button`, secondary is outlined, destructive is
 `--danger`. Used for confirmations such as "Delete chat?".
 
-**Settings (built).** A large dialog (max 760 px), anchored 10 vh from the top
+**Settings.** A large dialog (max 760 px), anchored 10 vh from the top
 and as tall as its tab (at least 240 px; the panel scrolls past
 `min(70vh, 560px)`), so switching tabs grows or shrinks it downwards. Below
 768 px the tabs become a scrolling row above the content, scrolled to the
 current tab. A vertical tab list on
-the left (General, Personalization, Model, Data; the current tab uses
-`--chip`) and content on the right. Content is
+the left (General, Personalization, Model, Tools, Data; the current tab
+uses `--chip`) and content on the right. Content is
 grouped as section heading (16 px, 500) + card (`--surface`, 16 px radius,
 hairline border). A card holds rows: 52 px tall, 0×16 px padding, a 14 px/500
 label (with an optional 12 px muted description) on the left, and the control
@@ -230,12 +229,13 @@ Hairline dividers separate rows. The Tools tab groups tools into sections (The
 web, Images, Your chats and files, then Other), each row with a
 one-line description that says what leaves the machine; a tool that isn't set
 up stays listed with its label in `--fg-muted`, its setup hint as the
-description and its switch disabled at 40 % opacity. Below them, a section
-per MCP server ("MCP · files"): a first row for the server ("Local server" /
-"Remote server", its status or error as the description, then Sign in
-(primary), Sign out, Reconnect and its switch on the right), then a row per
-tool with its title, the server's description (cut at three lines) and a
-switch.
+description and its switch disabled at 40 % opacity. Below them, an "MCP
+servers" section with one row, `mcp.json` and a **Reload** button, then a
+section per server ("MCP · files"): a first row for the server ("Local server"
+/ "Remote server", its status or error as the description, then Sign in
+(primary), Sign out, Reconnect and its switch on the right), a row "Ask before
+using its tools" with a switch, then a row per tool with its title, the
+server's description (cut at three lines) and a switch.
 
 **Disclosures** (Thinking, tool calls, Sources) replace the browser's
 triangle with a 16 px `ChevronRight` before the label, turned 90° when open
@@ -250,14 +250,14 @@ answer starts. Opened, the summary sits behind a 2 px `--border` rule.
 repeats listed once, so a memory change stays visible) or, while one runs, its
 live label; opened, its body (behind the same 2 px rule) lists each call. A
 single call isn't grouped. Each call is, like Thinking, a `<details>` in 14 px
-muted text above the
-answer, "Reading a page…" with the shimmer while a tool runs, "Read a page"
-afterwards. Opened, it says what the tool did in plain terms:
-what it was asked (the query, page or prompt, in `--fg`), a short
+muted text above the answer: "Reading a page…" with the shimmer while a tool
+runs, "Read a page" afterwards. Opened, it says what the tool did in plain
+terms: what it was asked (the query, page or prompt, in `--fg`), a short
 result or error, and what it found as source links (title and domain, as in
 Sources). A nested "Raw" disclosure holds Arguments (indented JSON) and Result
 in 13 px monospace blocks on `--surface-muted` (10 px radius); tools without a
-plain summary show those directly.
+plain summary show those directly. An MCP server's tool reads "Used echo ·
+fixture" (tool, then server).
 
 **Approval card.** In place of the answer's actions while tool calls wait: a
 card (`--surface`, hairline border, 16 px radius, 16 px padding) with a 15 px
@@ -332,8 +332,8 @@ equivalents use a 1.5 px stroke:
 | Edit message | `Pencil` |
 | Regenerate | `RefreshCw` |
 | Versions | `ChevronLeft` / `ChevronRight` |
-| Attach (Phase 9) / voice (Phase 9) | `Plus` / `Mic` |
-| Sidebar toggle (Phase 2) | `PanelLeft` |
+| Attach / voice | `Plus` / `Mic` |
+| Sidebar toggle | `PanelLeft` |
 | Settings | `Settings` |
 | Model picker | `ChevronDown`, `Check` |
 | Export as Markdown / JSON | `FileText` / `FileJson` |
@@ -347,7 +347,7 @@ drawn on a 32-unit grid with a 3.2-unit round stroke, the stem forks into two
 curved arms and the dot (`#3566f0`) closes the right one. The path takes
 `currentColor` — near-black in light mode, white in dark — and only the dot
 carries colour. In the sidebar it sits at 20 px beside `chibot` (system sans,
-18 px, 600, −0.01 em, 6 px apart). The favicon
+18 px, 600, −0.01 em, 4 px apart). The favicon
 (`src/web/public/favicon.svg`) is the same drawing at a 3.6-unit stroke on a
 32 px `#0d0d0d` tile, so it holds up in a 16 px tab.
 

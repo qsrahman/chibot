@@ -6,13 +6,14 @@ It works with OpenAI and with OpenAI-compatible servers that implement the
 Responses API, such as [Ollama](https://docs.ollama.com/openai) and
 [LM Studio](https://lmstudio.ai/).
 
-> **Status: Phase 10 (MCP client).** ChatGPT-style chat with a
-> sidebar, versions, a model picker, visible reasoning, custom instructions,
-> long-chat compaction, export/import, a theme setting, a Settings dialog,
-> tools the model can call (web search with sources, reading web pages,
-> creating and editing images, memory across chats, searching
-> past chats), projects with their own files and instructions, photo and file
-> attachments, voice input, and tools from MCP servers. See [PLAN.md](PLAN.md) for the roadmap.
+> **Status: v0.11, phases 0–10 complete.** Chat with a sidebar, message
+> versions, a model picker, visible reasoning, custom instructions, long-chat
+> compaction, export/import, themes, tools the model can call (web search with
+> sources, reading pages, creating and editing images, memory, searching past
+> chats), projects with their own files, attachments, voice input, and MCP
+> servers' tools. Next: multiple providers and a code runner. See
+> [PLAN.md](PLAN.md) for the roadmap and [CHANGELOG.md](CHANGELOG.md) for what
+> changed.
 
 ## Requirements
 
@@ -119,8 +120,8 @@ Settings → Tools (or restart chibot):
 ```
 
 - A **`local`** server is a command chibot runs (`command`, `args`, `env`,
-  `cwd`, by default your home folder) with your rights. It gets only a safe environment (`PATH`, `HOME`, …)
-  plus its own `env`, never chibot's keys.
+  `cwd`, by default your home folder) with your rights. It gets only a safe
+  environment (`PATH`, `HOME`, …) plus its own `env`, never chibot's keys.
 - A **`remote`** server is a URL (`url`, optional `headers`). If it needs
   signing in, Settings → Tools shows **Sign in**, which opens its provider's
   page and comes back to chibot (sign in on the machine running chibot).
@@ -133,9 +134,9 @@ Settings → Tools (or restart chibot):
 Servers are only set up here, never from the web app. Their tools are offered
 as `<server>__<tool>` and run without asking first, so add only servers you
 trust, or switch on **Ask before using its tools** for a server in Settings →
-Tools (worth it for one that can run commands or change files): a server's output can't change memories without asking, as with web
-pages. A file with mistakes is reported at startup, and chibot runs without
-MCP.
+Tools (worth it for one that can run commands or change files). Like web
+pages, a server's output can't change memories without asking. A file with
+mistakes is reported at startup, and chibot runs without MCP.
 
 ## Running
 
@@ -249,14 +250,13 @@ Then open http://127.0.0.1:3000.
 - **Settings** (sidebar gear, or ⌘/Ctrl+,):
   - *General:* theme (System, Light or Dark).
   - *Personalization:* what chibot should know about you, and how it should
-    respond. Sent with every message. **Memory**: turn it off, or manage
-    (delete) what chibot remembers.
+    respond. Sent with every message. **Memory**: turn it off, or edit and
+    delete what chibot remembers.
   - *Model:* reasoning effort, and compaction for long chats (on by default at
     64,000 tokens; earlier messages are summarized and a divider marks the
     spot).
   - *Tools:* switch each tool on or off, grouped (the web, images, your chats
-    and files, calculation), each saying what it does and what leaves this
-    machine. Tools that aren't set up are listed greyed out, with what to set
+    and files), each saying what it does and what leaves this machine. Tools that aren't set up are listed greyed out, with what to set
     in `.env`. Below, **Reload** re-reads `mcp.json`, then each MCP server: a
     switch (off stops it), its status or error, **Reconnect**, **Sign in** /
     **Sign out**, **Ask before using its tools**, and a switch per tool.
@@ -295,6 +295,7 @@ Then open http://127.0.0.1:3000.
 | `pnpm test:e2e` | Run the browser tests (first run: `pnpm exec playwright install chromium`) |
 | `pnpm typecheck` | Type-check server, tests and web |
 | `pnpm format` | Format with prettier |
+| `pnpm release patch` | Bump the version, move the CHANGELOG's Unreleased entries, run the checks and commit (`minor`, `major` or `X.Y.Z` too; `--e2e` adds the browser tests) |
 
 Developer conventions are in [AGENTS.md](AGENTS.md).
 
