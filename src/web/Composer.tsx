@@ -3,41 +3,19 @@ import {
   useRef,
   useState,
   type KeyboardEvent,
-  type ReactNode,
   type RefObject,
 } from 'react'
-import {
-  ArrowUp,
-  Clock,
-  LoaderCircle,
-  Mic,
-  Paperclip,
-  Pencil,
-  Plus,
-  Square,
-  X,
-} from 'lucide-react'
-import { ATTACHMENT_ACCEPT } from '../shared/documents.ts'
+import { ArrowUp, LoaderCircle, Mic, Square, X } from 'lucide-react'
 import type { Settings } from '../shared/settings.ts'
-import { FileCard } from './FileCard.tsx'
+import { AddMenu, type ToolOption } from './AddMenu.tsx'
+import { loadDrafts, saveDrafts } from './composerDrafts.ts'
+import { DraftAttachments } from './DraftAttachments.tsx'
 import { ModeSwitch } from './ModeSwitch.tsx'
-import { useAnchoredPopover } from './popover.ts'
+import { QueuedMessage } from './QueuedMessage.tsx'
 import type { Attachment } from './turns.ts'
-import type { AttachmentsApi, Draft } from './useAttachments.ts'
+import type { AttachmentsApi } from './useAttachments.ts'
 import { useDictation } from './useDictation.ts'
 import { TOUCH_ONLY, useMediaQuery } from './useMediaQuery.ts'
-
-/** A tool the user can pick for the next message ("+" menu). */
-export interface ToolOption {
-  name: string
-  /** In the menu, e.g. "Search the web". */
-  label: string
-  /** On the chip once picked, e.g. "Search". */
-  chip: string
-  icon: ReactNode
-  /** Why it can't be used (not set up, or switched off), or `null`. */
-  unavailable: string | null
-}
 
 interface Props {
   busy: boolean
@@ -119,8 +97,6 @@ export function Composer({
   textRef.current = text
   const draftsRef = useRef(attachments.drafts)
   draftsRef.current = attachments.drafts
-  const menu = useAnchoredPopover()
-  const pickerRef = useRef<HTMLInputElement>(null)
   const touchOnly = useMediaQuery(TOUCH_ONLY)
   const dictation = useDictation((spoken) => {
     // At the cursor, for review before sending.
@@ -241,124 +217,35 @@ export function Composer({
       }}
     >
       {queued !== null && (
-        <div className="composer-queued">
-          <Clock size={15} strokeWidth={1.75} aria-hidden />
-          <span className="composer-queued-label">Queued</span>
-          <span className="composer-queued-text" title={queued}>
-            {queued}
-          </span>
-          <button
-            type="button"
-            className="composer-queued-action"
-            aria-label="Edit queued message"
-            title="Edit queued message"
-            onClick={() => {
-              const taken = onTakeQueued()
-              if (taken === null) return
-              setText(taken)
-              inputRef.current?.focus()
-            }}
-          >
-            <Pencil size={14} aria-hidden />
-          </button>
-          <button
-            type="button"
-            className="composer-queued-action"
-            aria-label="Cancel queued message"
-            title="Cancel queued message"
-            onClick={onCancelQueued}
-          >
-            <X size={14} aria-hidden />
-          </button>
-        </div>
+        <QueuedMessage
+          text={queued}
+          onEdit={() => {
+            const taken = onTakeQueued()
+            if (taken === null) return
+            setText(taken)
+            inputRef.current?.focus()
+          }}
+          onCancel={onCancelQueued}
+        />
       )}
       {attachments.drafts.length > 0 && (
-        <ul className="composer-attachments" aria-label="Attachments">
-          {attachments.drafts.map((draft) => (
-            <DraftChip
-              key={draft.key}
-              draft={draft}
-              onRemove={() => attachments.remove(draft.key)}
-            />
-          ))}
-        </ul>
+        <DraftAttachments
+          drafts={attachments.drafts}
+          onRemove={attachments.remove}
+        />
       )}
       <div className="composer-left">
-        <button
-          type="button"
-          className="icon-button"
-          aria-label="Add files and more"
-          title="Add files and more"
-          popoverTarget={menu.id}
-          style={menu.triggerStyle}
-        >
-          <Plus size={24} strokeWidth={1.5} />
-        </button>
-        <input
-          ref={pickerRef}
-          type="file"
-          multiple
-          hidden
-          accept={ATTACHMENT_ACCEPT}
-          aria-label="Add photos & files"
-          onChange={(e) => {
-            const files = [...(e.target.files ?? [])]
-            e.target.value = ''
+        <AddMenu
+          tools={tools}
+          onFiles={(files) => {
             attachments.add(files)
             inputRef.current?.focus()
           }}
+          onPick={(option) => {
+            setPicked(option)
+            inputRef.current?.focus()
+          }}
         />
-        <div
-          id={menu.id}
-          ref={menu.ref}
-          popover="auto"
-          className="menu above"
-          role="menu"
-          style={menu.style}
-          {...menu.menuProps}
-        >
-          <button
-            type="button"
-            role="menuitem"
-            className="menu-item has-hint"
-            onClick={() => {
-              menu.hide()
-              pickerRef.current?.click()
-            }}
-          >
-            <Paperclip size={18} strokeWidth={1.5} aria-hidden />
-            <span className="menu-item-text">
-              Add photos & files
-              <span className="menu-hint">
-                Images, PDF, Word, text and code
-              </span>
-            </span>
-          </button>
-          {tools.map((option) => (
-            <button
-              key={option.name}
-              type="button"
-              role="menuitem"
-              className={
-                option.unavailable ? 'menu-item has-hint' : 'menu-item'
-              }
-              disabled={option.unavailable !== null}
-              onClick={() => {
-                setPicked(option)
-                menu.hide()
-                inputRef.current?.focus()
-              }}
-            >
-              {option.icon}
-              <span className="menu-item-text">
-                {option.label}
-                {option.unavailable && (
-                  <span className="menu-hint">{option.unavailable}</span>
-                )}
-              </span>
-            </button>
-          ))}
-        </div>
         {tool && (
           <button
             type="button"
@@ -478,77 +365,5 @@ export function Composer({
         </p>
       )}
     </form>
-  )
-}
-
-const DRAFTS_KEY = 'chibot.drafts'
-
-// Storage can throw (private windows, blocked site data). Drafts are a
-// convenience, so they just aren't kept then.
-function loadDrafts(): Record<string, string> {
-  try {
-    const stored: unknown = JSON.parse(localStorage.getItem(DRAFTS_KEY) ?? '{}')
-    if (!stored || typeof stored !== 'object') return {}
-    return Object.fromEntries(
-      Object.entries(stored).filter(
-        (entry): entry is [string, string] => typeof entry[1] === 'string',
-      ),
-    )
-  } catch {
-    return {}
-  }
-}
-
-function saveDrafts(texts: Record<string, string>): void {
-  // Sent or cleared drafts are dropped, so the store doesn't grow.
-  const kept = Object.entries(texts).filter(([, text]) => text.trim() !== '')
-  try {
-    if (kept.length === 0) localStorage.removeItem(DRAFTS_KEY)
-    else
-      localStorage.setItem(DRAFTS_KEY, JSON.stringify(Object.fromEntries(kept)))
-  } catch {
-    // Not kept this time.
-  }
-}
-
-/** An attachment in the composer: a thumbnail or a file card, with ×. */
-function DraftChip({
-  draft,
-  onRemove,
-}: {
-  draft: Draft
-  onRemove: () => void
-}) {
-  const state = draft.error
-    ? 'failed'
-    : draft.attachment
-      ? 'ready'
-      : 'uploading'
-  return (
-    <li
-      className={`attachment ${draft.preview ? 'image' : 'file'} ${state}`}
-      title={draft.error ?? draft.name}
-    >
-      {draft.preview ? (
-        <img src={draft.preview} alt={draft.name} />
-      ) : (
-        <FileCard name={draft.name} detail={draft.error ?? undefined} />
-      )}
-      {state === 'uploading' && (
-        <LoaderCircle
-          className="attachment-spinner"
-          size={20}
-          aria-label="Uploading"
-        />
-      )}
-      <button
-        type="button"
-        className="attachment-remove"
-        aria-label={`Remove ${draft.name}`}
-        onClick={onRemove}
-      >
-        <X size={12} strokeWidth={2.5} aria-hidden />
-      </button>
-    </li>
   )
 }

@@ -7,6 +7,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 ### Changed
 
 - Code only: full-text search moved out of `ConversationStore` into `ConversationSearch` (`conversations()` for the sidebar, `messages()` for `search_chats`), on the same database; `AppDeps` and `ToolDeps` take a `search`, and the store no longer goes to the tools. Behavior is unchanged.
+- Code only: the composer's "+" menu (`AddMenu`, which also owns the `ToolOption` type), attachments row (`DraftAttachments`), queued-message row (`QueuedMessage`) and draft storage (`composerDrafts.ts`) are their own files, and `useChat`'s queued message is a `useQueue` hook. The markup is unchanged (the layout e2e specs pass untouched).
 
 ## [0.11.12] - 2026-10-30
 

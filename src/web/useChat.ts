@@ -8,6 +8,7 @@ import {
   streamTurn,
   switchVersion as putVersion,
 } from './api.ts'
+import { useQueue } from './useQueue.ts'
 import {
   toTurns,
   waitingCalls,
@@ -42,13 +43,6 @@ interface Run {
   answered: boolean
 }
 
-/** A message to send once the current answer is saved. */
-interface Queued {
-  text: string
-  /** A tool to force on that message. */
-  tool?: string
-}
-
 /** Chat state for the conversation on screen. */
 export function useChat(
   conversationId: string | undefined,
@@ -64,13 +58,8 @@ export function useChat(
   // render, so a chat being opened never shows as an empty new chat.
   const [loadedId, setLoadedId] = useState<string | null>(null)
   const [title, setTitle] = useState<string | null>(null)
-  // A message typed while an answer streams; it goes once that answer is
-  // saved (text only: files need uploading first).
-  const [queued, setQueued] = useState<Queued | null>(null)
-  // Read by `drain`, which a run calls from its async continuation, where
-  // the state variable would be stale.
-  const queuedRef = useRef<Queued | null>(null)
-  queuedRef.current = queued
+  // A message typed while an answer streams goes once that answer is saved.
+  const queue = useQueue()
   // The run whose updates belong on screen. Cleared when the user switches
   // chats, so a run still going for the old chat can't touch the new one.
   const runRef = useRef<Run | null>(null)
@@ -107,7 +96,7 @@ export function useChat(
     setProjectId(null)
     setLoadedId(null)
     setTitle(null)
-    setQueued(null)
+    queue.clear()
     if (!conversationId) return
     let current = true
     getConversation(conversationId).then(
@@ -371,16 +360,15 @@ export function useChat(
    * `keep` is how many turns the chat has now.
    */
   function drain(chatId: string, keep: number) {
-    const next = queuedRef.current
+    const next = queue.take()
     if (!next) return
-    setQueued(null)
     void run(
       { text: next.text, ...(next.tool && { tool: next.tool }) },
       { keep, question: newQuestion(next.text, null, []) },
       chatId,
     ).then((accepted) => {
       // Refused before it reached the server: keep it for another try.
-      if (!accepted) setQueued(next)
+      if (!accepted) queue.put(next)
     })
   }
 
@@ -439,19 +427,16 @@ export function useChat(
 
   /** Holds `text` until the current answer is saved, then sends it. */
   function enqueue(text: string, tool?: string) {
-    setQueued({ text, ...(tool && { tool }) })
+    queue.put({ text, ...(tool && { tool }) })
   }
 
   /** Takes the queued message out (to edit it); `null` if there is none. */
   function takeQueued(): string | null {
-    const next = queuedRef.current
-    if (!next) return null
-    setQueued(null)
-    return next.text
+    return queue.take()?.text ?? null
   }
 
   function cancelQueued() {
-    setQueued(null)
+    queue.clear()
   }
 
   // While a turn is pending, the turns it replaces are hidden.
@@ -471,7 +456,7 @@ export function useChat(
     /** The chat's history hasn't arrived yet. */
     loading: conversationId !== undefined && loadedId !== conversationId,
     /** The message waiting for the current answer, if any. */
-    queued: queued?.text ?? null,
+    queued: queue.queued?.text ?? null,
     send,
     edit,
     regenerate,
