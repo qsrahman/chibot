@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.11.12] - 2026-10-30
+
 ### Changed
 
 - Code only (tests): the e2e `resetSettings` restores the server's own defaults and the settings test no longer lists every setting, so a new setting needs no change in either; the fake model's tool triggers are a `TRIGGERS` table (one row per tool) instead of an if-chain, checked against the old behavior on 100 phrases.
