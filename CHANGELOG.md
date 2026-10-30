@@ -8,6 +8,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- Code only (tests): the e2e `resetSettings` restores the server's own defaults and the settings test no longer lists every setting, so a new setting needs no change in either; the fake model's tool triggers are a `TRIGGERS` table (one row per tool) instead of an if-chain, checked against the old behavior on 100 phrases.
 - Code only: the turn route's checks (files can be attached here, an approval has calls waiting, `parentId` is a place a message can follow) are `refuseTurn` in `turn-request.ts`, with a test for each refusal; the route keeps the same statuses and messages.
 - Code only: `ChatService`'s 207-line turn loop is split into named steps (`#startTurn`, `#planTurn`, `#runCalls`, `#respond`, `#titleIfNew`) around a small `TurnPlan`; behavior is unchanged (the existing tests pass untouched).
 - Code only: each tool describes itself (`group`, `summary`, `running` / `done`, `chip`, and `unavailable()` when it needs setup), and `GET /api/tools` sends it. The web app's per-tool tables (`tools.ts`, the tool-call labels, the composer's tool list) are gone, so a new tool needs one server file. `web_search` and the image tools are always registered, listed in Settings with what's missing when unconfigured, and never offered to the model; the Settings Tools tab now sorts a section's tools by label.

@@ -3,14 +3,10 @@
 // contains "slow" streams a long answer slowly (to act mid-answer), "drip"
 // streams a normal one slowly (to queue a message), "think"
 // first streams a reasoning summary, and "compact" returns a compaction item.
-// "approve" calls the test-only e2e_note tool
-// (see server.ts), "earlier chats <words>" search_chats, "search" web_search,
-// "read <url>" fetch_url, "draw" generate_image, "bluer" edit_image (on the
-// chat's last image), "remember <fact>" saves a memory and "in my files
-// <words>" searches project files, "mcp echo <text>" calls the MCP fixture's
-// echo and "mcp picture" its picture tool (see server.ts); a forced
-// tool_choice is followed. Once the tool's output arrives, the answer quotes
-// it. It also fakes the Brave Search API (/brave/…), serves a test page
+// A question's words can call a tool ("approve", "search", "read <url>",
+// "draw", "remember <fact>", "mcp echo <text>", …): `TRIGGERS` below lists
+// them. A forced tool_choice is followed. Once the tool's output arrives, the
+// answer quotes it. It also fakes the Brave Search API (/brave/…), serves a test page
 // (/pages/robots), makes 1×1 images (/v1/images/…), embeds text as counts
 // of a few letters (/v1/embeddings) and transcribes any recording as
 // "Hello from the microphone" (/v1/audio/transcriptions). Its Files API
@@ -304,57 +300,107 @@ function textOf(content: unknown): string {
     .join('\n')
 }
 
-/** The tool call the question asks for (see the top of this file). */
+/** What `args` of a trigger gets to work with. */
+interface Asked {
+  question: string
+  /** The request's input items, for finding earlier outputs. */
+  input: unknown
+}
+
+/**
+ * A question that calls a tool, by its words. The first matching row wins; a
+ * row with `forced` also fires when the request's `tool_choice` names its
+ * tool (then `found` is `null`). Add a row to make the fake call a new tool.
+ */
+const TRIGGERS: {
+  tool: string
+  when: RegExp
+  forced?: true
+  args: (found: RegExpExecArray | null, asked: Asked) => unknown
+}[] = [
+  {
+    tool: 'memory',
+    when: /remember (.+)/,
+    args: (found) => ({ action: 'save', id: null, text: found![1] }),
+  },
+  {
+    tool: 'fixture__echo',
+    when: /mcp echo (.+)/,
+    args: (found) => ({ text: found![1] }),
+  },
+  { tool: 'fixture__picture', when: /mcp picture/, args: () => ({}) },
+  {
+    tool: 'search_project_files',
+    when: /in my files (.+)/,
+    args: (found) => ({ query: found![1] }),
+  },
+  {
+    tool: 'search_chats',
+    when: /earlier chats (.+)/,
+    args: (found) => ({ query: found![1], after: null, before: null }),
+  },
+  {
+    tool: 'web_search',
+    when: /search/,
+    forced: true,
+    args: (_, { question }) => ({ query: question, freshness: null }),
+  },
+  {
+    tool: 'generate_image',
+    when: /draw/,
+    forced: true,
+    args: (_, { question }) => ({ prompt: question, size: 'square' }),
+  },
+  {
+    tool: 'edit_image',
+    when: /bluer/,
+    args: (_, { input }) => ({
+      image_id: lastImageId(input),
+      prompt: 'make it bluer',
+    }),
+  },
+  // "read" and a URL, in any order.
+  {
+    tool: 'fetch_url',
+    when: /^(?=.*read)(?:.*?)(https?:\/\/\S+)/s,
+    args: (found) => ({ url: found![1] }),
+  },
+  { tool: 'e2e_note', when: /approve/, args: () => ({ text: 'hello' }) },
+]
+
+/** The tool call the question asks for (see `TRIGGERS`). */
 function pickTool(
   question: string,
   input: unknown,
   forced: string | undefined,
 ): { name: string; arguments: string } | null {
-  const call = (name: string, args: unknown) => ({
-    name,
-    arguments: JSON.stringify(args),
-  })
-  const url = /https?:\/\/\S+/.exec(question)?.[0]
-  const remember = /remember (.+)/.exec(question)?.[1]
-  if (remember) {
-    return call('memory', { action: 'save', id: null, text: remember })
+  for (const trigger of TRIGGERS) {
+    const found = trigger.when.exec(question)
+    if (!found && !(trigger.forced && forced === trigger.tool)) continue
+    return {
+      name: trigger.tool,
+      arguments: JSON.stringify(trigger.args(found, { question, input })),
+    }
   }
-  const echo = /mcp echo (.+)/.exec(question)?.[1]
-  if (echo) return call('fixture__echo', { text: echo })
-  if (question.includes('mcp picture')) return call('fixture__picture', {})
-  const files = /in my files (.+)/.exec(question)?.[1]
-  if (files) return call('search_project_files', { query: files })
-  const earlier = /earlier chats (.+)/.exec(question)?.[1]
-  if (earlier) {
-    return call('search_chats', { query: earlier, after: null, before: null })
-  }
-  if (forced === 'web_search' || question.includes('search')) {
-    return call('web_search', { query: question, freshness: null })
-  }
-  if (forced === 'generate_image' || question.includes('draw')) {
-    return call('generate_image', { prompt: question, size: 'square' })
-  }
-  if (question.includes('bluer')) {
-    // The chat's last image, from the tool outputs in its history.
-    const ids = (Array.isArray(input) ? input : []).flatMap(
-      (item: { type?: string; output?: string }) => {
-        if (item.type !== 'function_call_output') return []
-        try {
-          const { image_id } = JSON.parse(item.output ?? '') as {
-            image_id?: string
-          }
-          return image_id ? [image_id] : []
-        } catch {
-          return []
-        }
-      },
-    )
-    const id = ids.at(-1)
-    return call('edit_image', { image_id: id, prompt: 'make it bluer' })
-  }
-  if (question.includes('read') && url) return call('fetch_url', { url })
-  if (question.includes('approve')) return call('e2e_note', { text: 'hello' })
   return null
+}
+
+/** The chat's last image, from the tool outputs in its history. */
+function lastImageId(input: unknown): string | undefined {
+  const ids = (Array.isArray(input) ? input : []).flatMap(
+    (item: { type?: string; output?: string }) => {
+      if (item.type !== 'function_call_output') return []
+      try {
+        const { image_id } = JSON.parse(item.output ?? '') as {
+          image_id?: string
+        }
+        return image_id ? [image_id] : []
+      } catch {
+        return []
+      }
+    },
+  )
+  return ids.at(-1)
 }
 
 serve({ fetch: app.fetch, hostname: '127.0.0.1', port: PORT }, () =>

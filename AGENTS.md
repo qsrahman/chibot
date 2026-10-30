@@ -206,11 +206,10 @@ invariants, API quirks. No line-by-line narration.
   `tests/e2e/fake-openai.ts` via `OPENAI_BASE_URL`. The fake answers
   `Answer #n to: <question>`; a question containing "slow" streams a long
   answer slowly, "drip" a normal one slowly (to queue a message while it
-  streams), "think" adds a reasoning summary, "compact" a compaction item, and
-  "approve", "search", "read <url>", "draw", "bluer", "remember <fact>",
-  "earlier chats <words>", "in my files <words>", "mcp echo <text>" and
-  "mcp picture" call a tool (the top of the file lists them). It also fakes
-  Brave, the images API, embeddings, transcription
+  streams), "think" adds a reasoning summary, "compact" a compaction item,
+  and a question's words call a tool ("approve", "search", "read <url>", …:
+  the `TRIGGERS` table in the file lists them, and a new tool needs one row
+  there). It also fakes Brave, the images API, embeddings, transcription
   (`/debug/last-transcription`) and a Files API (`/debug/files`,
   `/debug/forget-files`; unknown file ids get a 404), and serves a test page;
   the model `e2e-other` refuses `input_file` parts, as Ollama does. Chromium
@@ -219,7 +218,8 @@ invariants, API quirks. No line-by-line narration.
   `answered`, `appReady`, `lastRequest`, `resetSettings`, …). Wait for the app
   (e.g. a focused composer, or the empty new-chat page) before typing or
   pressing shortcuts, and for `answered` before copying. Specs that change
-  settings reset them afterwards. First run:
+  settings reset them afterwards (`resetSettings` restores the server's
+  defaults, so a new setting needs no change there). First run:
   `pnpm exec playwright install chromium`.
 
 ## Workflow
