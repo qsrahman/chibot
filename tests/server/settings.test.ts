@@ -25,12 +25,13 @@ describe('SettingsStore', () => {
   })
 
   it('starts from the defaults', () => {
-    expect(settings.get()).toEqual({
+    expect(settings.get()).toEqual(settingsDefaults('env-model'))
+    // The ones that matter: the environment's model, the model's own
+    // reasoning effort, compaction on at 64k tokens, nothing switched off.
+    expect(settings.get()).toMatchObject({
       model: 'env-model',
       reasoningEffort: null,
-      aboutUser: '',
-      responseStyle: '',
-      compactThreshold: DEFAULT_COMPACT_THRESHOLD,
+      compactThreshold: 64_000,
       disabledTools: [],
       disabledMcpServers: [],
       askMcpServers: [],

@@ -45,19 +45,13 @@ export async function lastRequest(page: Page) {
   }
 }
 
-/** Puts the user settings back, so specs don't affect each other. */
+/** Puts the user settings back to the server's defaults, so specs don't affect each other. */
 export async function resetSettings(page: Page) {
-  const res = await page.request.patch('/api/settings', {
-    data: {
-      model: 'e2e-model',
-      reasoningEffort: null,
-      aboutUser: '',
-      responseStyle: '',
-      compactThreshold: 64_000,
-      disabledTools: [],
-      disabledMcpServers: [],
-      askMcpServers: [],
-    },
-  })
+  const { defaults } = (await (
+    await page.request.get('/api/settings')
+  ).json()) as {
+    defaults: Record<string, unknown>
+  }
+  const res = await page.request.patch('/api/settings', { data: defaults })
   expect(res.ok()).toBe(true)
 }
