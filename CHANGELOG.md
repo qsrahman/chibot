@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.11.13] - 2026-10-30
+
 ### Changed
 
 - Code only: full-text search moved out of `ConversationStore` into `ConversationSearch` (`conversations()` for the sidebar, `messages()` for `search_chats`), on the same database; `AppDeps` and `ToolDeps` take a `search`, and the store no longer goes to the tools. Behavior is unchanged.
