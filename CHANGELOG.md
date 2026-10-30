@@ -8,6 +8,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- Code only: the turn route's checks (files can be attached here, an approval has calls waiting, `parentId` is a place a message can follow) are `refuseTurn` in `turn-request.ts`, with a test for each refusal; the route keeps the same statuses and messages.
 - Code only: `ChatService`'s 207-line turn loop is split into named steps (`#startTurn`, `#planTurn`, `#runCalls`, `#respond`, `#titleIfNew`) around a small `TurnPlan`; behavior is unchanged (the existing tests pass untouched).
 - Code only: each tool describes itself (`group`, `summary`, `running` / `done`, `chip`, and `unavailable()` when it needs setup), and `GET /api/tools` sends it. The web app's per-tool tables (`tools.ts`, the tool-call labels, the composer's tool list) are gone, so a new tool needs one server file. `web_search` and the image tools are always registered, listed in Settings with what's missing when unconfigured, and never offered to the model; the Settings Tools tab now sorts a section's tools by label.
 - AGENTS.md's "Adding a tool" lists the presentation fields, and no longer names a flag that doesn't exist (`inTemporaryChats`; it is `offeredIn`).

@@ -20,6 +20,7 @@ import type {
   TurnErrorEvent,
 } from '../../shared/types.ts'
 import { toMarkdown } from '../markdown-export.ts'
+import { refuseTurn } from '../turn-request.ts'
 import type { AppDeps } from '../app.ts'
 import { explainApiError } from '../api-errors.ts'
 import { disposition, json, notFound } from './helpers.ts'
@@ -164,43 +165,8 @@ export function conversationRoutes({
     const id = c.req.param('id')
     if (!store.getConversation(id)) return notFound(c)
     const request = c.req.valid('json')
-    // Attachments: our uploads (or this chat's own files), not a project's.
-    for (const fileId of request.fileIds ?? []) {
-      const file = files.get(fileId)
-      if (
-        !file ||
-        !fileKind(file.name) ||
-        projects.hasFile(fileId) ||
-        (file.conversationId !== null && file.conversationId !== id)
-      ) {
-        return c.json({ error: `File ${fileId} can't be attached here` }, 400)
-      }
-    }
-    if (request.approvals && chat.waitingCalls(id).length === 0) {
-      return c.json({ error: 'No tool calls are waiting for approval' }, 409)
-    }
-    if (typeof request.parentId === 'number') {
-      const parent = store.getItem(id, request.parentId)
-      if (!parent) return notFound(c, 'Item')
-      const role = messageText(parent.data)?.role
-      // A regenerate answers a user message. A new or edited message follows
-      // a message (another user message, after a turn that failed or was
-      // stopped early) or a tool output (a stopped or denied call), but not
-      // an item in the middle of an answer, such as reasoning.
-      if (request.text === undefined) {
-        if (role !== 'user') {
-          return c.json({ error: 'Only a user message can be answered' }, 400)
-        }
-      } else if (
-        !role &&
-        !('type' in parent.data && parent.data.type === 'function_call_output')
-      ) {
-        return c.json(
-          { error: 'A message can only follow a message or a tool output' },
-          400,
-        )
-      }
-    }
+    const refusal = refuseTurn({ store, chat, files, projects }, id, request)
+    if (refusal) return c.json({ error: refusal.error }, refusal.status)
     // Only once the turn is accepted: a refused one leaves its uploads unsent.
     files.link(request.fileIds ?? [], id)
     // Aborted when the client disconnects or presses Stop. Passing it on
