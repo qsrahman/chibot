@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { Config } from '../../src/server/config.ts'
+import { ConversationSearch } from '../../src/server/conversation-search.ts'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
 import type {
   Conversation,
@@ -29,6 +30,7 @@ describe('conversation routes', () => {
     app = testApp({
       config,
       store,
+      search: new ConversationSearch(db),
       settings,
       chat: testChat([], { store, settings }),
       files,

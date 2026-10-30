@@ -7,6 +7,7 @@ import type { Health } from '../shared/types.ts'
 import type { Attachments } from './attachments.ts'
 import type { ChatService } from './chat-service.ts'
 import type { Config } from './config.ts'
+import type { ConversationSearch } from './conversation-search.ts'
 import type { ConversationStore } from './conversation-store.ts'
 import type { FileStore } from './file-store.ts'
 import type { McpServers } from './mcp-servers.ts'
@@ -26,6 +27,7 @@ import { notFound } from './routes/helpers.ts'
 export interface AppDeps {
   config: Config
   store: ConversationStore
+  search: ConversationSearch
   settings: SettingsStore
   chat: ChatService
   files: FileStore

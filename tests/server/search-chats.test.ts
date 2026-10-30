@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { ConversationSearch } from '../../src/server/conversation-search.ts'
 import type { ConversationStore } from '../../src/server/conversation-store.ts'
+import { openDatabase } from '../../src/server/database.ts'
 import { SearchChatsTool } from '../../src/server/tools/search-chats.ts'
 import { memoryStore } from './fakes.ts'
 
 describe('SearchChatsTool', () => {
   let store: ConversationStore
+  let searchChats: SearchChatsTool
   let current: string
   const chat = (title: string, messages: string[], temporary = false) => {
     const { id } = store.createConversation({ temporary })
@@ -18,7 +21,9 @@ describe('SearchChatsTool', () => {
     return id
   }
   beforeEach(() => {
-    store = memoryStore()
+    const db = openDatabase(':memory:')
+    store = memoryStore(db)
+    searchChats = new SearchChatsTool(new ConversationSearch(db))
     chat('Pasta', ['A quick pasta recipe?', 'Boil spaghetti for nine minutes.'])
     chat('Schema', [
       'How should we store chats?',
@@ -34,7 +39,7 @@ describe('SearchChatsTool', () => {
     before?: string | null
   }) =>
     JSON.parse(
-      await new SearchChatsTool(store).run(
+      await searchChats.run(
         { after: null, before: null, ...args },
         { conversationId: current },
       ),

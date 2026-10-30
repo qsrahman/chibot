@@ -7,6 +7,7 @@ import { createApp, type AppDeps } from '../../src/server/app.ts'
 import { Attachments } from '../../src/server/attachments.ts'
 import { ChatService } from '../../src/server/chat-service.ts'
 import { Config } from '../../src/server/config.ts'
+import { ConversationSearch } from '../../src/server/conversation-search.ts'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
 import { openDatabase } from '../../src/server/database.ts'
 import { FileStore } from '../../src/server/file-store.ts'
@@ -279,6 +280,7 @@ export function testApp(deps: Partial<AppDeps> = {}) {
   const projects = deps.projects ?? new ProjectStore(db, files)
   return createApp({
     config: new Config({ OPENAI_API_KEY: 'k' }),
+    search: new ConversationSearch(db),
     chat: new ChatService(fakeClient([]), store, settings),
     memories: new MemoryStore(db),
     index: new ProjectIndex(db, projects, files, null),

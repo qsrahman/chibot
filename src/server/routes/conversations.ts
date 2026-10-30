@@ -27,6 +27,7 @@ import { disposition, json, notFound } from './helpers.ts'
 
 export function conversationRoutes({
   store,
+  search,
   chat,
   files,
   projects,
@@ -36,7 +37,7 @@ export function conversationRoutes({
 
   app.get('/api/conversations', (c) => {
     const q = c.req.query('q')?.trim()
-    if (q) return c.json(store.searchConversations(q))
+    if (q) return c.json(search.conversations(q))
     return c.json(
       store.listConversations({ archived: c.req.query('archived') === '1' }),
     )

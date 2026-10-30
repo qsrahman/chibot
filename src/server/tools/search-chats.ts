@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { ConversationStore } from '../conversation-store.ts'
+import type { ConversationSearch } from '../conversation-search.ts'
 import type { Conversation } from '../../shared/types.ts'
 import { Tool, type ToolContext } from '../tool.ts'
 
@@ -29,11 +29,11 @@ export class SearchChatsTool extends Tool {
       'Only messages before this date (YYYY-MM-DD), or null',
     ),
   })
-  readonly #store: ConversationStore
+  readonly #search: ConversationSearch
 
-  constructor(store: ConversationStore) {
+  constructor(search: ConversationSearch) {
     super()
-    this.#store = store
+    this.#search = search
   }
 
   override offeredIn({ temporary }: Conversation) {
@@ -44,8 +44,8 @@ export class SearchChatsTool extends Tool {
     { query, after, before }: z.output<typeof this.parameters>,
     { conversationId }: ToolContext,
   ) {
-    const results = this.#store
-      .searchMessages(query, {
+    const results = this.#search
+      .messages(query, {
         excludeId: conversationId,
         after: startOf(after),
         before: startOf(before),

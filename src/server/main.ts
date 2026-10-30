@@ -11,6 +11,7 @@ import { OAUTH_CALLBACK } from './routes/mcp.ts'
 import { Attachments } from './attachments.ts'
 import { ChatService } from './chat-service.ts'
 import { Config, loadEnvFiles } from './config.ts'
+import { ConversationSearch } from './conversation-search.ts'
 import { ConversationStore } from './conversation-store.ts'
 import { openDatabase } from './database.ts'
 import { FileStore } from './file-store.ts'
@@ -39,7 +40,7 @@ import { WebSearchTool } from './tools/web-search.ts'
 /** What tools may need to be built. */
 export interface ToolDeps {
   config: Config
-  store: ConversationStore
+  search: ConversationSearch
   files: FileStore
   memories: MemoryStore
   projects: ProjectStore
@@ -49,7 +50,7 @@ export interface ToolDeps {
 /** The shipped tools whose setup exists (e.g. a Brave key for web search). */
 export function defaultTools({
   config,
-  store,
+  search,
   files,
   memories,
   projects,
@@ -63,7 +64,7 @@ export function defaultTools({
   return [
     new FetchUrlTool(),
     new MemoryTool(memories),
-    new SearchChatsTool(store),
+    new SearchChatsTool(search),
     new SearchProjectFilesTool(projects, index),
     // Listed in Settings even without their setup, saying what's missing.
     new WebSearchTool(config.braveApiKey),
@@ -86,6 +87,7 @@ export function start({
   mkdirSync(config.dataDir, { recursive: true })
   const db = openDatabase(config.databasePath)
   const store = new ConversationStore(db)
+  const search = new ConversationSearch(db)
   const settings = new SettingsStore(db, settingsDefaults(config.chat.model))
   const files = new FileStore(db, join(config.dataDir, 'files'))
   const memories = new MemoryStore(db)
@@ -119,7 +121,7 @@ export function start({
   })
   void mcp.start()
   const registry = new ToolRegistry(
-    tools({ config, store, files, memories, projects, index }),
+    tools({ config, search, files, memories, projects, index }),
     mcpTools(mcp, files, () => settings.get().askMcpServers),
   )
   const attachments = new Attachments(client, files)
@@ -132,6 +134,7 @@ export function start({
   const app = createApp({
     config,
     store,
+    search,
     settings,
     chat,
     files,

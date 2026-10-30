@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { sortTools, type ToolInfo } from '../../src/shared/tools.ts'
 import { Config } from '../../src/server/config.ts'
+import { ConversationSearch } from '../../src/server/conversation-search.ts'
 import { openDatabase } from '../../src/server/database.ts'
 import { defaultTools } from '../../src/server/main.ts'
 import { MemoryStore } from '../../src/server/memory-store.ts'
@@ -11,7 +12,7 @@ import {
   GenerateImageTool,
 } from '../../src/server/tools/images.ts'
 import { WebSearchTool } from '../../src/server/tools/web-search.ts'
-import { EchoTool, memoryStore, testFiles } from './fakes.ts'
+import { EchoTool, testFiles } from './fakes.ts'
 
 const context = { conversationId: 'c' }
 
@@ -22,7 +23,7 @@ function shipped(env: Record<string, string>) {
   const projects = new ProjectStore(db, files)
   return defaultTools({
     config: new Config(env),
-    store: memoryStore(db),
+    search: new ConversationSearch(db),
     files,
     memories: new MemoryStore(db),
     projects,

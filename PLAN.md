@@ -130,6 +130,8 @@ Browser (React + Vite)                        Node server (Hono)
   class.
 - **ConversationStore:** CRUD over conversations and their item tree, path and
   sibling queries, all in SQLite.
+- **ConversationSearch:** full-text search over the same database (sidebar
+  search and `search_chats`).
 - **ChatService:** turns (path + new input + settings) into
   `responses.create({ stream: true })` calls, yields the SDK events and
   persists the outcome. `runTurn` queues a chat's turns one after another; a

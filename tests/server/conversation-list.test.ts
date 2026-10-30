@@ -3,14 +3,18 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
+import { ConversationSearch } from '../../src/server/conversation-search.ts'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
 import { openDatabase } from '../../src/server/database.ts'
 import { memoryStore } from './fakes.ts'
 
 describe('ConversationStore lists, search and lifecycle', () => {
   let store: ConversationStore
+  let search: ConversationSearch
   beforeEach(() => {
-    store = memoryStore()
+    const db = openDatabase(':memory:')
+    store = memoryStore(db)
+    search = new ConversationSearch(db)
   })
 
   /** A saved conversation with one exchange, so it has a recent update. */
@@ -65,30 +69,30 @@ describe('ConversationStore lists, search and lifecycle', () => {
     expect(store.deleteConversation(a)).toBe(true)
     expect(store.getConversation(a)).toBeUndefined()
     expect(store.getPath(a)).toEqual([])
-    expect(store.searchConversations('pangolin')).toEqual([])
+    expect(search.conversations('pangolin')).toEqual([])
     expect(store.deleteConversation(a)).toBe(false)
   })
 
   it('searches message text by word prefix, with a snippet', () => {
     const a = chat('How do pangolins defend themselves?', 'They roll up.')
     chat('Something else entirely')
-    const [hit, ...rest] = store.searchConversations('pango')
+    const [hit, ...rest] = search.conversations('pango')
     expect(rest).toEqual([])
     expect(hit).toMatchObject({ id: a })
     expect(hit!.snippet).toContain('pangolins')
-    expect(ids(store.searchConversations('roll up'))).toEqual([a])
+    expect(ids(search.conversations('roll up'))).toEqual([a])
   })
 
   it('searches titles', () => {
     const a = chat('hi', 'hello', 'Trip to Lisbon')
-    expect(ids(store.searchConversations('lisb'))).toEqual([a])
-    expect(store.searchConversations('lisb')[0]!.snippet).toBeUndefined()
+    expect(ids(search.conversations('lisb'))).toEqual([a])
+    expect(search.conversations('lisb')[0]!.snippet).toBeUndefined()
   })
 
   it('treats search operators as plain text', () => {
     chat('a OR b NEAR c "quoted" -minus')
-    expect(() => store.searchConversations('" OR NEAR( -* %_')).not.toThrow()
-    expect(store.searchConversations('   ')).toEqual([])
+    expect(() => search.conversations('" OR NEAR( -* %_')).not.toThrow()
+    expect(search.conversations('   ')).toEqual([])
   })
 
   it('keeps temporary chats out of lists and search, and sweeps them', () => {
@@ -96,7 +100,7 @@ describe('ConversationStore lists, search and lifecycle', () => {
     store.appendItems(id, null, [{ role: 'user', content: 'secret walrus' }])
     expect(store.getConversation(id)!.temporary).toBe(true)
     expect(store.listConversations()).toEqual([])
-    expect(store.searchConversations('walrus')).toEqual([])
+    expect(search.conversations('walrus')).toEqual([])
 
     const kept = chat('kept')
     expect(store.deleteTemporaryConversations()).toBe(1)
@@ -130,7 +134,9 @@ describe('ConversationStore lists, search and lifecycle', () => {
         archived: false,
         temporary: false,
       })
-      expect(ids(migrated.searchConversations('axolotl'))).toEqual(['old'])
+      expect(
+        ids(new ConversationSearch(migratedDb).conversations('axolotl')),
+      ).toEqual(['old'])
       migratedDb.close()
     } finally {
       rmSync(dir, { recursive: true })
