@@ -130,9 +130,13 @@ Browser (React + Vite)                        Node server (Hono)
   class.
 - **ConversationStore:** CRUD over conversations and their item tree, path and
   sibling queries, all in SQLite.
-- **ChatService:** turns (path + new input + settings) into a
-  `responses.create({ stream: true })` call. It yields the SDK events and
-  persists the outcome. Phase 5 adds the function-calling loop here.
+- **ChatService:** turns (path + new input + settings) into
+  `responses.create({ stream: true })` calls, yields the SDK events and
+  persists the outcome. `runTurn` queues a chat's turns one after another; a
+  turn is `#startTurn` (save the message, find the leaf), `#planTurn` (what to
+  send: settings, tools, instructions), then up to `MAX_STEPS` times
+  `#runCalls` (run the previous response's tool calls) and `#respond` (one
+  streamed request, saved as it completes), and finally `#titleIfNew`.
 - **`createApp(deps)`:** the Hono app: access checks, then one route file per
   area (`routes/`). It's a factory so tests can inject fakes.
 - **`prompts.ts`:** what chibot tells the model: its instructions, a project's,

@@ -1,5 +1,6 @@
 import OpenAI from 'openai'
 import type {
+  FunctionTool,
   ResponseCreateParams,
   ResponseCreateParamsNonStreaming,
   ResponseFunctionToolCall,
@@ -7,8 +8,10 @@ import type {
   ResponseStreamEvent,
 } from 'openai/resources/responses/responses'
 import { messageText } from '../shared/messages.ts'
+import type { Settings } from '../shared/settings.ts'
 import { sortTools, type ToolInfo } from '../shared/tools.ts'
 import type {
+  Conversation,
   TurnApprovalEvent,
   TurnRequest,
   TurnTitleEvent,
@@ -21,6 +24,25 @@ import type { ProjectStore } from './project-store.ts'
 import type { SettingsStore } from './settings-store.ts'
 import { chatInstructions, cleanTitle, TITLE_INSTRUCTIONS } from './prompts.ts'
 import { TOOL_DENIED, ToolRegistry } from './tool-registry.ts'
+
+/** What `runTurn` yields. */
+type TurnEvent =
+  ResponseStreamEvent | TurnTitleEvent | TurnToolOutputEvent | TurnApprovalEvent
+
+/** What a turn sends the model, fixed when it starts. */
+interface TurnPlan {
+  conversation: Conversation
+  model: string
+  reasoningEffort: Settings['reasoningEffort']
+  compactThreshold: number | null
+  /** The tools offered, as request entries. */
+  tools: FunctionTool[]
+  /** Tools a call is refused for: unavailable, switched off or not offered here. */
+  disabled: string[]
+  instructions: string
+  /** The tool the user picked for this message, if any. */
+  forced: FunctionTool | undefined
+}
 
 // How long a turn waits for the previous turn of its chat to unwind.
 const PREVIOUS_TURN_WAIT_MS = 5000
@@ -100,12 +122,7 @@ export class ChatService {
     conversationId: string,
     request: TurnRequest,
     signal?: AbortSignal,
-  ): AsyncGenerator<
-    | ResponseStreamEvent
-    | TurnTitleEvent
-    | TurnToolOutputEvent
-    | TurnApprovalEvent
-  > {
+  ): AsyncGenerator<TurnEvent> {
     const previous = this.#turns.get(conversationId)
     const finished = Promise.withResolvers<void>()
     this.#turns.set(conversationId, finished.promise)
@@ -123,187 +140,38 @@ export class ChatService {
   /** @param saved called once everything is saved, before the title */
   async *#runTurn(
     conversationId: string,
-    { text, parentId, approvals, tool, fileIds = [] }: TurnRequest,
+    request: TurnRequest,
     signal: AbortSignal | undefined,
     saved: () => void,
-  ): AsyncGenerator<
-    | ResponseStreamEvent
-    | TurnTitleEvent
-    | TurnToolOutputEvent
-    | TurnApprovalEvent
-  > {
-    // The item the next output goes under: the user message being answered,
-    // or (resuming after approval) the waiting calls. Callers validate
-    // `parentId` and that calls are waiting.
-    let leafId: number
-    // Calls to answer before the next request.
-    let calls: ResponseFunctionToolCall[] = []
-    if (approvals) {
-      leafId = this.#store.getConversation(conversationId)!.currentLeafId!
-      calls = this.waitingCalls(conversationId, leafId)
-    } else if (text === undefined) {
-      leafId = parentId!
-    } else {
-      let parent =
-        parentId === undefined
-          ? this.#store.getConversation(conversationId)!.currentLeafId
-          : parentId
-      const waiting =
-        parent === null ? [] : this.waitingCalls(conversationId, parent)
-      if (waiting.length > 0) {
-        parent = this.#store
-          .appendItems(
-            conversationId,
-            parent,
-            waiting.map((call) => ({
-              type: 'function_call_output',
-              call_id: call.call_id,
-              output: TOOL_DENIED,
-            })),
-          )
-          .at(-1)!.id
-      }
-      // Callers validate `fileIds` (only with `attachments`).
-      const content =
-        fileIds.length > 0
-          ? [
-              ...this.#attachments!.parts(fileIds),
-              // Files alone are a message too.
-              ...(text.trim() ? [{ type: 'input_text' as const, text }] : []),
-            ]
-          : text
-      leafId = this.#store.appendItems(conversationId, parent, [
-        { role: 'user', content },
-      ])[0]!.id
-    }
-    const settings = this.#settings.get()
-    const { model, reasoningEffort, compactThreshold } = settings
-    const conversation = this.#store.getConversation(conversationId)!
-    const offered = this.#tools.tools.filter(
-      (t) =>
-        t.unavailable() === null &&
-        !settings.disabledTools.includes(t.name) &&
-        t.offeredIn(conversation),
-    )
-    const disabled = this.#tools.tools
-      .filter((t) => !offered.includes(t))
-      .map((t) => t.name)
-    const tools = offered.map((t) => t.declaration)
-    const project = conversation.projectId
-      ? this.#projects?.get(conversation.projectId)
-      : null
-    const instructions = chatInstructions(settings, {
-      project,
-      tools: offered.length > 0,
-      untrusted: offered.some((t) => t.untrustedOutput),
-      toolInstructions: offered.map((t) => t.instructions(conversation)),
-    })
-    // A tool the user picked is forced on the first request only; after
-    // that the model decides (or it would call it forever).
-    const forced = tools.find((t) => t.name === tool)
-
+  ): AsyncGenerator<TurnEvent> {
+    let { leafId, calls } = this.#startTurn(conversationId, request)
+    const plan = this.#planTurn(conversationId, request.tool)
+    let approvals = request.approvals
     let answered = false
     for (let step = 1; step <= MAX_STEPS; step++) {
       if (calls.length > 0) {
-        const history = this.#history(conversationId, leafId)
-        leafId = yield* this.#answer(conversationId, leafId, calls, (call) =>
-          !this.#tools.needsApproval(call, history) || approvals?.[call.call_id]
-            ? this.#tools.run(
-                call,
-                { conversationId, projectId: conversation.projectId, signal },
-                disabled,
-              )
-            : Promise.resolve(TOOL_DENIED),
+        leafId = yield* this.#runCalls(
+          plan,
+          conversationId,
+          leafId,
+          calls,
+          approvals,
+          signal,
         )
         signal?.throwIfAborted()
         approvals = undefined
       }
-      const input = fromLastCompaction(
-        this.#store.getPath(conversationId, leafId).map((item) => item.data),
+      const response = yield* this.#respond(
+        plan,
+        conversationId,
+        leafId,
+        step,
+        signal,
       )
-      let partial = ''
-      let output: ResponseInputItem[] | null = null
-      try {
-        // Not `responses.stream()`: its accumulator rejects some compatible
-        // servers' streams (Ollama gpt-oss: "missing content at index 0"), and
-        // chibot must save the answer before relaying `response.completed`.
-        const stream = await this.#withAttachments(model, input, (input) =>
-          this.#withOptional(
-            model,
-            {
-              reasoning: {
-                summary: 'auto',
-                ...(reasoningEffort && { effort: reasoningEffort }),
-              },
-              ...(compactThreshold !== null && {
-                context_management: [
-                  { type: 'compaction', compact_threshold: compactThreshold },
-                ],
-              }),
-            },
-            (optional) =>
-              this.#client.responses.create(
-                {
-                  model,
-                  instructions,
-                  input,
-                  ...(tools.length > 0 && {
-                    tools,
-                    // Make the last request answer instead of calling more.
-                    ...(step === MAX_STEPS && { tool_choice: 'none' as const }),
-                    ...(step === 1 &&
-                      forced && {
-                        tool_choice: { type: 'function', name: forced.name },
-                      }),
-                  }),
-                  stream: true,
-                  store: false,
-                  // Reasoning items can only be replayed without server-side
-                  // storage when they carry their encrypted content.
-                  include: ['reasoning.encrypted_content'],
-                  ...optional,
-                },
-                { signal },
-              ),
-          ),
-        )
-        for await (const event of stream) {
-          if (event.type === 'response.output_text.delta') {
-            partial += event.delta
-          } else if (
-            event.type === 'response.completed' ||
-            event.type === 'response.incomplete'
-          ) {
-            // Output items are valid input for the next turn. The SDK's types
-            // only disagree for item kinds chibot never requests.
-            output = event.response.output as ResponseInputItem[]
-            const items = this.#store.appendItems(
-              conversationId,
-              leafId,
-              output,
-              event.response.usage ?? null,
-              // The server may name a dated snapshot of the model requested.
-              event.response.model || model,
-            )
-            leafId = items.at(-1)?.id ?? leafId
-            answered = true
-          }
-          yield event
-        }
-      } finally {
-        // `finally` also runs when the consumer stops iterating (client gone).
-        if (!output && partial) {
-          this.#store.appendItems(
-            conversationId,
-            leafId,
-            [{ role: 'assistant', content: partial }],
-            null,
-            model,
-          )
-        }
-      }
+      leafId = response.leafId
+      answered ||= response.answered
 
-      calls = (output ?? []).filter(
+      calls = (response.output ?? []).filter(
         (item): item is ResponseFunctionToolCall =>
           item.type === 'function_call',
       )
@@ -324,12 +192,241 @@ export class ChatService {
 
     // The title may take a while, and the chat no longer changes meanwhile.
     saved()
+    const title = answered
+      ? await this.#titleIfNew(conversationId, signal)
+      : null
+    if (title) yield { type: 'chibot.title', title }
+  }
+
+  /**
+   * Saves the user's message (unless this is a regenerate or a resume after
+   * approval) and finds where the answer goes: the item the next output goes
+   * under, and the calls to answer before the next request. Callers validate
+   * `parentId`, `fileIds` (only with `attachments`) and that calls are waiting.
+   */
+  #startTurn(
+    conversationId: string,
+    { text, parentId, approvals, fileIds = [] }: TurnRequest,
+  ): { leafId: number; calls: ResponseFunctionToolCall[] } {
+    if (approvals) {
+      const leafId = this.#store.getConversation(conversationId)!.currentLeafId!
+      return { leafId, calls: this.waitingCalls(conversationId, leafId) }
+    }
+    if (text === undefined) return { leafId: parentId!, calls: [] }
+
+    let parent =
+      parentId === undefined
+        ? this.#store.getConversation(conversationId)!.currentLeafId
+        : parentId
+    const waiting =
+      parent === null ? [] : this.waitingCalls(conversationId, parent)
+    if (waiting.length > 0) {
+      parent = this.#store
+        .appendItems(
+          conversationId,
+          parent,
+          waiting.map((call) => ({
+            type: 'function_call_output',
+            call_id: call.call_id,
+            output: TOOL_DENIED,
+          })),
+        )
+        .at(-1)!.id
+    }
+    const content =
+      fileIds.length > 0
+        ? [
+            ...this.#attachments!.parts(fileIds),
+            // Files alone are a message too.
+            ...(text.trim() ? [{ type: 'input_text' as const, text }] : []),
+          ]
+        : text
+    const leafId = this.#store.appendItems(conversationId, parent, [
+      { role: 'user', content },
+    ])[0]!.id
+    return { leafId, calls: [] }
+  }
+
+  /** What the turn sends the model, from the settings and tools as they are now. */
+  #planTurn(conversationId: string, tool: string | undefined): TurnPlan {
+    const settings = this.#settings.get()
+    const conversation = this.#store.getConversation(conversationId)!
+    const offered = this.#tools.tools.filter(
+      (t) =>
+        t.unavailable() === null &&
+        !settings.disabledTools.includes(t.name) &&
+        t.offeredIn(conversation),
+    )
+    const tools = offered.map((t) => t.declaration)
+    const project = conversation.projectId
+      ? this.#projects?.get(conversation.projectId)
+      : null
+    return {
+      conversation,
+      model: settings.model,
+      reasoningEffort: settings.reasoningEffort,
+      compactThreshold: settings.compactThreshold,
+      tools,
+      disabled: this.#tools.tools
+        .filter((t) => !offered.includes(t))
+        .map((t) => t.name),
+      instructions: chatInstructions(settings, {
+        project,
+        tools: offered.length > 0,
+        untrusted: offered.some((t) => t.untrustedOutput),
+        toolInstructions: offered.map((t) => t.instructions(conversation)),
+      }),
+      // A tool the user picked is forced on the first request only; after
+      // that the model decides (or it would call it forever).
+      forced: tools.find((t) => t.name === tool),
+    }
+  }
+
+  /**
+   * Runs the calls the last response made (the approved ones; the rest get
+   * `TOOL_DENIED`), saves their outputs and yields them as `chibot.tool_output`.
+   * Returns the new leaf.
+   */
+  async *#runCalls(
+    plan: TurnPlan,
+    conversationId: string,
+    leafId: number,
+    calls: ResponseFunctionToolCall[],
+    approvals: TurnRequest['approvals'],
+    signal: AbortSignal | undefined,
+  ): AsyncGenerator<TurnToolOutputEvent, number> {
+    const history = this.#history(conversationId, leafId)
+    return yield* this.#answer(conversationId, leafId, calls, (call) =>
+      !this.#tools.needsApproval(call, history) || approvals?.[call.call_id]
+        ? this.#tools.run(
+            call,
+            {
+              conversationId,
+              projectId: plan.conversation.projectId,
+              signal,
+            },
+            plan.disabled,
+          )
+        : Promise.resolve(TOOL_DENIED),
+    )
+  }
+
+  /**
+   * One request to the model, streamed: yields its events and saves the
+   * response (before its `response.completed` is yielded). If the stream ends
+   * any other way, the text received so far is kept as a partial answer.
+   * Returns the new leaf, the response's output (`null` if it never
+   * completed) and whether it completed.
+   */
+  async *#respond(
+    plan: TurnPlan,
+    conversationId: string,
+    leafId: number,
+    step: number,
+    signal: AbortSignal | undefined,
+  ): AsyncGenerator<
+    ResponseStreamEvent,
+    { leafId: number; output: ResponseInputItem[] | null; answered: boolean }
+  > {
+    const { model, instructions, tools, forced } = plan
+    const input = fromLastCompaction(this.#history(conversationId, leafId))
+    let partial = ''
+    let output: ResponseInputItem[] | null = null
+    let answered = false
+    try {
+      // Not `responses.stream()`: its accumulator rejects some compatible
+      // servers' streams (Ollama gpt-oss: "missing content at index 0"), and
+      // chibot must save the answer before relaying `response.completed`.
+      const stream = await this.#withAttachments(model, input, (input) =>
+        this.#withOptional(
+          model,
+          {
+            reasoning: {
+              summary: 'auto',
+              ...(plan.reasoningEffort && { effort: plan.reasoningEffort }),
+            },
+            ...(plan.compactThreshold !== null && {
+              context_management: [
+                {
+                  type: 'compaction',
+                  compact_threshold: plan.compactThreshold,
+                },
+              ],
+            }),
+          },
+          (optional) =>
+            this.#client.responses.create(
+              {
+                model,
+                instructions,
+                input,
+                ...(tools.length > 0 && {
+                  tools,
+                  // Make the last request answer instead of calling more.
+                  ...(step === MAX_STEPS && { tool_choice: 'none' as const }),
+                  ...(step === 1 &&
+                    forced && {
+                      tool_choice: { type: 'function', name: forced.name },
+                    }),
+                }),
+                stream: true,
+                store: false,
+                // Reasoning items can only be replayed without server-side
+                // storage when they carry their encrypted content.
+                include: ['reasoning.encrypted_content'],
+                ...optional,
+              },
+              { signal },
+            ),
+        ),
+      )
+      for await (const event of stream) {
+        if (event.type === 'response.output_text.delta') {
+          partial += event.delta
+        } else if (
+          event.type === 'response.completed' ||
+          event.type === 'response.incomplete'
+        ) {
+          // Output items are valid input for the next turn. The SDK's types
+          // only disagree for item kinds chibot never requests.
+          output = event.response.output as ResponseInputItem[]
+          const items = this.#store.appendItems(
+            conversationId,
+            leafId,
+            output,
+            event.response.usage ?? null,
+            // The server may name a dated snapshot of the model requested.
+            event.response.model || model,
+          )
+          leafId = items.at(-1)?.id ?? leafId
+          answered = true
+        }
+        yield event
+      }
+    } finally {
+      // `finally` also runs when the consumer stops iterating (client gone).
+      if (!output && partial) {
+        this.#store.appendItems(
+          conversationId,
+          leafId,
+          [{ role: 'assistant', content: partial }],
+          null,
+          model,
+        )
+      }
+    }
+    return { leafId, output, answered }
+  }
+
+  /** A title for a chat that has none yet (never a temporary one), or `null`. */
+  async #titleIfNew(
+    conversationId: string,
+    signal: AbortSignal | undefined,
+  ): Promise<string | null> {
     // Read again: the title may have been set meanwhile.
     const current = this.#store.getConversation(conversationId)!
-    if (answered && current.title === null && !current.temporary) {
-      const title = await this.#generateTitle(conversationId, signal)
-      if (title) yield { type: 'chibot.title', title }
-    }
+    if (current.title !== null || current.temporary) return null
+    return this.#generateTitle(conversationId, signal)
   }
 
   /** The items on the path to `leafId`. */
