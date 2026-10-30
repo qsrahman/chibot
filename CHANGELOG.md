@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.11.11] - 2026-10-30
+
 ### Changed
 
 - Code only: `ChatService`'s 207-line turn loop is split into named steps (`#startTurn`, `#planTurn`, `#runCalls`, `#respond`, `#titleIfNew`) around a small `TurnPlan`; behavior is unchanged (the existing tests pass untouched).
