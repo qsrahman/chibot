@@ -9,6 +9,11 @@ const date = z.string().nullable()
 export class SearchChatsTool extends Tool {
   readonly name = 'search_chats'
   readonly label = 'Search past chats'
+  override readonly group = 'Your chats and files'
+  override readonly summary =
+    'Finds your earlier chats on this machine when you refer to them.'
+  override readonly running = 'Searching your chats…'
+  override readonly done = 'Searched your chats'
   readonly description =
     "Searches the user's earlier chats with you (their messages and your " +
     'answers) and returns each matching chat’s title with its best-matching ' +

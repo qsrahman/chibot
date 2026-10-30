@@ -159,19 +159,30 @@ transpiles it.
    the text the model sees. `context` has the `conversationId` (e.g. to keep
    files with the chat in `FileStore`) and the stop `signal`. Return JSON when
    the web app reads the output too (as for sources and images).
-2. Set `override readonly requiresApproval = true` if it has side effects
+2. Say how the interface should present it; the web app keeps no per-tool
+   text, it reads `Tool.info` from `GET /api/tools`: a `group` (Settings
+   section, see `TOOL_GROUPS` in `src/shared/tools.ts`), a `summary` (what it
+   does and what leaves the machine, in the user's words), `running` and
+   `done` (what an answer says: "Searching the web…" / "Searched the web"),
+   and, to offer it in the composer's "+" menu, a `chip`. A shipped tool that
+   leaves these out fails `tests/server/tool-info.test.ts`.
+3. Set `override readonly requiresApproval = true` if it has side effects
    (sends, writes, deletes, spends): the turn then waits for Approve / Deny.
    Use `'after-untrusted'` to ask only in chats that hold untrusted content
    (like `memory`), and mark tools whose output carries others' text
    (pages, search results) `untrustedOutput = true`. Tools that read or keep
-   the user's history set `inTemporaryChats = false`, and a tool can add to
-   the chat's instructions while offered by overriding `instructions()`.
-3. Throw for errors: `ToolRegistry` returns `Error: …` to the model, as it
+   the user's history override `offeredIn(conversation)` to leave out
+   temporary chats, and a tool can add to the chat's instructions while
+   offered by overriding `instructions()`.
+4. Throw for errors: `ToolRegistry` returns `Error: …` to the model, as it
    does for invalid arguments. Honour `signal` for anything slow.
-4. Add it to `defaultTools()` (`main.ts`), only when its setup exists (keys,
-   endpoints, from `Config`). Take collaborators (clients, `FileStore`) in the
-   constructor, and test `run` directly, like `tests/server/memory.test.ts`.
-5. Anything that reaches the network on the model's behalf must refuse private
+5. Add it to `defaultTools()` (`main.ts`). A tool that needs setup (keys,
+   endpoints, from `Config`) is always added, given `null` for what's
+   missing, and overrides `unavailable()` to say what to set: Settings lists
+   it with that hint and it's never offered to the model (see `web_search`).
+   Take collaborators (clients, `FileStore`) in the constructor, and test
+   `run` directly, like `tests/server/memory.test.ts`.
+6. Anything that reaches the network on the model's behalf must refuse private
    addresses, like `fetch_url` (`tools/fetch-url.ts`).
 
 ## Comments

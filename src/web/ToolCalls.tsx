@@ -1,27 +1,28 @@
 // An answer's tool calls: a collapsed row each (or one group), opening to
 // what was asked and what came back.
-import { mcpToolName, summarizeTool, type ToolActivity } from './turns.ts'
+import { useContext } from 'react'
+import type { ToolInfo } from '../shared/tools.ts'
 import { SourceLink } from './Sources.tsx'
 import { Summary } from './Summary.tsx'
+import { ToolInfoContext } from './toolInfo.ts'
+import { mcpToolName, summarizeTool, type ToolActivity } from './turns.ts'
 
-/** What a tool call says while running and once done. */
-const TOOL_LABELS: Record<string, [running: string, done: string]> = {
-  web_search: ['Searching the web…', 'Searched the web'],
-  fetch_url: ['Reading a page…', 'Read a page'],
-  generate_image: ['Creating an image…', 'Created an image'],
-  edit_image: ['Editing the image…', 'Edited the image'],
-  memory: ['Updating memory…', 'Memory updated'],
-  search_chats: ['Searching your chats…', 'Searched your chats'],
-  search_project_files: ['Searching project files…', 'Searched project files'],
-}
-
-/** What a tool call shows while it runs, and once it's done. */
-function labelsOf(tool: ToolActivity): [running: string, done: string] {
-  const labels = TOOL_LABELS[tool.name]
-  if (labels) return labels
-  const mcp = mcpToolName(tool.name)
-  const name = mcp ? `${mcp.tool} · ${mcp.server}` : tool.name
-  return [`Running ${name}…`, `Used ${name}`]
+/**
+ * What a tool call shows while it runs, and once it's done: the words the
+ * tool gave itself. An MCP server's tool is named from its name (the list may
+ * predate a reload), and a tool the server no longer has by its raw name.
+ */
+function labelsOf(
+  name: string,
+  infos: ToolInfo[],
+): [running: string, done: string] {
+  const mcp = mcpToolName(name)
+  if (mcp) {
+    const label = `${mcp.tool} · ${mcp.server}`
+    return [`Running ${label}…`, `Used ${label}`]
+  }
+  const info = infos.find((tool) => tool.name === name)
+  return info ? [info.running, info.done] : [`Running ${name}…`, `Used ${name}`]
 }
 
 /**
@@ -30,12 +31,15 @@ function labelsOf(tool: ToolActivity): [running: string, done: string] {
  * visible) or, while one runs, with what it's doing; each opens on its own.
  */
 export function ToolCalls({ tools }: { tools: ToolActivity[] }) {
+  const infos = useContext(ToolInfoContext)
   if (tools.length === 0) return null
   if (tools.length === 1) return <ToolCall tool={tools[0]!} />
   const running = tools.find((tool) => tool.output === null)
   const label = running
-    ? labelsOf(running)[0]
-    : [...new Set(tools.map((tool) => labelsOf(tool)[1]))].join(', ')
+    ? labelsOf(running.name, infos)[0]
+    : [...new Set(tools.map((tool) => labelsOf(tool.name, infos)[1]))].join(
+        ', ',
+      )
   return (
     <details className="thoughts tool-calls">
       <Summary live={running !== undefined}>{label}</Summary>
@@ -49,8 +53,9 @@ export function ToolCalls({ tools }: { tools: ToolActivity[] }) {
 }
 
 function ToolCall({ tool }: { tool: ToolActivity }) {
+  const infos = useContext(ToolInfoContext)
   const running = tool.output === null
-  const [busyLabel, doneLabel] = labelsOf(tool)
+  const [busyLabel, doneLabel] = labelsOf(tool.name, infos)
   return (
     <details className="thoughts tool-call">
       <Summary live={running}>{running ? busyLabel : doneLabel}</Summary>

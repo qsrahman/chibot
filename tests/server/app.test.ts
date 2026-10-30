@@ -82,7 +82,7 @@ describe('API', () => {
     })
   })
 
-  it('GET /api/tools lists the tools with their labels', async () => {
+  it('GET /api/tools lists the tools, each in its own words', async () => {
     const settings = testSettings('m-1')
     const chat = testChat([], {
       store,
@@ -96,7 +96,18 @@ describe('API', () => {
       chat,
     })
     expect(await (await app.request('/api/tools')).json()).toEqual({
-      tools: [{ name: 'echo', label: 'Echo' }],
+      tools: [
+        {
+          name: 'echo',
+          label: 'Echo',
+          group: 'Other',
+          summary: '',
+          running: 'Running Echo…',
+          done: 'Used Echo',
+          chip: null,
+          unavailable: null,
+        },
+      ],
     })
   })
 

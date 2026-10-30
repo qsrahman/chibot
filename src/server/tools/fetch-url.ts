@@ -79,6 +79,11 @@ const blockedError = (host: string, address: string) =>
 export class FetchUrlTool extends Tool {
   readonly name = 'fetch_url'
   readonly label = 'Read web pages'
+  override readonly group = 'The web'
+  override readonly summary =
+    'Reads pages you link or it finds. Never addresses on this machine or your network.'
+  override readonly running = 'Reading a page…'
+  override readonly done = 'Read a page'
   override readonly untrustedOutput = true
   readonly description =
     'Reads a web page and returns its main text: a search result to read in ' +

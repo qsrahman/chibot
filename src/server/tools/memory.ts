@@ -8,6 +8,11 @@ import { Tool } from '../tool.ts'
 export class MemoryTool extends Tool {
   readonly name = 'memory'
   readonly label = 'Memory'
+  override readonly group = 'Your chats and files'
+  override readonly summary =
+    'Remembers lasting facts and preferences across chats. Off, no memories are used.'
+  override readonly running = 'Updating memory…'
+  override readonly done = 'Memory updated'
   readonly description =
     'Saves, updates or deletes a memory about the user, kept across chats.'
   readonly parameters = z.object({

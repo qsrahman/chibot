@@ -7,8 +7,8 @@ import type {
   ResponseStreamEvent,
 } from 'openai/resources/responses/responses'
 import { messageText } from '../shared/messages.ts'
+import { sortTools, type ToolInfo } from '../shared/tools.ts'
 import type {
-  ToolInfo,
   TurnApprovalEvent,
   TurnRequest,
   TurnTitleEvent,
@@ -181,7 +181,9 @@ export class ChatService {
     const conversation = this.#store.getConversation(conversationId)!
     const offered = this.#tools.tools.filter(
       (t) =>
-        !settings.disabledTools.includes(t.name) && t.offeredIn(conversation),
+        t.unavailable() === null &&
+        !settings.disabledTools.includes(t.name) &&
+        t.offeredIn(conversation),
     )
     const disabled = this.#tools.tools
       .filter((t) => !offered.includes(t))
@@ -393,9 +395,12 @@ export class ChatService {
     return this.#generateTitle(conversationId, signal, true)
   }
 
-  /** The tools chibot offers (whatever the user switched off), for Settings. */
+  /**
+   * Every tool, for Settings and the composer (whether it's switched off is
+   * the `disabledTools` setting; one that needs setup says what).
+   */
   get tools(): ToolInfo[] {
-    return this.#tools.tools.map(({ name, label }) => ({ name, label }))
+    return sortTools(this.#tools.tools.map((tool) => tool.info))
   }
 
   /**

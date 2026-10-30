@@ -6,6 +6,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- Code only: each tool describes itself (`group`, `summary`, `running` / `done`, `chip`, and `unavailable()` when it needs setup), and `GET /api/tools` sends it. The web app's per-tool tables (`tools.ts`, the tool-call labels, the composer's tool list) are gone, so a new tool needs one server file. `web_search` and the image tools are always registered, listed in Settings with what's missing when unconfigured, and never offered to the model; the Settings Tools tab now sorts a section's tools by label.
+- AGENTS.md's "Adding a tool" lists the presentation fields, and no longer names a flag that doesn't exist (`inTemporaryChats`; it is `offeredIn`).
 - Docs only: README, PLAN, DESIGN and AGENTS are synced with the code (status, the Settings tabs, the tokens file, `scripts/`, `pnpm release`, the logo spacing). PLAN gains a status table with each phase's release and a record of the patch releases between phases, marks Phases 11a and 11 as not built, and drops finished phases' commit lists, "Done when" notes and research narration.
 
 ## [0.11.10] - 2026-10-28

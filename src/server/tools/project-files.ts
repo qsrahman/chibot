@@ -11,6 +11,11 @@ const MAX_LISTED_FILES = 50
 export class SearchProjectFilesTool extends Tool {
   readonly name = 'search_project_files'
   readonly label = 'Search project files'
+  override readonly group = 'Your chats and files'
+  override readonly summary =
+    "Searches a project's files, in that project's chats."
+  override readonly running = 'Searching project files…'
+  override readonly done = 'Searched project files'
   readonly description =
     "Searches the files of this chat's project and returns the passages " +
     'that best match, with their file names. Use it whenever the question ' +

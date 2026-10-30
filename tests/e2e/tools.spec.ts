@@ -25,7 +25,7 @@ test('waits for approval, also across a reload, then runs the tool', async ({
   await answered(page)
   await expect(answer(page, 0)).toHaveText('Tool said: Saved note: hello')
   await expect(approvalCard(page)).toHaveCount(0)
-  await expect(page.getByText('Used e2e_note')).toBeVisible()
+  await expect(page.getByText('Used Notes (test)')).toBeVisible()
 })
 
 test('tells the model when the user denies a tool', async ({ page }) => {

@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type DragEvent } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type DragEvent,
+  type ReactNode,
+} from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import {
   ArrowDown,
@@ -7,12 +13,13 @@ import {
   MessageCircleDashed,
   PanelLeft,
 } from 'lucide-react'
+import type { ToolIcon } from '../shared/tools.ts'
 import type { ConversationListItem, Health } from '../shared/types.ts'
 import { Composer, type ToolOption } from './Composer.tsx'
 import { ModelPicker } from './ModelPicker.tsx'
 import { ProjectDetails, ProjectHeading } from './ProjectHome.tsx'
 import { SHORTCUTS, useShortcuts } from './shortcuts.ts'
-import { TOOL_TEXT } from './tools.ts'
+import { ToolInfoContext } from './toolInfo.ts'
 import { waitingCalls } from './turns.ts'
 import { ApprovalCard, TurnView } from './TurnView.tsx'
 import { describeUsage } from './usage.ts'
@@ -22,21 +29,11 @@ import { UNTITLED } from './useConversations.ts'
 import type { ProjectsApi } from './useProjects.ts'
 import type { SettingsApi } from './useSettings.ts'
 
-/** Tools the composer's "+" menu offers, and what each needs set up. */
-const COMPOSER_TOOLS: Omit<ToolOption, 'unavailable'>[] = [
-  {
-    name: 'web_search',
-    label: 'Search the web',
-    chip: 'Search',
-    icon: <Globe size={18} strokeWidth={1.5} aria-hidden />,
-  },
-  {
-    name: 'generate_image',
-    label: 'Create an image',
-    chip: 'Image',
-    icon: <ImagePlus size={18} strokeWidth={1.5} aria-hidden />,
-  },
-]
+/** The composer's icons for a tool, by the name the server gives. */
+const TOOL_ICONS: Record<ToolIcon, ReactNode> = {
+  globe: <Globe size={18} strokeWidth={1.5} aria-hidden />,
+  image: <ImagePlus size={18} strokeWidth={1.5} aria-hidden />,
+}
 
 interface Props {
   health: Health | undefined
@@ -75,14 +72,23 @@ export function ChatPage({
   const [dragging, setDragging] = useState(false)
   const waiting = pending ? [] : waitingCalls(turns)
   // Shown even when unavailable, saying why, so they can be found.
-  const toolOptions: ToolOption[] = COMPOSER_TOOLS.map((option) => ({
-    ...option,
-    unavailable: !settings.tools.some((tool) => tool.name === option.name)
-      ? (TOOL_TEXT[option.name]?.setup ?? 'Not set up')
-      : settings.settings?.disabledTools.includes(option.name)
-        ? 'Off in Settings → Tools'
-        : null,
-  }))
+  const toolOptions: ToolOption[] = settings.tools.flatMap((tool) =>
+    tool.chip
+      ? [
+          {
+            name: tool.name,
+            label: tool.chip.action,
+            chip: tool.chip.text,
+            icon: TOOL_ICONS[tool.chip.icon],
+            unavailable:
+              tool.unavailable ??
+              (settings.settings?.disabledTools.includes(tool.name)
+                ? 'Off in Settings → Tools'
+                : null),
+          },
+        ]
+      : [],
+  )
   const chatUsage = describeUsage(chat.usage)
   // Each answer shows the context it sent against this limit.
   const compactThreshold =
@@ -221,212 +227,215 @@ export function ChatPage({
   }, [pageTitle])
 
   return (
-    <main
-      className={[
-        'chat',
-        empty && 'empty',
-        empty && projectHome && 'project-home',
-        dragging && 'dragging',
-      ]
-        .filter(Boolean)
-        .join(' ')}
-      {...dragHandlers}
-    >
-      <header className="topbar">
-        <span className="topbar-start">
-          {onOpenSidebar && (
-            <button
-              type="button"
-              className="icon-button"
-              aria-label="Open sidebar"
-              onClick={onOpenSidebar}
-            >
-              <PanelLeft size={20} strokeWidth={1.5} />
-            </button>
-          )}
-          {id && project && (
-            <Link className="breadcrumb" to={`/projects/${project.id}`}>
-              {project.name} /
-            </Link>
-          )}
-          {/* Phones only: with the sidebar hidden, say which chat this is. */}
-          {id && pageTitle && (
-            <span className="topbar-title" title={pageTitle}>
-              {pageTitle}
-            </span>
-          )}
-          {!health ? (
-            <span className="model">Server unreachable</span>
-          ) : settings.settings && settings.defaults ? (
-            <span title={health.baseURL ?? 'OpenAI'}>
-              <ModelPicker
-                model={settings.settings.model}
-                defaultModel={settings.defaults.model}
-                onSelect={(model) => void settings.update({ model })}
-                effort={settings.settings.reasoningEffort}
-                onEffort={(reasoningEffort) =>
-                  void settings.update({ reasoningEffort })
-                }
-              />
-            </span>
-          ) : null}
-        </span>
-        {projectHome ? null : id ? (
-          <span className="topbar-info">
-            {chatUsage && (
-              <span
-                className="usage"
-                title={`This chat, all versions: ${chatUsage.detail}`}
+    <ToolInfoContext value={settings.tools}>
+      <main
+        className={[
+          'chat',
+          empty && 'empty',
+          empty && projectHome && 'project-home',
+          dragging && 'dragging',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        {...dragHandlers}
+      >
+        <header className="topbar">
+          <span className="topbar-start">
+            {onOpenSidebar && (
+              <button
+                type="button"
+                className="icon-button"
+                aria-label="Open sidebar"
+                onClick={onOpenSidebar}
               >
-                {chatUsage.short}
+                <PanelLeft size={20} strokeWidth={1.5} />
+              </button>
+            )}
+            {id && project && (
+              <Link className="breadcrumb" to={`/projects/${project.id}`}>
+                {project.name} /
+              </Link>
+            )}
+            {/* Phones only: with the sidebar hidden, say which chat this is. */}
+            {id && pageTitle && (
+              <span className="topbar-title" title={pageTitle}>
+                {pageTitle}
               </span>
             )}
-            {temporary && <span className="badge">Temporary chat</span>}
+            {!health ? (
+              <span className="model">Server unreachable</span>
+            ) : settings.settings && settings.defaults ? (
+              <span title={health.baseURL ?? 'OpenAI'}>
+                <ModelPicker
+                  model={settings.settings.model}
+                  defaultModel={settings.defaults.model}
+                  onSelect={(model) => void settings.update({ model })}
+                  effort={settings.settings.reasoningEffort}
+                  onEffort={(reasoningEffort) =>
+                    void settings.update({ reasoningEffort })
+                  }
+                />
+              </span>
+            ) : null}
           </span>
-        ) : (
-          <button
-            type="button"
-            className={temporaryMode ? 'icon-button active' : 'icon-button'}
-            aria-label="Temporary chat"
-            aria-pressed={temporaryMode}
-            title="Temporary chat"
-            onClick={() => setTemporaryMode((on) => !on)}
-          >
-            <MessageCircleDashed size={20} strokeWidth={1.5} />
-          </button>
-        )}
-      </header>
-      {empty && projectHome ? (
-        project ? (
-          <ProjectHeading
-            project={project}
-            onRename={(name) => void projects.rename(project.id, name)}
-            onDelete={() =>
-              void projects.remove(project.id).then((gone) => {
-                if (gone) navigate('/')
-              })
-            }
-          />
-        ) : (
-          <div className="greeting">
-            <h1>{projects.error ?? ''}</h1>
-          </div>
-        )
-      ) : empty ? (
-        <div className="greeting">
-          <h1>{temporary ? 'Temporary chat' : 'What’s on your mind?'}</h1>
-          {temporary && (
-            <p>
-              This chat won’t appear in your history or search, and it’s deleted
-              when you leave it.
-            </p>
-          )}
-        </div>
-      ) : (
-        <div
-          className="messages"
-          onScroll={(e) => {
-            const el = e.currentTarget
-            const atEnd = el.scrollHeight - el.scrollTop - el.clientHeight < 40
-            // Only scrolling up leaves the end: a scroll event measured after
-            // the content grew (while following) isn't the user's.
-            const up = el.scrollTop < scrollTopRef.current
-            scrollTopRef.current = el.scrollTop
-            if (atEnd) followRef.current = true
-            else if (up) followRef.current = false
-            setAway(!atEnd)
-          }}
-        >
-          <div className="thread" ref={threadRef}>
-            {turns.map((turn, i) => (
-              <TurnView
-                key={turn.key}
-                turn={turn}
-                latest={!pending && i === turns.length - 1}
-                busy={busy}
-                approval={
-                  i === turns.length - 1 && waiting.length > 0 ? (
-                    <ApprovalCard
-                      calls={waiting}
-                      busy={busy}
-                      onAnswer={following(chat.approve)}
-                    />
-                  ) : undefined
-                }
-                editing={editingTurn === turn.key}
-                onEditingChange={(on) => setEditingTurn(on ? turn.key : null)}
-                onEdit={following((text: string) => chat.edit(i, text))}
-                onRegenerate={following(() => chat.regenerate(i))}
-                onSwitch={(itemId) => void chat.switchVersion(itemId)}
-                onImageLoad={follow}
-                compactThreshold={compactThreshold}
-              />
-            ))}
-            {pending && (
-              <TurnView
-                turn={pending.turn}
-                pending
-                onImageLoad={follow}
-                compactThreshold={compactThreshold}
-              />
-            )}
-            {error && (
-              <p className="error" role="alert">
-                {error}
-              </p>
-            )}
-            <div ref={endRef} />
-          </div>
-          {away && (
+          {projectHome ? null : id ? (
+            <span className="topbar-info">
+              {chatUsage && (
+                <span
+                  className="usage"
+                  title={`This chat, all versions: ${chatUsage.detail}`}
+                >
+                  {chatUsage.short}
+                </span>
+              )}
+              {temporary && <span className="badge">Temporary chat</span>}
+            </span>
+          ) : (
             <button
               type="button"
-              className="jump-latest"
-              aria-label="Jump to latest"
-              title="Jump to latest"
-              onClick={() => {
-                followRef.current = true
-                endRef.current?.scrollIntoView({
-                  block: 'end',
-                  behavior: 'smooth',
-                })
-              }}
+              className={temporaryMode ? 'icon-button active' : 'icon-button'}
+              aria-label="Temporary chat"
+              aria-pressed={temporaryMode}
+              title="Temporary chat"
+              onClick={() => setTemporaryMode((on) => !on)}
             >
-              <ArrowDown size={18} strokeWidth={2} />
+              <MessageCircleDashed size={20} strokeWidth={1.5} />
             </button>
           )}
-        </div>
-      )}
-      <Composer
-        busy={busy}
-        onSend={following(chat.send)}
-        onStop={chat.stop}
-        queued={chat.queued}
-        onQueue={chat.enqueue}
-        onCancelQueued={chat.cancelQueued}
-        onTakeQueued={chat.takeQueued}
-        onEditLast={editLast}
-        inputRef={composerRef}
-        tools={toolOptions}
-        attachments={attachments}
-        draftKey={draftKey}
-        transcription={health?.features.transcription ?? false}
-        effort={settings.settings?.reasoningEffort ?? null}
-        onEffort={(reasoningEffort) =>
-          void settings.update({ reasoningEffort })
-        }
-      />
-      {empty && projectHome && (
-        <ProjectDetails
-          projectId={projectHome}
-          onChatsChanged={onListChanged}
+        </header>
+        {empty && projectHome ? (
+          project ? (
+            <ProjectHeading
+              project={project}
+              onRename={(name) => void projects.rename(project.id, name)}
+              onDelete={() =>
+                void projects.remove(project.id).then((gone) => {
+                  if (gone) navigate('/')
+                })
+              }
+            />
+          ) : (
+            <div className="greeting">
+              <h1>{projects.error ?? ''}</h1>
+            </div>
+          )
+        ) : empty ? (
+          <div className="greeting">
+            <h1>{temporary ? 'Temporary chat' : 'What’s on your mind?'}</h1>
+            {temporary && (
+              <p>
+                This chat won’t appear in your history or search, and it’s
+                deleted when you leave it.
+              </p>
+            )}
+          </div>
+        ) : (
+          <div
+            className="messages"
+            onScroll={(e) => {
+              const el = e.currentTarget
+              const atEnd =
+                el.scrollHeight - el.scrollTop - el.clientHeight < 40
+              // Only scrolling up leaves the end: a scroll event measured after
+              // the content grew (while following) isn't the user's.
+              const up = el.scrollTop < scrollTopRef.current
+              scrollTopRef.current = el.scrollTop
+              if (atEnd) followRef.current = true
+              else if (up) followRef.current = false
+              setAway(!atEnd)
+            }}
+          >
+            <div className="thread" ref={threadRef}>
+              {turns.map((turn, i) => (
+                <TurnView
+                  key={turn.key}
+                  turn={turn}
+                  latest={!pending && i === turns.length - 1}
+                  busy={busy}
+                  approval={
+                    i === turns.length - 1 && waiting.length > 0 ? (
+                      <ApprovalCard
+                        calls={waiting}
+                        busy={busy}
+                        onAnswer={following(chat.approve)}
+                      />
+                    ) : undefined
+                  }
+                  editing={editingTurn === turn.key}
+                  onEditingChange={(on) => setEditingTurn(on ? turn.key : null)}
+                  onEdit={following((text: string) => chat.edit(i, text))}
+                  onRegenerate={following(() => chat.regenerate(i))}
+                  onSwitch={(itemId) => void chat.switchVersion(itemId)}
+                  onImageLoad={follow}
+                  compactThreshold={compactThreshold}
+                />
+              ))}
+              {pending && (
+                <TurnView
+                  turn={pending.turn}
+                  pending
+                  onImageLoad={follow}
+                  compactThreshold={compactThreshold}
+                />
+              )}
+              {error && (
+                <p className="error" role="alert">
+                  {error}
+                </p>
+              )}
+              <div ref={endRef} />
+            </div>
+            {away && (
+              <button
+                type="button"
+                className="jump-latest"
+                aria-label="Jump to latest"
+                title="Jump to latest"
+                onClick={() => {
+                  followRef.current = true
+                  endRef.current?.scrollIntoView({
+                    block: 'end',
+                    behavior: 'smooth',
+                  })
+                }}
+              >
+                <ArrowDown size={18} strokeWidth={2} />
+              </button>
+            )}
+          </div>
+        )}
+        <Composer
+          busy={busy}
+          onSend={following(chat.send)}
+          onStop={chat.stop}
+          queued={chat.queued}
+          onQueue={chat.enqueue}
+          onCancelQueued={chat.cancelQueued}
+          onTakeQueued={chat.takeQueued}
+          onEditLast={editLast}
+          inputRef={composerRef}
+          tools={toolOptions}
+          attachments={attachments}
+          draftKey={draftKey}
+          transcription={health?.features.transcription ?? false}
+          effort={settings.settings?.reasoningEffort ?? null}
+          onEffort={(reasoningEffort) =>
+            void settings.update({ reasoningEffort })
+          }
         />
-      )}
-      <p className="visually-hidden" role="status">
-        {announcement}
-      </p>
-      <p className="disclaimer">
-        chibot can make mistakes. Check important info.
-      </p>
-    </main>
+        {empty && projectHome && (
+          <ProjectDetails
+            projectId={projectHome}
+            onChatsChanged={onListChanged}
+          />
+        )}
+        <p className="visually-hidden" role="status">
+          {announcement}
+        </p>
+        <p className="disclaimer">
+          chibot can make mistakes. Check important info.
+        </p>
+      </main>
+    </ToolInfoContext>
   )
 }

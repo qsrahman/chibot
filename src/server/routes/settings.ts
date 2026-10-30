@@ -3,7 +3,8 @@ import {
   settingsPatchSchema,
   type SettingsResponse,
 } from '../../shared/settings.ts'
-import type { ModelsResponse, ToolInfo } from '../../shared/types.ts'
+import type { ToolInfo } from '../../shared/tools.ts'
+import type { ModelsResponse } from '../../shared/types.ts'
 import type { AppDeps } from '../app.ts'
 import { json } from './helpers.ts'
 

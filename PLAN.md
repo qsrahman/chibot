@@ -194,7 +194,7 @@ tool payloads), written in the same transaction as the item.
 | `GET /api/conversations/:id/export?format=md\|json` · `POST /api/conversations/import` | 4 | Export (download) / import (validated JSON, ≤ 200 MB since Phase 9 embeds files) |
 | `GET/PATCH /api/settings` | 4 | User settings and their defaults (never secrets) |
 | `GET /api/models` | 4 | The chat endpoint's models, or `null` if it can't list them |
-| `GET /api/files/:id` · `GET /api/tools` | 6 | Serve a stored file's original (generated images; Phase 9 attachments) / list tools with availability and on/off state (never keys) |
+| `GET /api/files/:id` · `GET /api/tools` | 6 | Serve a stored file's original (generated images; Phase 9 attachments) / list tools, each describing itself, with what's missing when it needs setup (never keys) |
 | `GET /api/memories` · `PATCH/DELETE /api/memories/:id` · `DELETE /api/memories` | 7 | View / edit / delete one or all memories |
 | `/api/projects[/:id]` (CRUD) · `/api/projects/:id/files[/:fileId]` · `POST /api/files` | 8 | Projects; their files (list, attach, detach, with indexing status); upload a file (project files; Phase 9 attachments, ≤ 50 MB). Conversation `PATCH` gains `projectId`. |
 | `POST /api/transcriptions` | 9 | Transcribe a recording (≤ 25 MB). Phase 9 adds `fileIds` to turns and `features` to health. |
@@ -396,9 +396,10 @@ on Ollama, images need `OPENAI_IMAGE_BASE_URL` / `_API_KEY`.
 - **Config and tools list.** `Config` moves to zod and gains the image
   endpoint (`OPENAI_IMAGE_*`, inheriting the chat endpoint; off on a
   compatible endpoint without a model) and `BRAVE_API_KEY`. A tool is offered
-  only when its setup exists. `GET /api/tools` lists the offered tools' names,
-  labels and on/off state, never keys (unconfigured tools aren't listed;
-  README says what each needs).
+  only when its setup exists. `GET /api/tools` lists every tool, each in its
+  own words (section, summary, the labels an answer uses, the composer chip)
+  and, when its setup is missing, what to set; never keys. The web app keeps
+  no per-tool text.
 - **Files.** Migration 5 adds `files` (§4; the original at
   `data/files/<id>`). `FileStore` saves, reads and deletes them;
   `GET /api/files/:id` serves them with immutable caching. Deleting a

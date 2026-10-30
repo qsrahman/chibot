@@ -65,8 +65,10 @@ export function defaultTools({
     new MemoryTool(memories),
     new SearchChatsTool(store),
     new SearchProjectFilesTool(projects, index),
-    ...(config.braveApiKey ? [new WebSearchTool(config.braveApiKey)] : []),
-    ...(image ? [new GenerateImageTool(image), new EditImageTool(image)] : []),
+    // Listed in Settings even without their setup, saying what's missing.
+    new WebSearchTool(config.braveApiKey),
+    new GenerateImageTool(image),
+    new EditImageTool(image),
   ]
 }
 

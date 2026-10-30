@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { Settings, SettingsPatch } from '../shared/settings.ts'
-import type { ToolInfo } from '../shared/types.ts'
+import type { ToolInfo } from '../shared/tools.ts'
 import { getSettings, listTools, updateSettings } from './api.ts'
 
 /** The user's settings (PLAN.md §6, layer 2) and how to change them. */

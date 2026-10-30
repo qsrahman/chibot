@@ -31,6 +31,16 @@ interface SearchResult {
 export class WebSearchTool extends Tool {
   readonly name = 'web_search'
   readonly label = 'Search the web'
+  override readonly group = 'The web'
+  override readonly summary =
+    'Searches with Brave; your queries are sent to Brave.'
+  override readonly running = 'Searching the web…'
+  override readonly done = 'Searched the web'
+  override readonly chip = {
+    action: 'Search the web',
+    text: 'Search',
+    icon: 'globe',
+  } as const
   override readonly untrustedOutput = true
   readonly description =
     'Searches the web (Brave Search) for current or specific information: ' +
@@ -45,19 +55,28 @@ export class WebSearchTool extends Tool {
       .nullable()
       .describe('Only results from the past day/week/month/year, or null'),
   })
-  readonly #apiKey: string
+  readonly #apiKey: string | null
   readonly #baseURL: string
 
-  constructor(apiKey: string, baseURL = 'https://api.search.brave.com/res/v1') {
+  /** @param apiKey `null` without `BRAVE_API_KEY`: listed, but not offered */
+  constructor(
+    apiKey: string | null,
+    baseURL = 'https://api.search.brave.com/res/v1',
+  ) {
     super()
     this.#apiKey = apiKey
     this.#baseURL = baseURL
+  }
+
+  override unavailable() {
+    return this.#apiKey ? null : 'Needs BRAVE_API_KEY in .env'
   }
 
   async run(
     { query, freshness }: z.output<typeof this.parameters>,
     { signal }: ToolContext,
   ) {
+    if (!this.#apiKey) throw new Error('web search is not set up')
     const url = new URL(`${this.#baseURL}/web/search`)
     url.searchParams.set('q', query)
     url.searchParams.set('count', '5')

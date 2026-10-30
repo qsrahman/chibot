@@ -1,5 +1,6 @@
 import { EventSourceParserStream } from 'eventsource-parser/stream'
 import type { ResponseStreamEvent } from 'openai/resources/responses/responses'
+import type { ToolInfo } from '../shared/tools.ts'
 import type {
   Settings,
   SettingsPatch,
@@ -18,7 +19,6 @@ import type {
   ProjectFile,
   ProjectWithContents,
   StoredFile,
-  ToolInfo,
   TurnApprovalEvent,
   TurnErrorEvent,
   TurnRequest,

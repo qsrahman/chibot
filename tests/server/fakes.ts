@@ -223,16 +223,23 @@ export class EchoTool extends Tool {
   readonly runs: string[] = []
   override readonly requiresApproval: boolean | 'after-untrusted'
   override readonly untrustedOutput: boolean
+  readonly #unavailable: string | null
 
   constructor({
     name = 'echo',
     requiresApproval = false as boolean | 'after-untrusted',
     untrustedOutput = false,
+    unavailable = null as string | null,
   } = {}) {
     super()
     this.name = name
     this.requiresApproval = requiresApproval
     this.untrustedOutput = untrustedOutput
+    this.#unavailable = unavailable
+  }
+
+  override unavailable() {
+    return this.#unavailable
   }
 
   async run({ text }: { text: string }) {

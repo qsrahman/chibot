@@ -90,6 +90,22 @@ describe('ChatService tools', () => {
     expect(calls[0]!.params).not.toHaveProperty('tool_choice')
   })
 
+  it('lists a tool that needs setup, but never offers it', async () => {
+    const calls: FakeCall[] = []
+    const chat = chatWith(answerEvents('Hi'), calls, [
+      new EchoTool({ unavailable: 'Needs ECHO_KEY in .env' }),
+    ])
+    expect(chat.tools).toEqual([
+      expect.objectContaining({
+        name: 'echo',
+        unavailable: 'Needs ECHO_KEY in .env',
+      }),
+    ])
+    await drain(chat.runTurn(conversationId, { text: 'Hi', tool: 'echo' }))
+    expect(calls[0]!.params).not.toHaveProperty('tools')
+    expect(calls[0]!.params).not.toHaveProperty('tool_choice')
+  })
+
   it('forces a chosen tool on the first request only', async () => {
     const calls: FakeCall[] = []
     const chat = chatWith(

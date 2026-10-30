@@ -23,6 +23,8 @@ const FORMATS: Record<string, { extension: string; mime: string }> = {
 }
 const DEFAULT_FORMAT = FORMATS.png!
 
+const SETUP = 'Needs an image model (OPENAI_IMAGE_MODEL)'
+
 const SHOWN =
   'The image is shown to the user automatically: don’t link to it or ' +
   'describe the file, just say briefly what you made.'
@@ -54,6 +56,16 @@ export interface ImageDeps {
 export class GenerateImageTool extends Tool {
   readonly name = 'generate_image'
   readonly label = 'Create images'
+  override readonly group = 'Images'
+  override readonly summary =
+    'Creates images; the prompt goes to the image service.'
+  override readonly running = 'Creating an image…'
+  override readonly done = 'Created an image'
+  override readonly chip = {
+    action: 'Create an image',
+    text: 'Image',
+    icon: 'image',
+  } as const
   readonly description = `Creates an image from a description. ${SHOWN} To change an image made earlier, use edit_image.`
   readonly parameters = z.object({
     prompt: z
@@ -63,25 +75,32 @@ export class GenerateImageTool extends Tool {
       ),
     size: z.enum(['square', 'portrait', 'landscape', 'auto']),
   })
-  readonly #deps: ImageDeps
+  readonly #deps: ImageDeps | null
 
-  constructor(deps: ImageDeps) {
+  /** @param deps `null` without an image model: listed, but not offered */
+  constructor(deps: ImageDeps | null) {
     super()
     this.#deps = deps
+  }
+
+  override unavailable() {
+    return this.#deps ? null : SETUP
   }
 
   async run(
     { prompt, size }: z.output<typeof this.parameters>,
     { conversationId, signal }: ToolContext,
   ) {
-    const { client, model } = this.#deps
-    const response = await fromImageService(this.#deps, () =>
+    const deps = this.#deps
+    if (!deps) throw new Error('image generation is not set up')
+    const { client, model } = deps
+    const response = await fromImageService(deps, () =>
       client.images.generate(
         { model, prompt, size: SIZES[size], quality: QUALITY },
         { signal },
       ),
     )
-    return saveImage(this.#deps.files, conversationId, response)
+    return saveImage(deps.files, conversationId, response)
   }
 }
 
@@ -89,23 +108,34 @@ export class GenerateImageTool extends Tool {
 export class EditImageTool extends Tool {
   readonly name = 'edit_image'
   readonly label = 'Edit images'
+  override readonly group = 'Images'
+  override readonly summary = 'Changes images made earlier in the same chat.'
+  override readonly running = 'Editing the image…'
+  override readonly done = 'Edited the image'
   readonly description = `Changes an image made earlier in this chat (by generate_image or edit_image), e.g. "make it bluer". ${SHOWN}`
   readonly parameters = z.object({
     image_id: z.string().describe('The image_id returned for the image'),
     prompt: z.string().describe('What to change, and what to keep'),
   })
-  readonly #deps: ImageDeps
+  readonly #deps: ImageDeps | null
 
-  constructor(deps: ImageDeps) {
+  /** @param deps `null` without an image model: listed, but not offered */
+  constructor(deps: ImageDeps | null) {
     super()
     this.#deps = deps
+  }
+
+  override unavailable() {
+    return this.#deps ? null : SETUP
   }
 
   async run(
     { image_id, prompt }: z.output<typeof this.parameters>,
     { conversationId, signal }: ToolContext,
   ) {
-    const { client, model, files } = this.#deps
+    const deps = this.#deps
+    if (!deps) throw new Error('image generation is not set up')
+    const { client, model, files } = deps
     const file = files.get(image_id)
     // Only this chat's images: ids from other chats aren't the model's to use.
     if (file?.conversationId !== conversationId) {
@@ -114,7 +144,7 @@ export class EditImageTool extends Tool {
     const image = await toFile(files.read(file.id), file.name, {
       type: file.mime,
     })
-    const response = await fromImageService(this.#deps, () =>
+    const response = await fromImageService(deps, () =>
       client.images.edit(
         { model, image, prompt, quality: QUALITY },
         { signal },

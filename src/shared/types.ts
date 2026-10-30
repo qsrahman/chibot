@@ -150,13 +150,6 @@ export interface TurnApprovalEvent {
   calls: ResponseFunctionToolCall[]
 }
 
-/** A tool in `GET /api/tools` (`{ tools: ToolInfo[] }`). */
-export interface ToolInfo {
-  name: string
-  /** What the user sees, e.g. "Search the web". */
-  label: string
-}
-
 /** `GET /api/health`. */
 export interface Health {
   status: 'ok'

@@ -8,6 +8,7 @@ import {
   EditImageTool,
   imageClient,
   GenerateImageTool,
+  type ImageDeps,
 } from '../../src/server/tools/images.ts'
 import { testFiles } from './fakes.ts'
 
@@ -28,7 +29,7 @@ function fakeImages(calls: Record<string, unknown>[], format = 'png') {
 describe('image tools', () => {
   let files: FileStore
   let calls: Record<string, unknown>[]
-  let deps: ConstructorParameters<typeof GenerateImageTool>[0]
+  let deps: ImageDeps
   beforeEach(() => {
     files = testFiles(openDatabase(':memory:'))
     calls = []
