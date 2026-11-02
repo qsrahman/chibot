@@ -3,24 +3,22 @@ import { Folder } from 'lucide-react'
 import type { Project } from '../shared/types.ts'
 import { Dialog } from './Dialog.tsx'
 
-/** Asks for a new project's name (also used to rename one). */
+/** Asks for a new project's name. */
 export function ProjectNameDialog({
   open,
   title,
-  initial = '',
   confirmLabel,
   onConfirm,
   onClose,
 }: {
   open: boolean
   title: string
-  initial?: string
   confirmLabel: string
   onConfirm: (name: string) => void
   onClose: () => void
 }) {
-  const [name, setName] = useState(initial)
-  const valid = name.trim() !== '' && name.trim() !== initial
+  const [name, setName] = useState('')
+  const valid = name.trim() !== ''
 
   return (
     <Dialog open={open} onClose={onClose} title={title}>
@@ -47,6 +45,63 @@ export function ProjectNameDialog({
           </button>
           <button type="submit" className="button primary" disabled={!valid}>
             {confirmLabel}
+          </button>
+        </div>
+      </form>
+    </Dialog>
+  )
+}
+
+/** Changes a project's name and description. */
+export function ProjectDetailsDialog({
+  open,
+  project,
+  onConfirm,
+  onClose,
+}: {
+  open: boolean
+  project: Project
+  onConfirm: (patch: { name: string; description: string }) => void
+  onClose: () => void
+}) {
+  const [name, setName] = useState(project.name)
+  const [description, setDescription] = useState(project.description)
+  const valid =
+    name.trim() !== '' &&
+    (name.trim() !== project.name || description.trim() !== project.description)
+
+  return (
+    <Dialog open={open} onClose={onClose} title="Edit project">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (!valid) return
+          onConfirm({ name: name.trim(), description: description.trim() })
+          onClose()
+        }}
+      >
+        <input
+          className="dialog-input"
+          aria-label="Project name"
+          maxLength={100}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          autoFocus
+        />
+        <input
+          className="dialog-input"
+          aria-label="Description"
+          placeholder="A line that tells it apart, e.g. Two weeks in April"
+          maxLength={200}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+        <div className="dialog-actions">
+          <button type="button" className="button" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="submit" className="button primary" disabled={!valid}>
+            Save
           </button>
         </div>
       </form>
@@ -89,6 +144,9 @@ export function MoveToProjectDialog({
                   <Folder />
                 </span>
                 <span className="row-label">{project.name}</span>
+                {project.description && (
+                  <span className="row-detail">{project.description}</span>
+                )}
               </button>
             </li>
           ))}

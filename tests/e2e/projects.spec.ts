@@ -47,11 +47,14 @@ test('answers from project files, with its instructions', async ({ page }) => {
   const instructions = page.getByRole('region', {
     name: 'Project instructions',
   })
+  await instructions.getByRole('button', { name: 'Add instructions' }).click()
   await instructions.getByLabel('Instructions').fill('Prices in yen.')
   await instructions.getByRole('button', { name: 'Save' }).click()
+  // Saved: shown as a preview, above the files.
+  await expect(instructions.getByText('Prices in yen.')).toBeVisible()
   await expect(
-    instructions.getByRole('button', { name: 'Save' }),
-  ).toBeDisabled()
+    instructions.getByRole('button', { name: 'Edit', exact: true }),
+  ).toBeVisible()
 
   await send(page, 'Look in my files door code')
   await answered(page)
@@ -121,6 +124,48 @@ test('refuses a file that is already in the project', async ({ page }) => {
     'b.md is already in this project as a.md',
   )
   await expect(files.getByRole('listitem')).toHaveCount(1)
+})
+
+test('describes a project, and drafts its instructions from the files', async ({
+  page,
+}) => {
+  await newProject(page, 'Trip')
+  await page.getByRole('button', { name: 'Project options' }).click()
+  await page.getByRole('button', { name: 'Edit name and description' }).click()
+  const edit = page.getByRole('dialog', { name: 'Edit project' })
+  await edit.getByLabel('Description').fill('Two weeks in April')
+  await edit.getByRole('button', { name: 'Save' }).click()
+  await expect(
+    page.getByRole('main').getByText('Two weeks in April'),
+  ).toBeVisible()
+  await expect(
+    page.locator('nav a', { hasText: 'Trip' }).first(),
+  ).toHaveAttribute('title', 'Trip: Two weeks in April')
+
+  const instructions = page.getByRole('region', {
+    name: 'Project instructions',
+  })
+  await instructions.getByRole('button', { name: 'Add instructions' }).click()
+  // The draft is based on the files, so there has to be one.
+  const suggest = instructions.getByRole('button', {
+    name: 'Suggest from files',
+  })
+  await expect(suggest).toBeDisabled()
+  await page
+    .getByRole('region', { name: 'Project files' })
+    .getByLabel('Add files')
+    .setInputFiles({
+      name: 'plan.md',
+      mimeType: 'text/markdown',
+      buffer: Buffer.from('Day 2: Kyoto.'),
+    })
+  await expect(page.getByText('Ready')).toBeVisible()
+  await suggest.click()
+  await expect(instructions.getByLabel('Instructions')).toHaveValue('E2E Title')
+  await expect(instructions.getByText('Drafted from your files')).toBeVisible()
+  // Nothing is saved until the user says so.
+  await instructions.getByRole('button', { name: 'Cancel' }).click()
+  await expect(instructions.getByText('E2E Title')).toHaveCount(0)
 })
 
 test('moves chats in and out, and deletes a project with them', async ({

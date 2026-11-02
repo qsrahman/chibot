@@ -308,7 +308,7 @@ export function ChatPage({
           project ? (
             <ProjectHeading
               project={project}
-              onRename={(name) => void projects.rename(project.id, name)}
+              onEdit={(patch) => void projects.update(project.id, patch)}
               onDelete={() =>
                 void projects.remove(project.id).then((gone) => {
                   if (gone) navigate('/')

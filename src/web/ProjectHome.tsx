@@ -3,9 +3,11 @@ import {
   Ellipsis,
   FileText,
   Folder,
+  LoaderCircle,
   NotebookPen,
   Pencil,
   RefreshCw,
+  Sparkles,
   Trash2,
   Upload,
   X,
@@ -24,77 +26,81 @@ import {
   reindexProjectFile,
   removeProjectFile,
   regenerateTitle,
+  suggestProjectInstructions,
   updateConversation,
   updateProject,
 } from './api.ts'
 import { ConversationRow, MenuItem } from './ConversationRow.tsx'
 import { ConfirmDialog, DeleteChatDialog } from './Dialog.tsx'
 import { useAnchoredPopover } from './popover.ts'
-import { NoteDialog, ProjectNameDialog } from './ProjectDialogs.tsx'
+import { NoteDialog, ProjectDetailsDialog } from './ProjectDialogs.tsx'
 import { useLoad } from './useLoad.ts'
 
-/** The project page's heading: its name, rename and delete. */
+/** The project page's heading: its name and description, edit and delete. */
 export function ProjectHeading({
   project,
-  onRename,
+  onEdit,
   onDelete,
 }: {
   project: Project
-  onRename: (name: string) => void
+  onEdit: (patch: { name: string; description: string }) => void
   onDelete: () => void
 }) {
-  const [renaming, setRenaming] = useState(false)
+  const [editing, setEditing] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const menu = useAnchoredPopover()
-  // Rename and delete wait in a menu, like a chat's, so the page's most
+  // Edit and delete wait in a menu, like a chat's, so the page's most
   // visible control isn't a destructive one.
   const act = (action: () => void) => () => {
     menu.hide()
     action()
   }
   return (
-    <div className="greeting project-heading">
-      <h1>
-        <Folder size={26} strokeWidth={1.5} aria-hidden />
-        {project.name}
-      </h1>
-      <button
-        type="button"
-        className="icon-button"
-        aria-label="Project options"
-        title="Project options"
-        popoverTarget={menu.id}
-        style={menu.triggerStyle}
-      >
-        <Ellipsis size={20} strokeWidth={1.5} />
-      </button>
-      <div
-        id={menu.id}
-        ref={menu.ref}
-        popover="auto"
-        className="menu"
-        style={menu.style}
-        {...menu.menuProps}
-      >
-        <MenuItem icon={<Pencil />} onClick={act(() => setRenaming(true))}>
-          Rename
-        </MenuItem>
-        <MenuItem
-          icon={<Trash2 />}
-          danger
-          onClick={act(() => setDeleting(true))}
+    <div className="greeting">
+      <div className="project-heading">
+        <h1>
+          <Folder size={26} strokeWidth={1.5} aria-hidden />
+          {project.name}
+        </h1>
+        <button
+          type="button"
+          className="icon-button"
+          aria-label="Project options"
+          title="Project options"
+          popoverTarget={menu.id}
+          style={menu.triggerStyle}
         >
-          Delete project
-        </MenuItem>
+          <Ellipsis size={20} strokeWidth={1.5} />
+        </button>
+        <div
+          id={menu.id}
+          ref={menu.ref}
+          popover="auto"
+          className="menu"
+          style={menu.style}
+          {...menu.menuProps}
+        >
+          <MenuItem icon={<Pencil />} onClick={act(() => setEditing(true))}>
+            Edit name and description
+          </MenuItem>
+          <MenuItem
+            icon={<Trash2 />}
+            danger
+            onClick={act(() => setDeleting(true))}
+          >
+            Delete project
+          </MenuItem>
+        </div>
       </div>
-      <ProjectNameDialog
-        key={String(renaming)}
-        open={renaming}
-        title="Rename project"
-        initial={project.name}
-        confirmLabel="Rename"
-        onConfirm={onRename}
-        onClose={() => setRenaming(false)}
+      {project.description && (
+        <p className="project-description">{project.description}</p>
+      )}
+      <ProjectDetailsDialog
+        key={String(editing)}
+        open={editing}
+        project={project}
+        onConfirm={onEdit}
+        onClose={() => setEditing(false)}
       />
       <ConfirmDialog
         open={deleting}
@@ -149,6 +155,17 @@ export function ProjectDetails({
           {error}
         </p>
       )}
+      <Instructions
+        key={contents.project.instructions}
+        instructions={contents.project.instructions}
+        canSuggest={contents.files.some((f) => f.status === 'ready')}
+        onSuggest={() =>
+          suggestProjectInstructions(projectId).then((r) => r.instructions)
+        }
+        onSave={(instructions) =>
+          void act(() => updateProject(projectId, { instructions }))
+        }
+      />
       <Files
         files={contents.files}
         onAdd={(files) =>
@@ -168,13 +185,6 @@ export function ProjectDetails({
         }
         onRemove={(fileId) =>
           void act(() => removeProjectFile(projectId, fileId))
-        }
-      />
-      <Instructions
-        key={contents.project.instructions}
-        instructions={contents.project.instructions}
-        onSave={(instructions) =>
-          void act(() => updateProject(projectId, { instructions }))
         }
       />
       <Chats
@@ -313,34 +323,155 @@ function Files({
   )
 }
 
+/**
+ * What chats in the project are told. Shown as a preview with Edit (or a
+ * prompt to add some), since they shape every answer; editing can start from
+ * a draft written from the project's files.
+ */
 function Instructions({
   instructions,
+  canSuggest,
+  onSuggest,
   onSave,
 }: {
   instructions: string
+  canSuggest: boolean
+  onSuggest: () => Promise<string>
   onSave: (instructions: string) => void
 }) {
+  const [editing, setEditing] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   const [draft, setDraft] = useState(instructions)
+  const [suggesting, setSuggesting] = useState(false)
+  const [suggested, setSuggested] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  function suggest() {
+    setSuggesting(true)
+    setError(null)
+    onSuggest().then(
+      (text) => {
+        setDraft(text)
+        setSuggested(true)
+        setSuggesting(false)
+      },
+      (err: Error) => {
+        setError(err.message)
+        setSuggesting(false)
+      },
+    )
+  }
+
+  const long = instructions.length > 240 || instructions.split('\n').length > 3
   return (
-    <section className="project-card" aria-label="Project instructions">
+    <section
+      className="project-card instructions"
+      aria-label="Project instructions"
+    >
       <header>
         <h2>Instructions</h2>
-        <button
-          type="button"
-          className="button primary"
-          disabled={draft === instructions}
-          onClick={() => onSave(draft)}
-        >
-          Save
-        </button>
+        {!editing && (
+          <button
+            type="button"
+            className="button"
+            onClick={() => setEditing(true)}
+          >
+            <Pencil size={16} strokeWidth={1.5} aria-hidden />
+            {instructions ? 'Edit' : 'Add instructions'}
+          </button>
+        )}
       </header>
-      <textarea
-        aria-label="Instructions"
-        placeholder="How chibot should work in this project, e.g. “Answer in British English. Prices in yen.”"
-        maxLength={8000}
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-      />
+      {editing ? (
+        <>
+          <textarea
+            aria-label="Instructions"
+            placeholder="How chibot should work in this project, e.g. “Answer in British English. Prices in yen.”"
+            maxLength={8000}
+            value={draft}
+            onChange={(e) => {
+              setDraft(e.target.value)
+              setSuggested(false)
+            }}
+            autoFocus
+          />
+          {suggested && (
+            <p className="project-hint">
+              Drafted from your files. Check it before saving.
+            </p>
+          )}
+          {error && (
+            <p className="error" role="alert">
+              {error}
+            </p>
+          )}
+          <div className="instructions-actions">
+            <button
+              type="button"
+              className="button"
+              disabled={!canSuggest || suggesting}
+              title={
+                canSuggest
+                  ? 'Writes a draft with your chat model, from the start of each file (sent to it)'
+                  : 'Add a file first: the draft is based on what is in the files'
+              }
+              onClick={suggest}
+            >
+              {suggesting ? (
+                <LoaderCircle className="spin" size={16} aria-hidden />
+              ) : (
+                <Sparkles size={16} strokeWidth={1.5} aria-hidden />
+              )}
+              Suggest from files
+            </button>
+            <span className="spacer" />
+            <button
+              type="button"
+              className="button"
+              onClick={() => {
+                setEditing(false)
+                setDraft(instructions)
+                setSuggested(false)
+                setError(null)
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="button primary"
+              disabled={draft === instructions}
+              onClick={() => onSave(draft)}
+            >
+              Save
+            </button>
+          </div>
+        </>
+      ) : instructions ? (
+        <>
+          <p
+            className={
+              expanded ? 'instructions-text' : 'instructions-text clamped'
+            }
+          >
+            {instructions}
+          </p>
+          {long && (
+            <button
+              type="button"
+              className="instructions-toggle"
+              aria-expanded={expanded}
+              onClick={() => setExpanded((on) => !on)}
+            >
+              {expanded ? 'Show less' : 'Show all'}
+            </button>
+          )}
+        </>
+      ) : (
+        <p className="project-hint">
+          Tell chibot how to work in this project: the language, the tone, what
+          the files are for. Every chat here follows them.
+        </p>
+      )}
     </section>
   )
 }

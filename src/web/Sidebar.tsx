@@ -181,7 +181,11 @@ export function Sidebar({
                   key={project.id}
                   to={`/projects/${project.id}`}
                   className="sidebar-row"
-                  title={project.name}
+                  title={
+                    project.description
+                      ? `${project.name}: ${project.description}`
+                      : project.name
+                  }
                 >
                   <span className="row-icon" aria-hidden>
                     <Folder />

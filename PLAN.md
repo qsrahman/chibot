@@ -537,15 +537,17 @@ Models differ in dimensions, so a model change means re-embedding.
   limited to the project's chats. Answers show "Searched project files", and Sources lists
   the files (opening the original).
 - **Web.** A Projects section above the chats in the sidebar ("New project",
-  a row each). `/projects/:id`: the name (rename), a composer that starts a
+  a row each). `/projects/:id`: the name and a one-line description (edit), a composer that starts a
   chat in the project, its chats, a Files card (upload by picker or drop, write a
-  note, status, index again, delete) and an Instructions card. Project chats appear only there
+  note, status, index again, delete) and an Instructions card (first, as a
+  preview with Edit; the editor's "Suggest from files" has the chat model draft
+  them from the start of each indexed file, for review). Project chats appear only there
   (search still finds them). A chat's "…" menu gains "Move to project" /
   "Remove from project". A project chat's header shows "Project name /"
   linking back; temporary mode isn't offered in projects. Moving the open
   chat into a project shows the project's page (the chat left the sidebar).
-- **Routes.** `/api/projects[/:id]` (list, create, update name and
-  instructions, delete), `/api/projects/:id/files[/:fileId]`,
+- **Routes.** `/api/projects[/:id]` (list, create, update name,
+  description and instructions, delete), `POST /api/projects/:id/suggest-instructions`, `/api/projects/:id/files[/:fileId]`,
   `POST /api/files`; conversation `PATCH` gains `projectId`.
 - **Dependencies:** `sqlite-vec` (pinned), `unpdf`, `mammoth`.
 

@@ -229,13 +229,13 @@ Then open http://127.0.0.1:3000.
   today's date and the time to the quarter hour.
 - **Projects** (sidebar → **New project**) group chats with their own files
   and instructions. On a project's page, add files (PDF, Word, text, notes,
-  code, data, including `Dockerfile`-style names; pick or drop them) or write a note, retry a file that failed (a file already in the project is refused), and write instructions; chats started there
+  code, data, including `Dockerfile`-style names; pick or drop them) or write a note, retry a file that failed (a file already in the project is refused), and write instructions (preview first; **Suggest from files** drafts them with your chat model from the start of each file, for you to check); chats started there
   search the files (by keywords, and by meaning with an embedding model),
   read a whole file when asked about all of it, cite them under **Sources**,
   and follow the instructions. Their "search past chats" looks in the
   project's chats only. Project chats are listed
   on their project's page; a chat's **…** menu moves it into a project or out.
-  Rename or delete a project from **…** next to its name; deleting it deletes
+  Edit a project's name and one-line description, or delete it, from **…** next to its name; deleting it deletes
   its chats and files.
 - **Voice input:** click the mic, speak, click again: the text appears at the
   cursor to check before sending. It needs a transcription model (see

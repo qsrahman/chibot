@@ -109,6 +109,57 @@
   resize: vertical;
 }
 
+.project-description {
+  margin: 6px 0 0;
+  color: var(--fg-muted);
+  font-size: 14px;
+}
+
+.instructions textarea {
+  min-height: 160px;
+}
+
+.instructions-text {
+  margin: 0;
+  font-size: 14px;
+  white-space: pre-wrap;
+}
+
+.instructions-text.clamped {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+.instructions-toggle {
+  margin-top: 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.instructions-toggle:hover {
+  text-decoration: underline;
+}
+
+.instructions-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.instructions-actions .spacer {
+  flex: 1;
+}
+
 .project-hint {
   margin: 0;
   color: var(--fg-muted);

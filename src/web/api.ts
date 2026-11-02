@@ -75,8 +75,15 @@ export const createProject = (name: string) =>
 
 export const updateProject = (
   id: string,
-  patch: { name?: string; instructions?: string },
+  patch: { name?: string; description?: string; instructions?: string },
 ) => request<Project>(`/api/projects/${id}`, send('PATCH', patch))
+
+/** A draft of the project's instructions from its files; nothing is saved. */
+export const suggestProjectInstructions = (id: string) =>
+  request<{ instructions: string }>(
+    `/api/projects/${id}/suggest-instructions`,
+    { method: 'POST' },
+  )
 
 export const deleteProject = (id: string) => remove(`/api/projects/${id}`)
 

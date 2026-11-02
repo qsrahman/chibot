@@ -21,8 +21,9 @@ export function useProjects() {
     [act],
   )
 
-  const rename = useCallback(
-    (id: string, name: string) => act(() => updateProject(id, { name })),
+  const update = useCallback(
+    (id: string, patch: Parameters<typeof updateProject>[1]) =>
+      act(() => updateProject(id, patch)),
     [act],
   )
 
@@ -37,7 +38,7 @@ export function useProjects() {
     error,
     refresh: reload,
     create,
-    rename,
+    update,
     remove,
   }
 }

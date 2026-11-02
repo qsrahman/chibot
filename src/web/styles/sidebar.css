@@ -99,6 +99,15 @@
   white-space: nowrap;
 }
 
+.row-detail {
+  flex: 0 1 45%;
+  overflow: hidden;
+  color: var(--fg-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .sidebar-list {
   flex: 1;
   margin: 8px 0;
