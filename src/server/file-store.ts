@@ -80,6 +80,10 @@ export class FileStore {
     return readFileSync(this.#path(id))
   }
 
+  rename(id: string, name: string): void {
+    this.#db.prepare('UPDATE files SET name = ? WHERE id = ?').run(name, id)
+  }
+
   delete(id: string): void {
     this.#db.prepare('DELETE FROM files WHERE id = ?').run(id)
     rmSync(this.#path(id), { force: true })

@@ -99,6 +99,22 @@ export class ProjectStore {
       .all(projectId) as unknown as ProjectFile[]
   }
 
+  /**
+   * `name`, or `name (2)`, `name (3)`… (before the extension) if the project
+   * has a file by that name already, so a file can be told apart by name.
+   */
+  uniqueName(projectId: string, name: string): string {
+    const taken = new Set(
+      this.files(projectId).map((f) => f.name.toLowerCase()),
+    )
+    const [, base, extension = ''] = /^(.*?)(\.[^./]*)?$/.exec(name)!
+    let candidate = name
+    for (let n = 2; taken.has(candidate.toLowerCase()); n++) {
+      candidate = `${base} (${n})${extension}`
+    }
+    return candidate
+  }
+
   /** The project's file called `name` (case does not matter). */
   fileNamed(projectId: string, name: string): ProjectFile | undefined {
     return this.files(projectId).find(

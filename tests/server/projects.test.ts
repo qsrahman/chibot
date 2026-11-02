@@ -212,6 +212,31 @@ describe('projects', () => {
     expect((await attach(elsewhere.id, again.id)).status).toBe(201)
   })
 
+  it('numbers a file whose name another file in the project has', async () => {
+    const project = projects.create('Trip')
+    const attach = async (name: string, text: string) => {
+      const file = files.save(null, name, 'text/plain', Buffer.from(text))
+      const res = await call('POST', `/api/projects/${project.id}/files`, {
+        fileId: file.id,
+      })
+      expect(res.status).toBe(201)
+    }
+    await attach('notes.md', 'one')
+    await attach('Notes.MD', 'two')
+    await attach('notes.md', 'three')
+    await attach('Dockerfile', 'a')
+    await attach('dockerfile', 'b')
+    expect(projects.files(project.id).map((f) => f.name)).toEqual([
+      'notes.md',
+      'Notes (2).MD',
+      'notes (3).md',
+      'Dockerfile',
+      'dockerfile (2)',
+    ])
+    // Reading one by name finds that one.
+    expect(projects.fileNamed(project.id, 'notes (3).md')?.size).toBe(5)
+  })
+
   it('indexes a file again', async () => {
     const project = projects.create('Trip')
     const other = projects.create('Other')

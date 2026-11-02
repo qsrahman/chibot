@@ -67,6 +67,9 @@ export function projectRoutes({
         409,
       )
     }
+    // The model and the file list name files, so names must differ.
+    const name = projects.uniqueName(project.id, file.name)
+    if (name !== file.name) files.rename(file.id, name)
     projects.addFile(project.id, file.id)
     void index.index(file.id)
     return c.json(projects.files(project.id), 201)

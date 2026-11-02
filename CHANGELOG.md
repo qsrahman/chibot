@@ -11,6 +11,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Fixed
 
+- Two files with the same name in a project (differing content) were told apart by nothing: `read_project_file` and the `file` filter took the first. The second is now named `notes (2).md`, and so on.
 - A file read with `read_project_file` now appears under **Sources** (the result carries `file_id`), as search hits do.
 
 ## [0.12.0] - 2026-11-02
