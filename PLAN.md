@@ -524,10 +524,10 @@ Models differ in dimensions, so a model change means re-embedding.
   (indexing / ready / failed with a reason) shows in the project. Unfinished
   files resume after a restart; a changed embedding model rebuilds the
   vectors.
-- **`search_project_files`** (`query`), offered only in project chats with
+- **`search_project_files`** (`query`, `file`, `limit`), offered only in project chats with
   files: keyword and vector hits merged by reciprocal rank fusion, the top 6
-  chunks as JSON (file name, file id, text); the description asks the model to
-  cite file names. Project chats' instructions add the project's instructions
+  chunks (the model may ask for 1 to 15 with `limit`) as JSON (file name, file
+  id, part, text); the description asks the model to cite file names. Project chats' instructions add the project's instructions
   and its file names. `read_project_file` (`file`, `from_part`) reads a file's
   chunks in order, three at a time, for questions about the whole file; hits
   carry their `part` of `parts`, `file` limits a search to one file, and

@@ -1,6 +1,10 @@
 import { z } from 'zod'
 import type { Conversation } from '../../shared/types.ts'
-import type { ProjectIndex } from '../project-index.ts'
+import {
+  DEFAULT_RESULTS,
+  MAX_RESULTS,
+  type ProjectIndex,
+} from '../project-index.ts'
 import type { ProjectStore } from '../project-store.ts'
 import { Tool, type ToolContext } from '../tool.ts'
 
@@ -45,6 +49,14 @@ export class SearchProjectFilesTool extends Tool {
       .string()
       .nullable()
       .describe('Only search this file (its name), or null for all files'),
+    limit: z
+      .number()
+      .int()
+      .nullable()
+      .describe(
+        `How many passages to return (1 to ${MAX_RESULTS}), or null for ${DEFAULT_RESULTS}. ` +
+          'Ask for more when the answer may be spread over many places, or for a broad question.',
+      ),
   })
   readonly #projects: ProjectStore
   readonly #index: ProjectIndex
@@ -75,7 +87,7 @@ export class SearchProjectFilesTool extends Tool {
   }
 
   async run(
-    { query, file }: z.output<typeof this.parameters>,
+    { query, file, limit }: z.output<typeof this.parameters>,
     { projectId, signal }: ToolContext,
   ) {
     if (!projectId) throw new Error('this chat is not in a project')
@@ -83,7 +95,11 @@ export class SearchProjectFilesTool extends Tool {
       ? projectFile(this.#projects, projectId, file).fileId
       : undefined
     const results = (
-      await this.#index.search(projectId, query, { signal, fileId })
+      await this.#index.search(projectId, query, {
+        signal,
+        fileId,
+        limit: limit ?? undefined,
+      })
     ).map(({ fileId, name, text, part, parts }) => ({
       file: name,
       file_id: fileId,

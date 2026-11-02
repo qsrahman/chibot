@@ -14,7 +14,10 @@ const EMBED_BATCH = 64
 // Hits taken from each search before merging, and the usual RRF constant.
 const CANDIDATES = 30
 const RRF_K = 60
-const RESULTS = 6
+// Passages a search returns unless asked for more or fewer, and the most it
+// may return (each is about 3,200 characters of the model's context).
+export const DEFAULT_RESULTS = 6
+export const MAX_RESULTS = 15
 // Parts of a file `read` returns at once (about 10,000 characters).
 const READ_PARTS = 3
 
@@ -189,7 +192,11 @@ export class ProjectIndex {
   async search(
     projectId: string,
     query: string,
-    { signal, fileId }: { signal?: AbortSignal; fileId?: string } = {},
+    {
+      signal,
+      fileId,
+      limit = DEFAULT_RESULTS,
+    }: { signal?: AbortSignal; fileId?: string; limit?: number } = {},
   ): Promise<Passage[]> {
     // Only this file's chunks, when the search is limited to one.
     const only = fileId ? this.#chunkIds(fileId) : null
@@ -229,7 +236,7 @@ export class ProjectIndex {
     )
     return [...scores]
       .sort((a, b) => b[1] - a[1])
-      .slice(0, RESULTS)
+      .slice(0, Math.min(Math.max(limit, 1), MAX_RESULTS))
       .map(([id]) => get.get(id) as unknown as Passage)
   }
 

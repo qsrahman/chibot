@@ -98,6 +98,18 @@ describe('project file search', () => {
     }
   })
 
+  it('returns as many passages as asked for, within limits', async () => {
+    for (let n = 1; n <= 20; n++)
+      await add(`f${n}.md`, `Note about otters ${n}.`)
+    const count = async (limit?: number) =>
+      (await index.search(projectId, 'otters', { limit })).length
+    expect(await count()).toBe(6)
+    expect(await count(2)).toBe(2)
+    expect(await count(12)).toBe(12)
+    expect(await count(100)).toBe(15)
+    expect(await count(0)).toBe(1)
+  })
+
   it('says which part of how many a passage is, and reads the parts in order', async () => {
     const tool = new SearchProjectFilesTool(projects, index)
     const reader = new ReadProjectFileTool(projects, index)
@@ -106,7 +118,10 @@ describe('project file search', () => {
     const context = { conversationId: 'c', projectId }
 
     const found = JSON.parse(
-      await tool.run({ query: 'Section 5', file: 'long.md' }, context),
+      await tool.run(
+        { query: 'Section 5', file: 'long.md', limit: null },
+        context,
+      ),
     )
     expect(found.results[0]).toMatchObject({ file: 'long.md', parts: 4 })
 
@@ -145,7 +160,7 @@ describe('project file search', () => {
 
     const output = JSON.parse(
       await tool.run(
-        { query: 'Kyoto', file: null },
+        { query: 'Kyoto', file: null, limit: null },
         { conversationId: chat.id, projectId },
       ),
     )
@@ -184,7 +199,7 @@ describe('project file search', () => {
       type: 'function_call',
       call_id: 'call_1',
       name: 'search_project_files',
-      arguments: '{"query":"kyoto","file":null}',
+      arguments: '{"query":"kyoto","file":null,"limit":null}',
     }
 
     const run = registry.run(call, {
