@@ -199,6 +199,9 @@ invariants, API quirks. No line-by-line narration.
   generator of `ResponseStreamEvent`s. Tests never hit the network.
   `testChat(events, { store, calls, tools, … })` builds a `ChatService` on
   such a fake with default stores and settings.
+- Retrieval: `tests/server/retrieval.test.ts` scores project search on a
+  small corpus (`tests/fixtures/retrieval`); run it before and after changing
+  chunking or ranking, and add a question when search misses one.
 - SQLite: use `':memory:'` databases.
 - Web: no component unit tests; pure helpers (e.g. `turns.ts`, `usage.ts`)
   get vitest tests. UI behaviour is covered by Playwright specs in

@@ -1,0 +1,21 @@
+Product sync, 4 March
+
+Attendees: Priya, Tomas, Wen, Ada.
+
+The mobile release moves from 12 March to 19 March because the payments SDK needs a security review. Tomas owns the review and will report on Friday. Wen will update the store listing screenshots in the meantime.
+
+Decision: we will drop support for Android 8 in the April release. Usage is below 1.5 percent and the maintenance cost is high.
+
+Action: Ada to draft the changelog for the 19 March release by Tuesday.
+
+Design review, 11 March
+
+Attendees: Priya, Wen, Jonas.
+
+Jonas presented the new onboarding flow. The group agreed to cut the tour from five screens to three and to ask for notification permission only after the first saved item. Open question: whether to show the pricing page before sign-up. Priya prefers after sign-up; Jonas will run an A/B test of 2,000 users to decide.
+
+Budget meeting, 18 March
+
+Attendees: Priya, Tomas, Finance.
+
+The cloud bill grew 22 percent last quarter, mostly from the image processing queue. Tomas proposes moving thumbnails to a cheaper tier and expects to save around 4,000 euros a month. Finance approved a 15,000 euro budget for the load-testing project, to be spent by the end of June.

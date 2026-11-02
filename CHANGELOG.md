@@ -11,6 +11,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 - **Add folder** on a project's Files card (and dropping a folder on it) adds a whole folder: files keep their folder path as their name (`app/src/main.ts`), and files projects can't read, folders such as `node_modules`, `.git`, `dist` and `build`, and everything past 1,000 files are skipped, with a count shown.
 
+- Code only: `tests/server/retrieval.test.ts` measures how often a project search puts the answering passage first (90% now) and among the first three (100%), over a small corpus (`tests/fixtures/retrieval`: handbook, TypeScript, meeting notes, recipes, a PDF with pages) and filler documents; it fails below 80% and 95%. Run it before and after changing chunking or ranking (`pnpm exec vitest run tests/server/retrieval.test.ts` prints the numbers and the misses).
+
 ### Fixed
 
 - Two files with the same name in a project (differing content) were told apart by nothing: `read_project_file` and the `file` filter took the first. The second is now named `notes (2).md`, and so on.
