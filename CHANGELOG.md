@@ -9,6 +9,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 - A search hit in a PDF carries the page it starts on (`page`, stored per chunk), and **Sources** opens the PDF at that page ("report.pdf · p. 12"). PDFs are chunked again once, at startup, to record pages.
 - A file whose text is longer than 5,000,000 characters says so in the project's file list ("Only the first 5,000,000 of … characters are searchable"); the list now shows a file's note in place of "Keywords only".
 
+- **Add folder** on a project's Files card (and dropping a folder on it) adds a whole folder: files keep their folder path as their name (`app/src/main.ts`), and files projects can't read, folders such as `node_modules`, `.git`, `dist` and `build`, and everything past 1,000 files are skipped, with a count shown.
+
 ### Fixed
 
 - Two files with the same name in a project (differing content) were told apart by nothing: `read_project_file` and the `file` filter took the first. The second is now named `notes (2).md`, and so on.

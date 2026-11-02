@@ -3,6 +3,7 @@ import {
   Ellipsis,
   FileText,
   Folder,
+  FolderUp,
   LoaderCircle,
   NotebookPen,
   Pencil,
@@ -31,6 +32,8 @@ import {
   updateProject,
 } from './api.ts'
 import { ConversationRow, MenuItem } from './ConversationRow.tsx'
+import { keepFolderFiles } from './folderFiles.ts'
+import { droppedFiles, pickedFiles } from './folders.ts'
 import { ConfirmDialog, DeleteChatDialog } from './Dialog.tsx'
 import { useAnchoredPopover } from './popover.ts'
 import { NoteDialog, ProjectDetailsDialog } from './ProjectDialogs.tsx'
@@ -131,6 +134,8 @@ export function ProjectDetails({
     reload,
     act,
   } = useLoad(useCallback(() => getProject(projectId), [projectId]))
+  // What an add did or is doing (not an error): progress, files skipped.
+  const [notice, setNotice] = useState<string | null>(null)
 
   // Files are indexed in the background: check back until they're done.
   const indexing = contents?.files.some((f) => f.status === 'indexing')
@@ -168,16 +173,32 @@ export function ProjectDetails({
       />
       <Files
         files={contents.files}
+        notice={notice}
         onAdd={(files) =>
           void act(async () => {
+            const { kept, skipped } = keepFolderFiles(files)
             // One refused file (a duplicate) doesn't stop the rest.
             const refused: string[] = []
-            for (const file of files) {
+            for (const [i, file] of kept.entries()) {
+              if (kept.length > 3) {
+                setNotice(`Adding ${i + 1} of ${kept.length}…`)
+              }
               await addProjectFile(projectId, file).catch((err: Error) =>
                 refused.push(err.message),
               )
             }
-            if (refused.length) throw new Error(refused.join('. '))
+            setNotice(
+              skipped
+                ? `Skipped ${skipped} of ${files.length} files: types projects can't read, or folders such as node_modules.`
+                : null,
+            )
+            if (refused.length) {
+              const shown = refused.slice(0, 3)
+              if (refused.length > 3) {
+                shown.push(`and ${refused.length - 3} more refused`)
+              }
+              throw new Error(shown.join('. '))
+            }
           })
         }
         onRetry={(fileId) =>
@@ -203,11 +224,13 @@ export function ProjectDetails({
 
 function Files({
   files,
+  notice,
   onAdd,
   onRetry,
   onRemove,
 }: {
   files: ProjectFile[]
+  notice: string | null
   onAdd: (files: File[]) => void
   onRetry: (fileId: string) => void
   onRemove: (fileId: string) => void
@@ -217,7 +240,10 @@ function Files({
   const drop = (e: DragEvent) => {
     e.preventDefault()
     setDragging(false)
-    if (e.dataTransfer.files.length) onAdd([...e.dataTransfer.files])
+    // Folders are read from the drop itself, so start before the handler ends.
+    void droppedFiles(e.dataTransfer).then((dropped) => {
+      if (dropped.length) onAdd(dropped)
+    })
   }
   return (
     <section
@@ -251,7 +277,23 @@ function Files({
               accept={DOCUMENT_ACCEPT}
               aria-label="Add files"
               onChange={(e) => {
-                const picked = [...(e.target.files ?? [])]
+                const picked = pickedFiles(e.target.files)
+                e.target.value = ''
+                if (picked.length) onAdd(picked)
+              }}
+            />
+          </label>
+          <label className="button">
+            <FolderUp size={16} strokeWidth={1.5} aria-hidden />
+            Add folder
+            <input
+              type="file"
+              hidden
+              aria-label="Add folder"
+              // Not in React's types; Chrome, Edge, Firefox and Safari read it.
+              {...{ webkitdirectory: '' }}
+              onChange={(e) => {
+                const picked = pickedFiles(e.target.files)
                 e.target.value = ''
                 if (picked.length) onAdd(picked)
               }}
@@ -265,10 +307,11 @@ function Files({
         onConfirm={(note) => onAdd([note])}
         onClose={() => setNoting(false)}
       />
+      {notice && <p className="project-hint">{notice}</p>}
       {files.length === 0 ? (
         <p className="project-hint">
           PDFs, Word documents and text files (notes, code, data) that chats in
-          this project can search. Drop them here.
+          this project can search. Drop them here, or add a whole folder.
         </p>
       ) : (
         <ul className="project-files">

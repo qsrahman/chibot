@@ -1,5 +1,12 @@
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
 import { expect, test, type Page } from '@playwright/test'
 import { answer, answered, appReady, lastRequest, send } from './helpers.ts'
 
@@ -166,6 +173,49 @@ test('describes a project, and drafts its instructions from the files', async ({
   // Nothing is saved until the user says so.
   await instructions.getByRole('button', { name: 'Cancel' }).click()
   await expect(instructions.getByText('E2E Title')).toHaveCount(0)
+})
+
+test('adds a folder, keeping paths and skipping what projects cannot use', async ({
+  page,
+}) => {
+  const dir = mkdtempSync(join(tmpdir(), 'chibot-folder-'))
+  try {
+    for (const [path, text] of Object.entries({
+      'app/docs/readme.md': '# App\n\nThe launch code is 4417.',
+      'app/src/main.ts': 'export const answer = 42',
+      'app/node_modules/dep/index.js': 'module.exports = 1',
+      'app/logo.png': 'not really a png',
+    })) {
+      mkdirSync(join(dir, dirname(path)), { recursive: true })
+      writeFileSync(join(dir, path), text)
+    }
+    await newProject(page, 'Code')
+    const files = page.getByRole('region', { name: 'Project files' })
+    await files.getByLabel('Add folder').setInputFiles(join(dir, 'app'))
+    await expect(files.getByText('app/docs/readme.md')).toBeVisible()
+    await expect(files.getByText('app/src/main.ts')).toBeVisible()
+    await expect(files.getByText('Ready')).toHaveCount(2)
+    await expect(files.getByText('dep/index.js')).toHaveCount(0)
+    await expect(files.getByText(/Skipped 2 of 4 files/)).toBeVisible()
+  } finally {
+    rmSync(dir, { recursive: true })
+  }
+})
+
+test('adds a file dropped on the files card', async ({ page }) => {
+  await newProject(page, 'Dropped')
+  const files = page.getByRole('region', { name: 'Project files' })
+  await files.evaluate((card) => {
+    const data = new DataTransfer()
+    data.items.add(
+      new File(['Dropped text.'], 'drop.md', { type: 'text/markdown' }),
+    )
+    card.dispatchEvent(
+      new DragEvent('drop', { dataTransfer: data, bubbles: true }),
+    )
+  })
+  await expect(files.getByText('drop.md')).toBeVisible()
+  await expect(files.getByText('Ready')).toBeVisible()
 })
 
 test('moves chats in and out, and deletes a project with them', async ({

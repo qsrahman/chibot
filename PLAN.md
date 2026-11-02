@@ -538,8 +538,8 @@ Models differ in dimensions, so a model change means re-embedding.
   the files (opening the original).
 - **Web.** A Projects section above the chats in the sidebar ("New project",
   a row each). `/projects/:id`: the name and a one-line description (edit), a composer that starts a
-  chat in the project, its chats, a Files card (upload by picker or drop, write a
-  note, status, index again, delete) and an Instructions card (first, as a
+  chat in the project, its chats, a Files card (upload by picker or drop, a whole folder with its
+  paths, write a note, status, index again, delete) and an Instructions card (first, as a
   preview with Edit; the editor's "Suggest from files" has the chat model draft
   them from the start of each indexed file, for review). Project chats appear only there
   (search still finds them). A chat's "…" menu gains "Move to project" /
