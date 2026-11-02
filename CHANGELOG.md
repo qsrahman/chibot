@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.12.2] - 2026-11-02
+
 ### Changed
 
 - Docs: [TURN.md](TURN.md) follows a message from Send to the answer on screen (request, door, turn loop, one request to the model, tools and approval, events, the browser), with where to look to change each part; AGENTS.md links it.
