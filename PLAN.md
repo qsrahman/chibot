@@ -519,7 +519,9 @@ Models differ in dimensions, so a model change means re-embedding.
   text formats (txt, md, code, json, csv, html), ≤ 50 MB.
   `POST /api/projects/:id/files` attaches a file and indexes it in the
   background: extract text (`unpdf`, `mammoth`, Readability for HTML, the rest
-  as is), chunk (~3,200 characters, 15% overlap, at paragraph breaks), add to
+  as is), chunk (~3,200 characters, 15% overlap, at the document's own seams: markdown
+  sections, top-level code units, paragraphs, then lines or sentences; see
+  `chunking.ts`), add to
   the FTS index and, with an embedding endpoint, embed in batches. Status
   (indexing / ready / failed with a reason) shows in the project. Unfinished
   files resume after a restart; a changed embedding model rebuilds the

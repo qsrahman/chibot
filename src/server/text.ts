@@ -53,6 +53,11 @@ export async function documentText(
     case 'html':
       return htmlToText(new TextDecoder().decode(data)).text
     case 'text':
-      return tidy(new TextDecoder().decode(data))
+      // Not tidy(): indentation is meaning in code and in lists.
+      return new TextDecoder()
+        .decode(data)
+        .replace(/\r\n?/g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim()
   }
 }

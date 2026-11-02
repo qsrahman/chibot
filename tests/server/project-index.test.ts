@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type OpenAI from 'openai'
 import { openDatabase } from '../../src/server/database.ts'
 import type { FileStore } from '../../src/server/file-store.ts'
-import { chunkText, ProjectIndex } from '../../src/server/project-index.ts'
+import { ProjectIndex } from '../../src/server/project-index.ts'
 import { ProjectStore } from '../../src/server/project-store.ts'
 import { documentKind } from '../../src/shared/documents.ts'
 import { documentText } from '../../src/server/text.ts'
@@ -28,28 +28,6 @@ function fakeEmbeddings(calls: string[][], { fail = false } = {}) {
   }
   return { embeddings: { create } } as unknown as OpenAI
 }
-
-describe('chunkText', () => {
-  it('keeps short text whole', () => {
-    expect(chunkText('One.\n\nTwo.')).toEqual(['One.\n\nTwo.'])
-  })
-
-  it('splits at paragraph breaks, overlapping by whole paragraphs', () => {
-    const paragraphs = ['a'.repeat(40), 'b'.repeat(40), 'c'.repeat(40)]
-    expect(chunkText(paragraphs.join('\n\n'), 90, 45)).toEqual([
-      `${'a'.repeat(40)}\n\n${'b'.repeat(40)}`,
-      `${'b'.repeat(40)}\n\n${'c'.repeat(40)}`,
-    ])
-  })
-
-  it('cuts paragraphs longer than a chunk at spaces', () => {
-    const words = Array.from({ length: 60 }, (_, i) => `w${i}`).join(' ')
-    const chunks = chunkText(words, 50, 10)
-    expect(chunks.length).toBeGreaterThan(3)
-    expect(chunks.every((c) => c.length <= 50)).toBe(true)
-    expect(chunks.join(' ')).toContain('w59')
-  })
-})
 
 describe('document text', () => {
   it('knows the supported types by extension', () => {

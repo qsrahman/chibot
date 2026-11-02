@@ -4,10 +4,9 @@ import { documentKind } from '../shared/documents.ts'
 import { anyWordQuery, transaction } from './database.ts'
 import type { FileStore } from './file-store.ts'
 import type { ProjectStore } from './project-store.ts'
+import { chunkStyle, chunkText } from './chunking.ts'
 import { documentText } from './text.ts'
 
-const CHUNK_SIZE = 3200
-const CHUNK_OVERLAP = 480
 // About 1,500 chunks: plenty for notes and documents, bounded for embedding.
 const MAX_TEXT = 5_000_000
 const EMBED_BATCH = 64
@@ -104,7 +103,9 @@ export class ProjectIndex {
       // Removed (with its project, maybe) while its text was extracted.
       const projectId = this.#projects.projectOf(fileId)
       if (!projectId) return
-      const chunks = chunkText(text.slice(0, MAX_TEXT))
+      const chunks = chunkText(text.slice(0, MAX_TEXT), {
+        style: chunkStyle(file.name),
+      })
       const ids = this.#saveChunks(fileId, chunks)
       let note: string | null = null
       if (this.#embedding) {
@@ -329,59 +330,4 @@ export class ProjectIndex {
       }[]
     ).map((row) => row.file_id)
   }
-}
-
-/**
- * Splits text into chunks of about `size` characters at paragraph breaks,
- * each starting with the end (about `overlap` characters) of the one before,
- * so a passage cut in two is still found whole in one of them. Paragraphs
- * longer than `size` are cut at spaces.
- */
-export function chunkText(
-  text: string,
-  size = CHUNK_SIZE,
-  overlap = CHUNK_OVERLAP,
-): string[] {
-  const paragraphs = text
-    .split(/\n\s*\n/)
-    .map((p) => p.trim())
-    .filter(Boolean)
-    .flatMap((p) => (p.length <= size ? [p] : cut(p, size, overlap)))
-  const chunks: string[] = []
-  let current: string[] = []
-  let length = 0
-  for (const paragraph of paragraphs) {
-    if (current.length > 0 && length + paragraph.length > size) {
-      chunks.push(current.join('\n\n'))
-      // Carry the last paragraphs that fit in the overlap.
-      const carried: string[] = []
-      let carriedLength = 0
-      for (const p of current.toReversed()) {
-        if (carriedLength + p.length > overlap) break
-        carried.unshift(p)
-        carriedLength += p.length + 2
-      }
-      current = carried
-      length = carriedLength
-    }
-    current.push(paragraph)
-    length += paragraph.length + 2
-  }
-  if (current.length > 0) chunks.push(current.join('\n\n'))
-  return chunks
-}
-
-/** Windows of `size` characters, `overlap` apart, ending at spaces. */
-function cut(text: string, size: number, overlap: number): string[] {
-  const pieces: string[] = []
-  let start = 0
-  while (start < text.length) {
-    let end = Math.min(start + size, text.length)
-    const space = text.lastIndexOf(' ', end)
-    if (end < text.length && space > start + size / 2) end = space
-    pieces.push(text.slice(start, end).trim())
-    if (end >= text.length) break
-    start = Math.max(end - overlap, start + 1)
-  }
-  return pieces
 }
