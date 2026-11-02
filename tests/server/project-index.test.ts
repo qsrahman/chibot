@@ -213,6 +213,31 @@ describe('ProjectIndex', () => {
     expect(count('SELECT count(*) n FROM chunk_vectors')).toBe(2)
   })
 
+  it('indexes files again that an older chunker split', async () => {
+    const index = new ProjectIndex(db, projects, files, null)
+    const id = add('notes.md', '# Title\n\nAlpha.')
+    await index.index(id)
+    const chunker = () => count('SELECT chunker n FROM project_files') as number
+    expect(chunker()).toBeGreaterThan(0)
+
+    // As left by an older version: stale chunks, chunker 0.
+    db.exec(
+      "UPDATE chunks SET text = 'stale'; UPDATE project_files SET chunker = 0",
+    )
+    await index.resume()
+    expect(db.prepare('SELECT text FROM chunks').all()).toEqual([
+      { text: '# Title\n\nAlpha.' },
+    ])
+    expect(chunker()).toBeGreaterThan(0)
+
+    // Up to date: left alone.
+    db.exec("UPDATE chunks SET text = 'kept'")
+    await index.resume()
+    expect(db.prepare('SELECT text FROM chunks').all()).toEqual([
+      { text: 'kept' },
+    ])
+  })
+
   it('re-embeds files indexed before embeddings were configured', async () => {
     await new ProjectIndex(db, projects, files, null).index(
       add('a.md', 'Alpha.'),

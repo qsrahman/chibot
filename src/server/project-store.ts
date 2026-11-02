@@ -106,6 +106,23 @@ export class ProjectStore {
       .all() as { projectId: string; fileId: string }[]
   }
 
+  /** Indexed files whose chunks were made by a chunker older than `version`. */
+  outdatedFiles(version: number): string[] {
+    return (
+      this.#db
+        .prepare(
+          "SELECT file_id FROM project_files WHERE status = 'ready' AND chunker < ?",
+        )
+        .all(version) as { file_id: string }[]
+    ).map((row) => row.file_id)
+  }
+
+  setChunker(fileId: string, version: number): void {
+    this.#db
+      .prepare('UPDATE project_files SET chunker = ? WHERE file_id = ?')
+      .run(version, fileId)
+  }
+
   /** The project a file is in. */
   projectOf(fileId: string): string | null {
     const row = this.#db

@@ -4,6 +4,10 @@
 const CHUNK_SIZE = 3200
 const CHUNK_OVERLAP = 480
 
+// Raise when chunking changes: project files chunked by an older version are
+// indexed again at startup.
+export const CHUNKER_VERSION = 1
+
 export type ChunkStyle = 'prose' | 'markdown' | 'code'
 
 const MARKDOWN = new Set(['md', 'markdown', 'mdx', 'rmd'])

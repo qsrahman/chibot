@@ -525,7 +525,7 @@ Models differ in dimensions, so a model change means re-embedding.
   the FTS index and, with an embedding endpoint, embed in batches. Status
   (indexing / ready / failed with a reason) shows in the project. Unfinished
   files resume after a restart; a changed embedding model rebuilds the
-  vectors.
+  vectors, and a new `CHUNKER_VERSION` re-chunks files made with an older one.
 - **`search_project_files`** (`query`, `file`, `limit`), offered only in project chats with
   files: keyword and vector hits merged by reciprocal rank fusion, the top 6
   chunks (the model may ask for 1 to 15 with `limit`) as JSON (file name, file

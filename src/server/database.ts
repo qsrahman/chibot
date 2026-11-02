@@ -98,6 +98,9 @@ const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
    CREATE TABLE embedding_model (model TEXT NOT NULL, dimensions INTEGER NOT NULL);`,
   // Attachments: the id of the provider's (Files API) copy, uploaded once.
   `ALTER TABLE files ADD COLUMN provider_file_id TEXT;`,
+  // Which chunker (CHUNKER_VERSION) made a project file's chunks, so a better
+  // one re-indexes the files made with an older one.
+  `ALTER TABLE project_files ADD COLUMN chunker INTEGER NOT NULL DEFAULT 0;`,
 ]
 
 /**

@@ -4,7 +4,7 @@ import { documentKind } from '../shared/documents.ts'
 import { anyWordQuery, transaction } from './database.ts'
 import type { FileStore } from './file-store.ts'
 import type { ProjectStore } from './project-store.ts'
-import { chunkStyle, chunkText } from './chunking.ts'
+import { CHUNKER_VERSION, chunkStyle, chunkText } from './chunking.ts'
 import { documentText } from './text.ts'
 
 // About 1,500 chunks: plenty for notes and documents, bounded for embedding.
@@ -73,8 +73,9 @@ export class ProjectIndex {
   }
 
   /**
-   * At startup: re-indexes files whose indexing didn't finish, and all files
-   * when the embedding model changed (vectors of different models don't mix).
+   * At startup: re-indexes files whose indexing didn't finish or was chunked
+   * by an older chunker, and all files when the embedding model changed
+   * (vectors of different models don't mix).
    */
   resume(): Promise<void> {
     const info = this.#vectorInfo()
@@ -82,6 +83,9 @@ export class ProjectIndex {
     const fileIds = new Set(
       this.#projects.unfinishedFiles().map((f) => f.fileId),
     )
+    this.#projects
+      .outdatedFiles(CHUNKER_VERSION)
+      .forEach((id) => fileIds.add(id))
     // `info` is missing when files were indexed before embeddings were
     // configured, so re-embed them too (and retry a failed first embedding).
     if (model && (!info || info.model !== model)) {
@@ -107,6 +111,7 @@ export class ProjectIndex {
         style: chunkStyle(file.name),
       })
       const ids = this.#saveChunks(fileId, chunks)
+      this.#projects.setChunker(fileId, CHUNKER_VERSION)
       let note: string | null = null
       if (this.#embedding) {
         try {
