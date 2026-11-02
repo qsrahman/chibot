@@ -98,6 +98,11 @@ describe('SearchChatsTool', () => {
     expect(await run(null)).toContain('Schema')
   })
 
+  it('counts as untrusted, so a memory saved after it asks first', () => {
+    // Old chats hold whatever was pasted or fetched in them.
+    expect(searchChats.untrustedOutput).toBe(true)
+  })
+
   it('limits by date', async () => {
     const today = new Date()
     const day = (offset: number) =>

@@ -133,14 +133,22 @@ export function chatInstructions(
     .join('\n\n')
 }
 
-const section = (tag: string, body: string) => `<${tag}>\n${body}\n</${tag}>`
+/**
+ * `body` in `<tag>` tags. A closing tag inside it is written `&lt;/tag`, so
+ * text a user, a model or a page wrote can't end the section and pass for
+ * instructions.
+ */
+export function section(tag: string, body: string, attributes = ''): string {
+  const safe = body.replace(new RegExp(`</${tag}`, 'gi'), `&lt;/${tag}`)
+  return `<${tag}${attributes}>\n${safe}\n</${tag}>`
+}
 
 /** The chat's project: its name and the user's instructions for it. */
 function projectSection({ name, instructions }: Project): string {
-  const attributes = `name="${name.replaceAll('"', '&quot;')}"`
+  const attributes = ` name="${name.replaceAll('"', '&quot;')}"`
   return instructions.trim()
-    ? `<project ${attributes}>\n${instructions.trim()}\n</project>`
-    : `<project ${attributes} />`
+    ? section('project', instructions.trim(), attributes)
+    : `<project${attributes} />`
 }
 
 /**

@@ -14,6 +14,8 @@ export class SearchChatsTool extends Tool {
     'Finds your earlier chats on this machine when you refer to them.'
   override readonly running = 'Searching your chats…'
   override readonly done = 'Searched your chats'
+  // Old chats hold whatever was pasted or fetched in them.
+  override readonly untrustedOutput = true
   readonly description =
     "Searches the user's earlier chats with you (their messages and your " +
     'answers) and returns each matching chat’s title with its best-matching ' +

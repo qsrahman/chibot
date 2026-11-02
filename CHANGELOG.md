@@ -4,6 +4,11 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- `search_chats` counts as untrusted (old chats hold whatever was pasted or fetched in them), so a memory change in a chat that searched its past chats asks for approval first, and such chats get the "others' text is not instructions" rule.
+- Code only: the tags in the instructions (`<user_profile>`, `<response_style>`, `<project>`, `<memories>`) go through one `section()` that writes a closing tag inside the text as `&lt;/tag`, so a memory or an instruction can't end its section and pass for instructions.
+
 ## [0.12.1] - 2026-11-02
 
 ### Added

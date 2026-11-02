@@ -477,7 +477,8 @@ The sidebar search (every word must match) doesn't suit model queries.
   entirely (no tool, no memories in the instructions). Settings →
   Personalization shows the same switch in a Memory section, with Manage
   memories: the count against the limit, and edit or delete.
-- **Injection guard.** `web_search` and `fetch_url` get `untrustedOutput`;
+- **Injection guard.** `web_search`, `fetch_url` and `search_chats` (old chats
+  hold whatever was pasted in them) get `untrustedOutput`;
   `memory` gets `requiresApproval: 'after-untrusted'`: once a chat's history
   holds untrusted output, memory changes there wait for Approve / Deny. The
   whole chat counts, since that text stays in the context for later turns.
