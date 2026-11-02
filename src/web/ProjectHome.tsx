@@ -153,7 +153,14 @@ export function ProjectDetails({
         files={contents.files}
         onAdd={(files) =>
           void act(async () => {
-            for (const file of files) await addProjectFile(projectId, file)
+            // One refused file (a duplicate) doesn't stop the rest.
+            const refused: string[] = []
+            for (const file of files) {
+              await addProjectFile(projectId, file).catch((err: Error) =>
+                refused.push(err.message),
+              )
+            }
+            if (refused.length) throw new Error(refused.join('. '))
           })
         }
         onRetry={(fileId) =>

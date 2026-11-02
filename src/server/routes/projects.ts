@@ -48,6 +48,21 @@ export function projectRoutes({
     if (file.conversationId !== null || projects.hasFile(file.id)) {
       return c.json({ error: 'The file is already in use' }, 409)
     }
+    // The same bytes twice would only make every search hit twice.
+    const same = projects
+      .files(project.id)
+      .find(
+        (f) =>
+          f.size === file.size &&
+          files.read(f.fileId).equals(files.read(file.id)),
+      )
+    if (same) {
+      files.delete(file.id)
+      return c.json(
+        { error: `${file.name} is already in this project as ${same.name}` },
+        409,
+      )
+    }
     projects.addFile(project.id, file.id)
     void index.index(file.id)
     return c.json(projects.files(project.id), 201)

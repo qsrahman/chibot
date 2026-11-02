@@ -9,6 +9,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 - `read_project_file`: in project chats the model can read a project file in order, about 10,000 characters at a time, for questions about the whole of a file (summaries, comparisons) or the text around a search hit. Before, it only had the 6 best passages.
 - `search_project_files` takes an optional `file` to search one file, and each hit says its part (`part` of `parts`) so the model can read around it. Longer PDFs get `[Page n]` lines (when indexed), so answers can cite pages.
 - Projects: **Add note** writes text straight into a project file (Markdown), and a file that failed or is searchable by keywords only has an **Index again** button (`POST /api/projects/:id/files/:fileId/index`).
+- A file with the same content as one already in the project is refused (409, naming the file it matches) and its upload deleted, so search stops returning every hit twice.
 - In a project chat, `search_chats` searches that project's chats only.
 
 ## [0.11.13] - 2026-10-30

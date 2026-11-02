@@ -164,6 +164,38 @@ describe('projects', () => {
     expect(files.get(file.id)).toBeNull()
   })
 
+  it('refuses the same file twice in a project, and deletes the copy', async () => {
+    const project = projects.create('Trip')
+    const upload = async (name: string, text: string) => {
+      const form = new FormData()
+      form.append('file', new File([text], name))
+      const res = await app.request('/api/files', {
+        method: 'POST',
+        body: form,
+      })
+      return (await res.json()) as StoredFile
+    }
+    const attach = (projectId: string, fileId: string) =>
+      call('POST', `/api/projects/${projectId}/files`, { fileId })
+    const first = await upload('plan.md', 'Visit Kyoto.')
+    expect((await attach(project.id, first.id)).status).toBe(201)
+
+    const copy = await upload('copy of plan.md', 'Visit Kyoto.')
+    const refused = await attach(project.id, copy.id)
+    expect(refused.status).toBe(409)
+    expect(refused.body).toEqual({
+      error: 'copy of plan.md is already in this project as plan.md',
+    })
+    expect(files.get(copy.id)).toBeNull()
+
+    // Different text, or another project, is fine.
+    const other = await upload('other.md', 'Visit Osaka.')
+    expect((await attach(project.id, other.id)).status).toBe(201)
+    const elsewhere = projects.create('Other')
+    const again = await upload('plan.md', 'Visit Kyoto.')
+    expect((await attach(elsewhere.id, again.id)).status).toBe(201)
+  })
+
   it('indexes a file again', async () => {
     const project = projects.create('Trip')
     const other = projects.create('Other')

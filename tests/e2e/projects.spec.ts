@@ -104,6 +104,25 @@ test('adds a note, reads a whole file, and indexes a failed file again', async (
   await expect(answer(page, 0)).toContainText('The garage code is 9027.')
 })
 
+test('refuses a file that is already in the project', async ({ page }) => {
+  await newProject(page, 'Dupes')
+  const files = page.getByRole('region', { name: 'Project files' })
+  const note = (name: string) => ({
+    name,
+    mimeType: 'text/markdown',
+    buffer: Buffer.from('The same text.'),
+  })
+  await files.getByLabel('Add files').setInputFiles(note('a.md'))
+  await expect(files.getByText('Ready')).toHaveCount(1)
+  await files
+    .getByLabel('Add files')
+    .setInputFiles([note('b.md'), note('c.md')])
+  await expect(page.getByRole('alert')).toContainText(
+    'b.md is already in this project as a.md',
+  )
+  await expect(files.getByRole('listitem')).toHaveCount(1)
+})
+
 test('moves chats in and out, and deletes a project with them', async ({
   page,
 }) => {
