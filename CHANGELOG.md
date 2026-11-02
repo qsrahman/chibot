@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-02
+
 ### Added
 
 - `read_project_file`: in project chats the model can read a project file in order, about 10,000 characters at a time, for questions about the whole of a file (summaries, comparisons) or the text around a search hit. Before, it only had the 6 best passages.
