@@ -4,6 +4,10 @@
   line-height: 26px;
 }
 
+.markdown.plain {
+  white-space: pre-wrap;
+}
+
 .markdown > :first-child {
   margin-top: 0;
 }

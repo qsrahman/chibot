@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- The web app's main script is 366 kB, down from 965 kB (gzip 115 kB, from 297 kB), and the build no longer warns about large chunks: the Markdown renderer (with code highlighting) is a separate chunk that loads beside the app, and KaTeX another that loads the first time a message has math. Until the renderer arrives a message shows as plain text.
 - `search_chats` counts as untrusted (old chats hold whatever was pasted or fetched in them), so a memory change in a chat that searched its past chats asks for approval first, and such chats get the "others' text is not instructions" rule.
 - Code only: the tags in the instructions (`<user_profile>`, `<response_style>`, `<project>`, `<memories>`) go through one `section()` that writes a closing tag inside the text as `&lt;/tag`, so a memory or an instruction can't end its section and pass for instructions.
 
