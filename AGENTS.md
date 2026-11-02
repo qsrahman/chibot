@@ -2,6 +2,7 @@
 
 Guide for humans and coding agents working on this repo. Product scope and the
 phase roadmap live in [PLAN.md](PLAN.md). Usage lives in [README.md](README.md).
+How a message becomes an answer lives in [TURN.md](TURN.md).
 
 ## Stack
 

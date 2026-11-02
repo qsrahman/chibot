@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- Docs: [TURN.md](TURN.md) follows a message from Send to the answer on screen (request, door, turn loop, one request to the model, tools and approval, events, the browser), with where to look to change each part; AGENTS.md links it.
 - Dependencies updated: `hono` 4.13.16, `openai` 7.47.0, `react-router` 8.5.1, `lucide-react` 1.66.0, `linkedom` 0.18.15, `@types/node` 26.6.6, and `unpdf` 2.1.0 (a major release: the PDF fixtures, page markers and retrieval tests pass unchanged). pnpm 12.16.1 is the minimum (`devEngines`; an older pnpm downloads it).
 - `rehype-katex` and `remark-math` ran KaTeX 0.16, which has a low-severity advisory (GHSA-238p-pmpm-9mq7), beside the 0.19 whose stylesheet we load. `pnpm-workspace.yaml` now pins one version (0.19), and `pnpm audit --prod` is clean.
 - The web app's main script is 366 kB, down from 965 kB (gzip 115 kB, from 297 kB), and the build no longer warns about large chunks: the Markdown renderer (with code highlighting) is a separate chunk that loads beside the app, and KaTeX another that loads the first time a message has math. Until the renderer arrives a message shows as plain text.
