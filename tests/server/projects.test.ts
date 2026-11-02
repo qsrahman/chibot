@@ -164,6 +164,30 @@ describe('projects', () => {
     expect(files.get(file.id)).toBeNull()
   })
 
+  it('indexes a file again', async () => {
+    const project = projects.create('Trip')
+    const other = projects.create('Other')
+    const file = files.save(
+      null,
+      'plan.md',
+      'text/markdown',
+      Buffer.from('Kyoto.'),
+    )
+    projects.addFile(project.id, file.id)
+    projects.setStatus(file.id, 'failed', 'embedding endpoint was down')
+
+    const again = (projectId: string) =>
+      call('POST', `/api/projects/${projectId}/files/${file.id}/index`)
+    expect((await again(other.id)).status).toBe(404)
+    expect((await again(project.id)).status).toBe(204)
+    await vi.waitFor(() =>
+      expect(projects.files(project.id)[0]).toMatchObject({
+        status: 'ready',
+        error: null,
+      }),
+    )
+  })
+
   it('serves uploads so that HTML can’t run scripts', async () => {
     const page = files.save(
       null,

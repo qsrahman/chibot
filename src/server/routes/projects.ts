@@ -61,6 +61,17 @@ export function projectRoutes({
     return removed ? c.body(null, 204) : notFound(c, 'File')
   })
 
+  // Indexes a file again, e.g. after a failure or once embeddings work.
+  app.post('/api/projects/:id/files/:fileId/index', (c) => {
+    const fileId = c.req.param('fileId')
+    if (projects.projectOf(fileId) !== c.req.param('id')) {
+      return notFound(c, 'File')
+    }
+    projects.setStatus(fileId, 'indexing')
+    void index.index(fileId)
+    return c.body(null, 204)
+  })
+
   app.patch('/api/projects/:id', json(projectPatchSchema), (c) => {
     const project = projects.update(c.req.param('id'), c.req.valid('json'))
     return project ? c.json(project) : notFound(c, 'Project')

@@ -74,6 +74,36 @@ test('answers from project files, with its instructions', async ({ page }) => {
   await expect(answer(page, 1)).toContainText('The secret code is KESTREL.')
 })
 
+test('adds a note, reads a whole file, and indexes a failed file again', async ({
+  page,
+}) => {
+  await newProject(page, 'Notes')
+  const files = page.getByRole('region', { name: 'Project files' })
+  await files.getByRole('button', { name: 'Add note' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Add a note' })
+  await dialog.getByLabel('Note title').fill('Codes')
+  await dialog
+    .getByLabel('Note', { exact: true })
+    .fill('The garage code is 9027.')
+  await dialog.getByRole('button', { name: 'Add note' }).click()
+  await expect(files.getByText('Codes.md')).toBeVisible()
+  await expect(files.getByText('Ready')).toHaveCount(1)
+
+  // A file with no text fails, and can be tried again.
+  await files.getByLabel('Add files').setInputFiles({
+    name: 'empty.md',
+    mimeType: 'text/markdown',
+    buffer: Buffer.from('   '),
+  })
+  await expect(files.getByText(/Failed: found no text/)).toBeVisible()
+  await files.getByRole('button', { name: 'Index empty.md again' }).click()
+  await expect(files.getByText(/Failed: found no text/)).toBeVisible()
+
+  await send(page, 'Read the whole file Codes.md')
+  await answered(page)
+  await expect(answer(page, 0)).toContainText('The garage code is 9027.')
+})
+
 test('moves chats in and out, and deletes a project with them', async ({
   page,
 }) => {

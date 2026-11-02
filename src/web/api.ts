@@ -117,6 +117,11 @@ export async function addProjectFile(projectId: string, file: File) {
   )
 }
 
+export const reindexProjectFile = (projectId: string, fileId: string) =>
+  request<void>(`/api/projects/${projectId}/files/${fileId}/index`, {
+    method: 'POST',
+  })
+
 export const removeProjectFile = (projectId: string, fileId: string) =>
   remove(`/api/projects/${projectId}/files/${fileId}`)
 

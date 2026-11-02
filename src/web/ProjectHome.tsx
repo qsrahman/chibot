@@ -3,7 +3,9 @@ import {
   Ellipsis,
   FileText,
   Folder,
+  NotebookPen,
   Pencil,
+  RefreshCw,
   Trash2,
   Upload,
   X,
@@ -19,6 +21,7 @@ import {
   addProjectFile,
   deleteConversation,
   getProject,
+  reindexProjectFile,
   removeProjectFile,
   regenerateTitle,
   updateConversation,
@@ -27,7 +30,7 @@ import {
 import { ConversationRow, MenuItem } from './ConversationRow.tsx'
 import { ConfirmDialog, DeleteChatDialog } from './Dialog.tsx'
 import { useAnchoredPopover } from './popover.ts'
-import { ProjectNameDialog } from './ProjectDialogs.tsx'
+import { NoteDialog, ProjectNameDialog } from './ProjectDialogs.tsx'
 import { useLoad } from './useLoad.ts'
 
 /** The project page's heading: its name, rename and delete. */
@@ -153,6 +156,9 @@ export function ProjectDetails({
             for (const file of files) await addProjectFile(projectId, file)
           })
         }
+        onRetry={(fileId) =>
+          void act(() => reindexProjectFile(projectId, fileId))
+        }
         onRemove={(fileId) =>
           void act(() => removeProjectFile(projectId, fileId))
         }
@@ -181,13 +187,16 @@ export function ProjectDetails({
 function Files({
   files,
   onAdd,
+  onRetry,
   onRemove,
 }: {
   files: ProjectFile[]
   onAdd: (files: File[]) => void
+  onRetry: (fileId: string) => void
   onRemove: (fileId: string) => void
 }) {
   const [dragging, setDragging] = useState(false)
+  const [noting, setNoting] = useState(false)
   const drop = (e: DragEvent) => {
     e.preventDefault()
     setDragging(false)
@@ -206,23 +215,39 @@ function Files({
     >
       <header>
         <h2>Files</h2>
-        <label className="button">
-          <Upload size={16} strokeWidth={1.5} aria-hidden />
-          Add files
-          <input
-            type="file"
-            multiple
-            hidden
-            accept={DOCUMENT_ACCEPT}
-            aria-label="Add files"
-            onChange={(e) => {
-              const picked = [...(e.target.files ?? [])]
-              e.target.value = ''
-              if (picked.length) onAdd(picked)
-            }}
-          />
-        </label>
+        <div className="project-card-actions">
+          <button
+            type="button"
+            className="button"
+            onClick={() => setNoting(true)}
+          >
+            <NotebookPen size={16} strokeWidth={1.5} aria-hidden />
+            Add note
+          </button>
+          <label className="button">
+            <Upload size={16} strokeWidth={1.5} aria-hidden />
+            Add files
+            <input
+              type="file"
+              multiple
+              hidden
+              accept={DOCUMENT_ACCEPT}
+              aria-label="Add files"
+              onChange={(e) => {
+                const picked = [...(e.target.files ?? [])]
+                e.target.value = ''
+                if (picked.length) onAdd(picked)
+              }}
+            />
+          </label>
+        </div>
       </header>
+      <NoteDialog
+        key={String(noting)}
+        open={noting}
+        onConfirm={(note) => onAdd([note])}
+        onClose={() => setNoting(false)}
+      />
       {files.length === 0 ? (
         <p className="project-hint">
           PDFs, Word documents and text files (notes, code, data) that chats in
@@ -253,6 +278,17 @@ function Files({
                       ? 'Keywords only'
                       : 'Ready'}
               </span>
+              {file.status !== 'indexing' && file.error && (
+                <button
+                  type="button"
+                  className="icon-button"
+                  aria-label={`Index ${file.name} again`}
+                  title="Index again"
+                  onClick={() => onRetry(file.fileId)}
+                >
+                  <RefreshCw size={16} strokeWidth={1.5} />
+                </button>
+              )}
               <button
                 type="button"
                 className="icon-button"

@@ -97,3 +97,60 @@ export function MoveToProjectDialog({
     </Dialog>
   )
 }
+
+/** Writes a note that is kept as a project file (Markdown) and searched with the rest. */
+export function NoteDialog({
+  open,
+  onConfirm,
+  onClose,
+}: {
+  open: boolean
+  onConfirm: (file: File) => void
+  onClose: () => void
+}) {
+  const [title, setTitle] = useState('')
+  const [text, setText] = useState('')
+  const valid = title.trim() !== '' && text.trim() !== ''
+
+  return (
+    <Dialog open={open} onClose={onClose} title="Add a note">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (!valid) return
+          // Slashes and the like would make an odd file name.
+          const name = title.trim().replace(/[\\/:*?"<>|]+/g, ' ')
+          onConfirm(
+            new File([text.trim()], `${name}.md`, { type: 'text/markdown' }),
+          )
+          onClose()
+        }}
+      >
+        <input
+          className="dialog-input"
+          aria-label="Note title"
+          placeholder="Title, e.g. Door codes"
+          maxLength={100}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          autoFocus
+        />
+        <textarea
+          className="dialog-input note-text"
+          aria-label="Note"
+          placeholder="What chats in this project should know"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+        />
+        <div className="dialog-actions">
+          <button type="button" className="button" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="submit" className="button primary" disabled={!valid}>
+            Add note
+          </button>
+        </div>
+      </form>
+    </Dialog>
+  )
+}

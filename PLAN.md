@@ -536,8 +536,8 @@ Models differ in dimensions, so a model change means re-embedding.
   the files (opening the original).
 - **Web.** A Projects section above the chats in the sidebar ("New project",
   a row each). `/projects/:id`: the name (rename), a composer that starts a
-  chat in the project, its chats, a Files card (upload by picker or drop,
-  status, delete) and an Instructions card. Project chats appear only there
+  chat in the project, its chats, a Files card (upload by picker or drop, write a
+  note, status, index again, delete) and an Instructions card. Project chats appear only there
   (search still finds them). A chat's "…" menu gains "Move to project" /
   "Remove from project". A project chat's header shows "Project name /"
   linking back; temporary mode isn't offered in projects. Moving the open

@@ -78,6 +78,11 @@
   margin-bottom: 8px;
 }
 
+.project-card-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .project-card h2,
 .project-chats h2 {
   margin: 0;
@@ -184,6 +189,11 @@
   background: var(--bg);
   color: inherit;
   font: inherit;
+}
+
+.note-text {
+  min-height: 160px;
+  resize: vertical;
 }
 
 .greeting {
