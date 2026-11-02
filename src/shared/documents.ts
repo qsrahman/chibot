@@ -20,7 +20,16 @@ const KINDS: Record<string, { kind: DocumentKind; mime: string }> = {
 // some, e.g. video/mp2t for .ts).
 const TEXT = `txt log tsv yaml yml toml ini xml rst tex js mjs cjs ts tsx jsx py
   rb go rs java kt c h cc cpp hpp cs swift php sh bash zsh sql css scss vue
-  svelte lua r dart scala`.split(/\s+/)
+  svelte lua r dart scala
+  jsonl ndjson mdx adoc org rmd srt vtt diff patch cfg conf properties
+  gradle kts groovy proto graphql gql tf hcl nix ex exs erl hrl hs ml mli fs
+  clj cljs lisp el vim zig nim pl pm jl m mm ps1 bat cmd vb sass less styl
+  ejs hbs pug j2 twig liquid
+  gitignore gitattributes dockerignore editorconfig prettierrc eslintrc
+  npmrc`.split(/\s+/)
+// Text files named without an extension.
+const TEXT_NAMES = `dockerfile makefile procfile gemfile rakefile justfile
+  readme license licence changelog authors`.split(/\s+/)
 
 export type DocumentKind = 'pdf' | 'docx' | 'html' | 'text'
 
@@ -30,7 +39,11 @@ export function documentKind(
 ): { kind: DocumentKind; mime: string } | null {
   const extension = /\.([^.]+)$/.exec(name)?.[1]?.toLowerCase() ?? ''
   if (KINDS[extension]) return KINDS[extension]
-  return TEXT.includes(extension) ? { kind: 'text', mime: 'text/plain' } : null
+  const text = { kind: 'text', mime: 'text/plain' } as const
+  if (TEXT.includes(extension)) return text
+  const base = name.split(/[\\/]/).pop()!.toLowerCase()
+  // Dockerfile, and variants like Dockerfile.dev.
+  return TEXT_NAMES.includes(base) || /^dockerfile\./.test(base) ? text : null
 }
 
 const IMAGES: Record<string, string> = {

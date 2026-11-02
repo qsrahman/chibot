@@ -10,6 +10,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 - `search_project_files` takes an optional `file` to search one file, and each hit says its part (`part` of `parts`) so the model can read around it. Longer PDFs get `[Page n]` lines (when indexed), so answers can cite pages.
 - Projects: **Add note** writes text straight into a project file (Markdown), and a file that failed or is searchable by keywords only has an **Index again** button (`POST /api/projects/:id/files/:fileId/index`).
 - A file with the same content as one already in the project is refused (409, naming the file it matches) and its upload deleted, so search stops returning every hit twice.
+- More text files are accepted in projects and as attachments: those named without an extension (`Dockerfile`, `Makefile`, `README`, `LICENSE`, …) and more extensions (`.jsonl`, `.mdx`, `.graphql`, `.gradle`, `.tf`, `.srt`, dotfiles such as `.gitignore`, and other languages). `.env` stays out, as it holds secrets. The file picker filters by extension, so extensionless files go in by drag and drop.
 - In a project chat, `search_chats` searches that project's chats only.
 
 ## [0.11.13] - 2026-10-30

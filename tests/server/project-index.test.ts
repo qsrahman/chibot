@@ -62,6 +62,36 @@ describe('document text', () => {
     expect(documentKind('photo.png')).toBeNull()
   })
 
+  it('reads text files without a known extension, by name', () => {
+    const text = { kind: 'text', mime: 'text/plain' }
+    for (const name of [
+      'Dockerfile',
+      'dockerfile.dev',
+      'Makefile',
+      'README',
+      'LICENSE',
+      '.gitignore',
+      'events.jsonl',
+      'schema.graphql',
+      'build.gradle',
+      'deploy.tf',
+      'notes.mdx',
+      'subs.SRT',
+    ]) {
+      expect(documentKind(name), name).toEqual(text)
+    }
+    // Secrets and binaries stay out.
+    for (const name of [
+      '.env',
+      'id_rsa',
+      'app.exe',
+      'archive.zip',
+      'Dockerfiles',
+    ]) {
+      expect(documentKind(name), name).toBeNull()
+    }
+  })
+
   it('marks the pages of a longer PDF, so passages can cite them', async () => {
     const page = () =>
       `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 100] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents %CONTENT% >>`
