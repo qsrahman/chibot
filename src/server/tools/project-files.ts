@@ -37,7 +37,7 @@ export class SearchProjectFilesTool extends Tool {
   readonly description =
     "Searches the files of this chat's project and returns the passages " +
     'that best match, with their file names and where in the file they are ' +
-    '(part n of m; PDF pages are marked "[Page n]" in the text). Use it ' +
+    '(part n of m, and the page for PDFs; PDF pages are marked "[Page n]" in the text). Use it ' +
     'whenever the question may be answered by the files, and ' +
     'read_project_file when you need more of a file around a passage. ' +
     'Cite the files you use, e.g. "(from notes.md)".'
@@ -100,11 +100,13 @@ export class SearchProjectFilesTool extends Tool {
         fileId,
         limit: limit ?? undefined,
       })
-    ).map(({ fileId, name, text, part, parts }) => ({
+    ).map(({ fileId, name, text, part, parts, page }) => ({
       file: name,
       file_id: fileId,
       part,
       parts,
+      // Only PDFs have pages.
+      ...(page !== null && { page }),
       text,
     }))
     return JSON.stringify({ query, results })

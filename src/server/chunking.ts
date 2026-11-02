@@ -6,7 +6,7 @@ const CHUNK_OVERLAP = 480
 
 // Raise when chunking changes: project files chunked by an older version are
 // indexed again at startup.
-export const CHUNKER_VERSION = 1
+export const CHUNKER_VERSION = 2
 
 export type ChunkStyle = 'prose' | 'markdown' | 'code'
 
@@ -22,6 +22,27 @@ export function chunkStyle(name: string): ChunkStyle {
   const extension = /\.([^.]+)$/.exec(name)?.[1]?.toLowerCase() ?? ''
   if (MARKDOWN.has(extension)) return 'markdown'
   return CODE.has(extension) ? 'code' : 'prose'
+}
+
+/**
+ * The PDF page each chunk starts on, from the `[Page n]` lines in the text;
+ * `null` where there are none (not a PDF, or a single page).
+ */
+export function chunkPages(chunks: string[]): (number | null)[] {
+  let current: number | null = null // the page the previous chunk ended on
+  return chunks.map((chunk) => {
+    const marks = [...chunk.matchAll(/^\[Page (\d+)\]$/gm)]
+    const first = marks[0]
+    const last = marks.at(-1)
+    // Text before the first line belongs to the page before it.
+    const page = !first
+      ? current
+      : first.index < 20
+        ? Number(first[1])
+        : Math.max(Number(first[1]) - 1, 1)
+    if (last) current = Number(last[1])
+    return page
+  })
 }
 
 /** A paragraph, section heading or code unit, with the headings above it. */

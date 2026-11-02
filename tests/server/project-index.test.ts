@@ -9,7 +9,7 @@ import { ProjectIndex } from '../../src/server/project-index.ts'
 import { ProjectStore } from '../../src/server/project-store.ts'
 import { documentKind } from '../../src/shared/documents.ts'
 import { documentText } from '../../src/server/text.ts'
-import { testFiles } from './fakes.ts'
+import { pdfOf, testFiles } from './fakes.ts'
 
 const fixture = (name: string) =>
   new Uint8Array(readFileSync(join(import.meta.dirname, '../fixtures', name)))
@@ -71,18 +71,7 @@ describe('document text', () => {
   })
 
   it('marks the pages of a longer PDF, so passages can cite them', async () => {
-    const page = () =>
-      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 100] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents %CONTENT% >>`
-    const objects = [
-      '<< /Type /Catalog /Pages 2 0 R >>',
-      '<< /Type /Pages /Kids [3 0 R 5 0 R] /Count 2 >>',
-      page().replace('%CONTENT%', '4 0 R'),
-      '<< /Length 38 >>\nstream\nBT /F1 12 Tf 10 50 Td (First) Tj ET\nendstream',
-      page().replace('%CONTENT%', '6 0 R'),
-      '<< /Length 39 >>\nstream\nBT /F1 12 Tf 10 50 Td (Second) Tj ET\nendstream',
-    ]
-    const pdf = `%PDF-1.4\n${objects.map((o, i) => `${i + 1} 0 obj\n${o}\nendobj\n`).join('')}trailer\n<< /Root 1 0 R /Size 7 >>\n%%EOF`
-    expect(await documentText('pdf', Buffer.from(pdf))).toBe(
+    expect(await documentText('pdf', pdfOf(['First', 'Second']))).toBe(
       '[Page 1]\n\nFirst\n\n[Page 2]\n\nSecond',
     )
   })
@@ -145,6 +134,36 @@ describe('ProjectIndex', () => {
       dimensions: 3,
     })
     expect(calls).toEqual([['Alpha beta.\n\nGamma delta.']])
+  })
+
+  it('stores the PDF page each chunk starts on', async () => {
+    const index = new ProjectIndex(db, projects, files, null)
+    const file = files.save(
+      null,
+      'guide.pdf',
+      'application/pdf',
+      pdfOf(['Alpha', 'Beta']),
+    )
+    projects.addFile(projectId, file.id)
+    await index.index(file.id)
+    const [hit] = await index.search(projectId, 'beta')
+    expect(hit).toMatchObject({ name: 'guide.pdf', page: 1 })
+    // One chunk holds both pages, so it starts on the first.
+    expect(hit!.text).toContain('[Page 2]')
+
+    const text = add('notes.md', 'Gamma.')
+    await index.index(text)
+    expect((await index.search(projectId, 'gamma'))[0]!.page).toBeNull()
+  })
+
+  it('says when only the start of a very large file is searchable', async () => {
+    const index = new ProjectIndex(db, projects, files, null)
+    const id = add('big.txt', `${'word '.repeat(1_100_000)}needle`)
+    await index.index(id)
+    expect(projects.files(projectId)[0]).toMatchObject({
+      status: 'ready',
+      error: 'Only the first 5,000,000 of 5,500,006 characters are searchable',
+    })
   })
 
   it('keeps a file searchable by keywords when embedding fails', async () => {

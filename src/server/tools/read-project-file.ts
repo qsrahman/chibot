@@ -60,6 +60,7 @@ export class ReadProjectFileTool extends Tool {
     if (status === 'failed') throw new Error(`${name} could not be read`)
     return JSON.stringify({
       file: name,
+      file_id: fileId,
       ...this.#index.read(projectId, fileId, from_part ?? 1),
     })
   }

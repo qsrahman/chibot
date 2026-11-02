@@ -302,3 +302,23 @@ export function testApp(deps: Partial<AppDeps> = {}) {
     files,
   })
 }
+
+/** A small PDF with one line of text on each page. */
+export function pdfOf(pages: string[]): Buffer {
+  const kids = pages.map((_, i) => `${3 + 2 * i} 0 R`).join(' ')
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    `<< /Type /Pages /Kids [${kids}] /Count ${pages.length} >>`,
+    ...pages.flatMap((text, i) => {
+      const stream = `BT /F1 12 Tf 10 50 Td (${text}) Tj ET`
+      return [
+        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 400 100] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents ${4 + 2 * i} 0 R >>`,
+        `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
+      ]
+    }),
+  ]
+  const body = objects.map((o, i) => `${i + 1} 0 obj\n${o}\nendobj\n`).join('')
+  return Buffer.from(
+    `%PDF-1.4\n${body}trailer\n<< /Root 1 0 R /Size ${objects.length + 1} >>\n%%EOF`,
+  )
+}

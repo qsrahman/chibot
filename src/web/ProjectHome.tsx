@@ -291,9 +291,7 @@ function Files({
                   ? 'Indexing…'
                   : file.status === 'failed'
                     ? `Failed: ${file.error}`
-                    : file.error
-                      ? 'Keywords only'
-                      : 'Ready'}
+                    : (file.error ?? 'Ready')}
               </span>
               {file.status !== 'indexing' && file.error && (
                 <button

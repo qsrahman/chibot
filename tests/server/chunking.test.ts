@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { chunkStyle, chunkText } from '../../src/server/chunking.ts'
+import { chunkPages, chunkStyle, chunkText } from '../../src/server/chunking.ts'
 
 describe('chunkStyle', () => {
   it('splits markdown by section and source by unit, the rest as prose', () => {
@@ -168,5 +168,22 @@ describe('chunkText', () => {
       expect(chunks.length).toBeGreaterThan(2)
       for (const chunk of chunks.slice(1)) expect(chunk).toMatch(/^ {4}def m\d/)
     })
+  })
+})
+
+describe('chunkPages', () => {
+  it('says which page each chunk starts on', () => {
+    expect(
+      chunkPages([
+        '[Page 1]\n\nOne\n\n[Page 2]\n\nTwo',
+        'Still on two',
+        '[Page 3]\n\nThree',
+        'The end of page two, then\n\n[Page 4]\n\nFour',
+      ]),
+    ).toEqual([1, 2, 3, 3])
+  })
+
+  it('has none for text without pages', () => {
+    expect(chunkPages(['a', 'b'])).toEqual([null, null])
   })
 })

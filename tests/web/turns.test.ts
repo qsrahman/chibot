@@ -298,6 +298,60 @@ describe('sourcesOf with project files', () => {
       }),
     ).toEqual([{ url: '/api/files/f1', title: 'plan.md', kind: 'file' }])
   })
+
+  it('opens a PDF at the page of each passage', () => {
+    const answer = (name: string, output: object) => ({
+      itemId: 1,
+      text: '',
+      thinking: '',
+      usage: null,
+      model: null,
+      versions: null,
+      tools: [
+        { callId: 'c', name, arguments: '{}', output: JSON.stringify(output) },
+      ],
+    })
+    expect(
+      sourcesOf(
+        answer('search_project_files', {
+          results: [
+            { file: 'a.pdf', file_id: 'f1', page: 12, text: 'x' },
+            { file: 'a.pdf', file_id: 'f1', page: 3, text: 'y' },
+            { file: 'a.pdf', file_id: 'f1', page: 12, text: 'z' },
+          ],
+        }),
+      ),
+    ).toEqual([
+      { url: '/api/files/f1#page=12', title: 'a.pdf · p. 12', kind: 'file' },
+      { url: '/api/files/f1#page=3', title: 'a.pdf · p. 3', kind: 'file' },
+    ])
+  })
+
+  it('links the file read_project_file read', () => {
+    const tools = [
+      {
+        callId: 'c',
+        name: 'read_project_file',
+        arguments: '{"file":"plan.md","from_part":null}',
+        output: JSON.stringify({ file: 'plan.md', file_id: 'f1', text: 'a' }),
+      },
+    ]
+    expect(
+      sourcesOf({
+        itemId: 1,
+        text: '',
+        thinking: '',
+        usage: null,
+        model: null,
+        versions: null,
+        tools,
+      }),
+    ).toEqual([{ url: '/api/files/f1', title: 'plan.md', kind: 'file' }])
+    expect(summarizeTool(tools[0]!)).toMatchObject({
+      input: 'plan.md',
+      links: [{ url: '/api/files/f1' }],
+    })
+  })
 })
 
 describe('attachments', () => {

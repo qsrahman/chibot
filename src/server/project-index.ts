@@ -4,7 +4,12 @@ import { documentKind } from '../shared/documents.ts'
 import { anyWordQuery, transaction } from './database.ts'
 import type { FileStore } from './file-store.ts'
 import type { ProjectStore } from './project-store.ts'
-import { CHUNKER_VERSION, chunkStyle, chunkText } from './chunking.ts'
+import {
+  CHUNKER_VERSION,
+  chunkPages,
+  chunkStyle,
+  chunkText,
+} from './chunking.ts'
 import { documentText } from './text.ts'
 
 // About 1,500 chunks: plenty for notes and documents, bounded for embedding.
@@ -27,6 +32,8 @@ export interface Passage {
   text: string
   part: number
   parts: number
+  /** The PDF page it starts on, if the file has pages. */
+  page: number | null
 }
 
 /** The embedding endpoint's client and model. */
@@ -110,14 +117,19 @@ export class ProjectIndex {
       const chunks = chunkText(text.slice(0, MAX_TEXT), {
         style: chunkStyle(file.name),
       })
+      const cut =
+        text.length > MAX_TEXT
+          ? `Only the first ${MAX_TEXT.toLocaleString('en')} of ${text.length.toLocaleString('en')} characters are searchable`
+          : null
       const ids = this.#saveChunks(fileId, chunks)
       this.#projects.setChunker(fileId, CHUNKER_VERSION)
-      let note: string | null = null
+      let note = cut
       if (this.#embedding) {
         try {
           await this.#embed(fileId, projectId, ids, chunks)
         } catch (err) {
-          note = `Searchable by keywords only: ${(err as Error).message}`
+          const keywords = `Searchable by keywords only: ${(err as Error).message}`
+          note = cut ? `${keywords}. ${cut}` : keywords
         }
       }
       this.#projects.setStatus(fileId, 'ready', note)
@@ -131,13 +143,16 @@ export class ProjectIndex {
     transaction(this.#db, () => {
       this.#projects.deleteChunks(fileId)
       const insert = this.#db.prepare(
-        'INSERT INTO chunks (file_id, position, text) VALUES (?, ?, ?)',
+        'INSERT INTO chunks (file_id, position, text, page) VALUES (?, ?, ?, ?)',
       )
       const index = this.#db.prepare(
         'INSERT INTO chunks_fts (rowid, text) VALUES (?, ?)',
       )
+      const pages = chunkPages(chunks)
       for (const [position, text] of chunks.entries()) {
-        const id = Number(insert.run(fileId, position, text).lastInsertRowid)
+        const id = Number(
+          insert.run(fileId, position, text, pages[position]!).lastInsertRowid,
+        )
         index.run(id, text)
         ids.push(id)
       }
@@ -236,7 +251,7 @@ export class ProjectIndex {
       )
     }
     const get = this.#db.prepare(
-      `SELECT c.file_id AS fileId, f.name, c.text, c.position + 1 AS part,
+      `SELECT c.file_id AS fileId, f.name, c.text, c.position + 1 AS part, c.page,
               (SELECT count(*) FROM chunks WHERE file_id = c.file_id) AS parts
          FROM chunks c JOIN files f ON f.id = c.file_id WHERE c.id = ?`,
     )

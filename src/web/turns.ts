@@ -189,10 +189,25 @@ function toolSources(tool: ToolActivity): Source[] {
     const { results } = parseJson<{ results?: unknown }>(tool.output)
     for (const row of rows(results)) {
       if (typeof row.file_id !== 'string' || !row.file_id) continue
-      const url = `/api/files/${encodeURIComponent(row.file_id)}`
+      // A PDF opens at the page the passage is on.
+      const page = typeof row.page === 'number' ? row.page : null
+      const url = `/api/files/${encodeURIComponent(row.file_id)}${page ? `#page=${page}` : ''}`
+      const name = sourceTitle(row.file, 'Project file')
       found.set(url, {
         url,
-        title: sourceTitle(row.file, 'Project file'),
+        title: page ? `${name} · p. ${page}` : name,
+        kind: 'file',
+      })
+    }
+  } else if (tool.name === 'read_project_file') {
+    const { file, file_id } = parseJson<{ file?: unknown; file_id?: unknown }>(
+      tool.output,
+    )
+    if (typeof file_id === 'string' && file_id) {
+      const url = `/api/files/${encodeURIComponent(file_id)}`
+      found.set(url, {
+        url,
+        title: sourceTitle(file, 'Project file'),
         kind: 'file',
       })
     }
@@ -244,6 +259,8 @@ export function summarizeTool(tool: ToolActivity): ToolSummary | null {
       return { input: null, result: tool.output, links: [] }
     case 'fetch_url':
       return { input: arg('url'), result: error, links: [] }
+    case 'read_project_file':
+      return { input: arg('file'), result: error, links: toolSources(tool) }
     case 'generate_image':
     case 'edit_image':
       return { input: arg('prompt'), result: error, links: [] }

@@ -4,6 +4,15 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- A search hit in a PDF carries the page it starts on (`page`, stored per chunk), and **Sources** opens the PDF at that page ("report.pdf · p. 12"). PDFs are chunked again once, at startup, to record pages.
+- A file whose text is longer than 5,000,000 characters says so in the project's file list ("Only the first 5,000,000 of … characters are searchable"); the list now shows a file's note in place of "Keywords only".
+
+### Fixed
+
+- A file read with `read_project_file` now appears under **Sources** (the result carries `file_id`), as search hits do.
+
 ## [0.12.0] - 2026-11-02
 
 ### Added

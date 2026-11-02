@@ -103,6 +103,8 @@ const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
   `ALTER TABLE project_files ADD COLUMN chunker INTEGER NOT NULL DEFAULT 0;`,
   // A line that tells projects apart in lists.
   `ALTER TABLE projects ADD COLUMN description TEXT NOT NULL DEFAULT '';`,
+  // The PDF page a chunk starts on, when it has pages.
+  `ALTER TABLE chunks ADD COLUMN page INTEGER;`,
 ]
 
 /**
