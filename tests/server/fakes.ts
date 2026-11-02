@@ -11,6 +11,7 @@ import { ConversationSearch } from '../../src/server/conversation-search.ts'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
 import { openDatabase } from '../../src/server/database.ts'
 import { FileStore } from '../../src/server/file-store.ts'
+import { InstructionWriter } from '../../src/server/instruction-writer.ts'
 import { MemoryStore } from '../../src/server/memory-store.ts'
 import { ProjectIndex } from '../../src/server/project-index.ts'
 import { McpServers } from '../../src/server/mcp-servers.ts'
@@ -278,12 +279,19 @@ export function testApp(deps: Partial<AppDeps> = {}) {
   const settings = deps.settings ?? testSettings()
   const files = deps.files ?? testFiles(db)
   const projects = deps.projects ?? new ProjectStore(db, files)
+  const index = new ProjectIndex(db, projects, files, null)
   return createApp({
     config: new Config({ OPENAI_API_KEY: 'k' }),
     search: new ConversationSearch(db),
     chat: new ChatService(fakeClient([]), store, settings),
     memories: new MemoryStore(db),
-    index: new ProjectIndex(db, projects, files, null),
+    index,
+    instructionWriter: new InstructionWriter(
+      fakeClient([]),
+      settings,
+      projects,
+      index,
+    ),
     attachments: new Attachments(fakeClient([]), files),
     transcription: null,
     mcp: new McpServers({}, { disabled: () => [] }),

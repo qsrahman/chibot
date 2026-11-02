@@ -11,6 +11,7 @@ import { OAUTH_CALLBACK } from './routes/mcp.ts'
 import { Attachments } from './attachments.ts'
 import { ChatService } from './chat-service.ts'
 import { Config, loadEnvFiles } from './config.ts'
+import { InstructionWriter } from './instruction-writer.ts'
 import { ConversationSearch } from './conversation-search.ts'
 import { ConversationStore } from './conversation-store.ts'
 import { openDatabase } from './database.ts'
@@ -143,6 +144,7 @@ export function start({
     memories,
     projects,
     index,
+    instructionWriter: new InstructionWriter(client, settings, projects, index),
     attachments,
     mcp,
     transcription:

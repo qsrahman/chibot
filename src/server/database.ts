@@ -101,6 +101,8 @@ const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
   // Which chunker (CHUNKER_VERSION) made a project file's chunks, so a better
   // one re-indexes the files made with an older one.
   `ALTER TABLE project_files ADD COLUMN chunker INTEGER NOT NULL DEFAULT 0;`,
+  // A line that tells projects apart in lists.
+  `ALTER TABLE projects ADD COLUMN description TEXT NOT NULL DEFAULT '';`,
 ]
 
 /**

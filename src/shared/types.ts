@@ -72,6 +72,8 @@ export interface ChatMatch {
 export interface Project {
   id: string
   name: string
+  /** A line that tells it apart from other projects (for people, not the model). */
+  description: string
   /** Added to the instructions of the project's chats. */
   instructions: string
   createdAt: number

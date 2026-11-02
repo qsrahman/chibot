@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import OpenAI from 'openai'
 import { documentKind } from '../../shared/documents.ts'
 import {
   addProjectFileSchema,
@@ -7,6 +8,8 @@ import {
 } from '../../shared/requests.ts'
 import type { ProjectWithContents } from '../../shared/types.ts'
 import type { AppDeps } from '../app.ts'
+import { explainApiError } from '../api-errors.ts'
+import { NothingToSuggestFrom } from '../instruction-writer.ts'
 import { json, notFound } from './helpers.ts'
 
 export function projectRoutes({
@@ -14,6 +17,7 @@ export function projectRoutes({
   files,
   projects,
   index,
+  instructionWriter,
   attachments,
 }: AppDeps) {
   const app = new Hono()
@@ -85,6 +89,25 @@ export function projectRoutes({
     projects.setStatus(fileId, 'indexing')
     void index.index(fileId)
     return c.body(null, 204)
+  })
+
+  // A draft for the user to review: nothing is saved here.
+  app.post('/api/projects/:id/suggest-instructions', async (c) => {
+    const id = c.req.param('id')
+    if (!projects.get(id)) return notFound(c, 'Project')
+    try {
+      const instructions = await instructionWriter.suggest(id, c.req.raw.signal)
+      return c.json({ instructions })
+    } catch (err) {
+      if (err instanceof NothingToSuggestFrom) {
+        return c.json({ error: err.message }, 409)
+      }
+      const message =
+        err instanceof OpenAI.APIError
+          ? explainApiError(err)
+          : (err as Error).message
+      return c.json({ error: message }, 502)
+    }
   })
 
   app.patch('/api/projects/:id', json(projectPatchSchema), (c) => {

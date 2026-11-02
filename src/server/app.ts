@@ -10,6 +10,7 @@ import type { Config } from './config.ts'
 import type { ConversationSearch } from './conversation-search.ts'
 import type { ConversationStore } from './conversation-store.ts'
 import type { FileStore } from './file-store.ts'
+import type { InstructionWriter } from './instruction-writer.ts'
 import type { McpServers } from './mcp-servers.ts'
 import { type MemoryStore } from './memory-store.ts'
 import type { ProjectIndex } from './project-index.ts'
@@ -34,6 +35,7 @@ export interface AppDeps {
   memories: MemoryStore
   projects: ProjectStore
   index: ProjectIndex
+  instructionWriter: InstructionWriter
   attachments: Attachments
   mcp: McpServers
   /** Voice input, or `null` without a transcription endpoint. */

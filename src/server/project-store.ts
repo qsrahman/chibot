@@ -5,7 +5,7 @@ import type { FileStore } from './file-store.ts'
 
 // Rows as `Project` objects.
 const PROJECT =
-  'id, name, instructions, created_at AS createdAt, updated_at AS updatedAt'
+  'id, name, description, instructions, created_at AS createdAt, updated_at AS updatedAt'
 
 /**
  * Projects and their files. Chunks and vectors of a file (written by the
@@ -48,19 +48,29 @@ export class ProjectStore {
   /** Changes what `patch` has; `null` if there's no such project. */
   update(
     id: string,
-    { name, instructions }: { name?: string; instructions?: string },
+    {
+      name,
+      description,
+      instructions,
+    }: { name?: string; description?: string; instructions?: string },
   ): Project | null {
     return (
       (this.#db
         .prepare(
           `UPDATE projects
               SET name = coalesce(?, name),
+                  description = coalesce(?, description),
                   instructions = coalesce(?, instructions),
                   updated_at = ?
             WHERE id = ? RETURNING ${PROJECT}`,
         )
-        .get(name ?? null, instructions ?? null, Date.now(), id) as
-        Project | undefined) ?? null
+        .get(
+          name ?? null,
+          description ?? null,
+          instructions ?? null,
+          Date.now(),
+          id,
+        ) as Project | undefined) ?? null
     )
   }
 

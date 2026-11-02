@@ -45,17 +45,33 @@ describe('projects', () => {
       { name: ' Trip ' },
     )
     expect(status).toBe(201)
-    expect(project).toMatchObject({ name: 'Trip', instructions: '' })
+    expect(project).toMatchObject({
+      name: 'Trip',
+      description: '',
+      instructions: '',
+    })
 
     const { body: updated } = await call<Project>(
       'PATCH',
       `/api/projects/${project.id}`,
-      { name: 'Japan trip', instructions: 'Prices in yen.' },
+      {
+        name: 'Japan trip',
+        description: ' Two weeks in April ',
+        instructions: 'Prices in yen.',
+      },
     )
     expect(updated).toMatchObject({
       name: 'Japan trip',
+      description: 'Two weeks in April',
       instructions: 'Prices in yen.',
     })
+    expect(
+      (
+        await call('PATCH', `/api/projects/${project.id}`, {
+          description: 'x'.repeat(201),
+        })
+      ).status,
+    ).toBe(400)
     expect((await call<Project[]>('GET', '/api/projects')).body).toEqual([
       updated,
     ])

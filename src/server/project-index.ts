@@ -272,6 +272,22 @@ export class ProjectIndex {
     }
   }
 
+  /** The start of each of the project's indexed files, up to `limit` files. */
+  excerpts(
+    projectId: string,
+    { limit = 12, length = 1500 } = {},
+  ): { name: string; text: string }[] {
+    const rows = this.#db
+      .prepare(
+        `SELECT f.name, c.text FROM project_files p
+           JOIN files f ON f.id = p.file_id
+           JOIN chunks c ON c.file_id = p.file_id AND c.position = 0
+          WHERE p.project_id = ? ORDER BY p.rowid LIMIT ?`,
+      )
+      .all(projectId, limit) as { name: string; text: string }[]
+    return rows.map(({ name, text }) => ({ name, text: text.slice(0, length) }))
+  }
+
   #keywordHits(projectId: string, query: string, fileId?: string): number[] {
     const match = anyWordQuery(query)
     if (!match) return []

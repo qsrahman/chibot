@@ -79,6 +79,7 @@ describe('custom instructions', () => {
     const project = {
       id: 'p',
       name: 'Japan "2026"',
+      description: '',
       instructions: ' Prices in yen. ',
       createdAt: 0,
       updatedAt: 0,

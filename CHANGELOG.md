@@ -14,6 +14,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 - `search_project_files` takes a `limit` (1 to 15, default 6), so the model asks for more passages on a broad question and fewer on a narrow one.
 - Smarter chunking for project files (`chunking.ts`): markdown splits at headings (a new `#`/`##` section starts a new chunk, chunks cut inside a section are prefixed with the headings above them, fenced code stays whole), source code splits at top-level units (functions and classes stay together, a comment or decorator stays with what it describes), and long text is cut at blank lines, line breaks or sentence ends (`Intl.Segmenter`) before words, with the overlap starting at such a seam too. On this repo's own files, chunks starting at a seam went from 13–25% to 30–67% for TypeScript and from 57–67% to 78–86% for README/AGENTS. Files chunked by an older chunker are indexed again at startup (each file records `CHUNKER_VERSION`; raise it whenever chunking changes), which embeds them again when an embedding endpoint is set.
 - Text and code files are read with their indentation (it was collapsed to one space), for search and as attachments.
+- Projects have a short `description` (up to 200 characters, in `PATCH /api/projects/:id`) that tells them apart in lists.
+- `POST /api/projects/:id/suggest-instructions` drafts a project's instructions from its name, description, current instructions and the start of each indexed file, with the chat model (`InstructionWriter`); nothing is saved, the user reviews the draft. It answers 409 until a file is indexed.
 - In a project chat, `search_chats` searches that project's chats only.
 
 ## [0.11.13] - 2026-10-30
