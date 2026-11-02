@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.12.1] - 2026-11-02
+
 ### Added
 
 - A search hit in a PDF carries the page it starts on (`page`, stored per chunk), and **Sources** opens the PDF at that page ("report.pdf · p. 12"). PDFs are chunked again once, at startup, to record pages.
