@@ -17,14 +17,17 @@ export function htmlToText(html: string): { title: string; text: string } {
 }
 
 // unpdf refuses Node's Buffer (a Uint8Array subclass), so copy into a plain one.
-const pdfToText = async (data: Uint8Array) =>
-  tidy(
-    (
-      await extractText(await getDocumentProxy(new Uint8Array(data)), {
-        mergePages: true,
-      })
-    ).text,
+// Pages of a longer PDF get a "[Page n]" line, so passages can cite them.
+const pdfToText = async (data: Uint8Array) => {
+  const { text: pages } = await extractText(
+    await getDocumentProxy(new Uint8Array(data)),
   )
+  return tidy(
+    pages.length === 1
+      ? pages[0]!
+      : pages.map((page, i) => `[Page ${i + 1}]\n\n${page}`).join('\n\n'),
+  )
+}
 
 const docxToText = async (data: Uint8Array) =>
   tidy((await mammoth.extractRawText({ buffer: Buffer.from(data) })).value)

@@ -528,7 +528,11 @@ Models differ in dimensions, so a model change means re-embedding.
   files: keyword and vector hits merged by reciprocal rank fusion, the top 6
   chunks as JSON (file name, file id, text); the description asks the model to
   cite file names. Project chats' instructions add the project's instructions
-  and its file names. Answers show "Searched project files", and Sources lists
+  and its file names. `read_project_file` (`file`, `from_part`) reads a file's
+  chunks in order, three at a time, for questions about the whole file; hits
+  carry their `part` of `parts`, `file` limits a search to one file, and
+  longer PDFs have `[Page n]` lines. In a project chat `search_chats` is
+  limited to the project's chats. Answers show "Searched project files", and Sources lists
   the files (opening the original).
 - **Web.** A Projects section above the chats in the sidebar ("New project",
   a row each). `/projects/:id`: the name (rename), a composer that starts a

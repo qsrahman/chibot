@@ -332,7 +332,12 @@ const TRIGGERS: {
   {
     tool: 'search_project_files',
     when: /in my files (.+)/,
-    args: (found) => ({ query: found![1] }),
+    args: (found) => ({ query: found![1], file: null }),
+  },
+  {
+    tool: 'read_project_file',
+    when: /whole file (\S+)/,
+    args: (found) => ({ file: found![1], from_part: null }),
   },
   {
     tool: 'search_chats',

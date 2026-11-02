@@ -34,6 +34,7 @@ import {
 import { mcpTools } from './tools/mcp-tool.ts'
 import { MemoryTool } from './tools/memory.ts'
 import { SearchProjectFilesTool } from './tools/project-files.ts'
+import { ReadProjectFileTool } from './tools/read-project-file.ts'
 import { SearchChatsTool } from './tools/search-chats.ts'
 import { WebSearchTool } from './tools/web-search.ts'
 
@@ -66,6 +67,7 @@ export function defaultTools({
     new MemoryTool(memories),
     new SearchChatsTool(search),
     new SearchProjectFilesTool(projects, index),
+    new ReadProjectFileTool(projects, index),
     // Listed in Settings even without their setup, saying what's missing.
     new WebSearchTool(config.braveApiKey),
     new GenerateImageTool(image),

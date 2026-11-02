@@ -69,6 +69,7 @@ describe('shipped tools', () => {
       'fetch_url',
       'generate_image',
       'memory',
+      'read_project_file',
       'search_chats',
       'search_project_files',
       'web_search',

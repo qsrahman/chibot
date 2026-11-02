@@ -89,6 +89,13 @@ export class ProjectStore {
       .all(projectId) as unknown as ProjectFile[]
   }
 
+  /** The project's file called `name` (case does not matter). */
+  fileNamed(projectId: string, name: string): ProjectFile | undefined {
+    return this.files(projectId).find(
+      (f) => f.name.toLowerCase() === name.trim().toLowerCase(),
+    )
+  }
+
   /** Files whose indexing didn't finish (e.g. the server stopped). */
   unfinishedFiles(): { projectId: string; fileId: string }[] {
     return this.#db

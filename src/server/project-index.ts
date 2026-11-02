@@ -15,6 +15,17 @@ const EMBED_BATCH = 64
 const CANDIDATES = 30
 const RRF_K = 60
 const RESULTS = 6
+// Parts of a file `read` returns at once (about 10,000 characters).
+const READ_PARTS = 3
+
+/** A passage of a project file; `part` of `parts` (1-based). */
+export interface Passage {
+  fileId: string
+  name: string
+  text: string
+  part: number
+  parts: number
+}
 
 /** The embedding endpoint's client and model. */
 export interface EmbeddingDeps {
@@ -178,9 +189,11 @@ export class ProjectIndex {
   async search(
     projectId: string,
     query: string,
-    signal?: AbortSignal,
-  ): Promise<{ fileId: string; name: string; text: string }[]> {
-    const lists = [this.#keywordHits(projectId, query)]
+    { signal, fileId }: { signal?: AbortSignal; fileId?: string } = {},
+  ): Promise<Passage[]> {
+    // Only this file's chunks, when the search is limited to one.
+    const only = fileId ? this.#chunkIds(fileId) : null
+    const lists = [this.#keywordHits(projectId, query, fileId)]
     if (
       this.#embedding &&
       this.#vectorInfo()?.model === this.#embedding.model
@@ -189,8 +202,10 @@ export class ProjectIndex {
         const [vector] = await this.#vectors([query], signal)
         const nearest = this.#db
           .prepare(
+            // The ids are our own integers, so listing them is safe.
             `SELECT rowid AS id FROM chunk_vectors
               WHERE embedding MATCH ? AND k = ? AND project_id = ?
+                ${only ? `AND rowid IN (${only.join(',') || 'NULL'})` : ''}
               ORDER BY distance`,
           )
           .all(vector!, CANDIDATES, projectId) as { id: number }[]
@@ -208,18 +223,43 @@ export class ProjectIndex {
       )
     }
     const get = this.#db.prepare(
-      `SELECT c.file_id AS fileId, f.name, c.text
+      `SELECT c.file_id AS fileId, f.name, c.text, c.position + 1 AS part,
+              (SELECT count(*) FROM chunks WHERE file_id = c.file_id) AS parts
          FROM chunks c JOIN files f ON f.id = c.file_id WHERE c.id = ?`,
     )
     return [...scores]
       .sort((a, b) => b[1] - a[1])
       .slice(0, RESULTS)
-      .map(
-        ([id]) => get.get(id) as { fileId: string; name: string; text: string },
-      )
+      .map(([id]) => get.get(id) as unknown as Passage)
   }
 
-  #keywordHits(projectId: string, query: string): number[] {
+  /**
+   * Parts of a project file's text from part `from` (1-based), a few at a
+   * time. Neighbouring parts overlap a little.
+   */
+  read(
+    projectId: string,
+    fileId: string,
+    from = 1,
+  ): { parts: number; from: number; to: number; text: string } {
+    const rows = this.#db
+      .prepare(
+        `SELECT c.text FROM chunks c
+           JOIN project_files p ON p.file_id = c.file_id
+          WHERE c.file_id = ? AND p.project_id = ? ORDER BY c.position`,
+      )
+      .all(fileId, projectId) as { text: string }[]
+    const start = Math.min(Math.max(from, 1), Math.max(rows.length, 1))
+    const shown = rows.slice(start - 1, start - 1 + READ_PARTS)
+    return {
+      parts: rows.length,
+      from: start,
+      to: start + shown.length - 1,
+      text: shown.map((r) => r.text).join('\n\n'),
+    }
+  }
+
+  #keywordHits(projectId: string, query: string, fileId?: string): number[] {
     const match = anyWordQuery(query)
     if (!match) return []
     const rows = this.#db
@@ -227,12 +267,26 @@ export class ProjectIndex {
         `SELECT c.id FROM chunks_fts
            JOIN chunks c ON c.id = chunks_fts.rowid
            JOIN project_files p ON p.file_id = c.file_id
-          WHERE chunks_fts MATCH ? AND p.project_id = ?
+          WHERE chunks_fts MATCH $match AND p.project_id = $projectId
+            AND ($fileId IS NULL OR c.file_id = $fileId)
           ORDER BY chunks_fts.rank
-          LIMIT ?`,
+          LIMIT $limit`,
       )
-      .all(match, projectId, CANDIDATES) as { id: number }[]
+      .all({
+        match,
+        projectId,
+        fileId: fileId ?? null,
+        limit: CANDIDATES,
+      }) as { id: number }[]
     return rows.map(({ id }) => id)
+  }
+
+  #chunkIds(fileId: string): number[] {
+    return (
+      this.#db
+        .prepare('SELECT id FROM chunks WHERE file_id = ?')
+        .all(fileId) as { id: number }[]
+    ).map(({ id }) => id)
   }
 
   /** Creates the vector table on first use, sized for the model. */

@@ -230,8 +230,10 @@ Then open http://127.0.0.1:3000.
 - **Projects** (sidebar → **New project**) group chats with their own files
   and instructions. On a project's page, add files (PDF, Word, text, notes,
   code, data; pick or drop them) and write instructions; chats started there
-  search the files (by keywords, and by meaning with an embedding model), cite
-  them under **Sources**, and follow the instructions. Project chats are listed
+  search the files (by keywords, and by meaning with an embedding model),
+  read a whole file when asked about all of it, cite them under **Sources**,
+  and follow the instructions. Their "search past chats" looks in the
+  project's chats only. Project chats are listed
   on their project's page; a chat's **…** menu moves it into a project or out.
   Rename or delete a project from **…** next to its name; deleting it deletes
   its chats and files.

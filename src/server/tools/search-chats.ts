@@ -19,7 +19,8 @@ export class SearchChatsTool extends Tool {
     'answers) and returns each matching chat’s title with its best-matching ' +
     'messages (excerpts, in order, with role and date). Use it when the ' +
     'user refers to something discussed before. ' +
-    'Put dates in after/before rather than in the query.'
+    'Put dates in after/before rather than in the query. In a project chat ' +
+    "it searches that project's chats only."
   readonly parameters = z.object({
     query: z.string().describe('Words the messages may contain'),
     after: date.describe(
@@ -42,11 +43,12 @@ export class SearchChatsTool extends Tool {
 
   async run(
     { query, after, before }: z.output<typeof this.parameters>,
-    { conversationId }: ToolContext,
+    { conversationId, projectId }: ToolContext,
   ) {
     const results = this.#search
       .messages(query, {
         excludeId: conversationId,
+        projectId,
         after: startOf(after),
         before: startOf(before),
       })

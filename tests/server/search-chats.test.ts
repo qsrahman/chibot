@@ -3,11 +3,13 @@ import { ConversationSearch } from '../../src/server/conversation-search.ts'
 import type { ConversationStore } from '../../src/server/conversation-store.ts'
 import { openDatabase } from '../../src/server/database.ts'
 import { SearchChatsTool } from '../../src/server/tools/search-chats.ts'
-import { memoryStore } from './fakes.ts'
+import { ProjectStore } from '../../src/server/project-store.ts'
+import { memoryStore, testFiles } from './fakes.ts'
 
 describe('SearchChatsTool', () => {
   let store: ConversationStore
   let searchChats: SearchChatsTool
+  let projects: ProjectStore
   let current: string
   const chat = (title: string, messages: string[], temporary = false) => {
     const { id } = store.createConversation({ temporary })
@@ -23,6 +25,7 @@ describe('SearchChatsTool', () => {
   beforeEach(() => {
     const db = openDatabase(':memory:')
     store = memoryStore(db)
+    projects = new ProjectStore(db, testFiles(db))
     searchChats = new SearchChatsTool(new ConversationSearch(db))
     chat('Pasta', ['A quick pasta recipe?', 'Boil spaghetti for nine minutes.'])
     chat('Schema', [
@@ -73,6 +76,26 @@ describe('SearchChatsTool', () => {
     })
     // Neither the chat asking nor a temporary chat is searched.
     expect(results.map((r) => r.title)).toEqual(['Schema'])
+  })
+
+  it("searches only the project's chats from a project chat", async () => {
+    const project = projects.create('P').id
+    const inProject = chat('Schema in project', ['database schema in project'])
+    store.updateConversation(inProject, { projectId: project })
+    const asking = chat('Asking', ['hello'])
+    store.updateConversation(asking, { projectId: project })
+
+    const run = async (projectId: string | null) =>
+      (
+        JSON.parse(
+          await searchChats.run(
+            { query: 'database schema', after: null, before: null },
+            { conversationId: asking, projectId },
+          ),
+        ) as { results: { title: string }[] }
+      ).results.map((r) => r.title)
+    expect(await run(project)).toEqual(['Schema in project'])
+    expect(await run(null)).toContain('Schema')
   })
 
   it('limits by date', async () => {

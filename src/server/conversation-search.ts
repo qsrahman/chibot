@@ -54,18 +54,20 @@ export class ConversationSearch {
    * (see `anyWordQuery`), chats ranked by their best hit, each
    * with its best few matching messages in chat order (so a question comes
    * with its answer). Temporary chats and `excludeId` (the chat asking) are
-   * left out; `after` / `before` (ms) limit when a message was written.
+   * left out, and with a `projectId` so are chats outside that project; `after` / `before` (ms) limit when a message was written.
    */
   messages(
     query: string,
     {
       excludeId,
+      projectId = null,
       after = null,
       before = null,
       limit = 5,
       perChat = 3,
     }: {
       excludeId: string
+      projectId?: string | null
       after?: number | null
       before?: number | null
       limit?: number
@@ -91,6 +93,7 @@ export class ConversationSearch {
              JOIN conversations c ON c.id = h.conversation_id
              JOIN items i ON i.id = h.item_id
             WHERE c.temporary = 0 AND c.id != $excludeId
+              AND ($projectId IS NULL OR c.project_id = $projectId)
               AND ($after IS NULL OR i.created_at >= $after)
               AND ($before IS NULL OR i.created_at < $before)
            WINDOW chat AS (PARTITION BY h.conversation_id ORDER BY h.rank
@@ -103,7 +106,7 @@ export class ConversationSearch {
                                      WHERE n = 1 ORDER BY best LIMIT $limit)
           ORDER BY best, item_id`,
       )
-      .all({ match, excludeId, after, before, limit, perChat }) as {
+      .all({ match, excludeId, projectId, after, before, limit, perChat }) as {
       conversation_id: string
       title: string | null
       created_at: number

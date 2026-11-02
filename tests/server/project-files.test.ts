@@ -8,6 +8,7 @@ import { ProjectIndex } from '../../src/server/project-index.ts'
 import { ProjectStore } from '../../src/server/project-store.ts'
 import { TOOL_STOPPED, ToolRegistry } from '../../src/server/tool-registry.ts'
 import { SearchProjectFilesTool } from '../../src/server/tools/project-files.ts'
+import { ReadProjectFileTool } from '../../src/server/tools/read-project-file.ts'
 import {
   answerEvents,
   drain,
@@ -87,6 +88,52 @@ describe('project file search', () => {
     expect(journey.map((r) => r.name)).not.toContain('other.md')
   })
 
+  it('limits a search to one file, by keyword and by meaning', async () => {
+    await add('plan.md', 'Take the shinkansen to Kyoto on day two.')
+    await add('trip.md', 'A train trip to Kyoto, then Osaka.')
+    const trip = projects.fileNamed(projectId, 'TRIP.md')!
+    for (const query of ['kyoto', 'how do we travel?']) {
+      const hits = await index.search(projectId, query, { fileId: trip.fileId })
+      expect(hits.map((h) => h.name)).toEqual(['trip.md'])
+    }
+  })
+
+  it('says which part of how many a passage is, and reads the parts in order', async () => {
+    const tool = new SearchProjectFilesTool(projects, index)
+    const reader = new ReadProjectFileTool(projects, index)
+    const paragraph = (n: number) => `Section ${n}. ${'word '.repeat(300)}`
+    await add('long.md', [1, 2, 3, 4, 5, 6, 7].map(paragraph).join('\n\n'))
+    const context = { conversationId: 'c', projectId }
+
+    const found = JSON.parse(
+      await tool.run({ query: 'Section 5', file: 'long.md' }, context),
+    )
+    expect(found.results[0]).toMatchObject({ file: 'long.md', parts: 4 })
+
+    const first = JSON.parse(
+      await reader.run({ file: 'LONG.md', from_part: null }, context),
+    )
+    expect(first).toMatchObject({ file: 'long.md', parts: 4, from: 1, to: 3 })
+    expect(first.text).toContain('Section 1.')
+    expect(first.text).not.toContain('Section 7.')
+    const last = JSON.parse(
+      await reader.run({ file: 'long.md', from_part: 4 }, context),
+    )
+    expect(last).toMatchObject({ from: 4, to: 4 })
+    expect(last.text).toContain('Section 7.')
+  })
+
+  it("names the project's files when asked for one it does not have", async () => {
+    await add('plan.md', 'Kyoto.')
+    const reader = new ReadProjectFileTool(projects, index)
+    await expect(
+      reader.run(
+        { file: 'nope.md', from_part: null },
+        { conversationId: 'c', projectId },
+      ),
+    ).rejects.toThrow('its files are: plan.md')
+  })
+
   it('is offered in project chats with files, with their names', async () => {
     const tool = new SearchProjectFilesTool(projects, index)
     const chat = store.createConversation({ projectId })
@@ -94,16 +141,22 @@ describe('project file search', () => {
     await add('plan.md', 'Kyoto.')
     expect(tool.offeredIn(chat)).toBe(true)
     expect(tool.offeredIn(store.createConversation())).toBe(false)
-    expect(tool.instructions(chat)).toContain('search_project_files: plan.md')
+    expect(tool.instructions(chat)).toContain('read_project_file: plan.md')
 
     const output = JSON.parse(
       await tool.run(
-        { query: 'Kyoto' },
+        { query: 'Kyoto', file: null },
         { conversationId: chat.id, projectId },
       ),
     )
     expect(output.results).toEqual([
-      { file: 'plan.md', file_id: expect.any(String), text: 'Kyoto.' },
+      {
+        file: 'plan.md',
+        file_id: expect.any(String),
+        part: 1,
+        parts: 1,
+        text: 'Kyoto.',
+      },
     ])
   })
 
@@ -131,7 +184,7 @@ describe('project file search', () => {
       type: 'function_call',
       call_id: 'call_1',
       name: 'search_project_files',
-      arguments: '{"query":"kyoto"}',
+      arguments: '{"query":"kyoto","file":null}',
     }
 
     const run = registry.run(call, {
@@ -149,7 +202,10 @@ describe('project file search', () => {
     const chat = testChat(answerEvents('ok'), {
       store,
       calls,
-      tools: new ToolRegistry([new SearchProjectFilesTool(projects, index)]),
+      tools: new ToolRegistry([
+        new SearchProjectFilesTool(projects, index),
+        new ReadProjectFileTool(projects, index),
+      ]),
       projects: projects,
     })
     const { id } = store.createConversation({ projectId })
@@ -162,6 +218,7 @@ describe('project file search', () => {
     expect(instructions).toContain('Prices in yen.')
     expect(tools).toEqual([
       expect.objectContaining({ name: 'search_project_files' }),
+      expect.objectContaining({ name: 'read_project_file' }),
     ])
 
     const loose = store.createConversation()

@@ -62,6 +62,23 @@ describe('document text', () => {
     expect(documentKind('photo.png')).toBeNull()
   })
 
+  it('marks the pages of a longer PDF, so passages can cite them', async () => {
+    const page = () =>
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 100] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents %CONTENT% >>`
+    const objects = [
+      '<< /Type /Catalog /Pages 2 0 R >>',
+      '<< /Type /Pages /Kids [3 0 R 5 0 R] /Count 2 >>',
+      page().replace('%CONTENT%', '4 0 R'),
+      '<< /Length 38 >>\nstream\nBT /F1 12 Tf 10 50 Td (First) Tj ET\nendstream',
+      page().replace('%CONTENT%', '6 0 R'),
+      '<< /Length 39 >>\nstream\nBT /F1 12 Tf 10 50 Td (Second) Tj ET\nendstream',
+    ]
+    const pdf = `%PDF-1.4\n${objects.map((o, i) => `${i + 1} 0 obj\n${o}\nendobj\n`).join('')}trailer\n<< /Root 1 0 R /Size 7 >>\n%%EOF`
+    expect(await documentText('pdf', Buffer.from(pdf))).toBe(
+      '[Page 1]\n\nFirst\n\n[Page 2]\n\nSecond',
+    )
+  })
+
   it('reads PDF, Word and HTML', async () => {
     // As FileStore returns them: Buffers.
     expect(await documentText('pdf', Buffer.from(fixture('secret.pdf')))).toBe(
