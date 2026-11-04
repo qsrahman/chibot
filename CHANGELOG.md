@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.12.10] - 2026-11-04
+
 ### Added
 
 - chibot can be installed as an app: a web manifest (`manifest.webmanifest`) and icons (192 and 512 px, a maskable one, and Apple's touch icon, drawn from the favicon) let Chrome, Edge and Safari open it in a window of its own. The manifest link sends credentials, so it also loads where a `CHIBOT_TOKEN` cookie is required. There is no service worker, deliberately: the server is local, so an offline copy of the page would only go stale after an upgrade.
