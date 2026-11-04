@@ -16,6 +16,8 @@ import {
   SettingsStore,
 } from '../../src/server/settings-store.ts'
 import { WebSearchTool } from '../../src/server/tools/web-search.ts'
+import { FetchUrlTool } from '../../src/server/tools/fetch-url.ts'
+import { MemoryTool } from '../../src/server/tools/memory.ts'
 import { EchoTool, testFiles } from './fakes.ts'
 
 const context = { conversationId: 'c' }
@@ -53,7 +55,24 @@ describe('Tool.info', () => {
       done: 'Used Echo',
       chip: null,
       unavailable: null,
+      approval: null,
     })
+  })
+
+  it('tells the approval card why a tool asks, in plain words', () => {
+    const shipped = new FetchUrlTool().info.approval
+    expect(shipped).toMatch(
+      /nothing you wrote or searched for gave this address/,
+    )
+    expect(
+      new MemoryTool(new MemoryStore(openDatabase(':memory:'))).info.approval,
+    ).toMatch(/plant a memory/)
+    // A tool that always asks has a general line; one that never asks has none.
+    class Asks extends EchoTool {
+      override readonly requiresApproval = true
+    }
+    expect(new Asks().info.approval).toMatch(/asks before it runs/)
+    expect(new WebSearchTool('k').info.approval).toBeNull()
   })
 
   it('carries the tool’s own wording and its setup hint', () => {

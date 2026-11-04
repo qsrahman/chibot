@@ -38,6 +38,11 @@ export interface ToolInfo {
   chip: ToolChip | null
   /** Why it can't be used (what to set up), or `null`. */
   unavailable: string | null
+  /**
+   * Why it may ask for the user's approval, in plain words for the card that
+   * asks; `null` for a tool that never asks.
+   */
+  approval: string | null
 }
 
 /** By section, then by label. */

@@ -314,7 +314,14 @@ export function ChatPage({
                   {chatUsage.short}
                 </span>
               )}
-              {temporary && <span className="badge">Temporary chat</span>}
+              {temporary && (
+                <span
+                  className="badge"
+                  title="Not saved: this chat is deleted when you leave it"
+                >
+                  Temporary chat
+                </span>
+              )}
             </span>
           ) : (
             <button

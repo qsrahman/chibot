@@ -28,6 +28,7 @@ export class McpTool extends Tool {
   readonly parameters = z.looseObject({})
   override readonly untrustedOutput = true
   override readonly requiresApproval: boolean
+  override readonly approvalReason: string
   readonly #tool: McpServerTool
   readonly #servers: McpServers
   readonly #files: FileStore
@@ -40,6 +41,7 @@ export class McpTool extends Tool {
   ) {
     super()
     this.requiresApproval = asks
+    this.approvalReason = `This tool belongs to the MCP server “${tool.server}”, which runs outside chibot, and you set that server to ask first (Settings → Tools). Check the details before approving.`
     const { definition } = tool
     this.name = tool.name
     this.label =

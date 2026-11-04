@@ -104,7 +104,9 @@ test('asks before a server’s tools when set to', async ({ page }) => {
   await page.keyboard.press('Escape')
   await send(page, 'Please mcp echo hi')
   const card = page.getByRole('region', { name: 'Tool approval' })
-  await expect(card).toContainText('fixture__echo')
+  // Its name, and why it asks (this server was set to).
+  await expect(card).toContainText('Echo')
+  await expect(card).toContainText('MCP server “fixture”')
   await card.getByRole('button', { name: 'Approve' }).click()
   await answered(page)
   await expect(answer(page, 0)).toHaveText('Tool said: echo: hi')

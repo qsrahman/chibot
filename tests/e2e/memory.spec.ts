@@ -99,7 +99,7 @@ test('asks before a memory change in a chat that read the web', async ({
   await answered(page)
   await send(page, 'Please remember robots are great')
   const card = page.getByRole('region', { name: 'Tool approval' })
-  await expect(card).toContainText('chibot wants to use memory')
+  await expect(card).toContainText('plant a memory')
   expect(await memories(page)).toEqual([])
 
   await card.getByRole('button', { name: 'Approve' }).click()

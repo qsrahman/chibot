@@ -13,6 +13,14 @@ All notable changes to the codebase are documented in this file. Format follows 
 - An answer that stopped early (stopped with **Stop**, or cut off by the model's output limit) says so under it, with **Continue** (asks the model to carry on from where it stopped) and **Regenerate** as labelled buttons, instead of only a small icon. Right after a Stop, only Continue is offered (regenerating needs the saved ids, which arrive when the chat reloads); a saved question with no answer at all says so, with **Try again**. It shows on the latest turn only, also after a reload.
 - Settings that save as soon as they change (switches, menus, models, compaction, memory) show a brief "Saved" at the top of the panel (also announced), which goes after two seconds or when you change tab; a failed save shows its error instead. Personalization keeps its own Save button and message.
 
+### Fixed
+
+- The **Raw** disclosure in the approval card showed the browser's triangle as well as its own chevron.
+
+### Changed
+
+- The approval card says what it asks in words, not a tool's internal name: the tool's label, what it does and what leaves this machine (its summary), then why it is asking, set apart in a marked paragraph. For the web-page reader it says that nothing you wrote or searched for gave the address, so a page may have told chibot to open it to carry your data out; for memory, that other sites' text may be trying to plant a memory; for an MCP server's tool, which server it comes from and that you set it to ask. Each tool gives its own words (`Tool.approvalReason`, sent as `approval` in `GET /api/tools`). Settings now reload the tool list when an MCP server's switches change, so the card is not stale. The "Temporary chat" badge has a tooltip saying the chat is deleted when you leave it.
+
 ## [0.12.9] - 2026-11-04
 
 ### Added

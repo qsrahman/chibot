@@ -1,6 +1,6 @@
 // One turn of a chat: the question, then the answer with its thoughts, tool
 // activity, images, sources and actions.
-import { useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useContext, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Pencil, RefreshCw, Wrench } from 'lucide-react'
 import { FileCard } from '../ui/FileCard.tsx'
 import { ImageViewer, opensViewer, type ViewedImage } from './ImageViewer.tsx'
@@ -14,6 +14,8 @@ import { AnswerImages } from './AnswerImages.tsx'
 import { Sources } from './Sources.tsx'
 import { Summary } from '../ui/Summary.tsx'
 import { ToolCalls, ToolDetails } from './ToolCalls.tsx'
+import { ToolInfoContext } from './toolInfo.ts'
+import { mcpToolName } from '../settings/mcp.ts'
 
 interface TurnViewProps {
   turn: Turn
@@ -271,13 +273,28 @@ export function ApprovalCard({
   busy: boolean
   onAnswer: (approved: boolean) => void
 }) {
-  const names = [...new Set(calls.map((call) => call.name))].join(', ')
+  const infos = useContext(ToolInfoContext)
+  const names = [...new Set(calls.map((call) => call.name))]
   return (
     <section className="approval" aria-label="Tool approval">
       <h2>
         <Wrench size={16} aria-hidden />
-        chibot wants to use {names}
+        chibot is asking before it goes on
       </h2>
+      {names.map((name) => {
+        const info = infos.find((tool) => tool.name === name)
+        const mcp = mcpToolName(name)
+        return (
+          <div key={name} className="approval-tool">
+            <strong>
+              {info?.label ?? (mcp ? `${mcp.tool} · ${mcp.server}` : name)}
+            </strong>
+            {info?.summary && <p>{info.summary}</p>}
+            {info?.approval && <p className="approval-why">{info.approval}</p>}
+          </div>
+        )
+      })}
+      <p className="approval-asked">What it is about to do:</p>
       {calls.map((call) => (
         <ToolDetails key={call.callId} tool={call} />
       ))}

@@ -13,7 +13,12 @@ test('waits for approval, also across a reload, then runs the tool', async ({
 }) => {
   await page.goto('/')
   await send(page, 'Please approve a note')
-  await expect(approvalCard(page)).toContainText('chibot wants to use e2e_note')
+  await expect(approvalCard(page)).toContainText('Notes (test)')
+  // What it is about to do, and why it asks, in words.
+  await expect(approvalCard(page)).toContainText(
+    'chibot is asking before it goes on',
+  )
+  await expect(approvalCard(page)).toContainText('asks before it runs')
   await expect(approvalCard(page)).toContainText('"text": "hello"')
   // Screen readers hear that it waits.
   await expect(page.getByRole('status')).toHaveText(

@@ -169,6 +169,19 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.locator('.toast').getByRole('button', { name: 'Undo' }).click()
     })
 
+    test('the approval card', async ({ page }) => {
+      await page.goto('/')
+      await appReady(page)
+      await send(page, 'Please approve a note')
+      await expect(
+        page.getByRole('region', { name: 'Tool approval' }),
+      ).toBeVisible()
+      expect(await violations(page)).toEqual([])
+      // Deny, so the chat is free for the next spec.
+      await page.getByRole('button', { name: 'Deny' }).click()
+      await answered(page)
+    })
+
     test('every Settings tab', async ({ page }) => {
       await page.goto('/')
       await appReady(page)

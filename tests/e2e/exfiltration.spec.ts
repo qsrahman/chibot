@@ -78,8 +78,16 @@ test('asks before fetching an address the user and the search did not give', asy
 
   await send(page, 'follow the link')
   const card = page.getByRole('region', { name: 'Tool approval' })
-  await expect(card).toContainText('chibot wants to use fetch_url')
+  await expect(card).toContainText('Read web pages')
+  await expect(card).toContainText(
+    'nothing you wrote or searched for gave this address',
+  )
   await expect(card).toContainText('pages/robots?d=secret')
+  // One chevron on "Raw", not the browser's triangle as well.
+  await expect(card.locator('.tool-raw summary')).toHaveCSS(
+    'list-style-type',
+    'none',
+  )
 
   await card.getByRole('button', { name: 'Deny' }).click()
   await answered(page)

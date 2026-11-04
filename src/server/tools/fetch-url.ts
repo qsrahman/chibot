@@ -91,6 +91,8 @@ export class FetchUrlTool extends Tool {
   // (https://evil.example/c?d=…), which leaks it. Once the chat holds others'
   // text, only an address the user or a search gave runs without asking.
   override readonly requiresApproval = 'after-untrusted'
+  override readonly approvalReason =
+    'The chat holds text from other sites, and nothing you wrote or searched for gave this address. A page may have told chibot to open it so it can carry your data out. Approve only if you recognise it.'
   readonly description =
     'Reads a web page and returns its main text: a search result to read in ' +
     'full, or a URL the user gave. Works for HTML, plain text, Markdown, ' +

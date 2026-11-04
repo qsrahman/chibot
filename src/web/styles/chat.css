@@ -486,7 +486,8 @@
 /* Thoughts, tool calls and Sources: a label after a chevron that turns
    when open, instead of the browser's own triangle. */
 .thoughts summary,
-.sources summary {
+.sources summary,
+.tool-raw summary {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -496,7 +497,8 @@
 }
 
 .thoughts summary::-webkit-details-marker,
-.sources summary::-webkit-details-marker {
+.sources summary::-webkit-details-marker,
+.tool-raw summary::-webkit-details-marker {
   display: none;
 }
 
@@ -636,6 +638,30 @@ details[open] > summary > .disclosure-chevron {
   margin: 0;
   color: var(--fg-muted);
   font-size: 0.8125rem;
+}
+
+.approval-tool {
+  display: grid;
+  gap: 4px;
+}
+
+.approval-tool strong {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* Why it asks: the part to read before pressing Approve. */
+.approval p.approval-why {
+  padding: 8px 12px;
+  border-left: 3px solid var(--danger);
+  border-radius: var(--radius-row);
+  background: var(--surface-muted);
+  color: var(--fg);
+}
+
+.approval p.approval-asked {
+  color: var(--fg);
+  font-weight: 500;
 }
 
 .approval-actions {

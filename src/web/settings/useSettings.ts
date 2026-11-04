@@ -7,6 +7,12 @@ import type { Settings, SettingsPatch } from '../../shared/settings.ts'
 import type { ToolInfo } from '../../shared/tools.ts'
 import { getSettings, listTools, updateSettings } from './api.ts'
 
+const RELOAD_TOOLS = [
+  ...SERVICE_MODELS,
+  'disabledMcpServers',
+  'askMcpServers',
+] as const
+
 /** The user's settings (PLAN.md §6, layer 2) and how to change them. */
 export function useSettings() {
   const [settings, setSettings] = useState<Settings | null>(null)
@@ -48,8 +54,10 @@ export function useSettings() {
       try {
         setSettings(await updateSettings(patch))
         setError(null)
-        // A model decides whether a tool can be used (image creation).
-        if (SERVICE_MODELS.some((key) => key in patch)) void reloadTools()
+        // These change what the tools say about themselves: a model decides
+        // whether image creation can be used, a server's switches whether its
+        // tools exist and whether they ask first.
+        if (RELOAD_TOOLS.some((key) => key in patch)) void reloadTools()
         return true
       } catch (err) {
         setError((err as Error).message)

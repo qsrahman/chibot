@@ -95,6 +95,7 @@ describe('API', () => {
           done: 'Used Echo',
           chip: null,
           unavailable: null,
+          approval: null,
         },
       ],
     })
