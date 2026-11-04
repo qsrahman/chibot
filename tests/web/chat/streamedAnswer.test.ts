@@ -54,6 +54,7 @@ describe('applyEvent', () => {
       usage: null,
       model: null,
       versions: null,
+      incomplete: false,
     })
     expect(before).toMatchObject({ text: 'So far', thinking: 'Hmm' })
     expect(before.tools).toHaveLength(1)

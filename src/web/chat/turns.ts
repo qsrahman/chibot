@@ -1,4 +1,7 @@
-import type { ResponseUsage } from 'openai/resources/responses/responses'
+import type {
+  ResponseInputItem,
+  ResponseUsage,
+} from 'openai/resources/responses/responses'
 import { fileParts, messageText } from '../../shared/messages.ts'
 import type { StoredItem } from '../../shared/types.ts'
 import { mcpToolName } from '../settings/mcp.ts'
@@ -50,6 +53,8 @@ export interface Answer {
   model: string | null
   /** Regenerations of this answer, or `null` if there are none. */
   versions: Versions | null
+  /** It stopped before it was finished (stopped by the user, or cut off by the model's limit). */
+  incomplete: boolean
 }
 
 /** A user message and the answer to it, as the chat shows them. */
@@ -97,9 +102,14 @@ export function toTurns(items: StoredItem[]): Turn[] {
       usage: null,
       model: null,
       versions: versionsOf(item),
+      incomplete: false,
     }
     if (message) {
       turn.answer.text = join(turn.answer.text, message.text)
+      // The last message decides: tool calls may follow an earlier one.
+      if (message.role === 'assistant') {
+        turn.answer.incomplete = isCutOff(item.data)
+      }
     }
     if (item.data.type === 'compaction') turn.compacted = true
     if (item.data.type === 'function_call') {
@@ -125,6 +135,19 @@ export function toTurns(items: StoredItem[]): Turn[] {
     if (item.model) turn.answer.model = item.model
   }
   return turns
+}
+
+/**
+ * An assistant message that ended early: one the model marked `incomplete`
+ * (its output limit), or the plain-text partial chibot saves when the user
+ * stops an answer (completed ones are typed `message` items).
+ */
+function isCutOff(data: ResponseInputItem): boolean {
+  if (!('role' in data) || data.role !== 'assistant') return false
+  if (!('type' in data) || data.type === undefined) return true
+  return (
+    data.type === 'message' && 'status' in data && data.status === 'incomplete'
+  )
 }
 
 /**

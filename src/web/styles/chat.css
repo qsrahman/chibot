@@ -353,6 +353,16 @@
   margin-top: 16px;
 }
 
+.recovery {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  color: var(--fg-muted);
+  font-size: 0.875rem;
+}
+
 .actions {
   display: flex;
   align-items: center;

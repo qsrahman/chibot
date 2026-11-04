@@ -161,7 +161,8 @@ export function useChat(
 
     let streamed = startAnswer(before)
     /** The turn as streamed so far. */
-    const soFar = (key: string) => turnSoFar(display.question, streamed, key)
+    const soFar = (key: string, incomplete = false) =>
+      turnSoFar(display.question, streamed, key, incomplete)
     const show = () =>
       setPending({ keep: display.keep, turn: soFar('pending') })
     /** The answer is complete and saved (or waits for approval). */
@@ -240,7 +241,7 @@ export function useChat(
         // actions stay hidden until the next reload.
         setTurns((prev) => [
           ...prev.slice(0, display.keep),
-          soFar(crypto.randomUUID()),
+          soFar(crypto.randomUUID(), true),
         ])
         accepted = true
         // The saved partial becomes the new leaf, so a queued message can

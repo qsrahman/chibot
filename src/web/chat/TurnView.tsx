@@ -28,6 +28,8 @@ interface TurnViewProps {
   onEditingChange?: (editing: boolean) => void
   onEdit?: (text: string) => void
   onRegenerate?: () => void
+  /** Asks the model to carry on from where a stopped answer ended. */
+  onContinue?: () => void
   onSwitch?: (itemId: number) => void
   /** An image loaded (and grew the page): keep following the answer. */
   onImageLoad?: () => void
@@ -45,6 +47,7 @@ export function TurnView({
   onEditingChange,
   onEdit,
   onRegenerate,
+  onContinue,
   onSwitch,
   onImageLoad,
   compactThreshold,
@@ -163,6 +166,43 @@ export function TurnView({
       )}
       {answer && <Sources answer={answer} />}
       {approval}
+      {!pending &&
+        !approval &&
+        latest &&
+        (answer ? answer.incomplete : saved) && (
+          <div
+            className="recovery"
+            role="group"
+            aria-label="Answer interrupted"
+          >
+            <span>
+              {answer
+                ? 'The answer stopped before it was finished.'
+                : 'There is no answer to this message.'}
+            </span>
+            {answer && (
+              <button
+                type="button"
+                className="button"
+                disabled={busy}
+                onClick={() => onContinue?.()}
+              >
+                Continue
+              </button>
+            )}
+            {/* Regenerating needs the saved ids, which a just-stopped answer lacks until the chat reloads. */}
+            {saved && (
+              <button
+                type="button"
+                className="button"
+                disabled={busy}
+                onClick={() => onRegenerate?.()}
+              >
+                {answer ? 'Regenerate' : 'Try again'}
+              </button>
+            )}
+          </div>
+        )}
       {!pending && !approval && (
         <div className="actions answer-actions">
           {answer && <CopyButton text={answer.text} />}

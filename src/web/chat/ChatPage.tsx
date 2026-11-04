@@ -51,6 +51,9 @@ interface Props {
   inert?: boolean
 }
 
+/** What "Continue" sends after a stopped answer. */
+const CONTINUE = 'Please continue from where you stopped.'
+
 /** Ways to start, for an empty chat: each puts the start of a message in the box. */
 const STARTERS = [
   { label: 'Summarize a page', text: 'Summarize this page for me: ' },
@@ -403,6 +406,7 @@ export function ChatPage({
                   onEditingChange={(on) => setEditingTurn(on ? turn.key : null)}
                   onEdit={following((text: string) => chat.edit(i, text))}
                   onRegenerate={following(() => chat.regenerate(i))}
+                  onContinue={following(() => chat.send(CONTINUE))}
                   onSwitch={(itemId) => void chat.switchVersion(itemId)}
                   onImageLoad={follow}
                   compactThreshold={compactThreshold}

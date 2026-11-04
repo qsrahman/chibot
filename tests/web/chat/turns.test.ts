@@ -27,6 +27,36 @@ const item = (
 })
 
 describe('toTurns', () => {
+  it('knows an answer that stopped early, from the model’s limit or the user’s Stop', () => {
+    const answerOf = (data: unknown) =>
+      toTurns([item(1, { role: 'user', content: 'Hi' }), item(2, data)])[0]!
+        .answer
+    // Typed and completed: whole.
+    expect(
+      answerOf({
+        type: 'message',
+        role: 'assistant',
+        status: 'completed',
+        id: 'm',
+        content: [{ type: 'output_text', text: 'Done.', annotations: [] }],
+      })?.incomplete,
+    ).toBe(false)
+    // The model ran out of output.
+    expect(
+      answerOf({
+        type: 'message',
+        role: 'assistant',
+        status: 'incomplete',
+        id: 'm',
+        content: [{ type: 'output_text', text: 'Half', annotations: [] }],
+      })?.incomplete,
+    ).toBe(true)
+    // What chibot keeps of an answer the user stopped: plain text.
+    expect(
+      answerOf({ role: 'assistant', content: 'Half of it' })?.incomplete,
+    ).toBe(true)
+  })
+
   it('groups each question with the output items that answer it', () => {
     const turns = toTurns([
       item(1, { role: 'user', content: 'Hi' }),
@@ -43,7 +73,17 @@ describe('toTurns', () => {
         role: 'assistant',
         content: [{ type: 'output_text', text: 'Hello ', annotations: [] }],
       }),
-      item(4, { role: 'assistant', content: 'there' }, { usage, model: 'm-1' }),
+      item(
+        4,
+        {
+          type: 'message',
+          role: 'assistant',
+          status: 'completed',
+          id: 'msg_2',
+          content: [{ type: 'output_text', text: 'there', annotations: [] }],
+        } as ResponseInputItem,
+        { usage, model: 'm-1' },
+      ),
       item(5, { role: 'user', content: 'Bye' }),
     ])
     expect(turns).toEqual([
@@ -66,6 +106,7 @@ describe('toTurns', () => {
           usage,
           model: 'm-1',
           versions: null,
+          incomplete: false,
         },
         compacted: false,
       },
@@ -162,6 +203,7 @@ describe('sourcesOf and imagesOf', () => {
       usage: null,
       model: null,
       versions: null,
+      incomplete: false,
       tools: [
         tool(
           'web_search',
@@ -195,6 +237,7 @@ describe('sourcesOf and imagesOf', () => {
       usage: null,
       model: null,
       versions: null,
+      incomplete: false,
       tools: [
         tool('web_search', {}, JSON.stringify({ results: 'not an array' })),
         tool(
@@ -301,6 +344,7 @@ describe('sourcesOf with past chats', () => {
         usage: null,
         model: null,
         versions: null,
+        incomplete: false,
         tools: [{ callId: 'c', name: 'search_chats', arguments: '{}', output }],
       }),
     ).toEqual([{ url: '/c/abc', title: 'Storage design', kind: 'chat' }])
@@ -324,6 +368,7 @@ describe('sourcesOf with project files', () => {
         usage: null,
         model: null,
         versions: null,
+        incomplete: false,
         tools: [
           {
             callId: 'c',
@@ -344,6 +389,7 @@ describe('sourcesOf with project files', () => {
       usage: null,
       model: null,
       versions: null,
+      incomplete: false,
       tools: [
         { callId: 'c', name, arguments: '{}', output: JSON.stringify(output) },
       ],
@@ -381,6 +427,7 @@ describe('sourcesOf with project files', () => {
         usage: null,
         model: null,
         versions: null,
+        incomplete: false,
         tools,
       }),
     ).toEqual([{ url: '/api/files/f1', title: 'plan.md', kind: 'file' }])

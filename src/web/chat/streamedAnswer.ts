@@ -155,6 +155,8 @@ export const turnSoFar = (
   question: Question,
   { text, thinking, tools }: StreamedAnswer,
   key: string,
+  /** The user stopped it. */
+  incomplete = false,
 ): Turn => ({
   key,
   question,
@@ -169,6 +171,7 @@ export const turnSoFar = (
           usage: null,
           model: null,
           versions: null,
+          incomplete,
         }
       : null,
 })

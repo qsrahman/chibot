@@ -645,3 +645,53 @@ for (const motion of ['no-preference', 'reduce'] as const) {
     await page.getByRole('button', { name: 'Stop' }).click()
   })
 }
+
+test('a stopped answer offers Continue and Regenerate, also after a reload', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  await send(page, 'slow story')
+  await expect(page.locator('.message.assistant')).toContainText('word3')
+  await page.getByRole('button', { name: 'Stop' }).click()
+  const recovery = page.getByRole('group', { name: 'Answer interrupted' })
+  await expect(recovery).toContainText('stopped before it was finished')
+  // Just stopped, the chat has no ids to regenerate from yet; Continue works.
+  await expect(recovery.getByRole('button', { name: 'Continue' })).toBeVisible()
+
+  // Still there once the page has loaded the saved chat, now with Regenerate.
+  await expect.poll(() => page.url()).toMatch(/\/c\//)
+  await page.reload()
+  await expect(
+    recovery.getByRole('button', { name: 'Regenerate' }),
+  ).toBeVisible()
+
+  await recovery.getByRole('button', { name: 'Continue' }).click()
+  await answered(page)
+  await expect(turns(page)).toHaveCount(2)
+  await expect(turns(page).nth(1).locator('.message.user')).toHaveText(
+    'Please continue from where you stopped.',
+  )
+  // The new answer is whole, so only the latest turn is judged and it is fine.
+  await expect(recovery).toHaveCount(0)
+})
+
+test('Regenerate on a stopped answer writes a new version', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  await send(page, 'slow poem')
+  await expect(page.locator('.message.assistant')).toContainText('word3')
+  await page.getByRole('button', { name: 'Stop' }).click()
+  await expect.poll(() => page.url()).toMatch(/\/c\//)
+  await page.reload()
+  const recovery = page.getByRole('group', { name: 'Answer interrupted' })
+  await recovery.getByRole('button', { name: 'Regenerate' }).click()
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible()
+  await page.getByRole('button', { name: 'Stop' }).click()
+  await page.reload()
+  await expect(
+    turns(page).first().locator('.answer-actions .versions-count'),
+  ).toHaveText('2/2')
+})
