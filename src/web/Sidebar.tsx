@@ -206,7 +206,10 @@ export function Sidebar({
         {!collapsed && (
           <div className="sidebar-list">
             <section>
-              <h3 className="sidebar-heading">Projects</h3>
+              {/* Labels, not headings: the sidebar comes before the page's own
+                  heading, and its groups would be the first outline a screen
+                  reader lists. */}
+              <p className="sidebar-heading">Projects</p>
               <SidebarButton
                 icon={<FolderPlus />}
                 label="New project"
@@ -238,7 +241,7 @@ export function Sidebar({
             )}
             {groupConversations(conversations.conversations).map((group) => (
               <section key={group.label}>
-                <h3 className="sidebar-heading">{group.label}</h3>
+                <p className="sidebar-heading">{group.label}</p>
                 {group.items.map((item) => (
                   <ConversationRow
                     key={item.id}

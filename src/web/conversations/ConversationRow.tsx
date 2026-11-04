@@ -94,6 +94,7 @@ export function ConversationRow({
         ref={menu.ref}
         popover="auto"
         className="menu"
+        role="menu"
         style={menu.style}
         {...menu.menuProps}
       >
@@ -174,11 +175,22 @@ export function MenuItem({
   const className = danger ? 'menu-item danger' : 'menu-item'
   // The server names the file (Content-Disposition), so `download` is bare.
   return download ? (
-    <a className={className} href={download} download onClick={onClick}>
+    <a
+      className={className}
+      role="menuitem"
+      href={download}
+      download
+      onClick={onClick}
+    >
       {content}
     </a>
   ) : (
-    <button type="button" className={className} onClick={onClick}>
+    <button
+      type="button"
+      className={className}
+      role="menuitem"
+      onClick={onClick}
+    >
       {content}
     </button>
   )

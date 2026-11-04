@@ -47,6 +47,7 @@ export function ProjectHeading({
           ref={menu.ref}
           popover="auto"
           className="menu"
+          role="menu"
           style={menu.style}
           {...menu.menuProps}
         >

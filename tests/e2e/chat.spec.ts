@@ -323,7 +323,7 @@ test('the tab title names the chat on screen', async ({ page }) => {
     .filter({ has: page.locator(`a[href="${pathname}"]`) })
   await row.hover()
   await row.getByRole('button', { name: /Options for/ }).click()
-  await page.getByRole('button', { name: 'Rename', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Rename', exact: true }).click()
   const field = page.getByRole('textbox', { name: 'Chat title' })
   await field.fill('Renamed chat')
   await field.press('Enter')
@@ -347,7 +347,7 @@ test('names a chat again from its menu', async ({ page }) => {
   const menu = async (item: string) => {
     await row.hover()
     await row.getByRole('button', { name: /Options for/ }).click()
-    await page.getByRole('button', { name: item, exact: true }).click()
+    await page.getByRole('menuitem', { name: item, exact: true }).click()
   }
   await menu('Rename')
   const field = page.getByRole('textbox', { name: 'Chat title' })

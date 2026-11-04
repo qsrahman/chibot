@@ -163,7 +163,9 @@ test('describes a project, and drafts its instructions from the files', async ({
 }) => {
   await newProject(page, 'Trip')
   await page.getByRole('button', { name: 'Project options' }).click()
-  await page.getByRole('button', { name: 'Edit name and description' }).click()
+  await page
+    .getByRole('menuitem', { name: 'Edit name and description' })
+    .click()
   const edit = page.getByRole('dialog', { name: 'Edit project' })
   await edit.getByLabel('Description').fill('Two weeks in April')
   await edit.getByRole('button', { name: 'Save' }).click()
@@ -259,7 +261,7 @@ test('moves chats in and out, and deletes a project with them', async ({
 
   await loose.hover()
   await loose.getByRole('button', { name: /Options for/ }).click()
-  await page.getByRole('button', { name: 'Move to project…' }).click()
+  await page.getByRole('menuitem', { name: 'Move to project…' }).click()
   await page
     .getByRole('dialog', { name: 'Move to project' })
     .getByRole('button', { name: 'Work' })
@@ -270,21 +272,21 @@ test('moves chats in and out, and deletes a project with them', async ({
   const chats = page.getByRole('region', { name: 'Project chats' })
   await expect(chats.locator(`a[href="${pathname}"]`)).toBeVisible()
   await chats.getByRole('button', { name: /Options for/ }).click()
-  await page.getByRole('button', { name: 'Remove from project' }).click()
+  await page.getByRole('menuitem', { name: 'Remove from project' }).click()
   await expect(chats).toHaveCount(0)
   await expect(loose).toHaveCount(1)
 
   // Back in, then delete the project: the chat goes with it.
   await loose.hover()
   await loose.getByRole('button', { name: /Options for/ }).click()
-  await page.getByRole('button', { name: 'Move to project…' }).click()
+  await page.getByRole('menuitem', { name: 'Move to project…' }).click()
   await page
     .getByRole('dialog', { name: 'Move to project' })
     .getByRole('button', { name: 'Work' })
     .click()
   await page.locator('nav').getByRole('link', { name: 'Work' }).click()
   await page.getByRole('button', { name: 'Project options' }).click()
-  await page.getByRole('button', { name: 'Delete project' }).click()
+  await page.getByRole('menuitem', { name: 'Delete project' }).click()
   await page
     .getByRole('dialog', { name: 'Delete project?' })
     .getByRole('button', { name: 'Delete' })

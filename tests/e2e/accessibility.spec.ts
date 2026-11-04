@@ -236,3 +236,73 @@ test('jumps to the latest message at once under reduced motion, and glides other
   await page.emulateMedia({ reducedMotion: 'reduce' })
   expect(await jumpAndCheck()).toBe(true)
 })
+
+// A screen reader's list of headings is an outline of the page: it starts at
+// the page's heading and never skips a level on the way down.
+const outline = (page: Page) =>
+  page.evaluate(() =>
+    [...document.querySelectorAll('h1, h2, h3, h4, h5, h6')]
+      .filter((h) => h.getClientRects().length > 0)
+      .map((h) => ({
+        level: Number(h.tagName[1]),
+        text: h.textContent!.trim(),
+      })),
+  )
+
+function expectOutline(headings: { level: number; text: string }[]) {
+  expect(headings.length).toBeGreaterThan(0)
+  expect(headings[0], 'the first heading').toMatchObject({ level: 1 })
+  let previous = 0
+  for (const { level, text } of headings) {
+    expect(level, `"${text}" after a level ${previous}`).toBeLessThanOrEqual(
+      previous + 1,
+    )
+    previous = level
+  }
+}
+
+test('the page’s headings form an outline, in the sidebar’s presence', async ({
+  page,
+}) => {
+  await chatsTitled(page, 'Plan a trip')
+  const created = await page.request.post('/api/projects', {
+    data: { name: 'Japan' },
+  })
+  const { id } = (await created.json()) as { id: string }
+
+  // A new chat, with groups of chats and a Projects section in the sidebar…
+  await page.goto('/')
+  await appReady(page)
+  await expect(page.getByText('Plan a trip').first()).toBeVisible()
+  expectOutline(await outline(page))
+
+  // …and a project's page.
+  await page.goto(`/projects/${id}`)
+  await expect(page.getByRole('heading', { name: 'Japan' })).toBeVisible()
+  expectOutline(await outline(page))
+})
+
+test('the menus on a chat row and on a project are menus', async ({ page }) => {
+  await chatsTitled(page, 'Plan a trip')
+  const created = await page.request.post('/api/projects', {
+    data: { name: 'Japan' },
+  })
+  const { id } = (await created.json()) as { id: string }
+  await page.goto(`/projects/${id}`)
+  await expect(page.getByRole('heading', { name: 'Japan' })).toBeVisible()
+
+  const row = page
+    .locator('.conversation-row', { hasText: 'Plan a trip' })
+    .first()
+  await row.hover()
+  await row.getByRole('button', { name: /Options for/ }).click()
+  await expect(page.getByRole('menu')).toBeVisible()
+  await expect(page.getByRole('menuitem', { name: 'Rename' })).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  await page.getByRole('button', { name: 'Project options' }).click()
+  await expect(page.getByRole('menu')).toBeVisible()
+  await expect(
+    page.getByRole('menuitem', { name: 'Delete project' }),
+  ).toBeVisible()
+})
