@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.12.4] - 2026-11-04
+
 ### Changed
 
 - The import rules are checked, not only written down: `pnpm deps` (dependency-cruiser, rules in `.dependency-cruiser.cjs`, run by `tests/architecture.test.ts` inside `pnpm test`) fails on an import between the server and the web app, a cycle, a feature reaching up the layers (`ui` ← `conversations` ← `settings` / `projects` ← `chat`), a route importing `app.ts`, or code outside `src/server/projects/` bypassing its `index.ts`. It reads TypeScript through `@swc/core`, because dependency-cruiser's own TypeScript reader doesn't support TypeScript 7 yet.
