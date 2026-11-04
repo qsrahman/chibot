@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.12.5] - 2026-11-04
+
 ### Changed
 
 - Code only: what `useChat.run` does with each streamed event (text, reasoning paragraphs, tool calls and outputs, and which events end or fail a response) is `applyEvent` in `chat/streamedAnswer.ts`, a pure function with 17 unit tests; `useChat` (469 → 394 lines) only does the side effects. The streaming e2e specs pass untouched.
