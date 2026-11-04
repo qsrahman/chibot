@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.12.9] - 2026-11-04
+
 ### Added
 
 - `?` opens the keyboard shortcut list when you are not typing in a text field (it is still a question mark in the message box); it is listed in the dialog.
