@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { MessageSquare } from 'lucide-react'
 import type { ConversationListItem } from '../../shared/types.ts'
@@ -20,6 +20,9 @@ export function SearchDialog({ open, onClose, recent }: Props) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<ConversationListItem[] | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // The result Enter opens (marked, and named by the field for screen readers).
+  const [active, setActive] = useState(0)
+  const listId = useId()
 
   useEffect(() => {
     if (!open) setQuery('')
@@ -50,6 +53,22 @@ export function SearchDialog({ open, onClose, recent }: Props) {
   }, [query])
 
   const shown = results ?? recent.slice(0, 8)
+  const optionId = (index: number) => `${listId}-${index}`
+  // A new list starts at its first result.
+  useEffect(() => setActive(0), [results, open])
+  // Keep the marked one in view when the list scrolls.
+  useEffect(() => {
+    document.getElementById(optionId(active))?.scrollIntoView({
+      block: 'nearest',
+    })
+  }, [active])
+  // Read out when results arrive (the list itself changes under the field).
+  const announcement =
+    results === null
+      ? ''
+      : results.length === 0
+        ? `No chats match “${query.trim()}”.`
+        : `${results.length} ${results.length === 1 ? 'chat' : 'chats'} found`
 
   function openChat(id: string) {
     onClose()
@@ -66,15 +85,31 @@ export function SearchDialog({ open, onClose, recent }: Props) {
       <input
         className="search-input"
         type="search"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={shown.length > 0}
+        aria-controls={listId}
+        aria-activedescendant={shown.length > 0 ? optionId(active) : undefined}
         placeholder="Search chats…"
         aria-label="Search chats"
         autoFocus
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' && shown[0]) openChat(shown[0].id)
+          if (shown.length === 0) return
+          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            // Round the ends; the caret stays where it is.
+            e.preventDefault()
+            const step = e.key === 'ArrowDown' ? 1 : -1
+            setActive((i) => (i + step + shown.length) % shown.length)
+          } else if (e.key === 'Enter' && shown[active]) {
+            openChat(shown[active].id)
+          }
         }}
       />
+      <p className="visually-hidden" role="status">
+        {announcement}
+      </p>
       <div className="search-results">
         {!results && shown.length > 0 && (
           <h3 className="sidebar-heading">Recent</h3>
@@ -83,24 +118,36 @@ export function SearchDialog({ open, onClose, recent }: Props) {
         {results?.length === 0 && (
           <p className="sidebar-note">No chats match “{query.trim()}”.</p>
         )}
-        {shown.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className="search-result"
-            onClick={() => openChat(item.id)}
-          >
-            <span className="row-icon" aria-hidden>
-              <MessageSquare />
-            </span>
-            <span className="search-text">
-              <span className="search-title">{item.title ?? UNTITLED}</span>
-              {item.snippet && (
-                <span className="search-snippet">{item.snippet}</span>
-              )}
-            </span>
-          </button>
-        ))}
+        <div
+          id={listId}
+          role="listbox"
+          aria-label={results ? 'Matching chats' : 'Recent chats'}
+        >
+          {shown.map((item, index) => (
+            <button
+              key={item.id}
+              id={optionId(index)}
+              type="button"
+              role="option"
+              aria-selected={index === active}
+              // Reached by the arrow keys from the field, not by Tab.
+              tabIndex={-1}
+              className="search-result"
+              onClick={() => openChat(item.id)}
+              onMouseMove={() => setActive(index)}
+            >
+              <span className="row-icon" aria-hidden>
+                <MessageSquare />
+              </span>
+              <span className="search-text">
+                <span className="search-title">{item.title ?? UNTITLED}</span>
+                {item.snippet && (
+                  <span className="search-snippet">{item.snippet}</span>
+                )}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
     </Dialog>
   )

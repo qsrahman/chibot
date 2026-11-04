@@ -140,8 +140,8 @@
   cursor: pointer;
 }
 
-.search-result:hover,
-.search-result:focus-visible {
+/* The marked result: the one Enter opens (the pointer marks the one under it). */
+.search-result[aria-selected='true'] {
   background: var(--chip);
 }
 
