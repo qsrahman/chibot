@@ -4,15 +4,15 @@
   "description": "Local ChatGPT-style chatbot on the OpenAI Responses API",
   "private": true,
   "bin": {
-    "chibot": "src/server/main.ts"
+    "chibot": "src/server/cli.ts"
   },
   "type": "module",
   "scripts": {
     "dev": "pnpm run --parallel \"/^dev:/\"",
-    "dev:server": "node --watch src/server/main.ts",
+    "dev:server": "node --watch src/server/cli.ts",
     "dev:web": "vite",
     "build": "vite build",
-    "start": "node src/server/main.ts",
+    "start": "node src/server/cli.ts",
     "deps": "depcruise src --config .dependency-cruiser.cjs",
     "typecheck": "tsc --noEmit && tsc --noEmit -p src/web && tsc --noEmit -p tests/e2e",
     "test": "vitest run",
@@ -51,6 +51,7 @@
     "@hono/zod-validator": "^0.9.1",
     "@modelcontextprotocol/client": "2.4.0",
     "@mozilla/readability": "0.6.0",
+    "env-paths": "^4.0.0",
     "eventsource-parser": "^4.1.3",
     "hast-util-to-text": "^4.0.3",
     "hono": "^4.13.16",

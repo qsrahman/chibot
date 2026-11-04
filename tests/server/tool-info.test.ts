@@ -82,7 +82,8 @@ describe('Tool.info', () => {
       running: 'Searching the web…',
       done: 'Searched the web',
       chip: null,
-      unavailable: 'Needs BRAVE_API_KEY in .env',
+      unavailable:
+        'Needs a Brave Search key: chibot config set braveApiKey <key>',
     })
     expect(new WebSearchTool('key').info.unavailable).toBeNull()
   })
@@ -122,11 +123,13 @@ describe('shipped tools', () => {
     })
     const hint = (name: string) =>
       unconfigured.find((tool) => tool.name === name)!.unavailable
-    expect(hint('web_search')).toBe('Needs BRAVE_API_KEY in .env')
+    expect(hint('web_search')).toBe(
+      'Needs a Brave Search key: chibot config set braveApiKey <key>',
+    )
     expect(hint('generate_image')).toMatch(/Choose an image model in Settings/)
     expect(hint('edit_image')).toMatch(/Choose an image model in Settings/)
     expect(new GenerateImageTool(null).unavailable()).toMatch(
-      /image server or key/,
+      /Needs an API key or server/,
     )
     expect(hint('fetch_url')).toBeNull()
   })

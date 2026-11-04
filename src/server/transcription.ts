@@ -50,7 +50,8 @@ export class Transcription {
           (setup
             ? '. It needs a transcription model (e.g. gpt-transcribe) on a ' +
               'server that transcribes: check the model in Settings → ' +
-              'Other models and OPENAI_TRANSCRIBE_BASE_URL in .env.'
+              'Other models and transcription.baseURL (`chibot config path` ' +
+              'shows where the settings are).'
             : '.'),
         { cause: err },
       )

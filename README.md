@@ -26,39 +26,71 @@ Responses API, such as [Ollama](https://docs.ollama.com/openai) and
 
 ```bash
 pnpm install
-cp .env.example .env   # then set OPENAI_API_KEY
+pnpm build        # the web app, once (and again after pulling changes)
+pnpm link -g      # puts the `chibot` command on your PATH
+chibot init       # asks where your models are, and for the key
+chibot            # then open http://127.0.0.1:3000
 ```
+
+`pnpm link -g` points the command at this folder, so it keeps working from any
+folder and picks up changes you pull (rebuild the web app after them). `chibot
+--help` lists the commands. To work on chibot itself, `pnpm dev` (see
+[Running](#running)) reads the same settings.
 
 ## Configuration
 
-Startup settings and keys go in `.env` or the environment; everything you can
-change while chatting (model, instructions, reasoning, compaction, theme) lives
-in **Settings**. `OPENAI_MODEL` is the model chibot starts with.
-
-Set these in `.env` or the environment. chibot reads the real environment
-first, then a `.env` in the folder you start it from, then the `.env` in the
-chibot folder, so it finds its settings wherever you run it.
-
-| Variable | Default | Purpose |
-|---|---|---|
-| `OPENAI_BASE_URL` | OpenAI | Any server with a Responses API |
-| `OPENAI_API_KEY` | — | Required for OpenAI; optional with `OPENAI_BASE_URL` |
-| `OPENAI_MODEL` | `gpt-6-astra` | Chat model; required with `OPENAI_BASE_URL` |
-| `HOST` | `127.0.0.1` | Interface to listen on (see below) |
-| `PORT` | `3000` | API server port |
-| `OPENAI_IMAGE_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Image generation; the model must be an image-generation model (not a chat model), and defaults to `gpt-image-2` on OpenAI |
-| `OPENAI_EMBEDDING_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Project file search by meaning; the model defaults to `text-embedding-3-small` on OpenAI, and must be named on other servers (without one, project files are searched by keywords) |
-| `OPENAI_TRANSCRIBE_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Voice input; the model defaults to `gpt-transcribe` on OpenAI, and must be named on other servers (without one, the mic is off). With chat on Ollama, point this at OpenAI |
-| `BRAVE_API_KEY` | — | Turns on web search ([Brave Search API](https://brave.com/search/api/)) |
-| `CHIBOT_DATA_DIR` | `<repo>/data` | Where the database, generated images and MCP sign-ins are kept |
-| `CHIBOT_MCP_CONFIG` | `<repo>/mcp.json` | The MCP servers to use (see below) |
-| `CHIBOT_TOKEN` | — | Requires a token (16+ characters) to use chibot; set it when `HOST` exposes chibot |
-
-For example, to chat with a local Ollama model, put this in `.env`:
+Startup settings and keys are kept in `config.json`, which `chibot init`
+writes (readable only by you; it holds your keys). Everything you can change
+while chatting (model, instructions, reasoning, compaction, theme) lives in
+**Settings**; the chat model you pick there starts from `chat.model`.
 
 ```bash
-OPENAI_BASE_URL=http://localhost:11434/v1
-OPENAI_MODEL=gemma4:cloud
+chibot config path                        # where everything is kept
+chibot config show                        # the settings, keys shown as "set"
+chibot config set chat.model gpt-6-astra  # change one (an empty value removes it)
+```
+
+chibot keeps its files in your system's usual folders:
+
+| | macOS | Linux | Windows |
+|---|---|---|---|
+| Settings (`config.json`, `mcp.json`) | `~/Library/Preferences/chibot` | `~/.config/chibot` | `%APPDATA%\chibot\Config` |
+| Data (chats, files, sign-ins) | `~/Library/Application Support/chibot` | `~/.local/share/chibot` | `%LOCALAPPDATA%\chibot\Data` |
+
+(Linux follows `XDG_CONFIG_HOME` and `XDG_DATA_HOME`.) Existing checkouts keep
+working: while `<chibot folder>/data` and `<chibot folder>/mcp.json` exist and
+the standard places are empty, chibot keeps using them and says so at startup.
+
+**Precedence**, highest first: command-line flags (`--port`, `--host`), real
+environment variables, `config.json`, defaults. So a variable such as
+`OPENAI_API_KEY` always overrides the file, which is how a deployment, a test
+or a one-off run changes a value. The old `.env` in the chibot folder is still
+read below the environment (and tells you to run `chibot init`, which offers to
+move it into `config.json`); a `.env` in the folder you run chibot from is
+**not** read, since a command you can run anywhere must not take settings from
+whatever folder it is in.
+
+| Setting (`chibot config set …`) | Variable | Default | Purpose |
+|---|---|---|---|
+| `chat.baseURL` | `OPENAI_BASE_URL` | OpenAI | Any server with a Responses API |
+| `chat.apiKey` | `OPENAI_API_KEY` | — | Required for OpenAI; optional with `chat.baseURL` |
+| `chat.model` | `OPENAI_MODEL` | `gpt-6-astra` | Chat model; required with `chat.baseURL` |
+| `server.host` | `HOST` | `127.0.0.1` | Interface to listen on (see below) |
+| `server.port` | `PORT` | `3000` | API server port |
+| `image.baseURL` / `.apiKey` / `.model` | `OPENAI_IMAGE_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Image generation; the model must be an image-generation model (not a chat model), and defaults to `gpt-image-2` on OpenAI |
+| `embedding.baseURL` / `.apiKey` / `.model` | `OPENAI_EMBEDDING_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Project file search by meaning; the model defaults to `text-embedding-3-small` on OpenAI, and must be named on other servers (without one, project files are searched by keywords) |
+| `transcription.baseURL` / `.apiKey` / `.model` | `OPENAI_TRANSCRIBE_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Voice input; the model defaults to `gpt-transcribe` on OpenAI, and must be named on other servers (without one, the mic is off). With chat on Ollama, point this at OpenAI |
+| `braveApiKey` | `BRAVE_API_KEY` | — | Turns on web search ([Brave Search API](https://brave.com/search/api/)) |
+| `token` | `CHIBOT_TOKEN` | — | Requires a token (16+ characters) to use chibot; set it when `server.host` exposes chibot |
+| — | `CHIBOT_CONFIG_DIR` | see above | Where `config.json` and `mcp.json` are |
+| — | `CHIBOT_DATA_DIR` | see above | Where the database, generated images and MCP sign-ins are kept |
+| — | `CHIBOT_MCP_CONFIG` | `mcp.json` in the settings folder | The MCP servers to use (see below) |
+
+For example, to chat with a local Ollama model:
+
+```bash
+chibot config set chat.baseURL http://localhost:11434/v1
+chibot config set chat.model gemma4:cloud
 ```
 
 Use any model Ollama can serve. `:cloud` models need `ollama signin` first.
@@ -77,40 +109,40 @@ models such as `x/z-image-turbo` can't be used: its images endpoint answers
 and model failed, and what to set.
 
 For project files, embeddings can stay local:
-`ollama pull nomic-embed-text`, then `OPENAI_EMBEDDING_MODEL=nomic-embed-text`.
+`ollama pull nomic-embed-text`, then
+`chibot config set embedding.model nomic-embed-text`.
 
-The `OPENAI_IMAGE_MODEL`, `OPENAI_EMBEDDING_MODEL` and
-`OPENAI_TRANSCRIBE_MODEL` variables only give the starting models: the image,
-embedding and transcription models can be changed (or emptied, to turn the
-feature off) in **Settings → Other models**, without a restart. The servers
-and keys behind them stay in `.env`.
+The `image.model`, `embedding.model` and `transcription.model` settings only
+give the starting models: the image, embedding and transcription models can be
+changed (or emptied, to turn the feature off) in **Settings → Other models**,
+without a restart. The servers and keys behind them stay in `config.json`.
 
 chibot has no login, and anyone who can reach it spends your API key. It
 therefore listens only on this machine by default. To use it from another
-device on your network, set `HOST=0.0.0.0` (this applies to both `pnpm dev`
-and `pnpm start`) together with a token:
+device on your network, set `server.host` to `0.0.0.0` (or run `chibot --host
+0.0.0.0`) together with a token:
 
 ```bash
-HOST=0.0.0.0
-CHIBOT_TOKEN=…   # e.g. the output of: openssl rand -hex 16
+chibot config set server.host 0.0.0.0
+chibot config set token "$(openssl rand -hex 16)"
 ```
 
-Then open `http://<this machine's IP>:3000/?token=<CHIBOT_TOKEN>` once in each
+Then open `http://<this machine's IP>:3000/?token=<token>` once in each
 browser; a cookie remembers it, and without it chibot answers 401. The server
 prints a warning when it's exposed without a token.
 
 Web pages you visit can't use chibot behind your back: it answers only to
-this machine's names (`localhost`, IP addresses, and `HOST` if it's a name),
+this machine's names (`localhost`, IP addresses, and `server.host` if it's a name),
 so a site can't point its own name at it, and it refuses uploads posted from
-other sites. From another device, open it by IP address, or set `HOST` to
-the name you use.
+other sites. From another device, open it by IP address, or set `server.host`
+to the name you use.
 
 ### MCP servers
 
 chibot can use the tools of [MCP](https://modelcontextprotocol.io) servers.
-List them in `mcp.json` in chibot's folder (git-ignored;
-[mcp.example.json](mcp.example.json) shows the format), then **Reload** it in
-Settings → Tools (or restart chibot):
+List them in `mcp.json` in chibot's settings folder (`chibot config path`
+shows it; [mcp.example.json](mcp.example.json) shows the format), then
+**Reload** it in Settings → Tools (or restart chibot):
 
 ```json
 {
@@ -131,11 +163,11 @@ Settings → Tools (or restart chibot):
 - A **`remote`** server is a URL (`url`, optional `headers`). If it needs
   signing in, Settings → Tools shows **Sign in**, which opens its provider's
   page and comes back to chibot (sign in on the machine running chibot).
-  Tokens are kept in `data/mcp-auth.json`, readable only by you; **Sign out**
+  Tokens are kept in `mcp-auth.json` in the data folder, readable only by you; **Sign out**
   removes them. A server with its own `Authorization` header doesn't sign in.
-- `${VAR}` anywhere is filled from the environment (and `.env`), so secrets
-  stay out of `mcp.json`. Reload re-reads `mcp.json` only: a changed `.env`
-  needs a restart. Names may use letters, digits, `-` and `_`.
+- `${VAR}` anywhere is filled from the environment (variables exported in your
+  shell), so secrets stay out of `mcp.json`. Reload re-reads `mcp.json` only: a
+  changed variable needs a restart. Names may use letters, digits, `-` and `_`.
 
 Servers are only set up here, never from the web app. Their tools are offered
 as `<server>__<tool>` and run without asking first, so add only servers you
@@ -165,7 +197,9 @@ pnpm build
 pnpm start
 ```
 
-Then open http://127.0.0.1:3000.
+Then open http://127.0.0.1:3000. With `chibot` linked (see [Setup](#setup)),
+`chibot` does the same from any folder, and `chibot --port 8080` picks another
+port.
 
 **As an app:** chibot has a web manifest and icons, so a browser can install
 it (Chrome and Edge: the install button in the address bar; Safari: Share →
@@ -272,8 +306,7 @@ needs the server running: there is no offline mode, since the server is local.
     64,000 tokens; earlier messages are summarized and a divider marks the
     spot).
   - *Tools:* switch each tool on or off, grouped (the web, images, your chats
-    and files), each saying what it does and what leaves this machine. Tools that aren't set up are listed greyed out, with what to set
-    in `.env`. Below, **Reload** re-reads `mcp.json`, then each MCP server: a
+    and files), each saying what it does and what leaves this machine. Tools that aren't set up are listed greyed out, with what to set. Below, **Reload** re-reads `mcp.json`, then each MCP server: a
     switch (off stops it), its status or error, **Reconnect**, **Sign in** /
     **Sign out**, **Ask before using its tools**, and a switch per tool.
   - *Data:* import a chat from a JSON export, and archived chats to restore or

@@ -17,7 +17,7 @@ const RELOAD_TOOLS = [
 export function useSettings() {
   const [settings, setSettings] = useState<Settings | null>(null)
   const [defaults, setDefaults] = useState<Settings | null>(null)
-  // Which of the other services have a server and key in .env.
+  // Which of the other services have a server and key in chibot's config.
   const [endpoints, setEndpoints] = useState<Record<ServiceModel, boolean>>({
     imageModel: false,
     embeddingModel: false,

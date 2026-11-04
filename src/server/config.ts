@@ -1,20 +1,18 @@
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
 import type { ChatModel } from 'openai/resources/shared'
+import { locations, ROOT } from './locations.ts'
 import { z } from 'zod'
 
-/** The repo root, found from this file, so `chibot` works from any folder. */
-const ROOT = join(import.meta.dirname, '../..')
-
 /**
- * Loads `.env` from the current folder, then from the repo. Neither
- * overrides a variable that's already set, so the real environment wins,
- * then the current folder's file, then the repo's.
+ * Loads the repo's `.env`, which older versions used for all settings; it is
+ * still read, below the real environment, until `chibot init` has moved its
+ * values into `config.json`. The current folder's `.env` is not read: a global
+ * command would otherwise take whatever keys the folder it runs in happens to
+ * hold, and a hostile folder could point it at its own server.
  *
  * @returns the files that were found and loaded
  */
-export function loadEnvFiles(
-  paths = [resolve('.env'), join(ROOT, '.env')],
-): string[] {
+export function loadEnvFiles(paths = [join(ROOT, '.env')]): string[] {
   const loaded: string[] = []
   for (const path of new Set(paths)) {
     try {
@@ -78,6 +76,7 @@ const envSchema = z
           .min(1, 'must be in 1-65535')
           .max(65535, 'must be in 1-65535'),
       ),
+    CHIBOT_CONFIG_DIR: optional,
     CHIBOT_DATA_DIR: optional,
     // Required to use chibot (once per browser), e.g. when HOST exposes it.
     CHIBOT_MCP_CONFIG: optional,
@@ -91,7 +90,7 @@ const envSchema = z
       ctx.addIssue({
         code: 'custom',
         path: ['OPENAI_API_KEY'],
-        message: 'is not set (add it to .env)',
+        message: 'is not set (run `chibot init`, or set it in the environment)',
       })
     }
     if (!env.OPENAI_MODEL && env.OPENAI_BASE_URL) {
@@ -116,12 +115,16 @@ export class Config {
   readonly braveApiKey: string | null
   readonly host: string
   readonly port: number
+  /** Holds `config.json` and `mcp.json`. */
+  readonly configDir: string
   /** Holds the database and stored files. */
   readonly dataDir: string
   /** Required to use chibot, or `null`: no login. */
   readonly token: string | null
   /** MCP servers' config file (`mcp.json`); it may not exist. */
   readonly mcpConfigPath: string
+  /** Notes for the startup message: older locations still in use. */
+  readonly legacyNotes: string[]
 
   constructor(env: NodeJS.ProcessEnv) {
     const parsed = envSchema.safeParse(env)
@@ -157,13 +160,12 @@ export class Config {
     this.braveApiKey = e.BRAVE_API_KEY ?? null
     this.host = e.HOST
     this.port = e.PORT
-    this.dataDir = e.CHIBOT_DATA_DIR
-      ? resolve(e.CHIBOT_DATA_DIR)
-      : join(ROOT, 'data')
+    const where = locations(e)
+    this.configDir = where.configDir
+    this.dataDir = where.dataDir
+    this.mcpConfigPath = where.mcpConfigPath
+    this.legacyNotes = where.legacy
     this.token = e.CHIBOT_TOKEN ?? null
-    this.mcpConfigPath = e.CHIBOT_MCP_CONFIG
-      ? resolve(e.CHIBOT_MCP_CONFIG)
-      : join(ROOT, 'mcp.json')
   }
 
   get databasePath(): string {

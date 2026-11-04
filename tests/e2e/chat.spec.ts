@@ -615,12 +615,15 @@ for (const motion of ['no-preference', 'reduce'] as const) {
     const fromBottom = () =>
       list.evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight)
 
-    // Long enough to scroll, and following it.
-    await expect
-      .poll(() => list.evaluate((el) => el.scrollHeight - el.clientHeight), {
-        timeout: 15_000,
-      })
-      .toBeGreaterThan(100)
+    // Long enough to scroll (judged by the words that have arrived: an offscreen
+    // turn is given an estimated height at first, which can look like overflow
+    // for a moment), and following it.
+    await expect(page.locator('.message.assistant')).toContainText('word70', {
+      timeout: 15_000,
+    })
+    expect(
+      await list.evaluate((el) => el.scrollHeight - el.clientHeight),
+    ).toBeGreaterThan(100)
     await expect.poll(fromBottom).toBeLessThan(40)
 
     // As a person does it: the wheel, whose scroll the page sees as the user's.

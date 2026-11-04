@@ -152,13 +152,13 @@ describe('image tools', () => {
     // No images endpoint (e.g. Ollama since 0.32.6): say so, and where to
     // point images instead.
     await expect(run(notFound)).rejects.toThrow(
-      /^the image service at http:\/\/localhost:11434\/v1 \(model img-1\) failed: .*404 page not found\. This server has no images endpoint .*Ollama removed image generation in 0\.32\.6.*OPENAI_IMAGE_BASE_URL=https:\/\/api\.openai\.com\/v1/,
+      /^the image service at http:\/\/localhost:11434\/v1 \(model img-1\) failed: .*404 page not found\. This server has no images endpoint .*Ollama removed image generation in 0\.32\.6.*chibot config set image\.baseURL https:\/\/api\.openai\.com\/v1/,
     )
     const unreachable = new OpenAI.APIConnectionError({
       message: 'Connection error.',
     })
     await expect(run(unreachable)).rejects.toThrow(
-      /Connection error\. Images need an image model .*image model in Settings → Other models and OPENAI_IMAGE_BASE_URL/,
+      /Connection error\. Images need an image model .*image model in Settings → Other models and image\.baseURL/,
     )
     const refused = new OpenAI.BadRequestError(
       400,

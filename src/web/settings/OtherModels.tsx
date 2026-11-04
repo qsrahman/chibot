@@ -5,13 +5,14 @@ import type { SettingsApi } from './useSettings.ts'
 import { Row, Section } from './parts.tsx'
 
 // The chat model is picked above the chat; these are the models behind
-// features, on the servers named in .env (their addresses and keys stay there).
+// features, on the servers named in chibot's config (their addresses and keys stay there).
 const SERVICES: {
   setting: ServiceModel
   section: string
   label: string
   description: string
-  env: string
+  /** What to set (with `chibot config set`) for it to have a server. */
+  configure: string
   example: string
 }[] = [
   {
@@ -19,7 +20,7 @@ const SERVICES: {
     section: 'Images',
     label: 'Image model',
     description: 'Creates and edits images. Empty turns image tools off.',
-    env: 'OPENAI_IMAGE_BASE_URL or OPENAI_API_KEY',
+    configure: 'image.baseURL or image.apiKey',
     example: 'gpt-image-2',
   },
   {
@@ -28,7 +29,7 @@ const SERVICES: {
     label: 'Embedding model',
     description:
       'Finds project files by meaning. Empty searches by keywords only; changing it indexes the files again.',
-    env: 'OPENAI_EMBEDDING_BASE_URL or OPENAI_API_KEY',
+    configure: 'embedding.baseURL or embedding.apiKey',
     example: 'text-embedding-3-small',
   },
   {
@@ -36,7 +37,7 @@ const SERVICES: {
     section: 'Voice input',
     label: 'Transcription model',
     description: 'Turns a recording into text. Empty turns the microphone off.',
-    env: 'OPENAI_TRANSCRIBE_BASE_URL or OPENAI_API_KEY',
+    configure: 'transcription.baseURL or transcription.apiKey',
     example: 'gpt-transcribe',
   },
 ]
@@ -74,7 +75,7 @@ function ModelRow({
   setting,
   label,
   description,
-  env,
+  configure,
   example,
   value,
   fallback,
@@ -82,7 +83,7 @@ function ModelRow({
   onSave,
 }: (typeof SERVICES)[number] & {
   value: string
-  /** What `.env` gives (or the built-in default); `''` for none. */
+  /** What the config gives (or the built-in default); `''` for none. */
   fallback: string
   connected: boolean
   onSave: (value: string) => Promise<boolean>
@@ -106,7 +107,9 @@ function ModelRow({
     <Row
       label={label}
       description={
-        connected ? description : `Needs ${env} in .env, then restart chibot.`
+        connected
+          ? description
+          : `Needs ${configure}: run chibot config set, then restart chibot.`
       }
       htmlFor={id}
       unavailable={!connected}

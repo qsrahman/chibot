@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -54,13 +54,15 @@ describe('Config', () => {
     expect(config.isLoopback).toBe(false)
   })
 
-  it('resolves the data directory', () => {
-    const fromRepo = new Config({ OPENAI_API_KEY: 'k' })
-    expect(fromRepo.dataDir).toMatch(/chibot\/data$/)
-    expect(fromRepo.databasePath).toBe(`${fromRepo.dataDir}/chibot.db`)
-
-    const custom = new Config({ OPENAI_API_KEY: 'k', CHIBOT_DATA_DIR: 'x/y' })
+  it('resolves the folders (see locations.test.ts for the defaults)', () => {
+    const custom = new Config({
+      OPENAI_API_KEY: 'k',
+      CHIBOT_DATA_DIR: 'x/y',
+      CHIBOT_CONFIG_DIR: 'x/c',
+    })
     expect(custom.dataDir).toBe(`${process.cwd()}/x/y`)
+    expect(custom.databasePath).toBe(`${process.cwd()}/x/y/chibot.db`)
+    expect(custom.configDir).toBe(`${process.cwd()}/x/c`)
   })
 
   it('inherits the chat endpoint for images', () => {
@@ -180,38 +182,42 @@ describe('Config', () => {
 })
 
 describe('loadEnvFiles', () => {
-  const names = ['CHIBOT_T_REAL', 'CHIBOT_T_CWD', 'CHIBOT_T_REPO']
+  const names = ['CHIBOT_T_REAL', 'CHIBOT_T_REPO']
   let dir: string
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), 'chibot-env-'))
-    mkdirSync(join(dir, 'cwd'))
-    mkdirSync(join(dir, 'repo'))
   })
   afterEach(() => {
     names.forEach((n) => delete process.env[n])
     rmSync(dir, { recursive: true })
   })
 
-  it('prefers the real environment, then the first file, then the second', () => {
+  it('keeps the real environment over the file', () => {
     process.env.CHIBOT_T_REAL = 'real'
-    writeFileSync(
-      join(dir, 'cwd', '.env'),
-      'CHIBOT_T_REAL=cwd\nCHIBOT_T_CWD=cwd\n',
-    )
-    writeFileSync(
-      join(dir, 'repo', '.env'),
-      'CHIBOT_T_REAL=repo\nCHIBOT_T_CWD=repo\nCHIBOT_T_REPO=repo\n',
-    )
-    const files = [join(dir, 'cwd', '.env'), join(dir, 'repo', '.env')]
-
-    expect(loadEnvFiles(files)).toEqual(files)
-    expect(names.map((n) => process.env[n])).toEqual(['real', 'cwd', 'repo'])
+    const file = join(dir, '.env')
+    writeFileSync(file, 'CHIBOT_T_REAL=file\nCHIBOT_T_REPO=file\n')
+    expect(loadEnvFiles([file])).toEqual([file])
+    expect(names.map((n) => process.env[n])).toEqual(['real', 'file'])
   })
 
-  it('skips missing files and loads a duplicate path once', () => {
-    writeFileSync(join(dir, 'repo', '.env'), 'CHIBOT_T_REPO=repo\n')
-    const repo = join(dir, 'repo', '.env')
-    expect(loadEnvFiles([join(dir, 'cwd', '.env'), repo, repo])).toEqual([repo])
-    expect(process.env.CHIBOT_T_REPO).toBe('repo')
+  it('skips a missing file, and loads a duplicate path once', () => {
+    const file = join(dir, '.env')
+    writeFileSync(file, 'CHIBOT_T_REPO=file\n')
+    expect(loadEnvFiles([join(dir, 'none', '.env'), file, file])).toEqual([
+      file,
+    ])
+  })
+
+  it('does not read the current folder’s .env', () => {
+    // A global command runs in any folder; that folder's file is not its settings.
+    const before = process.cwd()
+    writeFileSync(join(dir, '.env'), 'CHIBOT_T_REPO=from-the-folder\n')
+    process.chdir(dir)
+    try {
+      loadEnvFiles()
+    } finally {
+      process.chdir(before)
+    }
+    expect(process.env.CHIBOT_T_REPO).toBeUndefined()
   })
 })

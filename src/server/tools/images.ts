@@ -23,8 +23,7 @@ const FORMATS: Record<string, { extension: string; mime: string }> = {
 }
 const DEFAULT_FORMAT = FORMATS.png!
 
-const SETUP =
-  'Needs an image server or key (OPENAI_IMAGE_BASE_URL or OPENAI_API_KEY) in .env'
+const SETUP = 'Needs an API key or server: run `chibot init`'
 const NO_MODEL = 'Choose an image model in Settings → Other models'
 
 /** Why the tools can't run, or `null`. */
@@ -185,13 +184,14 @@ async function fromImageService<T>(
       err instanceof OpenAI.NotFoundError
         ? '. This server has no images endpoint (e.g. Ollama removed image ' +
           'generation in 0.32.6), or doesn’t know this model: tell the user ' +
-          'to set OPENAI_IMAGE_BASE_URL=https://api.openai.com/v1 and ' +
-          'OPENAI_IMAGE_API_KEY in .env, and an image model such as ' +
-          'gpt-image-2 in Settings → Other models.'
+          'to run `chibot config set image.baseURL https://api.openai.com/v1` ' +
+          'and `chibot config set image.apiKey <key>`, and choose an image ' +
+          'model such as gpt-image-2 in Settings → Other models.'
         : err instanceof OpenAI.APIConnectionError
           ? '. Images need an image model (e.g. gpt-image-2) on a server ' +
             'that makes images: tell the user to check the image model in ' +
-            'Settings → Other models and OPENAI_IMAGE_BASE_URL in .env.'
+            'Settings → Other models and image.baseURL (`chibot config path` ' +
+            'shows where the settings are).'
           : ''
     throw new Error(
       `the image service at ${client.baseURL} (model ${model}) failed: ` +

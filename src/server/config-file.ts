@@ -1,0 +1,204 @@
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs'
+import { join } from 'node:path'
+import { z } from 'zod'
+
+// `config.json`: the settings that used to live in `.env`, kept in chibot's
+// config folder with mode 0600. It holds secrets, so it never goes into the
+// database, an export or an API response (PLAN.md §6). Real environment
+// variables still win over it, so a deployment can override a value.
+
+const text = z.string().trim().min(1)
+const endpoint = z
+  .object({
+    baseURL: text.optional(),
+    apiKey: text.optional(),
+    model: text.optional(),
+  })
+  .strict()
+
+export const configFileSchema = z
+  .object({
+    /** Chat; also what the other features use for what they don't set. */
+    chat: endpoint.optional(),
+    image: endpoint.optional(),
+    embedding: endpoint.optional(),
+    transcription: endpoint.optional(),
+    /** Enables the web search tool. */
+    braveApiKey: text.optional(),
+    server: z
+      .object({
+        host: text.optional(),
+        port: z.number().int().min(1).max(65535).optional(),
+      })
+      .strict()
+      .optional(),
+    /** Required to use chibot (once per browser). */
+    token: text.optional(),
+  })
+  .strict()
+
+export type ConfigFile = z.infer<typeof configFileSchema>
+
+export const CONFIG_FILE = 'config.json'
+
+/** Each setting's place in the file, and the environment variable that overrides it. */
+const SETTINGS: [path: string, variable: string][] = [
+  ['chat.baseURL', 'OPENAI_BASE_URL'],
+  ['chat.apiKey', 'OPENAI_API_KEY'],
+  ['chat.model', 'OPENAI_MODEL'],
+  ['image.baseURL', 'OPENAI_IMAGE_BASE_URL'],
+  ['image.apiKey', 'OPENAI_IMAGE_API_KEY'],
+  ['image.model', 'OPENAI_IMAGE_MODEL'],
+  ['embedding.baseURL', 'OPENAI_EMBEDDING_BASE_URL'],
+  ['embedding.apiKey', 'OPENAI_EMBEDDING_API_KEY'],
+  ['embedding.model', 'OPENAI_EMBEDDING_MODEL'],
+  ['transcription.baseURL', 'OPENAI_TRANSCRIBE_BASE_URL'],
+  ['transcription.apiKey', 'OPENAI_TRANSCRIBE_API_KEY'],
+  ['transcription.model', 'OPENAI_TRANSCRIBE_MODEL'],
+  ['braveApiKey', 'BRAVE_API_KEY'],
+  ['server.host', 'HOST'],
+  ['server.port', 'PORT'],
+  ['token', 'CHIBOT_TOKEN'],
+]
+
+/** What is secret: shown as "set", never printed. */
+const SECRETS = /(^|\.)(apiKey|braveApiKey|token)$/
+
+function get(object: unknown, path: string): unknown {
+  return path
+    .split('.')
+    .reduce<unknown>(
+      (value, key) => (value as Record<string, unknown> | undefined)?.[key],
+      object,
+    )
+}
+
+/** The file as environment variables, which `Config` reads. */
+export function toEnv(file: ConfigFile): Record<string, string> {
+  const env: Record<string, string> = {}
+  for (const [path, variable] of SETTINGS) {
+    const value = get(file, path)
+    if (value !== undefined) env[variable] = String(value)
+  }
+  return env
+}
+
+/** The environment variables set in `env`, as a file (to import a `.env`). */
+export function fromEnv(env: Record<string, string | undefined>): ConfigFile {
+  const file: Record<string, unknown> = {}
+  for (const [path, variable] of SETTINGS) {
+    const value = env[variable]?.trim()
+    if (!value) continue
+    setPath(file, path, path === 'server.port' ? Number(value) : value)
+  }
+  return configFileSchema.parse(file)
+}
+
+function setPath(
+  object: Record<string, unknown>,
+  path: string,
+  value: unknown,
+) {
+  const keys = path.split('.')
+  const last = keys.pop()!
+  let at = object
+  for (const key of keys) {
+    at = (at[key] ??= {}) as Record<string, unknown>
+  }
+  at[last] = value
+}
+
+/** Read from `dir`; `exists` is false (and the file empty) when there is none. */
+export function readConfigFile(dir: string): {
+  file: ConfigFile
+  path: string
+  exists: boolean
+  /** Readable by others (POSIX), which it shouldn't be. */
+  tooOpen: boolean
+} {
+  const path = join(dir, CONFIG_FILE)
+  if (!existsSync(path))
+    return { file: {}, path, exists: false, tooOpen: false }
+  let json: unknown
+  try {
+    json = JSON.parse(readFileSync(path, 'utf8'))
+  } catch (err) {
+    throw new Error(`${path} isn't valid JSON: ${(err as Error).message}`)
+  }
+  const parsed = configFileSchema.safeParse(json)
+  if (!parsed.success) {
+    throw new Error(`${path} has a problem:\n${z.prettifyError(parsed.error)}`)
+  }
+  const tooOpen =
+    process.platform !== 'win32' && (statSync(path).mode & 0o077) !== 0
+  return { file: parsed.data, path, exists: true, tooOpen }
+}
+
+/** Saves `file` to `dir` readable by the owner only, replacing it whole or not at all. */
+export function writeConfigFile(dir: string, file: ConfigFile): string {
+  mkdirSync(dir, { recursive: true, mode: 0o700 })
+  const path = join(dir, CONFIG_FILE)
+  const temporary = `${path}.${process.pid}.tmp`
+  writeFileSync(temporary, `${JSON.stringify(file, null, 2)}\n`, {
+    mode: 0o600,
+  })
+  chmodSync(temporary, 0o600)
+  renameSync(temporary, path)
+  return path
+}
+
+/**
+ * `file` with the setting at `path` (`chat.model`) changed to `value`; an empty
+ * value removes it. Unknown settings and invalid values throw.
+ */
+export function withSetting(
+  file: ConfigFile,
+  path: string,
+  value: string,
+): ConfigFile {
+  if (!SETTINGS.some(([known]) => known === path)) {
+    throw new Error(
+      `Unknown setting "${path}". Settings: ${SETTINGS.map(([p]) => p).join(', ')}`,
+    )
+  }
+  const next = structuredClone(file) as Record<string, unknown>
+  const keys = path.split('.')
+  const last = keys.pop()!
+  const parents: Record<string, unknown>[] = [next]
+  for (const key of keys) {
+    parents.push((parents.at(-1)![key] ??= {}) as Record<string, unknown>)
+  }
+  const holder = parents.at(-1)!
+  if (value === '') delete holder[last]
+  else holder[last] = path === 'server.port' ? Number(value) : value
+  // Sections left empty go.
+  for (let i = keys.length - 1; i >= 0; i--) {
+    if (Object.keys(parents[i + 1]!).length === 0) delete parents[i]![keys[i]!]
+  }
+  const parsed = configFileSchema.safeParse(next)
+  if (!parsed.success) {
+    throw new Error(
+      `Invalid value for ${path}:\n${z.prettifyError(parsed.error)}`,
+    )
+  }
+  return parsed.data
+}
+
+/** `file` for printing: secrets show as "set". */
+export function redacted(file: ConfigFile): Record<string, unknown> {
+  const out: Record<string, unknown> = {}
+  for (const [path] of SETTINGS) {
+    const value = get(file, path)
+    if (value !== undefined)
+      setPath(out, path, SECRETS.test(path) ? 'set' : value)
+  }
+  return out
+}

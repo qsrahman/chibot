@@ -79,7 +79,7 @@ describe('POST /api/transcriptions', () => {
     const res = await record(app)
     expect(res.status).toBe(502)
     expect(((await res.json()) as { error: string }).error).toMatch(
-      /^Transcription at http:\/\/localhost:11434\/v1 \(model gemma4:cloud\) failed: .*not found\. It needs a transcription model .*model in Settings → Other models and OPENAI_TRANSCRIBE_BASE_URL/,
+      /^Transcription at http:\/\/localhost:11434\/v1 \(model gemma4:cloud\) failed: .*not found\. It needs a transcription model .*model in Settings → Other models and transcription\.baseURL/,
     )
     vi.restoreAllMocks()
   })

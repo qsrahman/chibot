@@ -4,6 +4,17 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- A `chibot` command (`src/server/cli.ts`, which `pnpm start` and `pnpm link -g` run): `chibot` starts it (`--port`, `--host`), `chibot init` asks where the models are and for the key (not echoed) and writes the settings, `chibot config path|show|set` shows where everything is, shows the settings with keys as "set", and changes one (`chibot config set chat.model gpt-6-astra`; an empty value removes it), `--version`, `--help`. `pnpm link -g` after `pnpm build` makes it available from any folder.
+- Settings and keys live in `config.json` (mode 0600, in a folder only you can open), which replaces `.env`. It has the same settings as the variables (`chat.baseURL`, `chat.apiKey`, `chat.model`, `image.*`, `embedding.*`, `transcription.*`, `braveApiKey`, `server.host`, `server.port`, `token`) and is checked strictly, so a misspelt one is an error. Precedence, highest first: flags, real environment variables, `config.json`, defaults. A new `env-paths` dependency gives the platform's folders (settings: `~/Library/Preferences/chibot`, `~/.config/chibot` or `%APPDATA%\chibot\Config`; data: `~/Library/Application Support/chibot`, `~/.local/share/chibot` or `%LOCALAPPDATA%\chibot\Data`), `CHIBOT_CONFIG_DIR` overrides the first.
+
+### Changed
+
+- The data folder and `mcp.json` default to the platform's folders instead of `<repo>/data` and `<repo>/mcp.json`. A checkout that has them, with the new places still empty, keeps using them and says where to move them at startup, so nothing is hidden.
+- The `.env` in the chibot folder is still read (below the environment), with a note at startup to run `chibot init`, which offers to move its values into `config.json`. A `.env` in the folder you run chibot from is no longer read: a command that runs from anywhere would otherwise take whatever keys that folder holds, and a hostile folder could point it at its own server (`OPENAI_BASE_URL`) to collect your key. `.env.example` is gone; the README lists every setting.
+- Messages that told you to set something in `.env` now say what to run (`chibot init`, `chibot config set …`).
+
 ## [0.12.10] - 2026-11-04
 
 ### Added

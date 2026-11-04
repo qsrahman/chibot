@@ -35,7 +35,7 @@ export type McpServerConfig = z.output<typeof localServer | typeof remoteServer>
 
 /**
  * The MCP servers in `path` (none when there's no file), with `${VAR}`
- * filled from `env` so secrets can stay in `.env`.
+ * filled from `env` so secrets stay out of the file.
  *
  * @throws Error saying what's wrong (the server and field)
  */

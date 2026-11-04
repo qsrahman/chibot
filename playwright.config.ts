@@ -54,6 +54,8 @@ export default defineConfig({
         HOST: '127.0.0.1',
         PORT: String(PORT),
         CHIBOT_DATA_DIR: '.e2e-data',
+        // Never the developer's own config.json.
+        CHIBOT_CONFIG_DIR: '.e2e-data/config',
         CHIBOT_TOKEN: '',
         // Never the developer's own mcp.json.
         CHIBOT_MCP_CONFIG: '.e2e-data/mcp.json',

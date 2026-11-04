@@ -64,7 +64,9 @@ export class WebSearchTool extends Tool {
   }
 
   override unavailable() {
-    return this.#apiKey ? null : 'Needs BRAVE_API_KEY in .env'
+    return this.#apiKey
+      ? null
+      : 'Needs a Brave Search key: chibot config set braveApiKey <key>'
   }
 
   async run(

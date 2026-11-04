@@ -8,7 +8,7 @@ export const settingsSchema = z.object({
   /** Chat model for new turns. Defaults to `OPENAI_MODEL`. */
   model: z.string().trim().min(1).max(200),
   /**
-   * The models of the other services, over the endpoints in `.env`: `''`
+   * The models of the other services, over the endpoints in chibot's config: `''`
    * turns the service off (image creation, search by meaning, voice input).
    */
   imageModel: z.string().trim().max(200),
@@ -40,6 +40,6 @@ export type SettingsPatch = z.infer<typeof settingsPatchSchema>
 export interface SettingsResponse {
   settings: Settings
   defaults: Settings
-  /** Which of the other services have a server and key in `.env`; without one a model does nothing. */
+  /** Which of the other services have a server and key in the config; without one a model does nothing. */
   endpoints: Record<ServiceModel, boolean>
 }

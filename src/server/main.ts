@@ -13,6 +13,8 @@ import { ChatService } from './chat/index.ts'
 import { ModelRequests } from './chat/index.ts'
 import { TitleWriter } from './chat/index.ts'
 import { Config, loadEnvFiles } from './config.ts'
+import { readConfigFile, toEnv } from './config-file.ts'
+import { locations } from './locations.ts'
 import { InstructionWriter } from './projects/index.ts'
 import { ConversationSearch } from './conversations/index.ts'
 import { ConversationStore } from './conversations/index.ts'
@@ -87,10 +89,28 @@ export function defaultTools({
  */
 export function start({
   tools = defaultTools,
-}: { tools?: (deps: ToolDeps) => Tool[] } = {}) {
-  loadEnvFiles()
-
-  const config = new Config(process.env)
+  env = {},
+}: {
+  tools?: (deps: ToolDeps) => Tool[]
+  /** Settings beating the environment and `config.json` (command-line flags). */
+  env?: Record<string, string>
+} = {}) {
+  const legacyEnv = loadEnvFiles()
+  // Lowest first: config.json, then the environment, then the flags.
+  const read = readConfigFile(locations({ ...process.env, ...env }).configDir)
+  const config = new Config({ ...toEnv(read.file), ...process.env, ...env })
+  if (read.exists) console.log(`Settings: ${read.path}`)
+  if (read.tooOpen) {
+    console.warn(
+      `Warning: ${read.path} holds keys and others can read it. Run: chmod 600 "${read.path}"`,
+    )
+  }
+  for (const path of legacyEnv) {
+    console.warn(
+      `Note: reading ${path}, which is no longer the place for settings. Run \`chibot init\` to move them into ${read.path}, then delete it.`,
+    )
+  }
+  config.legacyNotes.forEach((note) => console.warn(`Note: ${note}`))
   mkdirSync(config.dataDir, { recursive: true })
   const db = openDatabase(config.databasePath)
   const store = new ConversationStore(db)
@@ -231,5 +251,3 @@ export function serveWebApp(app: Hono, root: string): void {
   app.use('/*', serveStatic({ root }))
   app.get('*', serveStatic({ root, path: 'index.html' }))
 }
-
-if (import.meta.main) start()

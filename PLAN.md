@@ -123,8 +123,8 @@ Browser (React + Vite)                        Node server (Hono)
                                    OpenAI or compatible Responses API
 ```
 
-- **Config:** reads `.env` with `process.loadEnvFile`, validates it and exposes
-  typed settings, including one `Endpoint` (base URL, key, model) per
+- **Config:** takes the environment (merged over `config.json`, see §6),
+  validates it and exposes typed settings, including one `Endpoint` (base URL, key, model) per
   feature. `main.ts` builds an `OpenAI` client for each distinct endpoint. The
   SDK client already is the provider abstraction, so there's no `Provider`
   class.
@@ -832,7 +832,7 @@ Configuration lives in three layers, split by who changes it and how often:
 
 | Layer | Holds | Where | Changed by |
 |---|---|---|---|
-| Startup & secrets | API keys, base URLs, `HOST`/`PORT`, data dir | Environment / `.env` | Owner, then restart |
+| Startup & secrets | API keys, base URLs, `HOST`/`PORT`, data dir | `config.json` (mode 0600) in the platform's config folder, overridden by the environment | Owner (`chibot init`, `chibot config set`), then restart |
 | User preferences | Chat model, custom instructions, reasoning effort, tool switches (memory's is the memory on/off) | SQLite `settings` table (`SettingsStore`, Phase 4) | Settings dialog, live |
 | Browser preferences | Theme, sidebar collapsed, unsent message drafts (text) | `localStorage` | The UI, per browser |
 
@@ -842,8 +842,23 @@ Configuration lives in three layers, split by who changes it and how often:
   responses. (MCP servers live in `mcp.json`, with `${VAR}` from the
   environment, and their OAuth tokens in `data/mcp-auth.json`, mode 0600.)
   Settings shows only whether a key is configured.
-- **`.env` lookup:** real environment variables win, then `.env` in the current
-  folder, then `<repo>/.env`, so `chibot` works from any folder.
+- **Where things are:** the platform's folders (`env-paths`): settings
+  (`config.json`, `mcp.json`) in the config folder, the database, files and MCP
+  tokens in the data folder (`CHIBOT_CONFIG_DIR` / `CHIBOT_DATA_DIR` override).
+  A checkout's `<repo>/data` and `<repo>/mcp.json` stay in use while the
+  standard places are empty (`locations()`), so upgrading hides no chats.
+- **Lookup, highest first:** command-line flags, real environment variables,
+  `config.json`, defaults. `config.json` has the same settings as the
+  variables, grouped (`chat.model` is `OPENAI_MODEL`: `SETTINGS` in
+  `config-file.ts` maps each both ways), and is validated strictly, so a typo
+  is an error. The old `<repo>/.env` is still read below the environment, with a
+  note to run `chibot init`, which offers to import it. The current folder's
+  `.env` is never read: a command that runs anywhere must not take another
+  project's keys, or a hostile folder's `OPENAI_BASE_URL`.
+- **Installing:** `pnpm link -g` runs `src/server/cli.ts` from the checkout, so
+  Node still strips the types (it refuses to under `node_modules`, which rules
+  out a registry package without a build step); `pnpm build` first builds the
+  web app.
 - **Validation:** zod from Phase 4 (settings, imports, route bodies). `Config`
   moves to it in Phase 6, when the first per-feature endpoint (images)
   arrives.

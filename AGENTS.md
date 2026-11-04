@@ -6,7 +6,9 @@ How a message becomes an answer lives in [TURN.md](TURN.md).
 
 ## Stack
 
-- **Node ≥ 26** runs the server's TypeScript directly, with no build step.
+- **Node ≥ 26** runs the server's TypeScript directly, with no build step
+  (which also means it can't be installed from a registry: Node won't strip
+  types under `node_modules`; `pnpm link -g` runs it from the checkout).
 - **pnpm** (version pinned in `package.json` → `devEngines`).
 - **Server:** Hono + `@hono/node-server`, `openai` SDK, `node:sqlite`.
 - **Web:** React 19 + Vite (`src/web`), built to `dist/web`.
@@ -16,7 +18,10 @@ How a message becomes an answer lives in [TURN.md](TURN.md).
 ## Layout
 
 ```
-src/server/   main.ts (start(): wiring + listen, defaultTools()), app.ts (Hono
+src/server/   cli.ts (the `chibot` command: start, init, config), main.ts
+              (start(): wiring + listen, defaultTools()), config.ts (env →
+              typed settings), config-file.ts (config.json), locations.ts
+              (where files live), init.ts (the setup prompts), app.ts (Hono
               app: access checks, health, mounts routes/*.ts, one file per
               area, each `xRoutes({ …what it uses })` returning a Hono app),
               database.ts (one SQLite connection + the ordered migrations),
@@ -51,9 +56,10 @@ tests/e2e/    Playwright specs (*.spec.ts), fake-openai.ts, and server.ts
               127.0.0.1, a test-only tool that needs approval, and the MCP
               fixtures as `fixture` and `tracker`)
 scripts/      release.ts (`pnpm release`)
-data/         local SQLite database (with sqlite-vec loaded), files/ and
-              mcp-auth.json (MCP servers' OAuth tokens, mode 0600)
-              (git-ignored)
+data/         a checkout's older local data (git-ignored); chibot now keeps the
+              SQLite database (with sqlite-vec loaded), files/ and
+              mcp-auth.json (MCP servers' OAuth tokens, mode 0600) in the
+              platform's data folder (`chibot config path`)
 ```
 
 ## Commands
@@ -66,7 +72,8 @@ pnpm typecheck    # server/tests, web and e2e tsconfigs
 pnpm deps         # import rules (dependency-cruiser; also part of pnpm test)
 pnpm format       # prettier --write
 pnpm build        # build the web app into dist/web
-pnpm start        # production: serves the API and dist/web
+pnpm start        # production: serves the API and dist/web (= `chibot`)
+pnpm link -g      # puts `chibot` on your PATH (run `pnpm build` first)
 pnpm release      # patch|minor|major|X.Y.Z: bump, CHANGELOG, checks, commit
 ```
 
@@ -149,10 +156,13 @@ transpiles it.
   the image, embedding and transcription models start from `Config`; the user
   changes them in Settings, so code reads the setting when it runs, through a
   `() => string`, and treats `''` as the feature being off).
-- **Configuration layers** (PLAN.md §6): secrets and startup settings in the
-  environment / `.env` (via `Config`), MCP servers in `mcp.json`
-  (`loadMcpConfig`, with `${VAR}` from the environment) and their OAuth
-  tokens in `data/mcp-auth.json` (`McpAuthStore`), user preferences in SQLite
+- **Configuration layers** (PLAN.md §6): secrets and startup settings in
+  `config.json` (`config-file.ts`, mode 0600) under the environment (via
+  `Config`; flags beat the environment, which beats the file), MCP servers in
+  `mcp.json` (`loadMcpConfig`, with `${VAR}` from the environment) and their
+  OAuth tokens in `mcp-auth.json` in the data folder (`McpAuthStore`); where
+  these folders are comes from `locations()`, never from `ROOT` directly. User
+  preferences in SQLite
   (`SettingsStore`, Phase 4), and browser preferences in `localStorage`. Never
   put secrets in SQLite, `localStorage` or API responses.
 - **Provider-agnostic.** chibot talks to OpenAI or any OpenAI-compatible
