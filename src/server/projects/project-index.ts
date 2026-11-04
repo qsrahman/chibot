@@ -11,13 +11,13 @@ import {
   chunkText,
 } from './chunking.ts'
 import { documentText } from '../text.ts'
+import { fuse, type Hit } from './fusion.ts'
 
 // About 1,500 chunks: plenty for notes and documents, bounded for embedding.
 const MAX_TEXT = 5_000_000
 const EMBED_BATCH = 64
 // Hits taken from each search before merging, and the usual RRF constant.
 const CANDIDATES = 30
-const RRF_K = 60
 // Passages a search returns unless asked for more or fewer, and the most it
 // may return (each is about 3,200 characters of the model's context).
 export const DEFAULT_RESULTS = 6
@@ -207,8 +207,8 @@ export class ProjectIndex {
 
   /**
    * The project's chunks best matching `query`: keyword hits (any word, see
-   * `anyWordQuery`) and, with embeddings, the nearest by meaning, merged by
-   * reciprocal rank fusion, so a chunk ranked well by both comes first.
+   * `anyWordQuery`) and, with embeddings, the nearest by meaning, merged
+   * (see `fuse`) so a chunk ranked well by both comes first.
    */
   async search(
     projectId: string,
@@ -219,46 +219,75 @@ export class ProjectIndex {
       limit = DEFAULT_RESULTS,
     }: { signal?: AbortSignal; fileId?: string; limit?: number } = {},
   ): Promise<Passage[]> {
+    const { keyword, meaning } = await this.candidates(projectId, query, {
+      signal,
+      fileId,
+    })
+    return this.passages(
+      fuse(keyword, meaning).slice(
+        0,
+        Math.min(Math.max(limit, 1), MAX_RESULTS),
+      ),
+    )
+  }
+
+  /**
+   * What each search found for `query`, best first: the keyword hits, and the
+   * chunks nearest in meaning (`null` without embeddings, or if embedding the
+   * query failed).
+   */
+  async candidates(
+    projectId: string,
+    query: string,
+    { signal, fileId }: { signal?: AbortSignal; fileId?: string } = {},
+  ): Promise<{ keyword: Hit[]; meaning: Hit[] | null }> {
     // Only this file's chunks, when the search is limited to one.
     const only = fileId ? this.#chunkIds(fileId) : null
-    const lists = [this.#keywordHits(projectId, query, fileId)]
+    const keyword = this.#keywordHits(projectId, query, fileId)
     if (
-      this.#embedding &&
-      this.#vectorInfo()?.model === this.#embedding.model
+      !this.#embedding ||
+      this.#vectorInfo()?.model !== this.#embedding.model
     ) {
-      try {
-        const [vector] = await this.#vectors([query], signal)
-        const nearest = this.#db
-          .prepare(
-            // The ids are our own integers, so listing them is safe.
-            `SELECT rowid AS id FROM chunk_vectors
-              WHERE embedding MATCH ? AND k = ? AND project_id = ?
-                ${only ? `AND rowid IN (${only.join(',') || 'NULL'})` : ''}
-              ORDER BY distance`,
-          )
-          .all(vector!, CANDIDATES, projectId) as { id: number }[]
-        lists.push(nearest.map(({ id }) => id))
-      } catch (err) {
-        // A stop ends the call; any other failure still has the keyword hits.
-        if (signal?.aborted) throw err
-        console.error('Embedding the search failed:', err)
+      return { keyword, meaning: null }
+    }
+    try {
+      const [vector] = await this.#vectors([query], signal)
+      const nearest = this.#db
+        .prepare(
+          // The ids are our own integers, so listing them is safe.
+          `SELECT rowid AS id, distance FROM chunk_vectors
+            WHERE embedding MATCH ? AND k = ? AND project_id = ?
+              ${only ? `AND rowid IN (${only.join(',') || 'NULL'})` : ''}
+            ORDER BY distance`,
+        )
+        .all(vector!, CANDIDATES, projectId) as {
+        id: number
+        distance: number
+      }[]
+      // Cosine distance, so 1 - distance is how alike they are.
+      return {
+        keyword,
+        meaning: nearest.map(({ id, distance }) => ({
+          id,
+          score: 1 - distance,
+        })),
       }
+    } catch (err) {
+      // A stop ends the call; any other failure still has the keyword hits.
+      if (signal?.aborted) throw err
+      console.error('Embedding the search failed:', err)
+      return { keyword, meaning: null }
     }
-    const scores = new Map<number, number>()
-    for (const ids of lists) {
-      ids.forEach((id, rank) =>
-        scores.set(id, (scores.get(id) ?? 0) + 1 / (RRF_K + rank + 1)),
-      )
-    }
+  }
+
+  /** The chunks `ids`, in that order, with where they are in their files. */
+  passages(ids: number[]): Passage[] {
     const get = this.#db.prepare(
       `SELECT c.file_id AS fileId, f.name, c.text, c.position + 1 AS part, c.page,
               (SELECT count(*) FROM chunks WHERE file_id = c.file_id) AS parts
          FROM chunks c JOIN files f ON f.id = c.file_id WHERE c.id = ?`,
     )
-    return [...scores]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, Math.min(Math.max(limit, 1), MAX_RESULTS))
-      .map(([id]) => get.get(id) as unknown as Passage)
+    return ids.map((id) => get.get(id) as unknown as Passage)
   }
 
   /**
@@ -303,12 +332,12 @@ export class ProjectIndex {
     return rows.map(({ name, text }) => ({ name, text: text.slice(0, length) }))
   }
 
-  #keywordHits(projectId: string, query: string, fileId?: string): number[] {
+  #keywordHits(projectId: string, query: string, fileId?: string): Hit[] {
     const match = anyWordQuery(query)
     if (!match) return []
     const rows = this.#db
       .prepare(
-        `SELECT c.id FROM chunks_fts
+        `SELECT c.id, chunks_fts.rank AS rank FROM chunks_fts
            JOIN chunks c ON c.id = chunks_fts.rowid
            JOIN project_files p ON p.file_id = c.file_id
           WHERE chunks_fts MATCH $match AND p.project_id = $projectId
@@ -321,8 +350,9 @@ export class ProjectIndex {
         projectId,
         fileId: fileId ?? null,
         limit: CANDIDATES,
-      }) as { id: number }[]
-    return rows.map(({ id }) => id)
+      }) as { id: number; rank: number }[]
+    // FTS5's rank is BM25 with the sign flipped: the lower, the better.
+    return rows.map(({ id, rank }) => ({ id, score: -rank }))
   }
 
   #chunkIds(fileId: string): number[] {

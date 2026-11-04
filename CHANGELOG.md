@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- Code only: project search is `candidates()` (the keyword hits and those nearest in meaning, each with its score), `fuse()` (`projects/fusion.ts`, reciprocal rank fusion, a pure function with tests) and `passages()`, so ways of merging them can be compared; behavior is unchanged (the opt-in retrieval scores are identical).
 - Dependencies updated within their ranges: `vitest` 5.1.0, `lucide-react` 1.67.0, `@vitejs/plugin-react` 6.2.1 and `@hono/node-server` 2.1.6 (no other package is behind; `pnpm audit --prod` is clean).
 
 ## [0.12.6] - 2026-11-04
