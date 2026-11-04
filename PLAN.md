@@ -368,7 +368,7 @@ and a model without tool support ignores tools rather than failing.
   running, then a collapsed "Searched the web" disclosure with arguments and
   result (like Thoughts). A pending approval shows the tool, its arguments and
   Approve / Deny. A turn ends at a final answer, stop, error or pending
-  approval, not at the first `response.completed`; `turns.ts` groups every item
+  approval, not at the first `response.completed`; `chat/turns.ts` groups every item
   after the question into one answer.
 - **Current date.** Not a tool: the chat instructions gain the current date,
   time and timezone (the server's, which is the user's for a local app), so

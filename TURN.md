@@ -26,8 +26,8 @@ Composer.submit
 
 ## 1. The request
 
-`useChat.run` (`src/web/useChat.ts`) posts a `TurnRequest` (`src/shared`,
-`turnRequestSchema`) through `streamTurn` (`api.ts`) and reads the response as
+`useChat.run` (`src/web/chat/useChat.ts`) posts a `TurnRequest` (`src/shared`,
+`turnRequestSchema`) through `streamTurn` (`chat/api.ts`) and reads the response as
 server-sent events. One shape per intent:
 
 | Intent | Body |
@@ -120,7 +120,7 @@ provider's message (`explainApiError` says what a 429 means).
 summary, tool calls and their outputs), shown in place of the turns it
 replaces. On `response.completed` (the answer is saved) or `chibot.approval` it
 re-reads the chat (`getConversation`) and shows it as `toTurns(items)`
-(`turns.ts`), which also finds sources and waiting calls. Then:
+(`chat/turns.ts`), which also finds sources and waiting calls. Then:
 
 - a message queued while the answer streamed is sent (`useQueue`, `drain`);
 - Stop aborts the request, and the server keeps the partial answer;
@@ -137,7 +137,7 @@ re-reads the chat (`getConversation`) and shows it as `toTurns(items)`
 | History shape, versions, usage | `ConversationStore` |
 | What to do when an endpoint rejects a feature or file | `ModelRequests` |
 | How chats are titled | `TitleWriter`, `TITLE_INSTRUCTIONS` |
-| How a turn shows on screen | `useChat.ts`, `turns.ts`, `TurnView.tsx` |
+| How a turn shows on screen | `chat/useChat.ts`, `chat/turns.ts`, `chat/TurnView.tsx` |
 
 To see what chibot sent in a test run, `GET /debug/last-request` on the fake
 OpenAI server (`tests/e2e/fake-openai.ts`); in unit tests, `testChat(...)`

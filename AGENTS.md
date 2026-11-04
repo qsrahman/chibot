@@ -30,10 +30,14 @@ src/shared/   used by both server and web: API record types, chibot's own SSE
               events, message text extraction, zod schemas (requests,
               settings, export) and reasoning efforts (zod-free, so the web
               can import it)
-src/web/      Vite root: index.html, main.tsx, components (TurnView.tsx with
-              ToolCalls, Sources, AnswerImages), api.ts (fetch + SSE), hooks;
-              styles.css imports styles/*.css, one file per area (order
-              matters); settings/ holds one component per Settings tab
+src/web/      Vite root: index.html, main.tsx, App.tsx and the shell
+              (Sidebar, ShortcutsDialog), http.ts (fetch helpers, uploads),
+              and feature folders, each with its components, hooks and its
+              own api.ts: chat/ (ChatPage, Composer, TurnView, useChat, turns),
+              conversations/ (the chat list, search, archive), projects/,
+              settings/ (one component per Settings tab) and ui/ (dialogs,
+              popovers, shared hooks). styles.css imports styles/*.css, one
+              file per area (order matters)
 tests/        mirrors src/ (tests/server/*.test.ts, tests/web/*.test.ts);
               tests/fixtures/ holds small documents (PDF, .docx) and MCP
               servers: mcp-server.ts (stdio) and mcp-oauth-server.ts (HTTP
@@ -56,6 +60,7 @@ pnpm dev          # API server (watch) + Vite dev server, in parallel
 pnpm test         # vitest run
 pnpm test:e2e     # Playwright: builds, starts a fake OpenAI server + chibot
 pnpm typecheck    # server/tests, web and e2e tsconfigs
+pnpm deps         # import rules (dependency-cruiser; also part of pnpm test)
 pnpm format       # prettier --write
 pnpm build        # build the web app into dist/web
 pnpm start        # production: serves the API and dist/web
@@ -102,6 +107,14 @@ transpiles it.
   and never import `app.ts`. The one exception: `database.ts` imports
   `projects/schema.ts` (SQL only) because migrations run in one fixed order.
   Tests mirror the folders (`tests/server/projects/`).
+- **Web features** depend downwards only: `ui/` knows no feature;
+  `conversations/` uses `ui/`; `settings/` and `projects/` use those (and
+  not each other or `chat/`); `chat/` may use all of them; the shell (`App`,
+  `Sidebar`, …) uses any, and no feature imports it. The server and the web app
+  never import each other (only `src/shared`), and there are no import
+  cycles. `pnpm deps` checks all of this (rules in `.dependency-cruiser.cjs`,
+  also run by `pnpm test`); change the rules there when the design changes,
+  not by working around them.
 - **Private state** uses `#fields`.
 - **Validation** uses zod schemas in `src/shared` (`requests.ts`, `settings.ts`),
   applied to routes with `json(schema)` (`@hono/zod-validator`). Shared types
@@ -150,8 +163,9 @@ transpiles it.
   `code_interpreter`, remote MCP) in a request's `tools`. MCP servers' tools
   come through chibot's own client (`McpServers`) as `McpTool`s
   (`tools/mcp-tool.ts`), which `ToolRegistry` asks for on each turn.
-- **Web data** comes through `api.ts` (`request` / `send` / `remove`, which
-  turn failures into `Error`s with the server's message). Lists and dialogs
+- **Web data** comes through each feature's `api.ts`, built on `http.ts`
+  (`request` / `send` / `remove`, which turn failures into `Error`s with the
+  server's message). Lists and dialogs
   load it with `useLoad`, whose `act` runs an action and reloads, putting
   failures in `error`; don't hand-write that again.
 - **Store rows** come back as the shared types directly: select with column
@@ -160,7 +174,7 @@ transpiles it.
 - **Styling** is plain CSS following [DESIGN.md](DESIGN.md), which sets out
   ChatGPT-like aesthetics, tokens and component specs. Use its CSS variables,
   never raw colours. Build menus and dialogs on native `<dialog>` and the
-  Popover API, not a UI library: menus use `useAnchoredPopover` (`popover.ts`)
+  Popover API, not a UI library: menus use `useAnchoredPopover` (`ui/popover.ts`)
   and spread its `menuProps` for keyboard use. Icons come from `lucide-react`.
 
 ## Adding a tool
@@ -216,7 +230,7 @@ invariants, API quirks. No line-by-line narration.
   small corpus (`tests/fixtures/retrieval`); run it before and after changing
   chunking or ranking, and add a question when search misses one.
 - SQLite: use `':memory:'` databases.
-- Web: no component unit tests; pure helpers (e.g. `turns.ts`, `usage.ts`)
+- Web: no component unit tests; pure helpers (e.g. `chat/turns.ts`, `chat/usage.ts`)
   get vitest tests. UI behaviour is covered by Playwright specs in
   `tests/e2e/`, which drive a production build with the real SDK pointed at
   `tests/e2e/fake-openai.ts` via `OPENAI_BASE_URL`. The fake answers
