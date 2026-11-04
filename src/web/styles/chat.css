@@ -343,6 +343,23 @@
   opacity: 1;
 }
 
+/* A message with other versions always shows `< 2/3 >`, so they can be found
+   without hovering; the other actions still wait for it. */
+.actions:has(.versions) {
+  opacity: 1;
+}
+
+.actions:has(.versions) > :not(.versions) {
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.turn:hover .actions > :not(.versions),
+.turn.latest .answer-actions > :not(.versions),
+.actions:focus-within > :not(.versions) {
+  opacity: 1;
+}
+
 .user-actions {
   justify-content: flex-end;
 }

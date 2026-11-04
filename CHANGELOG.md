@@ -14,6 +14,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Fixed
 
+- When chibot can't be reached (the server stopped while the page was open), a failed message says "Can't reach chibot. Check that it is running, then try again." instead of the browser's bare "Failed to fetch", also when the server goes away in the middle of an answer. The message stays in the box to be sent again. The chat list says the same, with a **Try again** button, and reloads by itself when the window is back in front or the network returns, instead of staying stale; the projects' own message isn't repeated.
+- A message with other versions (an edit, a regenerated answer) shows its `< 2/3 >` switcher all the time, not only while hovered, so the versions can be found; copy and edit still wait for the pointer.
 - Controls drawn as an icon alone now show a tooltip on hover: the sidebar's open/close button (and the rail's New chat, Search, New project, Settings and Keyboard shortcuts icons, which have no text when it is collapsed), the Send button, a chat's "…" button and an attachment's ×. An e2e spec lists every icon-only button and link on the new-chat page, in a chat, in the collapsed sidebar, on a project and in Settings, and fails for one without a tooltip.
 
 ## [0.12.8] - 2026-11-04

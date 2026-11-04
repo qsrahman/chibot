@@ -397,3 +397,73 @@ test('↑ in an empty message box edits your last message', async ({ page }) => 
   await box.press('ArrowUp')
   await expect(editor).toHaveCount(0)
 })
+
+test('says when chibot can’t be reached, and recovers when it can', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  await send(page, 'Before')
+  await answered(page)
+
+  // The server goes away: a message fails with words, and stays to be sent again.
+  await page.route('**/api/**', (route) => route.abort('connectionrefused'))
+  await send(page, 'While down')
+  await expect(page.getByRole('alert')).toContainText('Can’t reach chibot')
+  await expect(page.getByRole('textbox', { name: 'Message' })).toHaveValue(
+    'While down',
+  )
+
+  // The chat list says so too, and a button asks again.
+  await page.reload().catch(() => {})
+  await page.unroute('**/api/**')
+  await page.route('**/api/conversations', (route) =>
+    route.abort('connectionrefused'),
+  )
+  await page.reload()
+  const note = page.getByRole('alert').filter({ hasText: 'Can’t reach chibot' })
+  await expect(note).toBeVisible()
+  await expect(note).toHaveCount(1)
+  await page.unroute('**/api/conversations')
+  await note.getByRole('button', { name: 'Try again' }).click()
+  await expect(note).toHaveCount(0)
+  await expect(
+    page
+      .locator('.conversation-row')
+      .filter({ hasText: /Before|E2E Title/ })
+      .first(),
+  ).toBeVisible()
+})
+
+test('a message with other versions shows them without hovering', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  await send(page, 'Versions one')
+  await answered(page)
+  const first = turns(page).first()
+  await first.hover()
+  await first.getByRole('button', { name: 'Edit message' }).click()
+  const editor = page.getByRole('textbox', { name: 'Edit message' })
+  await editor.fill('Versions two')
+  await editor.press('Enter')
+  await answered(page)
+  await send(page, 'Follow-up')
+  await answered(page)
+
+  // Not the latest turn, and the pointer is elsewhere.
+  await page.getByRole('textbox', { name: 'Message' }).hover()
+  const opacity = (selector: string) =>
+    first
+      .locator(selector)
+      .first()
+      .evaluate((el) => getComputedStyle(el).opacity)
+  expect(await opacity('.user-actions .versions')).toBe('1')
+  expect(await opacity('.user-actions .versions .action')).toBe('1')
+  // Copy and edit wait for the pointer.
+  const copy = first.locator('.user-actions > .action').first()
+  await expect
+    .poll(() => copy.evaluate((el) => getComputedStyle(el).opacity))
+    .toBe('0')
+})

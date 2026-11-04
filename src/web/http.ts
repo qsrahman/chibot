@@ -9,16 +9,33 @@ export const send = (method: string, body: unknown): RequestInit => ({
   body: JSON.stringify(body),
 })
 
+/** What a request that never reached the server says (a bare "Failed to fetch" tells nothing). */
+export const OFFLINE =
+  'Can’t reach chibot. Check that it is running, then try again.'
+
+/** `err` as a message for the user: a failed connection is `OFFLINE`; anything else (an abort too) is as it was. */
+export function asNetworkError(err: unknown): Error {
+  return err instanceof TypeError
+    ? new Error(OFFLINE, { cause: err })
+    : (err as Error)
+}
+
+/** `fetch`, with a failed connection reported as `OFFLINE`. */
+export const apiFetch: typeof fetch = (input, init) =>
+  fetch(input, init).catch((err: unknown) => {
+    throw asNetworkError(err)
+  })
+
 /** The JSON response, or nothing for an empty one (204). */
 export async function request<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init)
+  const res = await apiFetch(url, init)
   if (!res.ok) throw new Error(await errorMessage(res))
   return (res.status === 204 ? undefined : await res.json()) as T
 }
 
 /** Deletes `url`. Already gone (404) is fine: the result is the same. */
 export async function remove(url: string, init?: RequestInit): Promise<void> {
-  const res = await fetch(url, { ...init, method: 'DELETE' })
+  const res = await apiFetch(url, { ...init, method: 'DELETE' })
   if (!res.ok && res.status !== 404) throw new Error(await errorMessage(res))
 }
 

@@ -37,6 +37,20 @@ export function useLoad<T>(load: () => Promise<T>, active = true) {
     if (active) void reload()
   }, [active, reload])
 
+  // While a load has failed (the server was down), try again when the window
+  // is back in front or the network returns, instead of staying stale.
+  const failed = error !== null
+  useEffect(() => {
+    if (!active || !failed) return
+    const retry = () => void reload()
+    window.addEventListener('focus', retry)
+    window.addEventListener('online', retry)
+    return () => {
+      window.removeEventListener('focus', retry)
+      window.removeEventListener('online', retry)
+    }
+  }, [active, failed, reload])
+
   /** Runs `action`, then reloads; resolves to whether `action` worked. */
   const act = useCallback(
     async (action: () => Promise<unknown>): Promise<boolean> => {

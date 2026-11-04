@@ -7,7 +7,13 @@ import type {
   TurnTitleEvent,
   TurnToolOutputEvent,
 } from '../../shared/types.ts'
-import { errorMessage, request, send } from '../http.ts'
+import {
+  apiFetch,
+  asNetworkError,
+  errorMessage,
+  request,
+  send,
+} from '../http.ts'
 
 export type TurnEvent =
   | ResponseStreamEvent
@@ -47,7 +53,7 @@ export async function* streamTurn(
   request: TurnRequest,
   signal: AbortSignal,
 ): AsyncGenerator<TurnEvent> {
-  const res = await fetch(`/api/conversations/${conversationId}/turns`, {
+  const res = await apiFetch(`/api/conversations/${conversationId}/turns`, {
     ...send('POST', request),
     signal,
   })
@@ -58,7 +64,10 @@ export async function* streamTurn(
     .pipeThrough(new EventSourceParserStream())
     .getReader()
   for (;;) {
-    const { done, value } = await reader.read()
+    // The server going away mid-answer ends the stream with a network error.
+    const { done, value } = await reader.read().catch((err: unknown) => {
+      throw asNetworkError(err)
+    })
     if (done) return
     yield JSON.parse(value.data) as TurnEvent
   }

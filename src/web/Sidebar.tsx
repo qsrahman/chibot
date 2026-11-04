@@ -216,7 +216,8 @@ export function Sidebar({
                 label="New project"
                 onClick={() => setNewProjectOpen(true)}
               />
-              {projects.error && (
+              {/* One message when the server is down, under the chats. */}
+              {projects.error && projects.error !== conversations.error && (
                 <p className="sidebar-note">{projects.error}</p>
               )}
               {projects.projects.map((project) => (
@@ -238,7 +239,19 @@ export function Sidebar({
               ))}
             </section>
             {conversations.error && (
-              <p className="sidebar-note">{conversations.error}</p>
+              <p className="sidebar-note" role="alert">
+                {conversations.error}{' '}
+                <button
+                  type="button"
+                  className="sidebar-note-action"
+                  onClick={() => {
+                    void conversations.refresh()
+                    void projects.refresh()
+                  }}
+                >
+                  Try again
+                </button>
+              </p>
             )}
             {groupConversations(conversations.conversations).map((group) => (
               <section key={group.label}>
