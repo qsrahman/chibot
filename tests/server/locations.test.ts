@@ -1,6 +1,8 @@
+import { chmodSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { locations, xdgPaths } from '../../src/server/locations.ts'
+import { locations, openFolders, xdgPaths } from '../../src/server/locations.ts'
 
 const paths = {
   config: '/home/u/.config/chibot',
@@ -88,5 +90,21 @@ describe('xdgPaths', () => {
     expect(xdgPaths('/h', { XDG_CONFIG_HOME: '' }).config).toBe(
       '/h/.config/chibot',
     )
+  })
+})
+
+describe('openFolders', () => {
+  it('lists the folders others can open, and skips missing ones', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'chibot-open-'))
+    try {
+      const closed = join(dir, 'closed')
+      const open = join(dir, 'open')
+      mkdirSync(closed, { mode: 0o700 })
+      mkdirSync(open)
+      chmodSync(open, 0o755)
+      expect(openFolders([closed, open, join(dir, 'missing')])).toEqual([open])
+    } finally {
+      rmSync(dir, { recursive: true })
+    }
   })
 })

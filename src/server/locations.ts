@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import { existsSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import envPaths from 'env-paths'
@@ -98,4 +98,20 @@ export function locations(
     mcpConfigExplicit: Boolean(env.CHIBOT_MCP_CONFIG),
     legacy,
   }
+}
+
+/**
+ * Those of `dirs` that other users of this machine can open (POSIX): chats and
+ * keys are in them, and a database file is created readable by others unless
+ * the folder holding it is not.
+ */
+export function openFolders(dirs: string[]): string[] {
+  if (process.platform === 'win32') return []
+  return dirs.filter((dir) => {
+    try {
+      return (statSync(dir).mode & 0o077) !== 0
+    } catch {
+      return false // not there yet
+    }
+  })
 }

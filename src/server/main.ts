@@ -14,7 +14,7 @@ import { ModelRequests } from './chat/index.ts'
 import { TitleWriter } from './chat/index.ts'
 import { Config, layered, readEnvFiles } from './config.ts'
 import { mcpVariables, readConfigFile } from './config-file.ts'
-import { locations, ROOT } from './locations.ts'
+import { locations, openFolders, ROOT } from './locations.ts'
 import { InstructionWriter } from './projects/index.ts'
 import { ConversationSearch } from './conversations/index.ts'
 import { ConversationStore } from './conversations/index.ts'
@@ -135,6 +135,11 @@ export function start({
   }
   // Chats and files: for the owner only (the config folder is 0700 too).
   mkdirSync(config.dataDir, { recursive: true, mode: 0o700 })
+  for (const dir of openFolders([config.dataDir, config.configDir])) {
+    console.warn(
+      `Warning: other users of this machine can open ${dir}, which holds your chats and keys. Run: chmod 700 "${dir}"`,
+    )
+  }
   const db = openDatabase(config.databasePath)
   const store = new ConversationStore(db)
   const search = new ConversationSearch(db)
