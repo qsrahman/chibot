@@ -348,7 +348,7 @@ export function Composer({
               uploadQueued ? 'Sending when the files are uploaded' : 'Send'
             }
             title={
-              uploadQueued ? 'Sending when the files are uploaded' : undefined
+              uploadQueued ? 'Sending when the files are uploaded' : 'Send'
             }
             disabled={!canSend}
           >

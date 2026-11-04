@@ -84,6 +84,7 @@ export function ConversationRow({
         type="button"
         className="row-menu-button"
         aria-label={`Options for ${title}`}
+        title="Options"
         popoverTarget={menu.id}
         style={menu.triggerStyle}
       >

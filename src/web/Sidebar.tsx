@@ -195,6 +195,7 @@ export function Sidebar({
             type="button"
             className="icon-button"
             aria-label={collapsed ? 'Open sidebar' : 'Close sidebar'}
+            title={collapsed ? 'Open sidebar' : 'Close sidebar'}
             aria-expanded={!collapsed}
             onClick={onToggle}
           >
@@ -366,7 +367,7 @@ function SidebarButton({
     </>
   )
   return to ? (
-    <Link to={to} className={classes} aria-label={label}>
+    <Link to={to} className={classes} aria-label={label} title={label}>
       {content}
     </Link>
   ) : (
@@ -374,6 +375,7 @@ function SidebarButton({
       type="button"
       className={classes}
       aria-label={label}
+      title={label}
       onClick={onClick}
     >
       {content}

@@ -362,3 +362,50 @@ test('the browser’s bars follow the theme chosen in Settings', async ({
   expect(await bars()).toEqual(['#000000', '#000000'])
   await page.evaluate(() => localStorage.removeItem('chibot.colorScheme'))
 })
+
+// A control drawn as an icon alone has no label to read, so it needs a tooltip.
+const withoutTooltip = (page: Page) =>
+  page.evaluate(() =>
+    [...document.querySelectorAll('button, a[href], summary')]
+      .filter(
+        (el) =>
+          !el.textContent!.trim() &&
+          !el.hasAttribute('title') &&
+          // Not drawn: a hidden file input's label, the closed menus.
+          (el as HTMLElement).checkVisibility(),
+      )
+      .map(
+        (el) =>
+          `${el.tagName} ${el.getAttribute('aria-label') ?? el.className}`,
+      ),
+  )
+
+test('every control drawn as an icon alone has a tooltip', async ({ page }) => {
+  await chatsTitled(page, 'Tooltip chat')
+  await page.goto('/')
+  await appReady(page)
+  expect(await withoutTooltip(page)).toEqual([])
+
+  // In a chat, with an answer's actions, an attachment chip and a queued state.
+  await page.getByRole('link', { name: 'Tooltip chat' }).first().click()
+  await send(page, 'Hello')
+  await answered(page)
+  expect(await withoutTooltip(page)).toEqual([])
+
+  // The sidebar's rail, which shows icons only.
+  await page.getByRole('button', { name: 'Close sidebar' }).click()
+  expect(await withoutTooltip(page)).toEqual([])
+  await page.getByRole('button', { name: 'Open sidebar' }).click()
+
+  // A project's page, and Settings.
+  const created = await page.request.post('/api/projects', {
+    data: { name: 'Tooltips' },
+  })
+  const { id } = (await created.json()) as { id: string }
+  await page.goto(`/projects/${id}`)
+  await expect(page.getByRole('heading', { name: 'Tooltips' })).toBeVisible()
+  expect(await withoutTooltip(page)).toEqual([])
+  await page.keyboard.press('ControlOrMeta+,')
+  await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
+  expect(await withoutTooltip(page)).toEqual([])
+})

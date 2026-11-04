@@ -254,6 +254,7 @@ export function ChatPage({
                 type="button"
                 className="icon-button"
                 aria-label="Open sidebar"
+                title="Open sidebar"
                 onClick={onOpenSidebar}
               >
                 <PanelLeft size={20} strokeWidth={1.5} />

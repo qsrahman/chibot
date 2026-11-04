@@ -8,6 +8,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 - The composer's **+** menu no longer offers **Search the web**; the model still searches when it needs to (it is switched on or off in Settings → Tools). **Create an image** stays, and now says what it does under its name, as **Add photos & files** does.
 
+### Fixed
+
+- Controls drawn as an icon alone now show a tooltip on hover: the sidebar's open/close button (and the rail's New chat, Search, New project, Settings and Keyboard shortcuts icons, which have no text when it is collapsed), the Send button, a chat's "…" button and an attachment's ×. An e2e spec lists every icon-only button and link on the new-chat page, in a chat, in the collapsed sidebar, on a project and in Settings, and fails for one without a tooltip.
+
 ## [0.12.8] - 2026-11-04
 
 ### Changed

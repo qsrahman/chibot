@@ -56,6 +56,7 @@ function DraftChip({
         type="button"
         className="attachment-remove"
         aria-label={`Remove ${draft.name}`}
+        title={`Remove ${draft.name}`}
         onClick={onRemove}
       >
         <X size={12} strokeWidth={2.5} aria-hidden />
