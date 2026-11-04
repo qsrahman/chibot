@@ -27,6 +27,7 @@ import type { ConversationSearch } from '../conversation-search.ts'
 import type { ConversationStore } from '../conversation-store.ts'
 import type { FileStore } from '../file-store.ts'
 import type { ProjectStore } from '../project-store.ts'
+import type { TitleWriter } from '../title-writer.ts'
 import { explainApiError } from '../api-errors.ts'
 import { disposition, json, notFound } from './helpers.ts'
 
@@ -34,6 +35,7 @@ export function conversationRoutes({
   store,
   search,
   chat,
+  titles,
   files,
   projects,
   attachments,
@@ -41,6 +43,7 @@ export function conversationRoutes({
   store: ConversationStore
   search: ConversationSearch
   chat: ChatService
+  titles: TitleWriter
   files: FileStore
   projects: ProjectStore
   attachments: Attachments
@@ -88,7 +91,7 @@ export function conversationRoutes({
     if (!store.getPath(id).some((item) => messageText(item.data))) {
       return c.json({ error: 'There is nothing to title yet' }, 400)
     }
-    const title = await chat.regenerateTitle(id, c.req.raw.signal)
+    const title = await titles.regenerate(id, c.req.raw.signal)
     if (!title) {
       return c.json({ error: 'The model gave no title; try again' }, 502)
     }

@@ -11,6 +11,9 @@ import type { ConversationSearch } from './conversation-search.ts'
 import type { ConversationStore } from './conversation-store.ts'
 import type { FileStore } from './file-store.ts'
 import type { InstructionWriter } from './instruction-writer.ts'
+import type { ModelRequests } from './model-requests.ts'
+import type { TitleWriter } from './title-writer.ts'
+import type { ToolRegistry } from './tool-registry.ts'
 import type { McpServers } from './mcp-servers.ts'
 import { type MemoryStore } from './memory-store.ts'
 import type { ProjectIndex } from './project-index.ts'
@@ -31,6 +34,9 @@ export interface AppDeps {
   search: ConversationSearch
   settings: SettingsStore
   chat: ChatService
+  titles: TitleWriter
+  model: ModelRequests
+  registry: ToolRegistry
   files: FileStore
   memories: MemoryStore
   projects: ProjectStore

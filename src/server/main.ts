@@ -10,6 +10,8 @@ import { createApp } from './app.ts'
 import { OAUTH_CALLBACK } from './routes/mcp.ts'
 import { Attachments } from './attachments.ts'
 import { ChatService } from './chat-service.ts'
+import { ModelRequests } from './model-requests.ts'
+import { TitleWriter } from './title-writer.ts'
 import { Config, loadEnvFiles } from './config.ts'
 import { InstructionWriter } from './instruction-writer.ts'
 import { ConversationSearch } from './conversation-search.ts'
@@ -129,7 +131,9 @@ export function start({
   )
   const attachments = new Attachments(client, files)
   attachments.deleteOrphans()
-  const chat = new ChatService(client, store, settings, {
+  const model = new ModelRequests(client, attachments)
+  const titles = new TitleWriter(model, store, settings)
+  const chat = new ChatService(model, titles, store, settings, {
     tools: registry,
     projects,
     attachments,
@@ -140,6 +144,9 @@ export function start({
     search,
     settings,
     chat,
+    titles,
+    model,
+    registry,
     files,
     memories,
     projects,

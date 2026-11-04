@@ -9,6 +9,7 @@ import { openDatabase } from '../../src/server/database.ts'
 import type { FileStore } from '../../src/server/file-store.ts'
 import {
   answerEvents,
+  chatOn,
   drain,
   fakeClient,
   memoryStore,
@@ -51,7 +52,7 @@ describe('attachments', () => {
     calls: FakeCall[],
   ) {
     const client = fakeClient(answerEvents('ok'), calls, options)
-    return new ChatService(client, store, testSettings('m'), {
+    return chatOn(client, store, testSettings('m'), {
       attachments: new Attachments(client, files),
     })
   }
@@ -214,7 +215,7 @@ describe('attachments', () => {
     const deletedUploads: string[] = []
     const client = fakeClient(answerEvents('ok'), [], { deletedUploads })
     const attachments = new Attachments(client, files)
-    const chat = new ChatService(client, store, testSettings('m'), {
+    const chat = chatOn(client, store, testSettings('m'), {
       attachments,
     })
     const app = testApp({ store, files, chat, attachments })

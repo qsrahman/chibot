@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { ResponseInputItem } from 'openai/resources/responses/responses'
-import {
-  ChatService,
-  fromLastCompaction,
-} from '../../src/server/chat-service.ts'
+import { fromLastCompaction } from '../../src/server/chat-service.ts'
 import {
   answerEvents,
+  chatOn,
   drain,
   fakeClient,
   memoryStore,
@@ -66,7 +64,7 @@ describe('compaction', () => {
       (call) => (call === 0 ? compacted : answerEvents('second')),
       calls,
     )
-    const chat = new ChatService(client, store, testSettings())
+    const chat = chatOn(client, store, testSettings())
     const { id } = store.createConversation({ temporary: true })
 
     await drain(chat.runTurn(id, { text: 'early question' }))

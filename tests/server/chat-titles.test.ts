@@ -8,6 +8,7 @@ import {
   type FakeOptions,
   memoryStore,
   testChat,
+  testChatServices,
 } from './fakes.ts'
 
 const eventTypes = async (stream: AsyncIterable<{ type: string }>) =>
@@ -26,6 +27,10 @@ describe('ChatService titles', () => {
   beforeEach(() => {
     store = memoryStore()
   })
+
+  function services(options: FakeOptions) {
+    return testChatServices(answerEvents('A'), { store, client: options })
+  }
 
   function service(options: FakeOptions) {
     return testChat(answerEvents('A'), { store, client: options })
@@ -55,24 +60,26 @@ describe('ChatService titles', () => {
 
   it('names a chat again on request, replacing even a typed title', async () => {
     let n = 0
-    const chat = service({ title: () => `Title ${++n}` })
+    const { chat, titles } = services({ title: () => `Title ${++n}` })
     const { id } = store.createConversation()
     await eventTypes(chat.runTurn(id, { text: 'Hi' }))
     expect(store.getConversation(id)!.title).toBe('Title 1')
 
     store.updateConversation(id, { title: 'My own name' })
-    expect(await chat.regenerateTitle(id)).toBe('Title 2')
+    expect(await titles.regenerate(id)).toBe('Title 2')
     expect(store.getConversation(id)!.title).toBe('Title 2')
   })
 
   it('keeps the title when regenerating fails', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     let fail = false
-    const chat = service({ title: () => (fail ? new Error('boom') : 'First') })
+    const { chat, titles } = services({
+      title: () => (fail ? new Error('boom') : 'First'),
+    })
     const { id } = store.createConversation()
     await eventTypes(chat.runTurn(id, { text: 'Hi' }))
     fail = true
-    expect(await chat.regenerateTitle(id)).toBeNull()
+    expect(await titles.regenerate(id)).toBeNull()
     expect(store.getConversation(id)!.title).toBe('First')
     vi.restoreAllMocks()
   })

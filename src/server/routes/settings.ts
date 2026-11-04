@@ -5,18 +5,21 @@ import {
 } from '../../shared/settings.ts'
 import type { ToolInfo } from '../../shared/tools.ts'
 import type { ModelsResponse } from '../../shared/types.ts'
-import type { ChatService } from '../chat-service.ts'
+import type { ModelRequests } from '../model-requests.ts'
 import type { McpServers } from '../mcp-servers.ts'
 import type { SettingsStore } from '../settings-store.ts'
+import type { ToolRegistry } from '../tool-registry.ts'
 import { json } from './helpers.ts'
 
 export function settingsRoutes({
   settings,
-  chat,
+  registry,
+  model,
   mcp,
 }: {
   settings: SettingsStore
-  chat: ChatService
+  registry: ToolRegistry
+  model: ModelRequests
   mcp: McpServers
 }) {
   const app = new Hono()
@@ -30,7 +33,7 @@ export function settingsRoutes({
 
   // Whether each is on is the `disabledTools` setting.
   app.get('/api/tools', (c) =>
-    c.json({ tools: chat.tools } satisfies { tools: ToolInfo[] }),
+    c.json({ tools: registry.info } satisfies { tools: ToolInfo[] }),
   )
 
   app.patch('/api/settings', json(settingsPatchSchema), async (c) => {
@@ -41,7 +44,7 @@ export function settingsRoutes({
   })
 
   app.get('/api/models', async (c) =>
-    c.json({ models: await chat.listModels() } satisfies ModelsResponse),
+    c.json({ models: await model.listModels() } satisfies ModelsResponse),
   )
 
   return app

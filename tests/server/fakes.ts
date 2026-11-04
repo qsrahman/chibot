@@ -6,6 +6,9 @@ import { z } from 'zod'
 import { createApp, type AppDeps } from '../../src/server/app.ts'
 import { Attachments } from '../../src/server/attachments.ts'
 import { ChatService } from '../../src/server/chat-service.ts'
+import { ModelRequests } from '../../src/server/model-requests.ts'
+import { TitleWriter } from '../../src/server/title-writer.ts'
+import { ToolRegistry } from '../../src/server/tool-registry.ts'
 import { Config } from '../../src/server/config.ts'
 import { ConversationSearch } from '../../src/server/conversation-search.ts'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
@@ -196,15 +199,51 @@ export function testChat(
     client?: FakeOptions
     model?: string
     settings?: SettingsStore
-  } & NonNullable<ConstructorParameters<typeof ChatService>[3]> = {},
+  } & NonNullable<ConstructorParameters<typeof ChatService>[4]> = {},
 ) {
-  return new ChatService(
+  return chatOn(fakeClient(events, calls, client), store, settings, options)
+}
+
+/** `testChat`, with the title writer it uses too. */
+export function testChatServices(
+  events: Parameters<typeof fakeClient>[0],
+  {
+    store = memoryStore(),
+    calls,
+    client,
+    settings = testSettings('m'),
+    ...options
+  }: {
+    store?: ConversationStore
+    calls?: FakeCall[]
+    client?: FakeOptions
+    settings?: SettingsStore
+  } & NonNullable<ConstructorParameters<typeof ChatService>[4]> = {},
+) {
+  return chatServices(
     fakeClient(events, calls, client),
     store,
     settings,
     options,
   )
 }
+
+/** A `ChatService` on `client`, with its model requests and title writer. */
+export function chatServices(
+  client: OpenAI,
+  store: ConversationStore,
+  settings: SettingsStore,
+  options: NonNullable<ConstructorParameters<typeof ChatService>[4]> = {},
+) {
+  const model = new ModelRequests(client, options.attachments)
+  const titles = new TitleWriter(model, store, settings)
+  const chat = new ChatService(model, titles, store, settings, options)
+  return { chat, titles, model }
+}
+
+/** A `ChatService` on `client`. */
+export const chatOn = (...args: Parameters<typeof chatServices>) =>
+  chatServices(...args).chat
 
 /** Settings with `model` (and any overrides), on their own in-memory database. */
 export function testSettings(model = 'm', overrides: Partial<Settings> = {}) {
@@ -280,10 +319,14 @@ export function testApp(deps: Partial<AppDeps> = {}) {
   const files = deps.files ?? testFiles(db)
   const projects = deps.projects ?? new ProjectStore(db, files)
   const index = new ProjectIndex(db, projects, files, null)
+  const model = new ModelRequests(fakeClient([]))
   return createApp({
     config: new Config({ OPENAI_API_KEY: 'k' }),
     search: new ConversationSearch(db),
-    chat: new ChatService(fakeClient([]), store, settings),
+    chat: chatOn(fakeClient([]), store, settings),
+    titles: new TitleWriter(model, store, settings),
+    model,
+    registry: new ToolRegistry([]),
     memories: new MemoryStore(db),
     index,
     instructionWriter: new InstructionWriter(

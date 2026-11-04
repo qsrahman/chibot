@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import OpenAI from 'openai'
-import { ChatService } from '../../src/server/chat-service.ts'
+import { ModelRequests } from '../../src/server/model-requests.ts'
 import {
   answerEvents,
   drain,
@@ -12,8 +12,8 @@ import {
 
 describe('models', () => {
   it('lists the endpoint models, sorted', async () => {
-    const chat = testChat([])
-    expect(await chat.listModels()).toEqual(['m-1', 'm-2'])
+    const models = new ModelRequests(fakeClient([]))
+    expect(await models.listModels()).toEqual(['m-1', 'm-2'])
   })
 
   it('returns null when the endpoint cannot list models', async () => {
@@ -21,8 +21,7 @@ describe('models', () => {
     const client = fakeClient([], [], {
       models: new OpenAI.NotFoundError(404, {}, 'nope', new Headers()),
     })
-    const chat = new ChatService(client, memoryStore(), testSettings())
-    expect(await chat.listModels()).toBeNull()
+    expect(await new ModelRequests(client).listModels()).toBeNull()
     vi.restoreAllMocks()
   })
 

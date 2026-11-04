@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- Code only: `ChatService` (480 lines, from 654) keeps the turn loop; the request fallbacks (optional features, attachments, listing models) are `ModelRequests` (`model-requests.ts`) and chat titles are `TitleWriter` (`title-writer.ts`), both injected, so the routes for titles, models and tools use them directly (`ToolRegistry.info` lists the tools). Behavior is unchanged.
 - Code only: each route file (`routes/*.ts`) declares the few collaborators it uses instead of taking the whole `AppDeps` from `app.ts`, which removes the six import cycles between `app.ts` and the routes; `app.ts` still composes them from `AppDeps`.
 
 ## [0.12.2] - 2026-11-02

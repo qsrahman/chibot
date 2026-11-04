@@ -92,10 +92,11 @@ describe('ChatService tools', () => {
 
   it('lists a tool that needs setup, but never offers it', async () => {
     const calls: FakeCall[] = []
-    const chat = chatWith(answerEvents('Hi'), calls, [
+    const registry = new ToolRegistry([
       new EchoTool({ unavailable: 'Needs ECHO_KEY in .env' }),
     ])
-    expect(chat.tools).toEqual([
+    const chat = testChat(answerEvents('Hi'), { store, calls, tools: registry })
+    expect(registry.info).toEqual([
       expect.objectContaining({
         name: 'echo',
         unavailable: 'Needs ECHO_KEY in .env',

@@ -3,6 +3,7 @@ import type {
   ResponseInputItem,
 } from 'openai/resources/responses/responses'
 import { z } from 'zod'
+import { sortTools, type ToolInfo } from '../shared/tools.ts'
 import type { Tool, ToolContext } from './tool.ts'
 
 export const TOOL_STOPPED = 'The user stopped this tool call.'
@@ -33,6 +34,14 @@ export class ToolRegistry {
 
   get(name: string): Tool | undefined {
     return this.#tools.get(name) ?? this.#more().find((t) => t.name === name)
+  }
+
+  /**
+   * Every tool, for Settings and the composer (whether it's switched off is
+   * the `disabledTools` setting; one that needs setup says what).
+   */
+  get info(): ToolInfo[] {
+    return sortTools(this.tools.map((tool) => tool.info))
   }
 
   /**

@@ -1,15 +1,10 @@
-import OpenAI from 'openai'
 import type {
   FunctionTool,
-  ResponseCreateParams,
-  ResponseCreateParamsNonStreaming,
   ResponseFunctionToolCall,
   ResponseInputItem,
   ResponseStreamEvent,
 } from 'openai/resources/responses/responses'
-import { messageText } from '../shared/messages.ts'
 import type { Settings } from '../shared/settings.ts'
-import { sortTools, type ToolInfo } from '../shared/tools.ts'
 import type {
   Conversation,
   TurnApprovalEvent,
@@ -18,11 +13,12 @@ import type {
   TurnToolOutputEvent,
 } from '../shared/types.ts'
 import type { Attachments } from './attachments.ts'
-import { chatModels } from './chat-models.ts'
 import type { ConversationStore } from './conversation-store.ts'
 import type { ProjectStore } from './project-store.ts'
 import type { SettingsStore } from './settings-store.ts'
-import { chatInstructions, cleanTitle, TITLE_INSTRUCTIONS } from './prompts.ts'
+import type { ModelRequests } from './model-requests.ts'
+import { chatInstructions } from './prompts.ts'
+import type { TitleWriter } from './title-writer.ts'
 import { TOOL_DENIED, ToolRegistry } from './tool-registry.ts'
 
 /** What `runTurn` yields. */
@@ -53,7 +49,8 @@ const STEP_LIMIT_OUTPUT = 'Error: too many tool calls in one answer.'
 
 /** Runs chat turns statelessly: the full history is sent on every request. */
 export class ChatService {
-  readonly #client: OpenAI
+  readonly #model: ModelRequests
+  readonly #titles: TitleWriter
   readonly #store: ConversationStore
   readonly #settings: SettingsStore
   readonly #tools: ToolRegistry
@@ -61,17 +58,16 @@ export class ChatService {
   readonly #attachments: Attachments | null
   // Each chat's latest turn, until it has finished unwinding.
   readonly #turns = new Map<string, Promise<void>>()
-  // Model + optional-feature combinations the server rejected (400) while
-  // the same request without them worked. Kept until restart.
-  readonly #unsupported = new Set<string>()
 
   /**
    * @param options.tools offered to the model (none by default)
    * @param options.projects for project chats' instructions
-   * @param options.attachments to send files attached to messages
+   * @param options.attachments to put files attached to messages in them
+   *   (`model` sends them)
    */
   constructor(
-    client: OpenAI,
+    model: ModelRequests,
+    titles: TitleWriter,
     store: ConversationStore,
     settings: SettingsStore,
     {
@@ -84,7 +80,8 @@ export class ChatService {
       attachments?: Attachments | null
     } = {},
   ) {
-    this.#client = client
+    this.#model = model
+    this.#titles = titles
     this.#store = store
     this.#settings = settings
     this.#tools = tools
@@ -193,7 +190,7 @@ export class ChatService {
     // The title may take a while, and the chat no longer changes meanwhile.
     saved()
     const title = answered
-      ? await this.#titleIfNew(conversationId, signal)
+      ? await this.#titles.ifNew(conversationId, signal)
       : null
     if (title) yield { type: 'chibot.title', title }
   }
@@ -334,51 +331,41 @@ export class ChatService {
     let output: ResponseInputItem[] | null = null
     let answered = false
     try {
-      // Not `responses.stream()`: its accumulator rejects some compatible
-      // servers' streams (Ollama gpt-oss: "missing content at index 0"), and
-      // chibot must save the answer before relaying `response.completed`.
-      const stream = await this.#withAttachments(model, input, (input) =>
-        this.#withOptional(
+      const stream = await this.#model.stream(
+        {
           model,
-          {
-            reasoning: {
-              summary: 'auto',
-              ...(plan.reasoningEffort && { effort: plan.reasoningEffort }),
-            },
-            ...(plan.compactThreshold !== null && {
-              context_management: [
-                {
-                  type: 'compaction',
-                  compact_threshold: plan.compactThreshold,
-                },
-              ],
-            }),
+          instructions,
+          input,
+          ...(tools.length > 0 && {
+            tools,
+            // Make the last request answer instead of calling more.
+            ...(step === MAX_STEPS && { tool_choice: 'none' as const }),
+            ...(step === 1 &&
+              forced && {
+                tool_choice: { type: 'function', name: forced.name },
+              }),
+          }),
+          stream: true,
+          store: false,
+          // Reasoning items can only be replayed without server-side
+          // storage when they carry their encrypted content.
+          include: ['reasoning.encrypted_content'],
+        },
+        {
+          reasoning: {
+            summary: 'auto',
+            ...(plan.reasoningEffort && { effort: plan.reasoningEffort }),
           },
-          (optional) =>
-            this.#client.responses.create(
+          ...(plan.compactThreshold !== null && {
+            context_management: [
               {
-                model,
-                instructions,
-                input,
-                ...(tools.length > 0 && {
-                  tools,
-                  // Make the last request answer instead of calling more.
-                  ...(step === MAX_STEPS && { tool_choice: 'none' as const }),
-                  ...(step === 1 &&
-                    forced && {
-                      tool_choice: { type: 'function', name: forced.name },
-                    }),
-                }),
-                stream: true,
-                store: false,
-                // Reasoning items can only be replayed without server-side
-                // storage when they carry their encrypted content.
-                include: ['reasoning.encrypted_content'],
-                ...optional,
+                type: 'compaction',
+                compact_threshold: plan.compactThreshold,
               },
-              { signal },
-            ),
-        ),
+            ],
+          }),
+        },
+        signal,
       )
       for await (const event of stream) {
         if (event.type === 'response.output_text.delta') {
@@ -416,17 +403,6 @@ export class ChatService {
       }
     }
     return { leafId, output, answered }
-  }
-
-  /** A title for a chat that has none yet (never a temporary one), or `null`. */
-  async #titleIfNew(
-    conversationId: string,
-    signal: AbortSignal | undefined,
-  ): Promise<string | null> {
-    // Read again: the title may have been set meanwhile.
-    const current = this.#store.getConversation(conversationId)!
-    if (current.title !== null || current.temporary) return null
-    return this.#generateTitle(conversationId, signal)
   }
 
   /** The items on the path to `leafId`. */
@@ -480,157 +456,7 @@ export class ChatService {
     for (const o of outputs) yield { type: 'chibot.tool_output', ...o }
     return items.at(-1)!.id
   }
-
-  /**
-   * Names the chat again from its first messages, replacing its title
-   * (also one the user typed). Null if the model gave none.
-   */
-  regenerateTitle(
-    conversationId: string,
-    signal?: AbortSignal,
-  ): Promise<string | null> {
-    return this.#generateTitle(conversationId, signal, true)
-  }
-
-  /**
-   * Every tool, for Settings and the composer (whether it's switched off is
-   * the `disabledTools` setting; one that needs setup says what).
-   */
-  get tools(): ToolInfo[] {
-    return sortTools(this.#tools.tools.map((tool) => tool.info))
-  }
-
-  /**
-   * The chat models the endpoint offers, sorted, or `null` when it can't
-   * list them (see `chatModels` for how the others are left out).
-   */
-  async listModels(): Promise<string[] | null> {
-    try {
-      const ids: string[] = []
-      for await (const model of this.#client.models.list()) ids.push(model.id)
-      return (await chatModels(ids, this.#client.baseURL)).sort()
-    } catch (err) {
-      console.error('Listing models failed:', err)
-      return null
-    }
-  }
-
-  /**
-   * Calls `send` with `optional` request features, or without them where
-   * they're rejected: models without reasoning (or without that effort), or
-   * compatible servers without compaction, answer 400. A 400 is retried once
-   * without them; if that works, the combination is remembered so later
-   * requests skip the failing attempt.
-   */
-  async #withOptional<T>(
-    model: string,
-    optional: OptionalParams,
-    send: (optional: OptionalParams) => Promise<T>,
-  ): Promise<T> {
-    const key = JSON.stringify([model, optional])
-    if (this.#unsupported.has(key)) return send({})
-    try {
-      return await send(optional)
-    } catch (err) {
-      if (!(err instanceof OpenAI.BadRequestError)) throw err
-      const result = await send({})
-      this.#unsupported.add(key)
-      return result
-    }
-  }
-
-  /**
-   * Sends `input` with its attachments resolved (see `Attachments`). A model
-   * that rejects files (400) gets documents as their text from then on, and
-   * a provider that lost an upload (404) gets it again: each retried once.
-   */
-  async #withAttachments<T>(
-    model: string,
-    input: ResponseInputItem[],
-    send: (input: ResponseInputItem[]) => Promise<T>,
-  ): Promise<T> {
-    const attachments = this.#attachments
-    if (!attachments) return send(input)
-    // A refused request with images most likely means the model can't see
-    // them; the server's own message (often just "400") doesn't say what to do.
-    const explain = (err: unknown) =>
-      err instanceof OpenAI.BadRequestError && attachments.sendsImages(input)
-        ? new Error(
-            `${model} refused this chat's images (${err.message}). ` +
-              'If it can’t see images, pick a model that can (e.g. gemma4 ' +
-              'on Ollama, or OpenAI’s GPT models).',
-            { cause: err },
-          )
-        : err
-    try {
-      return await send(await attachments.resolve(input, model))
-    } catch (err) {
-      if (
-        err instanceof OpenAI.BadRequestError &&
-        attachments.sendsFiles(input, model)
-      ) {
-        attachments.useText(model)
-      } else if (
-        err instanceof OpenAI.NotFoundError &&
-        attachments.uploaded(input)
-      ) {
-        attachments.forgetUploads(input)
-      } else {
-        throw explain(err)
-      }
-    }
-    try {
-      return await send(await attachments.resolve(input, model))
-    } catch (err) {
-      throw explain(err)
-    }
-  }
-
-  /** Names the conversation from its opening messages. Never throws. */
-  async #generateTitle(
-    conversationId: string,
-    signal?: AbortSignal,
-    replace = false,
-  ): Promise<string | null> {
-    const transcript = this.#store
-      .getPath(conversationId)
-      .flatMap((item) => messageText(item.data) ?? [])
-      .slice(0, 2)
-      .map(({ role, text }) => `${role}: ${text.slice(0, 1000)}`)
-      .join('\n\n')
-    const { model } = this.#settings.get()
-    const params: ResponseCreateParamsNonStreaming = {
-      model,
-      instructions: TITLE_INSTRUCTIONS,
-      input: transcript,
-      store: false,
-    }
-    try {
-      const response = await this.#withOptional(
-        model,
-        { reasoning: { effort: 'low' } },
-        (optional) =>
-          this.#client.responses.create({ ...params, ...optional }, { signal }),
-      )
-      const title = cleanTitle(response.output_text)
-      if (!title) return null
-      if (replace) {
-        this.#store.updateConversation(conversationId, { title })
-        return title
-      }
-      return this.#store.setTitleIfEmpty(conversationId, title) ? title : null
-    } catch (err) {
-      if (!signal?.aborted) console.error('Title generation failed:', err)
-      return null
-    }
-  }
 }
-
-/** Request features some models or servers reject (see `#withOptional`). */
-type OptionalParams = Pick<
-  ResponseCreateParams,
-  'reasoning' | 'context_management'
->
 
 /**
  * The model input for a path: from the last compaction item on (it stands

@@ -83,18 +83,7 @@ describe('API', () => {
   })
 
   it('GET /api/tools lists the tools, each in its own words', async () => {
-    const settings = testSettings('m-1')
-    const chat = testChat([], {
-      store,
-      settings,
-      tools: new ToolRegistry([new EchoTool()]),
-    })
-    const app = testApp({
-      config,
-      store,
-      settings,
-      chat,
-    })
+    const app = testApp({ registry: new ToolRegistry([new EchoTool()]) })
     expect(await (await app.request('/api/tools')).json()).toEqual({
       tools: [
         {

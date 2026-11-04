@@ -80,7 +80,7 @@ turn is about to save. Then `#runTurn`:
      it survives a reload.
    - On the last step `tool_choice: 'none'` makes the model answer.
 4. **Title.** Once everything is saved (`saved()` releases the next turn), a
-   saved chat without a title gets one (`#titleIfNew`, `chibot.title`).
+   saved chat without a title gets one (`TitleWriter.ifNew`, `chibot.title`).
 
 ## 4. One request to the model (`#respond`)
 
@@ -88,10 +88,11 @@ turn is about to save. Then `#runTurn`:
   last compaction item if there is one (`fromLastCompaction`). The history in
   SQLite is the source of truth: requests are `store: false`, with
   `include: ['reasoning.encrypted_content']` so reasoning can be replayed.
-- **Attachments** are resolved just before sending (`#withAttachments`): files
-  as the provider's file ids, or as text for models that refuse them.
-- **Optional features** (reasoning effort, compaction) are retried without
-  where a server answers 400, and remembered (`#withOptional`).
+- **The request itself** goes through `ModelRequests.stream` (`model-requests.ts`),
+  which makes it work with what the endpoint supports. Attachments are resolved
+  just before sending: files as the provider's file ids, or as text for models
+  that refuse them. Optional features (reasoning effort, compaction) are
+  retried without where a server answers 400, and remembered.
 - **Saved before relayed.** The response is appended to the tree *before*
   its `response.completed` is yielded, so a client that sees it can re-read the
   chat. If the stream ends any other way (Stop, disconnect, error), the text
@@ -134,6 +135,8 @@ re-reads the chat (`getConversation`) and shows it as `toTurns(items)`
 | Which tools are offered, and approval | `ChatService.#planTurn`, `ToolRegistry`, the `Tool` subclass |
 | What a request may do | `turn-request.ts`, `requests.ts` |
 | History shape, versions, usage | `ConversationStore` |
+| What to do when an endpoint rejects a feature or file | `ModelRequests` |
+| How chats are titled | `TitleWriter`, `TITLE_INSTRUCTIONS` |
 | How a turn shows on screen | `useChat.ts`, `turns.ts`, `TurnView.tsx` |
 
 To see what chibot sent in a test run, `GET /debug/last-request` on the fake

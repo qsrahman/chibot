@@ -138,7 +138,9 @@ Browser (React + Vite)                        Node server (Hono)
   turn is `#startTurn` (save the message, find the leaf), `#planTurn` (what to
   send: settings, tools, instructions), then up to `MAX_STEPS` times
   `#runCalls` (run the previous response's tool calls) and `#respond` (one
-  streamed request, saved as it completes), and finally `#titleIfNew`.
+  streamed request, saved as it completes), and finally the title
+  (`TitleWriter`). The requests themselves, with their fallbacks for endpoints
+  that reject a feature or a file, are `ModelRequests`.
 - **`createApp(deps)`:** the Hono app: access checks, then one route file per
   area (`routes/`). It's a factory so tests can inject fakes.
 - **`prompts.ts`:** what chibot tells the model: its instructions, a project's,
