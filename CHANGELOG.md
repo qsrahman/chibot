@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.12.7] - 2026-11-04
+
 ### Changed
 
 - Search ranking was compared, not changed. The opt-in retrieval test now prints a table of ways to merge keyword and meaning search (reciprocal rank fusion with other constants and weights, score blends, each search alone), over the two question sets plus 8 new held-out paraphrases written before any variant was run, and for an index built with a model's task prefixes. With Ollama's `nomic-embed-text-v2-moe`: no merge beats the shipped one on both the tuning sets and the held-out one (the best on the tuning paraphrases, a 30% keyword blend, goes from 58% to 83% first hit there but loses a top-three question on held-out); the differences are one or two questions of 41, within noise. Prefixes (`search_query: ` / `search_document: `, which chibot does not send) lift meaning-only search a lot (held-out first hit 63% to 88%) but hybrid by about one question of 20, so they were not added. Finding better ranking needs a larger question set than this corpus gives.
