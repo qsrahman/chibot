@@ -10,6 +10,8 @@ export function useDictation(onText: (text: string) => void) {
     'idle',
   )
   const [error, setError] = useState<string | null>(null)
+  // The microphone while recording, for the level meter.
+  const [stream, setStream] = useState<MediaStream | null>(null)
   const recorder = useRef<MediaRecorder | null>(null)
   const transcription = useRef<AbortController | null>(null)
   // Covers the gap before the recorder exists (getUserMedia is pending).
@@ -58,6 +60,7 @@ export function useDictation(onText: (text: string) => void) {
     const rec = new MediaRecorder(stream)
     rec.ondataavailable = (e) => chunks.push(e.data)
     rec.onstop = () => {
+      setStream(null)
       stream.getTracks().forEach((track) => track.stop())
       recorder.current = null
       const controller = new AbortController()
@@ -78,8 +81,9 @@ export function useDictation(onText: (text: string) => void) {
     }
     rec.start()
     recorder.current = rec
+    setStream(stream)
     setState('recording')
   }
 
-  return { state, error, start, stop: () => recorder.current?.stop() }
+  return { state, error, stream, start, stop: () => recorder.current?.stop() }
 }

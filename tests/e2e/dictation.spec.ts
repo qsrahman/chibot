@@ -63,3 +63,57 @@ test('ignores a second dictation click while recording starts', async ({
   await stop.click()
   await expect(box).toHaveValue('Hello from the microphone')
 })
+
+for (const [device, viewport] of [
+  ['desktop', { width: 1280, height: 720 }],
+  ['phone', { width: 375, height: 812 }],
+] as const) {
+  test(`shows how long it has recorded and how loud (${device})`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport)
+    await page.goto('/')
+    await appReady(page)
+    await expect(page.locator('.dictation-meter')).toHaveCount(0)
+    await page.getByRole('button', { name: 'Dictate' }).click()
+    const meter = page.locator('.dictation-meter')
+    await expect(meter).toBeVisible()
+    // The clock runs…
+    await expect(meter.locator('.dictation-time')).toHaveText('0:00')
+    await expect(meter.locator('.dictation-time')).toHaveText('0:01', {
+      timeout: 4000,
+    })
+    // …and the fake microphone's tone moves the bar.
+    await expect
+      .poll(() =>
+        meter
+          .locator('.dictation-level-bar')
+          .evaluate((el) => Number(el.style.getPropertyValue('--level'))),
+      )
+      .toBeGreaterThan(0)
+    // It is for the eyes: a screen reader is told once, not every second.
+    await expect(meter).toHaveAttribute('aria-hidden', 'true')
+    await expect(page.locator('.toast-live')).toHaveText('Recording')
+
+    // The buttons stay on the composer's bottom row, and the page doesn't overflow.
+    const rows = await page.evaluate(() => {
+      const bottom = (selector: string) =>
+        document.querySelector(selector)!.getBoundingClientRect().bottom
+      return {
+        plus: bottom('.composer-left .icon-button'),
+        mic: bottom('.composer-actions .icon-button.recording'),
+        meter: bottom('.dictation-meter'),
+        overflow: document.documentElement.scrollWidth > innerWidth,
+      }
+    })
+    expect(rows.overflow).toBe(false)
+    expect(Math.abs(rows.mic - rows.plus)).toBeLessThan(2)
+    expect(rows.meter).toBeLessThanOrEqual(rows.plus + 2)
+
+    await page.getByRole('button', { name: 'Stop recording' }).click()
+    await expect(meter).toHaveCount(0)
+    await expect(page.getByRole('textbox', { name: 'Message' })).toHaveValue(
+      'Hello from the microphone',
+    )
+  })
+}

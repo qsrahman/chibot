@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Added
 
+- Voice input shows a clock and a level bar while it records, so it is clear the microphone hears you (on phones only the clock, to leave the message box its room). They are for the eyes; screen readers are told "Recording" and "Transcribing" once instead of hearing a timer.
 - Links in an answer to a page it searched or read are numbered like the **Sources** list under it (which is numbered now), and hovering or focusing one shows a card saying which page it is (title, site, "Source 2 of 5"). Esc hides the card without also stopping the answer. Other links are left as they were.
 - A tool call's row says what it came to without opening it: "Searched the web · 2 results", "Read web pages · example.com", "Created an image · a red robot", "Nothing found", or the first line of an error in red. MCP tools show the first line of their text.
 - An answer that stopped early (stopped with **Stop**, or cut off by the model's output limit) says so under it, with **Continue** (asks the model to carry on from where it stopped) and **Regenerate** as labelled buttons, instead of only a small icon. Right after a Stop, only Continue is offered (regenerating needs the saved ids, which arrive when the chat reloads); a saved question with no answer at all says so, with **Try again**. It shows on the latest turn only, also after a reload.

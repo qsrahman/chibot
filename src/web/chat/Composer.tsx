@@ -9,12 +9,14 @@ import { ArrowUp, LoaderCircle, Mic, Square, X } from 'lucide-react'
 import type { Settings } from '../../shared/settings.ts'
 import { AddMenu, type ToolOption } from './AddMenu.tsx'
 import { loadDrafts, saveDrafts } from './composerDrafts.ts'
+import { DictationMeter } from './DictationMeter.tsx'
 import { DraftAttachments } from './DraftAttachments.tsx'
 import { ModeSwitch } from './ModeSwitch.tsx'
 import { QueuedMessage } from './QueuedMessage.tsx'
 import type { Attachment } from './turns.ts'
 import type { AttachmentsApi } from './useAttachments.ts'
 import { useDictation } from './useDictation.ts'
+import { useToast } from '../ui/toast.tsx'
 import { TOUCH_ONLY, useMediaQuery } from '../ui/useMediaQuery.ts'
 
 interface Props {
@@ -121,6 +123,15 @@ export function Composer({
     box?.focus()
   })
   const recording = dictation.state === 'recording'
+  // The button's name changes, which a screen reader doesn't say by itself.
+  const { announce } = useToast()
+  const dictationState = useRef(dictation.state)
+  useEffect(() => {
+    if (dictationState.current === dictation.state) return
+    dictationState.current = dictation.state
+    if (dictation.state === 'recording') announce('Recording')
+    if (dictation.state === 'transcribing') announce('Transcribing')
+  }, [dictation.state, announce])
   const micLabel = !transcription
     ? 'Voice input needs a transcription model: choose one in Settings → Other models'
     : recording
@@ -294,6 +305,7 @@ export function Composer({
       />
       <div className="composer-actions">
         <ModeSwitch effort={effort} onChange={onEffort} />
+        {dictation.stream && <DictationMeter stream={dictation.stream} />}
         <button
           type="button"
           className={recording ? 'icon-button recording' : 'icon-button'}
