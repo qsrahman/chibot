@@ -113,7 +113,7 @@ test('a chosen tool’s chip leaves room to type', async ({ page }) => {
   await page.goto('/')
   await appReady(page)
   await page.getByRole('button', { name: 'Add files and more' }).click()
-  await page.getByRole('menuitem', { name: /Search the web/ }).click()
+  await page.getByRole('menuitem', { name: /Create an image/ }).click()
   await expect(page.locator('.composer-chip')).toBeVisible()
 
   const box = page.getByRole('textbox', { name: 'Message' })

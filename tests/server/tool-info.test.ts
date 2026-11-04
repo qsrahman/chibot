@@ -51,7 +51,7 @@ describe('Tool.info', () => {
       group: 'The web',
       running: 'Searching the web…',
       done: 'Searched the web',
-      chip: { action: 'Search the web', text: 'Search', icon: 'globe' },
+      chip: null,
       unavailable: 'Needs BRAVE_API_KEY in .env',
     })
     expect(new WebSearchTool('key').info.unavailable).toBeNull()

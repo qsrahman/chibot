@@ -609,8 +609,7 @@ models (`gemma4:cloud`, `gemma4:e4b`, `qwen3.5:9b`; `gpt-oss` answers 400
 - **Deletion.** Deleting a conversation (including the temporary-chat sweep)
   deletes its files locally and, best effort, their provider copies. Uploads
   never sent are swept after a day (already in place).
-- **Composer.** "Add photos & files" heads the "+" menu, above Search the web
-  and Create an image; pasting and dropping onto the chat attach too. Chips
+- **Composer.** "Add photos & files" heads the "+" menu, above Create an image; pasting and dropping onto the chat attach too. Chips
   above the textarea show a thumbnail or file icon, the name, a spinner while
   uploading and × to remove; Send waits for uploads.
 - **Messages.** User bubbles show image thumbnails (opening full size) and

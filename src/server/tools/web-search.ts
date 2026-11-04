@@ -36,11 +36,6 @@ export class WebSearchTool extends Tool {
     'Searches with Brave; your queries are sent to Brave.'
   override readonly running = 'Searching the web…'
   override readonly done = 'Searched the web'
-  override readonly chip = {
-    action: 'Search the web',
-    text: 'Search',
-    icon: 'globe',
-  } as const
   override readonly untrustedOutput = true
   readonly description =
     'Searches the web (Brave Search) for current or specific information: ' +

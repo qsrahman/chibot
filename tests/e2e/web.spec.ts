@@ -102,9 +102,9 @@ test('the composer menu forces a tool for one message', async ({ page }) => {
   await page.goto('/')
   await appReady(page)
   await page.getByRole('button', { name: 'Add files and more' }).click()
-  await page.getByRole('menuitem', { name: 'Search the web' }).click()
+  await page.getByRole('menuitem', { name: 'Create an image' }).click()
   await expect(
-    page.getByRole('button', { name: 'Remove Search the web' }),
+    page.getByRole('button', { name: 'Remove Create an image' }),
   ).toBeVisible()
   await send(page, 'Hello there')
   await answered(page)
@@ -114,13 +114,13 @@ test('the composer menu forces a tool for one message', async ({ page }) => {
   ).json()) as { tool_choice?: unknown }[]
   expect(requests.at(-2)!.tool_choice).toEqual({
     type: 'function',
-    name: 'web_search',
+    name: 'generate_image',
   })
   expect(requests.at(-1)).not.toHaveProperty('tool_choice')
-  await expect(sources(page, 0)).toBeVisible()
+  await expect(turns(page).first().locator('.image img')).toBeVisible()
   // The pick was for that message only.
   await expect(
-    page.getByRole('button', { name: 'Remove Search the web' }),
+    page.getByRole('button', { name: 'Remove Create an image' }),
   ).toHaveCount(0)
 })
 
@@ -133,14 +133,14 @@ test('a tool switched off in Settings is greyed out and not sent', async ({
   const dialog = page.getByRole('dialog', { name: 'Settings' })
   await dialog.getByRole('button', { name: 'Tools' }).click()
   // Saved first, then shown: click and wait rather than uncheck().
-  const webSearch = dialog.getByRole('switch', { name: 'Search the web' })
+  const webSearch = dialog.getByRole('switch', { name: 'Create images' })
   await webSearch.click()
   await expect(webSearch).not.toBeChecked()
   await page.keyboard.press('Escape')
 
   await page.getByRole('button', { name: 'Add files and more' }).click()
   // Still listed, so it can be found, but greyed out with the reason.
-  const item = page.getByRole('menuitem', { name: /Search the web/ })
+  const item = page.getByRole('menuitem', { name: /Create an image/ })
   await expect(item).toBeDisabled()
   await expect(item).toContainText('Off in Settings → Tools')
   await page.keyboard.press('Escape')
@@ -150,8 +150,8 @@ test('a tool switched off in Settings is greyed out and not sent', async ({
   const names = ((await lastRequest(page)).tools as { name: string }[]).map(
     (tool) => tool.name,
   )
-  expect(names).not.toContain('web_search')
-  expect(names).toContain('generate_image')
+  expect(names).not.toContain('generate_image')
+  expect(names).toContain('web_search')
 })
 
 test('menus move with the arrow keys', async ({ page }) => {
@@ -164,7 +164,7 @@ test('menus move with the arrow keys', async ({ page }) => {
   // Opens on its first item.
   await expect(item(/Add photos & files/)).toBeFocused()
   await page.keyboard.press('ArrowDown')
-  await expect(item(/Search the web/)).toBeFocused()
+  await expect(item(/Create an image/)).toBeFocused()
   await page.keyboard.press('End')
   await expect(item(/Create an image/)).toBeFocused()
   await page.keyboard.press('ArrowDown') // wraps around

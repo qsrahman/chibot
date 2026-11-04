@@ -226,8 +226,7 @@ Then open http://127.0.0.1:3000.
     return appear in the answer and are kept with the chat. **Stop** cancels
     a call; calls time out after a minute.
 
-  The composer's **+** menu also makes the next message use **Search the web**
-  or **Create an image**; one that isn't set up or is switched off shows
+  The composer's **+** menu also makes the next message use **Create an image**; one that isn't set up or is switched off shows
   greyed out with the reason. Tools with side effects (none ship yet) ask first:
   **Approve** or **Deny**, or send a new message to deny. Models also know
   today's date and the time to the quarter hour.
