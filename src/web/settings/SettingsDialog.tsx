@@ -66,6 +66,23 @@ export function SettingsDialog({
   }, [open, tab])
   const current = settings.settings
 
+  // Settings that save as soon as they change say so briefly; Personalization
+  // has its own Save button, and its own "Saved".
+  const [saved, setSaved] = useState(false)
+  const savedTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  useEffect(() => () => clearTimeout(savedTimer.current), [])
+  // Another tab is another subject.
+  useEffect(() => setSaved(false), [tab])
+  const save: SettingsApi['update'] = async (patch) => {
+    const ok = await settings.update(patch)
+    if (ok) {
+      setSaved(true)
+      clearTimeout(savedTimer.current)
+      savedTimer.current = setTimeout(() => setSaved(false), 2000)
+    }
+    return ok
+  }
+
   return (
     <Dialog open={open} onClose={onClose} title="Settings" className="settings">
       <div className="settings-layout">
@@ -90,6 +107,9 @@ export function SettingsDialog({
           ))}
         </nav>
         <div className="settings-panel">
+          <div className="settings-flash" role="status">
+            {saved && <span>Saved</span>}
+          </div>
           {settings.error && (
             <p className="error" role="alert">
               {settings.error}
@@ -103,7 +123,7 @@ export function SettingsDialog({
                 <Memory
                   on={!current.disabledTools.includes('memory')}
                   onChange={(on) =>
-                    void settings.update({
+                    void save({
                       disabledTools: withMember(
                         current.disabledTools,
                         'memory',
@@ -120,7 +140,7 @@ export function SettingsDialog({
             <Model
               settings={current}
               defaults={settings.defaults}
-              onChange={settings.update}
+              onChange={save}
             />
           )}
           {tab === 'other-models' && current && settings.defaults && (
@@ -128,7 +148,7 @@ export function SettingsDialog({
               settings={current}
               defaults={settings.defaults}
               endpoints={settings.endpoints}
-              onChange={settings.update}
+              onChange={save}
             />
           )}
           {tab === 'tools' && current && (
@@ -136,9 +156,9 @@ export function SettingsDialog({
               <Tools
                 tools={settings.tools}
                 disabled={current.disabledTools}
-                onChange={settings.update}
+                onChange={save}
               />
-              <McpServers settings={current} onChange={settings.update} />
+              <McpServers settings={current} onChange={save} />
             </>
           )}
           {tab === 'data' && (

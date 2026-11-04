@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- Settings that save as soon as they change (switches, menus, models, compaction, memory) show a brief "Saved" at the top of the panel (also announced), which goes after two seconds or when you change tab; a failed save shows its error instead. Personalization keeps its own Save button and message.
+
 ## [0.12.9] - 2026-11-04
 
 ### Added

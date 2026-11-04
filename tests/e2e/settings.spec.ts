@@ -320,3 +320,24 @@ test('chooses the models of images, search and voice input', async ({
   await dialog.getByRole('button', { name: 'Reset' }).first().click()
   await expect(image).toHaveValue('e2e-image')
 })
+
+test('a setting that saves at once says so for a moment', async ({ page }) => {
+  await page.goto('/')
+  const dialog = await openSettings(page, 'Model')
+  const flash = dialog.locator('.settings-flash')
+  await expect(flash).toHaveText('')
+  await dialog.getByLabel('Reasoning effort').selectOption('low')
+  await expect(flash).toHaveText('Saved')
+  await expect(flash).toHaveText('', { timeout: 5000 })
+
+  // A failed save says nothing of the sort.
+  await page.route('**/api/settings', (route) =>
+    route.request().method() === 'PATCH'
+      ? route.fulfill({ status: 500, json: { error: 'Disk full' } })
+      : route.continue(),
+  )
+  await dialog.getByLabel('Reasoning effort').selectOption('high')
+  await expect(dialog.getByRole('alert')).toContainText('Disk full')
+  await expect(flash).toHaveText('')
+  await page.unroute('**/api/settings')
+})
