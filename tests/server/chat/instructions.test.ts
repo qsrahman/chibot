@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { chatInstructions } from '../../src/server/prompts.ts'
-import { ToolRegistry } from '../../src/server/tool-registry.ts'
+import { chatInstructions } from '../../../src/server/chat/prompts.ts'
+import { ToolRegistry } from '../../../src/server/tool-registry.ts'
 import {
   EchoTool,
   answerEvents,
@@ -9,7 +9,7 @@ import {
   testSettings,
   type FakeCall,
   testChat,
-} from './fakes.ts'
+} from '../fakes.ts'
 
 const none = { aboutUser: '', responseStyle: '' }
 

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ConversationStore } from '../../../src/server/conversation-store.ts'
+import type { ConversationStore } from '../../../src/server/conversations/index.ts'
 import { openDatabase } from '../../../src/server/database.ts'
 import type { FileStore } from '../../../src/server/file-store.ts'
 import { ProjectStore } from '../../../src/server/projects/project-store.ts'

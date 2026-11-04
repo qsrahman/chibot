@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- Code only: conversations and the chat are feature folders too: `src/server/conversations/` (the store, search and Markdown export: data only) and `src/server/chat/` (the turn loop, `ModelRequests`, `TitleWriter`, prompts, `refuseTurn` and the `/api/conversations` routes, which need both the chat and projects), each with an `index.ts`. The instruction writer's prompt moved into `projects/` and `section()` into its own `prompt-tags.ts`, so projects don't depend on the chat. The rules now fix the order `conversations` ← `mcp` / `projects` ← `chat`.
 - Code only: MCP is a feature folder, `src/server/mcp/` (config, connections, OAuth sign-in, routes and the tool, with an `index.ts` and tests under `tests/server/mcp/`); the dependency rules now also require MCP code to be imported through its index and keep it independent of chat, conversations and projects.
 
 ## [0.12.4] - 2026-11-04

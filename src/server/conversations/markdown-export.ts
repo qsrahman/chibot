@@ -1,5 +1,5 @@
-import { fileParts, messageText } from '../shared/messages.ts'
-import type { Conversation, StoredItem } from '../shared/types.ts'
+import { fileParts, messageText } from '../../shared/messages.ts'
+import type { Conversation, StoredItem } from '../../shared/types.ts'
 
 /**
  * The conversation as shown (its current path) in Markdown.

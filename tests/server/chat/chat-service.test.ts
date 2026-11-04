@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import OpenAI from 'openai'
-import { messageText } from '../../src/shared/messages.ts'
-import { ConversationStore } from '../../src/server/conversation-store.ts'
+import { messageText } from '../../../src/shared/messages.ts'
+import { ConversationStore } from '../../../src/server/conversations/index.ts'
 import {
   answerEvents,
   drain,
@@ -9,7 +9,7 @@ import {
   type FakeCall,
   memoryStore,
   testChat,
-} from './fakes.ts'
+} from '../fakes.ts'
 
 describe('ChatService', () => {
   let store: ConversationStore

@@ -1,20 +1,20 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { Config } from '../../src/server/config.ts'
-import { ConversationSearch } from '../../src/server/conversation-search.ts'
-import { ConversationStore } from '../../src/server/conversation-store.ts'
+import { Config } from '../../../src/server/config.ts'
+import { ConversationSearch } from '../../../src/server/conversations/index.ts'
+import { ConversationStore } from '../../../src/server/conversations/index.ts'
 import type {
   Conversation,
   ConversationListItem,
-} from '../../src/shared/types.ts'
-import { openDatabase } from '../../src/server/database.ts'
-import type { FileStore } from '../../src/server/file-store.ts'
+} from '../../../src/shared/types.ts'
+import { openDatabase } from '../../../src/server/database.ts'
+import type { FileStore } from '../../../src/server/file-store.ts'
 import {
   memoryStore,
   testFiles,
   testSettings,
   testApp,
   testChat,
-} from './fakes.ts'
+} from '../fakes.ts'
 
 const config = new Config({ OPENAI_API_KEY: 'k' })
 

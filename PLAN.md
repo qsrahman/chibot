@@ -143,7 +143,7 @@ Browser (React + Vite)                        Node server (Hono)
   that reject a feature or a file, are `ModelRequests`.
 - **`createApp(deps)`:** the Hono app: access checks, then one route file per
   area (`routes/`). It's a factory so tests can inject fakes.
-- **`prompts.ts`:** what chibot tells the model: its instructions, a project's,
+- **`chat/prompts.ts`:** what chibot tells the model: its instructions, a project's,
   and the title request.
 - **`main.ts`:** wires the real dependencies together and starts the server.
 

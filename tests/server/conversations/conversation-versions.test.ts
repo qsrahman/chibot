@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { ConversationStore } from '../../src/server/conversation-store.ts'
-import { usage, memoryStore } from './fakes.ts'
+import { ConversationStore } from '../../../src/server/conversations/conversation-store.ts'
+import { usage, memoryStore } from '../fakes.ts'
 
 describe('ConversationStore versions', () => {
   let store: ConversationStore

@@ -1,7 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite'
-import { anyWordQuery } from './database.ts'
+import { anyWordQuery } from '../database.ts'
 import { toConversation, type ConversationRow } from './conversation-store.ts'
-import type { ChatMatch, ConversationListItem } from '../shared/types.ts'
+import type { ChatMatch, ConversationListItem } from '../../shared/types.ts'
 
 const SEARCH_LIMIT = 50
 

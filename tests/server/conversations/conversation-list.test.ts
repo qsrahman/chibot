@@ -3,10 +3,10 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
-import { ConversationSearch } from '../../src/server/conversation-search.ts'
-import { ConversationStore } from '../../src/server/conversation-store.ts'
-import { openDatabase } from '../../src/server/database.ts'
-import { memoryStore } from './fakes.ts'
+import { ConversationSearch } from '../../../src/server/conversations/conversation-search.ts'
+import { ConversationStore } from '../../../src/server/conversations/conversation-store.ts'
+import { openDatabase } from '../../../src/server/database.ts'
+import { memoryStore } from '../fakes.ts'
 
 describe('ConversationStore lists, search and lifecycle', () => {
   let store: ConversationStore

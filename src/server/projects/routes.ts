@@ -8,7 +8,7 @@ import {
 } from '../../shared/requests.ts'
 import type { ProjectWithContents } from '../../shared/types.ts'
 import type { Attachments } from '../attachments.ts'
-import type { ConversationStore } from '../conversation-store.ts'
+import type { ConversationStore } from '../conversations/index.ts'
 import type { FileStore } from '../file-store.ts'
 import type { InstructionWriter } from './instruction-writer.ts'
 import type { ProjectIndex } from './project-index.ts'

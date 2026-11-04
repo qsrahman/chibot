@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type OpenAI from 'openai'
 import type { ResponseFunctionToolCall } from 'openai/resources/responses/responses'
-import type { ConversationStore } from '../../../src/server/conversation-store.ts'
+import type { ConversationStore } from '../../../src/server/conversations/index.ts'
 import { openDatabase } from '../../../src/server/database.ts'
 import type { FileStore } from '../../../src/server/file-store.ts'
 import { ProjectIndex } from '../../../src/server/projects/project-index.ts'

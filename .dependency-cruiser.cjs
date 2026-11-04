@@ -1,11 +1,24 @@
 // Who may import whom, checked by `pnpm deps` and by `pnpm test`
 // (tests/architecture.test.ts). The layers are described in AGENTS.md.
+// Server features: a folder with an index.ts. From the bottom up: conversations
+// (data), then mcp and projects, then chat, which uses the others.
+const SERVER_FEATURES = ['conversations', 'mcp', 'projects', 'chat']
 const WEB_FEATURES = 'chat|conversations|projects|settings'
 const WEB_SHELL = 'App|Sidebar|ShortcutsDialog|main'
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
+    ...SERVER_FEATURES.filter((f) => f !== 'projects').map((feature) => ({
+      name: `${feature}-through-its-index`,
+      comment: `Outside src/server/${feature}/, import from its index.ts only.`,
+      severity: 'error',
+      from: { pathNot: `^src/server/${feature}/` },
+      to: {
+        path: `^src/server/${feature}/`,
+        pathNot: `^src/server/${feature}/index\\.ts$`,
+      },
+    })),
     {
       name: 'no-circular',
       comment:
@@ -69,10 +82,10 @@ module.exports = {
         'Stores, search and the database serve the chat; they do not call up into it, the routes or the tools.',
       severity: 'error',
       from: {
-        path: '^src/server/(database|[a-z]+-(store|search))\\.ts$',
+        path: '^src/server/(database|conversations/|[a-z]+-(store|search)\\.ts$)',
       },
       to: {
-        path: '^src/server/(chat-service|app|main|tool-registry|routes/|tools/)',
+        path: '^src/server/(chat/|app|main|tool-registry|routes/|tools/)',
       },
     },
     {
@@ -80,7 +93,7 @@ module.exports = {
       comment: 'A tool does not reach up into the chat, the routes or the app.',
       severity: 'error',
       from: { path: '^src/server/tools/' },
-      to: { path: '^src/server/(chat-service|app|main|routes/)' },
+      to: { path: '^src/server/(chat/|app|main|routes/)' },
     },
     {
       name: 'projects-through-its-index',
@@ -94,11 +107,12 @@ module.exports = {
       },
     },
     {
-      name: 'mcp-through-its-index',
-      comment: 'Outside src/server/mcp/, import from its index.ts only.',
+      name: 'conversations-stand-alone',
+      comment:
+        'Conversations are data (store, search, export): they know nothing of the chat, MCP or projects.',
       severity: 'error',
-      from: { pathNot: '^src/server/mcp/' },
-      to: { path: '^src/server/mcp/', pathNot: '^src/server/mcp/index\\.ts$' },
+      from: { path: '^src/server/conversations/' },
+      to: { path: '^src/server/(chat|mcp|projects)/' },
     },
     {
       name: 'mcp-stands-alone',
@@ -106,6 +120,13 @@ module.exports = {
       severity: 'error',
       from: { path: '^src/server/mcp/' },
       to: { path: '^src/server/(chat|conversations|projects)/' },
+    },
+    {
+      name: 'projects-below-the-chat',
+      comment: 'Projects may use conversations, not the chat or MCP.',
+      severity: 'error',
+      from: { path: '^src/server/projects/' },
+      to: { path: '^src/server/(chat|mcp)/' },
     },
     {
       name: 'database-takes-only-the-projects-schema',

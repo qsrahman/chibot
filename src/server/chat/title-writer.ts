@@ -1,9 +1,9 @@
 import type { ResponseCreateParamsNonStreaming } from 'openai/resources/responses/responses'
-import { messageText } from '../shared/messages.ts'
-import type { ConversationStore } from './conversation-store.ts'
+import { messageText } from '../../shared/messages.ts'
+import type { ConversationStore } from '../conversations/index.ts'
 import type { ModelRequests } from './model-requests.ts'
 import { cleanTitle, TITLE_INSTRUCTIONS } from './prompts.ts'
-import type { SettingsStore } from './settings-store.ts'
+import type { SettingsStore } from '../settings-store.ts'
 
 /** Names chats from their opening messages. */
 export class TitleWriter {

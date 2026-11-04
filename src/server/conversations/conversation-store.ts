@@ -3,15 +3,15 @@ import type {
   ResponseInputItem,
   ResponseUsage,
 } from 'openai/resources/responses/responses'
-import { messageText } from '../shared/messages.ts'
-import type { ConversationExport } from '../shared/export.ts'
-import { transaction } from './database.ts'
+import { messageText } from '../../shared/messages.ts'
+import type { ConversationExport } from '../../shared/export.ts'
+import { transaction } from '../database.ts'
 import type {
   Conversation,
   ConversationListItem,
   ConversationPatch,
   StoredItem,
-} from '../shared/types.ts'
+} from '../../shared/types.ts'
 
 export interface ConversationRow {
   id: string

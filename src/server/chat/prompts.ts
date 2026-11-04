@@ -1,6 +1,6 @@
-import type { Settings } from '../shared/settings.ts'
-import type { Project } from '../shared/types.ts'
-import { section } from './prompt-tags.ts'
+import type { Settings } from '../../shared/settings.ts'
+import type { Project } from '../../shared/types.ts'
+import { section } from '../prompt-tags.ts'
 
 // What chibot tells the model: its built-in instructions, a project's, and
 // the request for a chat title (with cleaning of the reply).

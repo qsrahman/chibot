@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { ConversationSearch } from '../../src/server/conversation-search.ts'
-import type { ConversationStore } from '../../src/server/conversation-store.ts'
+import { ConversationSearch } from '../../src/server/conversations/index.ts'
+import type { ConversationStore } from '../../src/server/conversations/index.ts'
 import { openDatabase } from '../../src/server/database.ts'
 import { SearchChatsTool } from '../../src/server/tools/search-chats.ts'
 import { ProjectStore } from '../../src/server/projects/index.ts'

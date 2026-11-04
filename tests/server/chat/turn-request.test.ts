@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { ResponseInputItem } from 'openai/resources/responses/responses'
-import { openDatabase } from '../../src/server/database.ts'
-import { ProjectStore } from '../../src/server/projects/index.ts'
-import { refuseTurn } from '../../src/server/turn-request.ts'
-import { memoryStore, testChat, testFiles } from './fakes.ts'
+import { openDatabase } from '../../../src/server/database.ts'
+import { ProjectStore } from '../../../src/server/projects/index.ts'
+import { refuseTurn } from '../../../src/server/chat/turn-request.ts'
+import { memoryStore, testChat, testFiles } from '../fakes.ts'
 
 describe('refuseTurn', () => {
   const db = () => openDatabase(':memory:')

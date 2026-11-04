@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { Config } from '../../src/server/config.ts'
-import type { ConversationStore } from '../../src/server/conversation-store.ts'
-import { openDatabase } from '../../src/server/database.ts'
-import type { FileStore } from '../../src/server/file-store.ts'
-import type { ConversationExport } from '../../src/shared/export.ts'
-import type { Conversation } from '../../src/shared/types.ts'
+import { Config } from '../../../src/server/config.ts'
+import type { ConversationStore } from '../../../src/server/conversations/conversation-store.ts'
+import { openDatabase } from '../../../src/server/database.ts'
+import type { FileStore } from '../../../src/server/file-store.ts'
+import type { ConversationExport } from '../../../src/shared/export.ts'
+import type { Conversation } from '../../../src/shared/types.ts'
 import {
   memoryStore,
   testFiles,
@@ -12,7 +12,7 @@ import {
   usage,
   testApp,
   testChat,
-} from './fakes.ts'
+} from '../fakes.ts'
 
 describe('export and import', () => {
   let store: ConversationStore

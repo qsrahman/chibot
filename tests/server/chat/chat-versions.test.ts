@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { ChatService } from '../../src/server/chat-service.ts'
-import { Config } from '../../src/server/config.ts'
-import { ConversationStore } from '../../src/server/conversation-store.ts'
-import type { SettingsStore } from '../../src/server/settings-store.ts'
-import { messageText } from '../../src/shared/messages.ts'
+import { ChatService } from '../../../src/server/chat/chat-service.ts'
+import { Config } from '../../../src/server/config.ts'
+import { ConversationStore } from '../../../src/server/conversations/index.ts'
+import type { SettingsStore } from '../../../src/server/settings-store.ts'
+import { messageText } from '../../../src/shared/messages.ts'
 import {
   answerEvents,
   drain,
@@ -12,7 +12,7 @@ import {
   testSettings,
   testApp,
   testChat,
-} from './fakes.ts'
+} from '../fakes.ts'
 
 describe('edit, regenerate and switch versions', () => {
   let store: ConversationStore

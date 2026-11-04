@@ -1,14 +1,17 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { ResponseStreamEvent } from 'openai/resources/responses/responses'
 import { z } from 'zod'
-import { ChatService, MAX_STEPS } from '../../src/server/chat-service.ts'
-import type { ConversationStore } from '../../src/server/conversation-store.ts'
-import { Tool } from '../../src/server/tool.ts'
+import {
+  ChatService,
+  MAX_STEPS,
+} from '../../../src/server/chat/chat-service.ts'
+import type { ConversationStore } from '../../../src/server/conversations/index.ts'
+import { Tool } from '../../../src/server/tool.ts'
 import {
   TOOL_DENIED,
   TOOL_STOPPED,
   ToolRegistry,
-} from '../../src/server/tool-registry.ts'
+} from '../../../src/server/tool-registry.ts'
 import {
   answerEvents,
   callEvents,
@@ -19,7 +22,7 @@ import {
   testSettings,
   type FakeCall,
   testChat,
-} from './fakes.ts'
+} from '../fakes.ts'
 
 describe('ChatService tools', () => {
   let store: ConversationStore

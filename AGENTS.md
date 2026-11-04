@@ -19,13 +19,16 @@ How a message becomes an answer lives in [TURN.md](TURN.md).
 src/server/   main.ts (start(): wiring + listen, defaultTools()), app.ts (Hono
               app: access checks, health, mounts routes/*.ts, one file per
               area, each `xRoutes({ …what it uses })` returning a Hono app),
-              prompts.ts (what chibot tells the model), database.ts (one
-              SQLite connection + the ordered migrations), one class per
-              file; tools/ holds the shipped Tool subclasses
-src/server/projects/
-              a feature folder: its store, search index, chunking,
-              instruction writer, routes, tools and schema. index.ts is what
-              the rest of the server may import (see Design conventions)
+              database.ts (one SQLite connection + the ordered migrations),
+              one class per file; tools/ holds the shipped Tool subclasses
+src/server/<feature>/
+              feature folders, each with an index.ts (what the rest of the
+              server may import; see Design conventions): conversations/
+              (history trees, search, export), chat/ (the turn loop, model
+              requests, titles, prompts.ts: what chibot tells the model, and
+              the /api/conversations routes), projects/ (store, search index,
+              chunking, instruction writer, routes, tools, schema) and mcp/
+              (config, connections, OAuth, routes, the tool)
 src/shared/   used by both server and web: API record types, chibot's own SSE
               events, message text extraction, zod schemas (requests,
               settings, export) and reasoning efforts (zod-free, so the web
@@ -100,10 +103,11 @@ transpiles it.
   client, store, config). Only `main.ts` constructs real ones. Tests pass
   fakes.
 - **Features own their files.** Code that belongs to one feature (a store, its
-  routes and tools, its schema) lives in `src/server/<feature>/` (so far
-  `projects/`), with an `index.ts` listing what the rest of the server may
-  use; import from the index, not from files inside, so the feature can change
-  inside. Routes name the collaborators they use (`xRoutes({ store, files })`)
+  routes and tools, its schema) lives in `src/server/<feature>/`, with an
+  `index.ts` listing what the rest of the server may use; import from the
+  index, not from files inside, so the feature can change inside. They depend
+  upwards only: `conversations/` (data) ← `mcp/` and `projects/` ← `chat/`,
+  and `pnpm deps` fails otherwise. Routes name the collaborators they use (`xRoutes({ store, files })`)
   and never import `app.ts`. The one exception: `database.ts` imports
   `projects/schema.ts` (SQL only) because migrations run in one fixed order.
   Tests mirror the folders (`tests/server/projects/`).
@@ -133,7 +137,7 @@ transpiles it.
   `include: ['reasoning.encrypted_content']`. The SQLite history is the source
   of truth. History is a tree (`parent_id`). A turn's input is the root→leaf
   path (see PLAN.md §3).
-- **Prompts** (`prompts.ts`, tool descriptions and `instructions()`) follow
+- **Prompts** (`chat/prompts.ts`, tool descriptions and `instructions()`) follow
   OpenAI's and Anthropic's guidance: say what to do rather than what to avoid,
   and why (models generalize from the reason); no all-caps emphasis, which
   makes models over-trigger; no contradicting rules (say what overrides what);
@@ -162,7 +166,7 @@ transpiles it.
   OpenAI-hosted tools (`web_search`, `file_search`, `image_generation`,
   `code_interpreter`, remote MCP) in a request's `tools`. MCP servers' tools
   come through chibot's own client (`McpServers`) as `McpTool`s
-  (`tools/mcp-tool.ts`), which `ToolRegistry` asks for on each turn.
+  (`mcp/mcp-tool.ts`), which `ToolRegistry` asks for on each turn.
 - **Web data** comes through each feature's `api.ts`, built on `http.ts`
   (`request` / `send` / `remove`, which turn failures into `Error`s with the
   server's message). Lists and dialogs

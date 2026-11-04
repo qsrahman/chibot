@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ResponseInputItem } from 'openai/resources/responses/responses'
-import { fromLastCompaction } from '../../src/server/chat-service.ts'
+import { fromLastCompaction } from '../../../src/server/chat/chat-service.ts'
 import {
   answerEvents,
   chatOn,
@@ -10,7 +10,7 @@ import {
   testSettings,
   type FakeCall,
   testChat,
-} from './fakes.ts'
+} from '../fakes.ts'
 
 const compaction = (id: string) =>
   ({ type: 'compaction', id, encrypted_content: 'x' }) as ResponseInputItem

@@ -1,10 +1,10 @@
-import { fileKind } from '../shared/documents.ts'
-import { messageText } from '../shared/messages.ts'
-import type { TurnRequest } from '../shared/types.ts'
+import { fileKind } from '../../shared/documents.ts'
+import { messageText } from '../../shared/messages.ts'
+import type { TurnRequest } from '../../shared/types.ts'
 import type { ChatService } from './chat-service.ts'
-import type { ConversationStore } from './conversation-store.ts'
-import type { FileStore } from './file-store.ts'
-import type { ProjectStore } from './projects/index.ts'
+import type { ConversationStore } from '../conversations/index.ts'
+import type { FileStore } from '../file-store.ts'
+import type { ProjectStore } from '../projects/index.ts'
 
 /** Why a turn is refused: the HTTP status and the message the user sees. */
 export interface Refusal {

@@ -4,22 +4,22 @@ import type {
   ResponseInputItem,
   ResponseStreamEvent,
 } from 'openai/resources/responses/responses'
-import type { Settings } from '../shared/settings.ts'
+import type { Settings } from '../../shared/settings.ts'
 import type {
   Conversation,
   TurnApprovalEvent,
   TurnRequest,
   TurnTitleEvent,
   TurnToolOutputEvent,
-} from '../shared/types.ts'
-import type { Attachments } from './attachments.ts'
-import type { ConversationStore } from './conversation-store.ts'
-import type { ProjectStore } from './projects/index.ts'
-import type { SettingsStore } from './settings-store.ts'
+} from '../../shared/types.ts'
+import type { Attachments } from '../attachments.ts'
+import type { ConversationStore } from '../conversations/index.ts'
+import type { ProjectStore } from '../projects/index.ts'
+import type { SettingsStore } from '../settings-store.ts'
 import type { ModelRequests } from './model-requests.ts'
 import { chatInstructions } from './prompts.ts'
 import type { TitleWriter } from './title-writer.ts'
-import { TOOL_DENIED, ToolRegistry } from './tool-registry.ts'
+import { TOOL_DENIED, ToolRegistry } from '../tool-registry.ts'
 
 /** What `runTurn` yields. */
 type TurnEvent =

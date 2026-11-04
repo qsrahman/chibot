@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import OpenAI from 'openai'
-import { ModelRequests } from '../../src/server/model-requests.ts'
+import { ModelRequests } from '../../../src/server/chat/model-requests.ts'
 import {
   answerEvents,
   drain,
@@ -8,7 +8,7 @@ import {
   memoryStore,
   testSettings,
   testChat,
-} from './fakes.ts'
+} from '../fakes.ts'
 
 describe('models', () => {
   it('lists the endpoint models, sorted', async () => {

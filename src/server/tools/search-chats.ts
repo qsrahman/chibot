@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { ConversationSearch } from '../conversation-search.ts'
+import type { ConversationSearch } from '../conversations/index.ts'
 import type { Conversation } from '../../shared/types.ts'
 import { Tool, type ToolContext } from '../tool.ts'
 

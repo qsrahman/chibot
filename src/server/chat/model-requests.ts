@@ -8,7 +8,7 @@ import type {
   ResponseStreamEvent,
 } from 'openai/resources/responses/responses'
 import type { Stream } from 'openai/streaming'
-import type { Attachments } from './attachments.ts'
+import type { Attachments } from '../attachments.ts'
 import { chatModels } from './chat-models.ts'
 
 /** Request features some models or servers reject (see `ModelRequests`). */

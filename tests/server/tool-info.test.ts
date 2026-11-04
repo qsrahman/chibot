@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { sortTools, type ToolInfo } from '../../src/shared/tools.ts'
 import { Config } from '../../src/server/config.ts'
-import { ConversationSearch } from '../../src/server/conversation-search.ts'
+import { ConversationSearch } from '../../src/server/conversations/index.ts'
 import { openDatabase } from '../../src/server/database.ts'
 import { defaultTools } from '../../src/server/main.ts'
 import { MemoryStore } from '../../src/server/memory-store.ts'

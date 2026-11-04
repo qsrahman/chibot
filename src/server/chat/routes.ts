@@ -19,17 +19,17 @@ import type {
   ConversationWithItems,
   TurnErrorEvent,
 } from '../../shared/types.ts'
-import { toMarkdown } from '../markdown-export.ts'
-import { refuseTurn } from '../turn-request.ts'
+import { toMarkdown } from '../conversations/index.ts'
+import { refuseTurn } from './turn-request.ts'
 import type { Attachments } from '../attachments.ts'
-import type { ChatService } from '../chat-service.ts'
-import type { ConversationSearch } from '../conversation-search.ts'
-import type { ConversationStore } from '../conversation-store.ts'
+import type { ChatService } from './chat-service.ts'
+import type { ConversationSearch } from '../conversations/index.ts'
+import type { ConversationStore } from '../conversations/index.ts'
 import type { FileStore } from '../file-store.ts'
 import type { ProjectStore } from '../projects/index.ts'
-import type { TitleWriter } from '../title-writer.ts'
+import type { TitleWriter } from './title-writer.ts'
 import { explainApiError } from '../api-errors.ts'
-import { disposition, json, notFound } from './helpers.ts'
+import { disposition, json, notFound } from '../routes/helpers.ts'
 
 export function conversationRoutes({
   store,

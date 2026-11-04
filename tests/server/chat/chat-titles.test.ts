@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import OpenAI from 'openai'
 import type { ResponseCreateParams } from 'openai/resources/responses/responses'
-import { ConversationStore } from '../../src/server/conversation-store.ts'
+import { ConversationStore } from '../../../src/server/conversations/index.ts'
 import {
   answerEvents,
   drain,
@@ -9,7 +9,7 @@ import {
   memoryStore,
   testChat,
   testChatServices,
-} from './fakes.ts'
+} from '../fakes.ts'
 
 const eventTypes = async (stream: AsyncIterable<{ type: string }>) =>
   (await drain(stream)).map((event) => event.type)

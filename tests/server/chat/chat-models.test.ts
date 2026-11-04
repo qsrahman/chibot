@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { chatModels } from '../../src/server/chat-models.ts'
+import { chatModels } from '../../../src/server/chat/chat-models.ts'
 
 const OPENAI_IDS = [
   'gpt-6-astra',

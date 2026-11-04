@@ -7,7 +7,7 @@ import {
 } from 'eventsource-parser/stream'
 import { ToolRegistry } from '../../src/server/tool-registry.ts'
 import { Config } from '../../src/server/config.ts'
-import { ConversationStore } from '../../src/server/conversation-store.ts'
+import { ConversationStore } from '../../src/server/conversations/index.ts'
 import type {
   Conversation,
   ConversationWithItems,

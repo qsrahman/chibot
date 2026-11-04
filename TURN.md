@@ -10,7 +10,7 @@ browser                         server
 Composer.submit
  └ useChat.send / edit / …
     └ run()  ── POST /api/conversations/:id/turns ──▶ app.ts middleware
-                                                      routes/conversations.ts
+                                                      chat/routes.ts
                                                        └ refuseTurn
                                                        └ ChatService.runTurn
                                                           ├ #startTurn  save the message
@@ -44,8 +44,8 @@ chat's `currentLeafId` says which branch is on screen.
 
 `createApp` (`app.ts`) runs, in order: the host check (only this machine's
 names, against DNS rebinding), the `CHIBOT_TOKEN` check when set, and CSRF for
-browser form posts. Then `routes/conversations.ts` validates the body with zod
-(`json(turnRequestSchema)`) and asks `refuseTurn` (`turn-request.ts`): files
+browser form posts. Then `chat/routes.ts` validates the body with zod
+(`json(turnRequestSchema)`) and asks `refuseTurn` (`chat/turn-request.ts`): files
 that can be attached here, an approval with calls actually waiting, and a
 `parentId` where a message or answer may follow. A refusal is a 4xx before
 anything is saved. Otherwise the route links the uploads to the chat and
@@ -64,7 +64,7 @@ turn is about to save. Then `#runTurn`:
 2. **`#planTurn`** reads the settings and tools *as they are now* and builds a
    `TurnPlan`: the model and effort; the offered tools (`unavailable()` is
    `null`, not switched off in Settings, `offeredIn(conversation)`); the
-   instructions (`chatInstructions` in `prompts.ts`: identity, rules, user
+   instructions (`chatInstructions` in `chat/prompts.ts`: identity, rules, user
    profile, style, project, what each tool adds, the time last, for prompt
    caching); and the tool the user picked, forced on the first request only.
 3. **The loop**, at most `MAX_STEPS` (10) requests:
@@ -88,7 +88,7 @@ turn is about to save. Then `#runTurn`:
   last compaction item if there is one (`fromLastCompaction`). The history in
   SQLite is the source of truth: requests are `store: false`, with
   `include: ['reasoning.encrypted_content']` so reasoning can be replayed.
-- **The request itself** goes through `ModelRequests.stream` (`model-requests.ts`),
+- **The request itself** goes through `ModelRequests.stream` (`chat/model-requests.ts`),
   which makes it work with what the endpoint supports. Attachments are resolved
   just before sending: files as the provider's file ids, or as text for models
   that refuse them. Optional features (reasoning effort, compaction) are
@@ -131,10 +131,10 @@ re-reads the chat (`getConversation`) and shows it as `toTurns(items)`
 
 | To change… | Start in |
 | --- | --- |
-| What the model is told | `prompts.ts`, and each tool's `description` / `instructions()` |
+| What the model is told | `chat/prompts.ts`, and each tool's `description` / `instructions()` |
 | Which tools are offered, and approval | `ChatService.#planTurn`, `ToolRegistry`, the `Tool` subclass |
-| What a request may do | `turn-request.ts`, `requests.ts` |
-| History shape, versions, usage | `ConversationStore` |
+| What a request may do | `chat/turn-request.ts`, `requests.ts` |
+| History shape, versions, usage | `conversations/` (`ConversationStore`) |
 | What to do when an endpoint rejects a feature or file | `ModelRequests` |
 | How chats are titled | `TitleWriter`, `TITLE_INSTRUCTIONS` |
 | How a turn shows on screen | `chat/useChat.ts`, `chat/turns.ts`, `chat/TurnView.tsx` |
