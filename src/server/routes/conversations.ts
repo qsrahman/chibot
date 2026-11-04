@@ -21,7 +21,12 @@ import type {
 } from '../../shared/types.ts'
 import { toMarkdown } from '../markdown-export.ts'
 import { refuseTurn } from '../turn-request.ts'
-import type { AppDeps } from '../app.ts'
+import type { Attachments } from '../attachments.ts'
+import type { ChatService } from '../chat-service.ts'
+import type { ConversationSearch } from '../conversation-search.ts'
+import type { ConversationStore } from '../conversation-store.ts'
+import type { FileStore } from '../file-store.ts'
+import type { ProjectStore } from '../project-store.ts'
 import { explainApiError } from '../api-errors.ts'
 import { disposition, json, notFound } from './helpers.ts'
 
@@ -32,7 +37,14 @@ export function conversationRoutes({
   files,
   projects,
   attachments,
-}: AppDeps) {
+}: {
+  store: ConversationStore
+  search: ConversationSearch
+  chat: ChatService
+  files: FileStore
+  projects: ProjectStore
+  attachments: Attachments
+}) {
   const app = new Hono()
 
   app.get('/api/conversations', (c) => {

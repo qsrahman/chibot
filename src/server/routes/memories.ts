@@ -1,11 +1,10 @@
 import { Hono } from 'hono'
 import { MAX_MEMORY_LENGTH } from '../../shared/memory.ts'
 import { memoryPatchSchema } from '../../shared/requests.ts'
-import { normalizeMemory } from '../memory-store.ts'
-import type { AppDeps } from '../app.ts'
+import { normalizeMemory, type MemoryStore } from '../memory-store.ts'
 import { json, notFound } from './helpers.ts'
 
-export function memoryRoutes({ memories }: AppDeps) {
+export function memoryRoutes({ memories }: { memories: MemoryStore }) {
   const app = new Hono()
 
   app.get('/api/memories', (c) => c.json(memories.list().reverse()))

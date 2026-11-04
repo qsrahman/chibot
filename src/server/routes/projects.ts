@@ -7,7 +7,12 @@ import {
   projectPatchSchema,
 } from '../../shared/requests.ts'
 import type { ProjectWithContents } from '../../shared/types.ts'
-import type { AppDeps } from '../app.ts'
+import type { Attachments } from '../attachments.ts'
+import type { ConversationStore } from '../conversation-store.ts'
+import type { FileStore } from '../file-store.ts'
+import type { InstructionWriter } from '../instruction-writer.ts'
+import type { ProjectIndex } from '../project-index.ts'
+import type { ProjectStore } from '../project-store.ts'
 import { explainApiError } from '../api-errors.ts'
 import { NothingToSuggestFrom } from '../instruction-writer.ts'
 import { json, notFound } from './helpers.ts'
@@ -19,7 +24,14 @@ export function projectRoutes({
   index,
   instructionWriter,
   attachments,
-}: AppDeps) {
+}: {
+  store: ConversationStore
+  files: FileStore
+  projects: ProjectStore
+  index: ProjectIndex
+  instructionWriter: InstructionWriter
+  attachments: Attachments
+}) {
   const app = new Hono()
 
   app.get('/api/projects', (c) => c.json(projects.list()))

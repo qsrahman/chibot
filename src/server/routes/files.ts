@@ -2,10 +2,18 @@ import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
 import { z } from 'zod'
 import { fileKind } from '../../shared/documents.ts'
-import type { AppDeps } from '../app.ts'
+import type { FileStore } from '../file-store.ts'
+import type { Transcription } from '../transcription.ts'
 import { disposition, form, notFound } from './helpers.ts'
 
-export function fileRoutes({ files, transcription }: AppDeps) {
+export function fileRoutes({
+  files,
+  transcription,
+}: {
+  files: FileStore
+  /** Voice input, or `null` without a transcription endpoint. */
+  transcription: Transcription | null
+}) {
   const app = new Hono()
 
   app.post(

@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- Code only: each route file (`routes/*.ts`) declares the few collaborators it uses instead of taking the whole `AppDeps` from `app.ts`, which removes the six import cycles between `app.ts` and the routes; `app.ts` still composes them from `AppDeps`.
+
 ## [0.12.2] - 2026-11-02
 
 ### Changed

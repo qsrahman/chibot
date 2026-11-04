@@ -1,9 +1,9 @@
 import { Hono, type Context } from 'hono'
 import type { McpServerStatus } from '../../shared/types.ts'
-import type { AppDeps } from '../app.ts'
+import type { McpServers } from '../mcp-servers.ts'
 import { notFound } from './helpers.ts'
 
-export function mcpRoutes({ mcp }: AppDeps) {
+export function mcpRoutes({ mcp }: { mcp: McpServers }) {
   const app = new Hono()
 
   const mcpStatus = (c: Context) =>

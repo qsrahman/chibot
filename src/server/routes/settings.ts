@@ -5,10 +5,20 @@ import {
 } from '../../shared/settings.ts'
 import type { ToolInfo } from '../../shared/tools.ts'
 import type { ModelsResponse } from '../../shared/types.ts'
-import type { AppDeps } from '../app.ts'
+import type { ChatService } from '../chat-service.ts'
+import type { McpServers } from '../mcp-servers.ts'
+import type { SettingsStore } from '../settings-store.ts'
 import { json } from './helpers.ts'
 
-export function settingsRoutes({ settings, chat, mcp }: AppDeps) {
+export function settingsRoutes({
+  settings,
+  chat,
+  mcp,
+}: {
+  settings: SettingsStore
+  chat: ChatService
+  mcp: McpServers
+}) {
   const app = new Hono()
 
   app.get('/api/settings', (c) =>
