@@ -4,6 +4,11 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+
+### Fixed
+
+- **Add files** and **Add folder** on a project's Files card can be reached and pressed with the keyboard. They were labels around `hidden` file inputs, which no keyboard can focus, so Tab skipped them; they are real buttons now (`FilePickerButton`) that open the picker.
+
 ## [0.12.7] - 2026-11-04
 
 ### Changed

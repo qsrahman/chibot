@@ -114,6 +114,31 @@ test('adds a note, reads a whole file, and indexes a failed file again', async (
   await expect(answer(page, 0)).toContainText('The garage code is 9027.')
 })
 
+test('adds files and folders with the keyboard alone', async ({ page }) => {
+  await newProject(page, 'Keyboard')
+  const files = page.getByRole('region', { name: 'Project files' })
+  const note = files.getByRole('button', { name: 'Add note' })
+  const addFiles = files.getByRole('button', { name: 'Add files' })
+  const addFolder = files.getByRole('button', { name: 'Add folder' })
+
+  // Tab reaches all three, in the order they are drawn.
+  await note.focus()
+  await page.keyboard.press('Tab')
+  await expect(addFiles).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(addFolder).toBeFocused()
+
+  // Enter opens the pickers, one for files and one for a folder.
+  const files$ = page.waitForEvent('filechooser')
+  await addFiles.focus()
+  await page.keyboard.press('Enter')
+  expect((await files$).isMultiple()).toBe(true)
+  const folder$ = page.waitForEvent('filechooser')
+  await addFolder.focus()
+  await page.keyboard.press('Enter')
+  await folder$
+})
+
 test('refuses a file that is already in the project', async ({ page }) => {
   await newProject(page, 'Dupes')
   const files = page.getByRole('region', { name: 'Project files' })

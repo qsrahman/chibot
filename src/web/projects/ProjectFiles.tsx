@@ -7,9 +7,9 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import { DOCUMENT_ACCEPT } from '../../shared/documents.ts'
 import type { ProjectFile } from '../../shared/types.ts'
-import { droppedFiles, pickedFiles } from './folders.ts'
+import { FilePickerButton } from './FilePickerButton.tsx'
+import { droppedFiles } from './folders.ts'
 import { NoteDialog } from './ProjectDialogs.tsx'
 
 /** The project's files: add (files, a folder, a note), index again, remove. */
@@ -58,38 +58,17 @@ export function ProjectFiles({
             <NotebookPen size={16} strokeWidth={1.5} aria-hidden />
             Add note
           </button>
-          <label className="button">
-            <Upload size={16} strokeWidth={1.5} aria-hidden />
-            Add files
-            <input
-              type="file"
-              multiple
-              hidden
-              accept={DOCUMENT_ACCEPT}
-              aria-label="Add files"
-              onChange={(e) => {
-                const picked = pickedFiles(e.target.files)
-                e.target.value = ''
-                if (picked.length) onAdd(picked)
-              }}
-            />
-          </label>
-          <label className="button">
-            <FolderUp size={16} strokeWidth={1.5} aria-hidden />
-            Add folder
-            <input
-              type="file"
-              hidden
-              aria-label="Add folder"
-              // Not in React's types; Chrome, Edge, Firefox and Safari read it.
-              {...{ webkitdirectory: '' }}
-              onChange={(e) => {
-                const picked = pickedFiles(e.target.files)
-                e.target.value = ''
-                if (picked.length) onAdd(picked)
-              }}
-            />
-          </label>
+          <FilePickerButton
+            icon={<Upload size={16} strokeWidth={1.5} aria-hidden />}
+            label="Add files"
+            onPick={onAdd}
+          />
+          <FilePickerButton
+            icon={<FolderUp size={16} strokeWidth={1.5} aria-hidden />}
+            label="Add folder"
+            folder
+            onPick={onAdd}
+          />
         </div>
       </header>
       <NoteDialog
