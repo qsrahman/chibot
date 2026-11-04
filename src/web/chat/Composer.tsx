@@ -265,7 +265,8 @@ export function Composer({
         aria-label="Message"
         placeholder="Ask anything"
         rows={1}
-        autoFocus
+        // Not on a touch screen: it would raise the keyboard over the page.
+        autoFocus={!touchOnly}
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={onKeyDown}

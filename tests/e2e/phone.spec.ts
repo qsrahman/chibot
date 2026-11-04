@@ -145,6 +145,57 @@ test.describe('on a touch screen', () => {
     await page.getByRole('button', { name: 'Send' }).click()
   }
 
+  // Controls are at least 44px square for a finger (the drawn icon may be
+  // smaller): 2.5.8 asks 24px, phones' own guidelines 44 to 48.
+  const small = (page: Page) =>
+    page.evaluate(() => {
+      return [
+        ...document.querySelectorAll<HTMLElement>(
+          'button, [role=switch], select, summary, a.sidebar-row, a.search-result, textarea',
+        ),
+      ]
+        .filter((el) => el.getClientRects().length > 0)
+        .filter((el) => getComputedStyle(el).visibility !== 'hidden')
+        .map((el) => {
+          const r = el.getBoundingClientRect()
+          const label = el.getAttribute('aria-label') ?? el.textContent ?? ''
+          return {
+            what: `${el.tagName.toLowerCase()} "${label.trim().slice(0, 28)}"`,
+            width: Math.round(r.width),
+            height: Math.round(r.height),
+          }
+        })
+        .filter(({ width, height }) => width < 44 || height < 44)
+        .map(({ what, width, height }) => `${what} ${width}x${height}`)
+    })
+
+  test('does not raise the keyboard until the message box is tapped', async ({
+    page,
+  }) => {
+    await page.goto('/')
+    const message = page.getByRole('textbox', { name: 'Message' })
+    await expect(message).toBeVisible()
+    // Long enough for an autofocus to have happened.
+    await page.waitForTimeout(400)
+    await expect(message).not.toBeFocused()
+    await message.tap()
+    await expect(message).toBeFocused()
+  })
+
+  test('has controls a finger can hit, in the chat and in the drawer', async ({
+    page,
+  }) => {
+    await page.goto('/')
+    await appReady(page)
+    await sendByTap(page, 'Hello there')
+    await answered(page)
+    expect(await small(page), 'in the chat').toEqual([])
+
+    await page.getByRole('button', { name: 'Open sidebar' }).click()
+    await expect(page.locator('nav.sidebar')).toBeVisible()
+    expect(await small(page), 'in the drawer').toEqual([])
+  })
+
   test('shows controls that wait for a hover elsewhere', async ({ page }) => {
     await page.goto('/')
     await appReady(page)

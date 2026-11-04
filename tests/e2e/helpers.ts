@@ -29,8 +29,16 @@ export const answered = (page: Page) =>
   expect(page.getByRole('button', { name: 'Stop' })).toHaveCount(0)
 
 /** Shortcut listeners attach after the first render; wait for the app. */
-export const appReady = (page: Page) =>
-  expect(page.getByRole('textbox', { name: 'Message' })).toBeFocused()
+export async function appReady(page: Page) {
+  const message = page.getByRole('textbox', { name: 'Message' })
+  // On a touch screen the box is not focused by itself (that would raise the
+  // keyboard over the page): just there.
+  const touch = await page.evaluate(
+    () => matchMedia('(hover: none) and (pointer: coarse)').matches,
+  )
+  if (touch) await expect(message).toBeVisible()
+  else await expect(message).toBeFocused()
+}
 export const openChat = (page: Page, url: string) =>
   page.locator(`.conversation-row a[href="${new URL(url).pathname}"]`).click()
 

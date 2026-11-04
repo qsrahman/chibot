@@ -86,6 +86,38 @@
   }
 }
 
+/* A finger needs 44px (WCAG asks 24, phones' own guidelines 44 to 48). The
+   drawn icons stay as they are, centred in bigger boxes. */
+@media (pointer: coarse) {
+  .icon-button,
+  .action {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .model-button,
+  .mode-button,
+  .composer textarea {
+    min-height: 44px;
+  }
+
+  .sidebar-row {
+    height: 44px;
+  }
+
+  /* Fills the end of its row, and the row leaves room for it. */
+  .row-menu-button {
+    top: 0;
+    right: 0;
+    width: 44px;
+    height: 44px;
+  }
+
+  .conversation-row .sidebar-row {
+    padding-right: 48px;
+  }
+}
+
 /* Touch screens have no hover, so controls that wait for one stay visible:
    a chat's "…" menu, message actions and image downloads. */
 @media (hover: none) {
