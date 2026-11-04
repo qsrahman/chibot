@@ -8,6 +8,7 @@ import {
   updateConversation,
 } from './api.ts'
 import { Dialog } from '../ui/Dialog.tsx'
+import { useToast } from '../ui/toast.tsx'
 import { DeleteChatDialog } from './DeleteChatDialog.tsx'
 import { UNTITLED } from './useConversations.ts'
 import { useLoad } from '../ui/useLoad.ts'
@@ -23,6 +24,7 @@ interface Props {
 export function ArchivedDialog({ open, onClose, onChanged, onDeleted }: Props) {
   const navigate = useNavigate()
   const [toDelete, setToDelete] = useState<ConversationListItem | null>(null)
+  const { toast } = useToast()
   const {
     data: archived = [],
     error,
@@ -35,11 +37,15 @@ export function ArchivedDialog({ open, onClose, onChanged, onDeleted }: Props) {
   async function restore(id: string) {
     if (await act(() => updateConversation(id, { archived: false }))) {
       onChanged()
+      toast('Chat restored')
     }
   }
 
   async function remove(id: string) {
-    if (await act(() => deleteConversation(id))) onDeleted(id)
+    if (await act(() => deleteConversation(id))) {
+      onDeleted(id)
+      toast('Chat deleted')
+    }
   }
 
   return (

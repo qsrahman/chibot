@@ -1,0 +1,69 @@
+/* Toasts (ui/toast.tsx): bottom centre, above the composer's note. */
+
+.toasts {
+  position: fixed;
+  inset: auto 0 72px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(100%, 440px);
+  padding: 6px 6px 6px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+  color: var(--fg);
+  font-size: 0.875rem;
+  box-shadow: var(--dialog-shadow);
+  pointer-events: auto;
+  animation: toast-in 150ms ease-out;
+}
+
+.toast-message {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+.toast-action {
+  padding: 6px 10px;
+  border: none;
+  border-radius: var(--radius-row);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.toast-action:hover {
+  background: var(--chip);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: fade-in 150ms ease-out;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+}

@@ -9,4 +9,5 @@
 @import './styles/menus.css';
 @import './styles/dialogs.css';
 @import './styles/settings.css';
+@import './styles/toast.css';
 @import './styles/responsive.css';

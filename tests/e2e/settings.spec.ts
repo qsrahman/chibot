@@ -223,7 +223,7 @@ test('exports a chat and imports it back', async ({ page }) => {
   const file = await exported.body()
 
   const dialog = await openSettings(page, 'Data')
-  await dialog.getByLabel('Import a chat').setInputFiles({
+  await dialog.getByLabel('Chat file').setInputFiles({
     name: 'chat.json',
     mimeType: 'application/json',
     buffer: file,
@@ -234,7 +234,7 @@ test('exports a chat and imports it back', async ({ page }) => {
 
   // A broken file is rejected with a message.
   const data = await openSettings(page, 'Data')
-  await data.getByLabel('Import a chat').setInputFiles({
+  await data.getByLabel('Chat file').setInputFiles({
     name: 'bad.json',
     mimeType: 'application/json',
     buffer: Buffer.from('{"version": 2}'),

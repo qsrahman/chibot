@@ -30,6 +30,7 @@ import { SearchDialog } from './conversations/SearchDialog.tsx'
 import { SettingsDialog, type SettingsTab } from './settings/SettingsDialog.tsx'
 import { ShortcutsDialog } from './ShortcutsDialog.tsx'
 import { SHORTCUTS, useShortcuts } from './ui/shortcuts.ts'
+import { useToast } from './ui/toast.tsx'
 import type { ConversationsApi } from './conversations/useConversations.ts'
 import type { ProjectsApi } from './projects/useProjects.ts'
 import type { SettingsApi } from './settings/useSettings.ts'
@@ -119,6 +120,7 @@ export function Sidebar({
       setShortcutsOpen(true)
     },
   })
+  const { toast } = useToast()
   const [toDelete, setToDelete] = useState<ConversationListItem | null>(null)
   const [toMove, setToMove] = useState<ConversationListItem | null>(null)
   const [newProjectOpen, setNewProjectOpen] = useState(false)
@@ -129,7 +131,20 @@ export function Sidebar({
   }
 
   async function remove(id: string) {
-    if ((await conversations.remove(id)) && id === openId) navigate('/')
+    if (!(await conversations.remove(id))) return
+    toast('Chat deleted')
+    if (id === openId) navigate('/')
+  }
+
+  // Archiving can be undone at once; deleting can't, so that one asks first.
+  async function archive(id: string) {
+    if (!(await conversations.update(id, { archived: true }))) return
+    toast('Chat archived', {
+      action: {
+        label: 'Undo',
+        onClick: () => void conversations.update(id, { archived: false }),
+      },
+    })
   }
 
   const toolbar = (
@@ -269,9 +284,7 @@ export function Sidebar({
                         pinned: !item.pinned,
                       })
                     }
-                    onArchive={() =>
-                      void conversations.update(item.id, { archived: true })
-                    }
+                    onArchive={() => void archive(item.id)}
                     onDelete={() => setToDelete(item)}
                     onMove={() => setToMove(item)}
                   />

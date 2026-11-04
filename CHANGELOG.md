@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Added
 
+- Toasts: brief feedback at the bottom of the window (`ui/toast.tsx`, also announced to screen readers through a polite live region). Archiving a chat says "Chat archived" with an **Undo** button, restoring, deleting and importing a chat say so too. A toast stays while the pointer or keyboard focus is on it, and goes after 6 seconds otherwise. Deleting is permanent, so it still asks first (undoing it would need chats to be kept after deletion, which they aren't).
 - **Settings → Other models** sets the image, embedding (project search) and transcription (voice input) models, which could only be changed in `.env`. They apply at once, without a restart. `.env` keeps the servers and keys, and gives each model's starting value (`OPENAI_IMAGE_MODEL` and the like), shown as the placeholder with a **Reset** button; a model with no server or key in `.env` is greyed out saying what to set. An empty model turns the feature off: image tools are listed as unavailable (saying where to choose one), the microphone is disabled, and project search goes by keywords only. Changing the embedding model indexes the project files again in the background. A feature whose server is set up but whose model isn't (Ollama for chat, say) can now be switched on here instead of in `.env`: `Config` no longer drops an endpoint for lacking a model.
 
 ### Changed
@@ -14,6 +15,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Fixed
 
+- **Import a chat** (Settings → Data) is a real button that a keyboard can reach; it was a label around a hidden file input, which Tab skipped.
 - When chibot can't be reached (the server stopped while the page was open), a failed message says "Can't reach chibot. Check that it is running, then try again." instead of the browser's bare "Failed to fetch", also when the server goes away in the middle of an answer. The message stays in the box to be sent again. The chat list says the same, with a **Try again** button, and reloads by itself when the window is back in front or the network returns, instead of staying stale; the projects' own message isn't repeated.
 - A message with other versions (an edit, a regenerated answer) shows its `< 2/3 >` switcher all the time, not only while hovered, so the versions can be found; copy and edit still wait for the pointer.
 - Controls drawn as an icon alone now show a tooltip on hover: the sidebar's open/close button (and the rail's New chat, Search, New project, Settings and Keyboard shortcuts icons, which have no text when it is collapsed), the Send button, a chat's "…" button and an attachment's ×. An e2e spec lists every icon-only button and link on the new-chat page, in a chat, in the collapsed sidebar, on a project and in Settings, and fails for one without a tooltip.
