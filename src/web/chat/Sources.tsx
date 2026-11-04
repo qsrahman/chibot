@@ -10,8 +10,11 @@ export function Sources({ answer }: { answer: Answer }) {
     <details className="sources">
       <Summary>Sources · {sources.length}</Summary>
       <ul className="source-list">
-        {sources.map((source) => (
+        {sources.map((source, i) => (
           <li key={source.url}>
+            <span className="source-num" aria-hidden>
+              {i + 1}
+            </span>
             <SourceLink source={source} />
           </li>
         ))}

@@ -47,14 +47,13 @@ const CODE = [
 
 /** [foreground, background] pairs that must reach a ratio. */
 const TEXT: [string, string][] = [
-  ...['bg', 'surface', 'surface-muted'].map((bg): [string, string] => [
-    'fg',
-    bg,
-  ]),
-  ...['bg', 'surface', 'surface-muted', 'chip'].map((bg): [string, string] => [
-    'fg-muted',
-    bg,
-  ]),
+  // Menus, toasts and the citation card are drawn on surface-raised.
+  ...['bg', 'surface', 'surface-muted', 'surface-raised'].map(
+    (bg): [string, string] => ['fg', bg],
+  ),
+  ...['bg', 'surface', 'surface-muted', 'surface-raised', 'chip'].map(
+    (bg): [string, string] => ['fg-muted', bg],
+  ),
   ...['bg', 'surface'].map((bg): [string, string] => ['danger', bg]),
   ['bubble-fg', 'bubble-bg'],
   ['danger-fg', 'danger'],

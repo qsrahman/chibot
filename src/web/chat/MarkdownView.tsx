@@ -1,4 +1,12 @@
-import { memo, useEffect, useState, type ComponentProps } from 'react'
+import {
+  memo,
+  useContext,
+  useEffect,
+  useId,
+  useState,
+  type ComponentProps,
+  type ReactNode,
+} from 'react'
 import ReactMarkdown, { type Components, type ExtraProps } from 'react-markdown'
 import { toText } from 'hast-util-to-text'
 import rehypeHighlight from 'rehype-highlight'
@@ -7,6 +15,8 @@ import remarkMath from 'remark-math'
 import { dollarMath } from './math.ts'
 import { WrapText } from 'lucide-react'
 import { CopyButton, IconAction } from './MessageActions.tsx'
+import { SourcesContext, sourceKey } from './sourcesContext.ts'
+import type { Source } from './turns.ts'
 
 const remarkPlugins = [remarkGfm, remarkMath]
 type Katex = typeof import('./katex.ts').rehypeKatex
@@ -149,9 +159,107 @@ function Image({
 function Link({
   node: _node,
   href,
+  children,
   ...props
 }: ComponentProps<'a'> & ExtraProps) {
+  const sources = useContext(SourcesContext)
   // Footnote references (#…) stay on the page.
-  if (href?.startsWith('#')) return <a href={href} {...props} />
-  return <a href={href} target="_blank" rel="noopener noreferrer" {...props} />
+  if (href?.startsWith('#')) {
+    return (
+      <a href={href} {...props}>
+        {children}
+      </a>
+    )
+  }
+  const index = href
+    ? sources.findIndex((s) => sourceKey(s.url) === sourceKey(href))
+    : -1
+  if (index >= 0) {
+    return (
+      <Citation
+        source={sources[index]!}
+        number={index + 1}
+        total={sources.length}
+        href={href!}
+        props={props}
+      >
+        {children}
+      </Citation>
+    )
+  }
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+      {children}
+    </a>
+  )
+}
+
+/**
+ * A link to one of the answer's sources: its number matches the Sources list,
+ * and hovering or focusing it shows which page it is. Esc hides the card
+ * (and is not also taken as "stop the answer").
+ */
+function Citation({
+  source,
+  number,
+  total,
+  href,
+  props,
+  children,
+}: {
+  source: Source
+  number: number
+  total: number
+  href: string
+  props: ComponentProps<'a'>
+  children: ReactNode
+}) {
+  const id = useId()
+  const [shown, setShown] = useState(false)
+  const [dismissed, setDismissed] = useState(false)
+  const host = URL.parse(source.url, location.origin)?.hostname
+  // While the card shows, Esc hides it (a pointer user hasn't focused anything
+  // in it), without also stopping the answer.
+  useEffect(() => {
+    if (!shown || dismissed) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      setDismissed(true)
+      e.stopPropagation()
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [shown, dismissed])
+  const leave = () => {
+    setShown(false)
+    setDismissed(false)
+  }
+  return (
+    <span
+      className="cite"
+      data-dismissed={dismissed || undefined}
+      onPointerEnter={() => setShown(true)}
+      onFocus={() => setShown(true)}
+      onPointerLeave={leave}
+      onBlur={leave}
+    >
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-describedby={id}
+        {...props}
+      >
+        {children}
+        <sup className="cite-num">{number}</sup>
+      </a>
+      <span role="tooltip" id={id} className="cite-card">
+        <strong>{source.title}</strong>
+        <span>{host}</span>
+        <span>
+          Source {number} of {total}
+        </span>
+      </span>
+    </span>
+  )
 }

@@ -51,6 +51,52 @@
   line-height: 1.3;
 }
 
+/* A link to one of the answer's sources: numbered like the list under the
+   answer, with a card saying which page it is (shown on hover and focus). */
+.cite {
+  position: relative;
+}
+
+.cite-num {
+  margin-left: 2px;
+  color: var(--fg-muted);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.cite-card {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  z-index: 5;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  width: max-content;
+  max-width: min(20rem, 80vw);
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-row);
+  background: var(--surface-raised);
+  color: var(--fg-muted);
+  box-shadow: var(--dialog-shadow);
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+}
+
+.cite-card strong {
+  color: var(--fg);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* Hovering the card itself keeps it open (it can be read and pointed at). */
+.cite:not([data-dismissed]):hover .cite-card,
+.cite:not([data-dismissed]):focus-within .cite-card {
+  display: flex;
+}
+
 /* Code blocks have no box, as on ChatGPT: a label, then the code. */
 .code-header {
   display: flex;

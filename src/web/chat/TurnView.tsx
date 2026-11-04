@@ -7,7 +7,8 @@ import { ImageViewer, opensViewer, type ViewedImage } from './ImageViewer.tsx'
 import { Markdown } from './Markdown.tsx'
 import { TOUCH_ONLY, useMediaQuery } from '../ui/useMediaQuery.ts'
 import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
-import { type ToolActivity, type Turn } from './turns.ts'
+import { SourcesContext } from './sourcesContext.ts'
+import { sourcesOf, type ToolActivity, type Turn } from './turns.ts'
 import { describeContext, describeUsage } from './usage.ts'
 import { AnswerImages } from './AnswerImages.tsx'
 import { Sources } from './Sources.tsx'
@@ -56,6 +57,8 @@ export function TurnView({
   const [viewing, setViewing] = useState<ViewedImage | null>(null)
   // Shown after a Stop before the server's ids are known: no edit/regenerate.
   const saved = question.itemId !== null
+  // The links in the answer to these are numbered, as in the list under it.
+  const sources = answer ? sourcesOf(answer) : []
   const answerUsage = describeUsage(answer?.usage)
   const contextUsage = describeContext(answer?.usage, compactThreshold)
 
@@ -155,7 +158,9 @@ export function TurnView({
       )}
       {answer?.text ? (
         <div className="message assistant">
-          <Markdown text={answer.text} />
+          <SourcesContext value={sources}>
+            <Markdown text={answer.text} />
+          </SourcesContext>
         </div>
       ) : (
         pending &&

@@ -708,6 +708,21 @@ details[open] > summary > .disclosure-chevron {
   list-style: none;
 }
 
+.source-list li {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.source-num {
+  flex: none;
+  min-width: 1.25rem;
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+  text-align: right;
+}
+
 .source-list a {
   display: flex;
   gap: 8px;

@@ -695,3 +695,97 @@ test('Regenerate on a stopped answer writes a new version', async ({
     turns(page).first().locator('.answer-actions .versions-count'),
   ).toHaveText('2/2')
 })
+
+test('links to an answer’s sources are numbered, and say which page they are', async ({
+  page,
+}) => {
+  const item = (id: number, parentId: number | null, data: unknown) => ({
+    id,
+    parentId,
+    data,
+    usage: null,
+    model: id === 1 ? null : 'e2e-model',
+    createdAt: id,
+  })
+  const res = await page.request.post('/api/conversations/import', {
+    data: {
+      version: 2,
+      exportedAt: 0,
+      conversation: { title: 'Cited chat', createdAt: 1, updatedAt: 2 },
+      currentLeafId: 4,
+      items: [
+        item(1, null, { role: 'user', content: 'Robots?' }),
+        item(2, 1, {
+          type: 'function_call',
+          call_id: 'c1',
+          name: 'web_search',
+          arguments: '{"query":"robots","freshness":null}',
+        }),
+        item(3, 2, {
+          type: 'function_call_output',
+          call_id: 'c1',
+          output: JSON.stringify({
+            results: [
+              {
+                title: 'Robots guide',
+                url: 'https://example.com/robots',
+                snippet: 's',
+              },
+              {
+                title: 'History of robots',
+                url: 'https://history.test/r',
+                snippet: 's',
+              },
+            ],
+          }),
+        }),
+        item(4, 3, {
+          type: 'message',
+          role: 'assistant',
+          status: 'completed',
+          id: 'm4',
+          content: [
+            {
+              type: 'output_text',
+              text: 'See [the guide](https://example.com/robots), [the history](https://history.test/r#top) and [an unrelated page](https://elsewhere.test/).',
+              annotations: [],
+            },
+          ],
+        }),
+      ],
+      files: [],
+    },
+  })
+  const { id } = (await res.json()) as { id: string }
+  await page.goto(`/c/${id}`)
+  const message = page.locator('.message.assistant')
+  const guide = message.getByRole('link', { name: /the guide/ })
+  const history = message.getByRole('link', { name: /the history/ })
+  // Numbered as in the Sources list (the fragment makes no difference)…
+  await expect(guide.locator('.cite-num')).toHaveText('1')
+  await expect(history.locator('.cite-num')).toHaveText('2')
+  // …but a link to anywhere else is left alone.
+  await expect(
+    message
+      .getByRole('link', { name: 'an unrelated page' })
+      .locator('.cite-num'),
+  ).toHaveCount(0)
+
+  // Hovering or focusing shows which page it is; Esc hides it.
+  const cardOf = (link: typeof guide) =>
+    link.locator('xpath=following-sibling::*[@role="tooltip"]')
+  await expect(cardOf(guide)).toBeHidden()
+  await guide.hover()
+  await expect(cardOf(guide)).toContainText('Robots guide')
+  await expect(cardOf(guide)).toContainText('example.com')
+  await expect(cardOf(guide)).toContainText('Source 1 of 2')
+  await page.keyboard.press('Escape')
+  await expect(cardOf(guide)).toBeHidden()
+  await page.mouse.move(5, 5)
+  await history.focus()
+  await expect(cardOf(history)).toContainText('History of robots')
+
+  // The list under the answer is numbered the same way.
+  await page.getByText('Sources · 2').click()
+  await expect(page.locator('.sources .source-num').first()).toHaveText('1')
+})
