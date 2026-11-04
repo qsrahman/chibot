@@ -34,7 +34,7 @@
   min-width: 0;
   margin: 2px 4px 0;
   color: var(--fg-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .composer-queued-label {
@@ -156,7 +156,7 @@
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 14px;
+  font-size: 0.875rem;
   cursor: pointer;
 }
 
@@ -174,7 +174,7 @@
   margin: 0;
   padding: 0 8px 4px;
   color: var(--danger);
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 @keyframes spin {
@@ -228,8 +228,8 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
 }
 
 .file-card-name {
@@ -268,7 +268,7 @@
   background: var(--bubble-bg);
   color: var(--bubble-fg);
   font: inherit;
-  font-size: 14px;
+  font-size: 0.875rem;
   cursor: pointer;
 }
 
@@ -280,7 +280,7 @@
   flex: 1 1 0;
   min-width: 0;
   align-self: flex-end;
-  max-height: 40vh;
+  max-height: 40dvh;
   padding: 6px 0;
   margin: 0;
   border: none;
@@ -289,8 +289,8 @@
   background: transparent;
   color: inherit;
   font: inherit;
-  font-size: 17px;
-  line-height: 24px;
+  font-size: 1.0625rem;
+  line-height: 1.5rem;
   /* Grows with its content; supported in Chromium and Safari. */
   field-sizing: content;
 }
@@ -303,8 +303,8 @@
   margin: 0;
   padding: 8px 16px;
   color: var(--fg-muted);
-  font-size: 12px;
-  line-height: 16px;
+  font-size: 0.75rem;
+  line-height: 1rem;
   text-align: center;
 }
 

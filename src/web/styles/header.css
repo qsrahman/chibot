@@ -23,7 +23,7 @@
 .breadcrumb {
   overflow: hidden;
   color: var(--fg-muted);
-  font-size: 18px;
+  font-size: 1.125rem;
   text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -34,7 +34,7 @@
 }
 
 .model {
-  font-size: 18px;
+  font-size: 1.125rem;
 }
 
 .model-button {
@@ -48,7 +48,7 @@
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 18px;
+  font-size: 1.125rem;
   cursor: pointer;
 }
 
@@ -57,7 +57,7 @@
 }
 
 .model-menu {
-  width: min(360px, 100vw - 32px);
+  width: min(360px, 100dvw - 32px);
 }
 
 /* The chosen reasoning effort, after the model's name. */
@@ -90,11 +90,11 @@
   background: var(--surface);
   color: inherit;
   font: inherit;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .model-list {
-  max-height: 50vh;
+  max-height: 50dvh;
   overflow-y: auto;
 }
 
@@ -108,7 +108,7 @@
 .menu-hint,
 .menu-note {
   color: var(--fg-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .menu-note {
@@ -120,8 +120,8 @@
   border-radius: 999px;
   background: var(--surface-muted);
   color: var(--fg-muted);
-  font-size: 12px;
-  line-height: 20px;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
 }
 
 .icon-button {

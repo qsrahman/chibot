@@ -39,16 +39,16 @@
 
 .dialog-title {
   margin: 0 0 8px;
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 500;
-  line-height: 24px;
+  line-height: 1.5rem;
 }
 
 .dialog-body {
   margin: 0 0 20px;
   color: var(--fg-muted);
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
 }
 
 .dialog-actions {
@@ -65,7 +65,7 @@
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
 }
@@ -120,7 +120,7 @@
 }
 
 .search-results {
-  max-height: 60vh;
+  max-height: 60dvh;
   padding: 8px;
   overflow-y: auto;
 }
@@ -159,14 +159,14 @@
 }
 
 .search-title {
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
 }
 
 .search-snippet {
   color: var(--fg-muted);
-  font-size: 12px;
-  line-height: 16px;
+  font-size: 0.75rem;
+  line-height: 1rem;
 }
 
 .shortcut-list {
@@ -180,7 +180,7 @@
   gap: 16px;
   padding: 8px 0;
   border-bottom: 1px solid var(--border);
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .shortcut dd {
@@ -196,6 +196,6 @@ kbd {
   border-radius: 6px;
   background: var(--surface-muted);
   font: inherit;
-  font-size: 12px;
+  font-size: 0.75rem;
   text-align: center;
 }

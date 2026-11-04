@@ -107,3 +107,42 @@ test('the search dialog says when nothing matches', async ({ page }) => {
   await expect(search).toHaveAttribute('aria-expanded', 'false')
   await expect(search).not.toHaveAttribute('aria-activedescendant', /.+/)
 })
+
+test('text follows the browser’s font size setting', async ({ page }) => {
+  await page.goto('/')
+  await appReady(page)
+  await send(page, 'Hello there')
+  await answered(page)
+
+  // Sizes of text that has its own size (not just inherited), and the line
+  // height of answers.
+  const measure = () =>
+    page.evaluate(() => {
+      const size = (selector: string) =>
+        parseFloat(getComputedStyle(document.querySelector(selector)!).fontSize)
+      const line = (selector: string) =>
+        parseFloat(
+          getComputedStyle(document.querySelector(selector)!).lineHeight,
+        )
+      return {
+        composer: size('textarea[aria-label="Message"]'),
+        sidebarRow: size('nav.sidebar .sidebar-row'),
+        disclaimer: size('.disclaimer'),
+        userMessage: size('.message.user p'),
+        answerLine: line('.message.assistant'),
+        rootLine: line('body'),
+      }
+    })
+  const normal = await measure()
+  // Unchanged at the default size.
+  expect(normal.composer).toBe(17)
+  expect(normal.rootLine).toBe(24)
+
+  // A browser whose default size is 150% of the usual, as a user may set it:
+  // everything is sized from it.
+  await page.addStyleTag({ content: ':root { font-size: 150% !important }' })
+  const large = await measure()
+  for (const [name, size] of Object.entries(large)) {
+    expect(size / normal[name as keyof typeof normal], name).toBeCloseTo(1.5, 2)
+  }
+})

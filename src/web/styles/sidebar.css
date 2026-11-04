@@ -31,7 +31,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
@@ -59,8 +59,8 @@
   background: none;
   color: inherit;
   font: inherit;
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
   text-align: left;
   text-decoration: none;
   cursor: pointer;
@@ -103,7 +103,7 @@
   flex: 0 1 45%;
   overflow: hidden;
   color: var(--fg-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -117,15 +117,15 @@
 .sidebar-heading {
   margin: 16px 10px 4px;
   color: var(--fg-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
-  line-height: 16px;
+  line-height: 1rem;
 }
 
 .sidebar-note {
   padding: 0 10px;
   color: var(--fg-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .sidebar-bottom {
@@ -172,5 +172,5 @@
   background: var(--surface);
   color: inherit;
   font: inherit;
-  font-size: 14px;
+  font-size: 0.875rem;
 }

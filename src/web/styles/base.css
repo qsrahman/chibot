@@ -73,8 +73,10 @@
     'Apple Color Emoji',
     Arial,
     sans-serif;
-  font-size: 16px;
-  line-height: 24px;
+  /* The browser's own default size (usually 16px), so a larger setting scales
+     everything: sizes below are in rem, not px. */
+  font-size: 100%;
+  line-height: 1.5rem;
 }
 
 * {

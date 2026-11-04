@@ -12,7 +12,7 @@
 /* Empty chat: the greeting and composer sit in the middle, the header stays
    on top. */
 .chat.empty {
-  padding-bottom: 10vh;
+  padding-bottom: 10dvh;
 }
 
 .chat.empty .greeting {
@@ -31,7 +31,7 @@
 }
 
 .chat.project-home .greeting {
-  margin-top: 8vh;
+  margin-top: 8dvh;
 }
 
 .chat.project-home .disclaimer {
@@ -88,7 +88,7 @@
 .project-card h2,
 .project-chats h2 {
   margin: 0;
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 500;
 }
 
@@ -107,14 +107,14 @@
   background: var(--bg);
   color: inherit;
   font: inherit;
-  font-size: 14px;
+  font-size: 0.875rem;
   resize: vertical;
 }
 
 .project-description {
   margin: 6px 0 0;
   color: var(--fg-muted);
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .instructions textarea {
@@ -123,7 +123,7 @@
 
 .instructions-text {
   margin: 0;
-  font-size: 14px;
+  font-size: 0.875rem;
   white-space: pre-wrap;
 }
 
@@ -142,7 +142,7 @@
   background: none;
   color: var(--fg-muted);
   font: inherit;
-  font-size: 13px;
+  font-size: 0.8125rem;
   cursor: pointer;
 }
 
@@ -165,7 +165,7 @@
 .project-hint {
   margin: 0;
   color: var(--fg-muted);
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .project-files {
@@ -181,7 +181,7 @@
   gap: 8px;
   min-height: 40px;
   border-top: 1px solid var(--border);
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .project-files li:first-child {
@@ -207,7 +207,7 @@
   max-width: 50%;
   overflow: hidden;
   color: var(--fg-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -257,17 +257,17 @@
 
 .greeting h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: 1.75rem;
   font-weight: 400;
-  line-height: 34px;
+  line-height: 2.125rem;
 }
 
 .greeting p {
   max-width: 28rem;
   margin: 8px auto 0;
   color: var(--fg-muted);
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
 }
 
 /* Full-width scroller, so the scrollbar sits at the window edge. */
@@ -376,7 +376,7 @@
 .usage {
   margin-left: 8px;
   color: var(--fg-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
   cursor: default;
 }
@@ -397,7 +397,7 @@
   display: inline-flex;
   align-items: center;
   color: var(--fg-muted);
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -411,7 +411,7 @@
   gap: 12px;
   margin: 16px 0 0;
   color: var(--fg-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .compaction-note::before,
@@ -424,7 +424,7 @@
 .thoughts {
   margin-top: 16px;
   color: var(--fg-muted);
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 /* Thoughts, tool calls and Sources: a label after a chevron that turns
@@ -481,7 +481,7 @@ details[open] > summary > .disclosure-chevron {
 }
 
 .thoughts-body .markdown {
-  line-height: 22px;
+  line-height: 1.375rem;
 }
 
 /* Consecutive tool calls sit closer together than other answer parts. */
@@ -515,7 +515,7 @@ details[open] > summary > .disclosure-chevron {
 
 .tool-raw {
   margin-top: 2px;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .tool-raw .tool-details {
@@ -526,7 +526,7 @@ details[open] > summary > .disclosure-chevron {
   display: grid;
   gap: 4px;
   margin: 0;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .tool-details dt {
@@ -564,14 +564,14 @@ details[open] > summary > .disclosure-chevron {
   align-items: center;
   gap: 8px;
   margin: 0;
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 500;
 }
 
 .approval p {
   margin: 0;
   color: var(--fg-muted);
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .approval-actions {
@@ -632,7 +632,7 @@ details[open] > summary > .disclosure-chevron {
 .sources {
   margin-top: 12px;
   color: var(--fg-muted);
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .source-list {
@@ -665,7 +665,7 @@ details[open] > summary > .disclosure-chevron {
 
 .source-host {
   flex: none;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .edit-box {
@@ -681,7 +681,7 @@ details[open] > summary > .disclosure-chevron {
 
 .edit-box textarea {
   width: 100%;
-  max-height: 40vh;
+  max-height: 40dvh;
   padding: 0;
   border: none;
   outline: none;

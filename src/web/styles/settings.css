@@ -4,7 +4,7 @@
   width: min(100% - 32px, 760px);
   /* Anchored near the top and as tall as its tab, so switching tabs only
      grows or shrinks it downwards instead of jumping around the centre. */
-  margin-top: max(16px, 10vh);
+  margin-top: max(16px, 10dvh);
 }
 
 .settings-layout {
@@ -27,7 +27,7 @@
 }
 
 .settings-panel {
-  max-height: min(70vh, 560px);
+  max-height: min(70dvh, 560px);
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -38,7 +38,7 @@
 
 .settings-section h3 {
   margin: 0 0 12px;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 500;
 }
 
@@ -52,7 +52,7 @@
   margin: 0;
   padding: 16px;
   color: var(--fg-muted);
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .settings-row {
@@ -80,7 +80,7 @@
 
 .settings-label label,
 .settings-field label {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 500;
 }
 
@@ -96,8 +96,8 @@
   overflow: hidden;
   margin: 2px 0 0;
   color: var(--fg-muted);
-  font-size: 12px;
-  line-height: 16px;
+  font-size: 0.75rem;
+  line-height: 1rem;
   overflow-wrap: anywhere;
 }
 
@@ -118,7 +118,7 @@
   background: var(--surface);
   color: inherit;
   font: inherit;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .settings-panel select {
@@ -156,7 +156,7 @@
 
 .settings-saved {
   color: var(--fg-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 label.button {
@@ -203,7 +203,7 @@ label.button {
 }
 
 .archived-list {
-  max-height: 60vh;
+  max-height: 60dvh;
   margin: 0;
   padding: 0;
   overflow-y: auto;
@@ -221,13 +221,13 @@ label.button {
   flex: 1;
   min-width: 0;
   padding: 10px 0;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .memory-count {
   margin: -12px 0 12px;
   color: var(--fg-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .memory-edit {
@@ -259,7 +259,7 @@ label.button {
   background: none;
   color: inherit;
   font: inherit;
-  font-size: 14px;
+  font-size: 0.875rem;
   text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;

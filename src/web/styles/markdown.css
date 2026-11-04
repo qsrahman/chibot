@@ -1,7 +1,7 @@
 /* Markdown */
 
 .markdown {
-  line-height: 26px;
+  line-height: 1.625rem;
 }
 
 .markdown.plain {
@@ -59,8 +59,8 @@
 
 .code-label {
   color: var(--fg-muted);
-  font-size: 12px;
-  line-height: 16px;
+  font-size: 0.75rem;
+  line-height: 1rem;
 }
 
 .markdown pre {
@@ -73,8 +73,8 @@
   padding: 0;
   background: transparent;
   font-family: var(--font-mono);
-  font-size: 16px;
-  line-height: 26px;
+  font-size: 1rem;
+  line-height: 1.625rem;
 }
 
 /* highlight.js token classes */
@@ -166,7 +166,7 @@
 
 .markdown table {
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .markdown th,
@@ -202,5 +202,5 @@
   border: 1px solid var(--danger);
   border-radius: var(--radius-card);
   color: var(--danger);
-  font-size: 14px;
+  font-size: 0.875rem;
 }
