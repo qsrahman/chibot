@@ -409,3 +409,80 @@ test('every control drawn as an icon alone has a tooltip', async ({ page }) => {
   await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
   expect(await withoutTooltip(page)).toEqual([])
 })
+
+// Tablets: portrait, landscape (short), and a narrow window between phone
+// and laptop. Nothing may overflow the page or leave a dialog or menu off screen.
+for (const [name, size] of [
+  ['tablet portrait', { width: 768, height: 1024 }],
+  ['tablet landscape', { width: 1024, height: 600 }],
+  ['short landscape', { width: 844, height: 390 }],
+] as const) {
+  test(`fits a ${name} screen`, async ({ page }) => {
+    await page.setViewportSize(size)
+    const inside = (selector: string) =>
+      page.locator(selector).evaluate((el, s) => {
+        const r = el.getBoundingClientRect()
+        return (
+          r.left >= 0 &&
+          r.top >= 0 &&
+          r.right <= s.width &&
+          r.bottom <= s.height
+        )
+      }, size)
+    const noOverflow = () =>
+      page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)
+
+    await chatsTitled(page, 'Tablet chat')
+    const created = await page.request.post('/api/projects', {
+      data: { name: 'Tablet project' },
+    })
+    const { id } = (await created.json()) as { id: string }
+    await page.goto('/')
+    await appReady(page)
+    expect(await noOverflow()).toBe(true)
+    expect(await inside('.composer')).toBe(true)
+
+    // A chat with an answer, the model menu, and the + menu.
+    await send(page, 'Hello tablet')
+    await answered(page)
+    expect(await noOverflow()).toBe(true)
+    expect(await inside('.composer')).toBe(true)
+    await page.getByRole('button', { name: 'Add files and more' }).click()
+    expect(await inside('.menu:popover-open')).toBe(true)
+    await page.keyboard.press('Escape')
+    await page.locator('.model-button').first().click()
+    expect(await inside('.menu:popover-open')).toBe(true)
+    await page.keyboard.press('Escape')
+
+    // A project's page scrolls as a whole.
+    await page.goto(`/projects/${id}`)
+    await expect(
+      page.getByRole('heading', { name: 'Tablet project' }),
+    ).toBeVisible()
+    expect(await noOverflow()).toBe(true)
+    expect(await inside('.composer')).toBe(true)
+
+    // Settings, every tab, and the search dialog, fit and don't overflow.
+    await page.keyboard.press('ControlOrMeta+,')
+    const dialog = page.getByRole('dialog', { name: 'Settings' })
+    await expect(dialog).toBeVisible()
+    for (const tab of [
+      'General',
+      'Personalization',
+      'Model',
+      'Other models',
+      'Tools',
+      'Data',
+    ]) {
+      await dialog.getByRole('button', { name: tab, exact: true }).click()
+      expect(await inside('dialog[open]')).toBe(true)
+      expect(await noOverflow()).toBe(true)
+    }
+    await page.keyboard.press('Escape')
+    await page.keyboard.press('ControlOrMeta+k')
+    await expect(
+      page.getByRole('dialog', { name: 'Search chats' }),
+    ).toBeVisible()
+    expect(await inside('dialog[open]')).toBe(true)
+  })
+}

@@ -598,3 +598,50 @@ test('code blocks: lines wrap on request, long ones are numbered, copying says s
   expect(copied).toContain('const line1 = 1')
   expect(copied).not.toMatch(/^1\n2\n/)
 })
+
+// While an answer streams the view follows its end, until the user scrolls
+// up to read: then it stays put and offers a way back.
+for (const motion of ['no-preference', 'reduce'] as const) {
+  test(`stops following a streaming answer once scrolled up, and returns on request (${motion} motion)`, async ({
+    page,
+  }) => {
+    test.setTimeout(60_000)
+    await page.emulateMedia({ reducedMotion: motion })
+    await page.setViewportSize({ width: 560, height: 380 })
+    await page.goto('/')
+    await appReady(page)
+    await send(page, 'slow essay')
+    const list = page.locator('.messages')
+    const fromBottom = () =>
+      list.evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight)
+
+    // Long enough to scroll, and following it.
+    await expect
+      .poll(() => list.evaluate((el) => el.scrollHeight - el.clientHeight), {
+        timeout: 15_000,
+      })
+      .toBeGreaterThan(100)
+    expect(await fromBottom()).toBeLessThan(40)
+
+    await list.evaluate((el) => el.scrollTo({ top: 0 }))
+    const jump = page.getByRole('button', { name: 'Jump to latest' })
+    await expect(jump).toBeVisible()
+    // More arrives; the view is not pulled back down.
+    const height = await list.evaluate((el) => el.scrollHeight)
+    await expect
+      .poll(() => list.evaluate((el) => el.scrollHeight), { timeout: 15_000 })
+      .toBeGreaterThan(height + 30)
+    expect(await list.evaluate((el) => el.scrollTop)).toBeLessThan(5)
+
+    await jump.click()
+    await expect(jump).toHaveCount(0)
+    expect(await fromBottom()).toBeLessThan(40)
+    // …and it follows again.
+    const was = await list.evaluate((el) => el.scrollHeight)
+    await expect
+      .poll(() => list.evaluate((el) => el.scrollHeight), { timeout: 15_000 })
+      .toBeGreaterThan(was + 30)
+    expect(await fromBottom()).toBeLessThan(40)
+    await page.getByRole('button', { name: 'Stop' }).click()
+  })
+}
