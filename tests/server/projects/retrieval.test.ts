@@ -4,9 +4,15 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import OpenAI from 'openai'
 import { openDatabase } from '../../../src/server/database.ts'
 import {
+  DEFAULT_RESULTS,
   ProjectIndex,
   type EmbeddingDeps,
 } from '../../../src/server/projects/project-index.ts'
+import {
+  fuse,
+  reciprocalRankFusion,
+  type Hit,
+} from '../../../src/server/projects/fusion.ts'
 import { ProjectStore } from '../../../src/server/projects/project-store.ts'
 import { pdfOf, testFiles } from '../fakes.ts'
 
@@ -231,6 +237,51 @@ const PARAPHRASES: Question[] = [
   },
 ]
 
+// Paraphrases written before any way of merging the searches was compared, to
+// check that a choice made on the other two sets is not just fitted to them.
+const HELD_OUT: Question[] = [
+  {
+    ask: 'What is the daily food allowance when I am on a trip?',
+    file: 'handbook.md',
+    has: '60 euros per day',
+  },
+  {
+    ask: 'Is there an upper limit on how many days I can stay home ill?',
+    file: 'handbook.md',
+    has: 'not capped',
+  },
+  {
+    ask: 'What does a new employee get handed on the first morning?',
+    file: 'handbook.md',
+    has: 'a laptop on day one',
+  },
+  {
+    ask: 'Who is checking the payments component for safety?',
+    file: 'meeting-notes.txt',
+    has: 'Tomas owns the review',
+  },
+  {
+    ask: 'How much money did finance approve for stress-testing the system?',
+    file: 'meeting-notes.txt',
+    has: '15,000 euro budget',
+  },
+  {
+    ask: 'How do I turn a text file of settings lines into an object?',
+    file: 'api.ts',
+    has: 'parseEnv',
+  },
+  {
+    ask: 'How do I add up the cost of purchases in euros?',
+    file: 'api.ts',
+    has: 'totalInEuros',
+  },
+  {
+    ask: 'How long should the vegetables for the bisque stay in the oven?',
+    file: 'recipes.md',
+    has: 'at 200 degrees for 35 minutes',
+  },
+]
+
 // The lowest shares of questions whose answer is the first hit, and among
 // the first three.
 const RECALL_AT_1 = 0.8
@@ -266,14 +317,25 @@ async function buildIndex(embedding: EmbeddingDeps | null) {
   return { index, projectId }
 }
 
+/** The ids of the chunks to return, best first, from what each search found. */
+type Merge = (found: { keyword: Hit[]; meaning: Hit[] | null }) => number[]
+
 /** How often the answer is the first hit, and among the first three. */
 async function score(
   { index, projectId }: { index: ProjectIndex; projectId: string },
   questions: Question[],
+  merge?: Merge,
 ) {
   const missed = { 1: [] as string[], 3: [] as string[] }
   for (const { ask, file, has, page } of questions) {
-    const hits = await index.search(projectId, ask)
+    const hits = merge
+      ? index.passages(
+          merge(await index.candidates(projectId, ask)).slice(
+            0,
+            DEFAULT_RESULTS,
+          ),
+        )
+      : await index.search(projectId, ask)
     const rank = hits.findIndex(
       (h) =>
         h.name === file &&
@@ -314,6 +376,33 @@ describe('project search quality', () => {
   })
 })
 
+/**
+ * An embedding client that puts a prefix before every text, for models
+ * trained to expect one (nomic's "search_document: " and "search_query: ").
+ * It indexes with the document prefix until `state.mode` is set to 'query'.
+ */
+function prefixedClient(base: OpenAI, query: string, document: string) {
+  const state = { mode: 'document' as 'document' | 'query' }
+  const client = {
+    embeddings: {
+      create: (
+        params: OpenAI.EmbeddingCreateParams,
+        options?: OpenAI.RequestOptions,
+      ) =>
+        base.embeddings.create(
+          {
+            ...params,
+            input: (params.input as string[]).map(
+              (text) => (state.mode === 'query' ? query : document) + text,
+            ),
+          },
+          options,
+        ),
+    },
+  } as unknown as OpenAI
+  return { client, state }
+}
+
 // Opt-in, with a real embedding endpoint (nothing here needs the network
 // otherwise). For a local one:
 //   RETRIEVAL_EMBEDDING_URL=http://localhost:11434/v1 \
@@ -353,6 +442,88 @@ describe.skipIf(!embeddingUrl)('project search by meaning', () => {
     expect(results['hybrid, paraphrases'].recall(3)).toBeGreaterThan(
       results['keyword, paraphrases'].recall(3),
     )
+  }, 300_000)
+
+  // Not a pass/fail check: a table, to compare ways of merging what the two
+  // searches found. Pick on the first two columns; the last says whether the
+  // pick holds on questions that were not used to choose.
+  it('compares ways of merging the two searches', async () => {
+    const minMax = (hits: Hit[]) => {
+      const scores = hits.map((h) => h.score)
+      const low = Math.min(...scores)
+      const span = Math.max(...scores) - low || 1
+      return new Map(hits.map((h) => [h.id, (h.score - low) / span]))
+    }
+    const blend =
+      (keywordShare: number): Merge =>
+      ({ keyword, meaning }) => {
+        const k = minMax(keyword)
+        const m = minMax(meaning ?? [])
+        const ids = new Set([...k.keys(), ...m.keys()])
+        const mix = (id: number) =>
+          keywordShare * (k.get(id) ?? 0) +
+          (1 - keywordShare) * (m.get(id) ?? 0)
+        return [...ids].sort((x, y) => mix(y) - mix(x))
+      }
+    const rrf =
+      (options: Parameters<typeof reciprocalRankFusion>[1]): Merge =>
+      ({ keyword, meaning }) =>
+        reciprocalRankFusion([keyword, meaning ?? []], options)
+    const variants: Record<string, Merge> = {
+      'keyword only': ({ keyword }) => keyword.map((h) => h.id),
+      'meaning only': ({ meaning }) => (meaning ?? []).map((h) => h.id),
+      'RRF k=60 (shipped)': ({ keyword, meaning }) => fuse(keyword, meaning),
+      'RRF k=20': rrf({ k: 20 }),
+      'RRF k=10': rrf({ k: 10 }),
+      'RRF meaning x1.5': rrf({ weights: [1, 1.5] }),
+      'RRF meaning x2': rrf({ weights: [1, 2] }),
+      'RRF meaning x3': rrf({ weights: [1, 3] }),
+      'blend 30% keyword': blend(0.3),
+      'blend 50% keyword': blend(0.5),
+      'blend 70% keyword': blend(0.7),
+    }
+    const sets = [
+      ['same words', QUESTIONS],
+      ['paraphrases', PARAPHRASES],
+      ['held out', HELD_OUT],
+    ] as const
+    const pct = (n: number) => `${(n * 100).toFixed(0)}%`.padStart(4)
+    const lines = [
+      `${''.padEnd(32)}${sets.map(([name]) => name.padEnd(17)).join('')}  (first hit / first three)`,
+    ]
+    const rows = async (
+      corpus: Awaited<ReturnType<typeof buildIndex>>,
+      suffix: string,
+    ) => {
+      for (const [name, merge] of Object.entries(variants)) {
+        const cells: string[] = []
+        for (const [, questions] of sets) {
+          const { recall } = await score(corpus, questions, merge)
+          cells.push(`${pct(recall(1))} / ${pct(recall(3))}`.padEnd(17))
+        }
+        lines.push(`${`${name}${suffix}`.padEnd(32)}${cells.join('')}`)
+      }
+    }
+    await rows(hybrid, '')
+    // With the model's task prefixes, if given (RETRIEVAL_QUERY_PREFIX and
+    // RETRIEVAL_DOCUMENT_PREFIX): a fresh index, since the vectors change.
+    const query = process.env.RETRIEVAL_QUERY_PREFIX
+    const document = process.env.RETRIEVAL_DOCUMENT_PREFIX
+    if (query !== undefined && document !== undefined) {
+      const { client, state } = prefixedClient(
+        new OpenAI({ baseURL: embeddingUrl, apiKey: 'none' }),
+        query,
+        document,
+      )
+      const prefixed = await buildIndex({
+        client,
+        model: process.env.RETRIEVAL_EMBEDDING_MODEL!,
+      })
+      state.mode = 'query'
+      lines.push('')
+      await rows(prefixed, ' + prefixes')
+    }
+    console.log(`\n${lines.join('\n')}\n`)
   }, 300_000)
 })
 

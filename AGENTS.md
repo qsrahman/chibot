@@ -237,8 +237,12 @@ invariants, API quirks. No line-by-line narration.
   chunking or ranking, and add a question when search misses one. With an
   embedding endpoint (`RETRIEVAL_EMBEDDING_URL`, `RETRIEVAL_EMBEDDING_MODEL`,
   e.g. Ollama's `nomic-embed-text-v2-moe`) it also scores keyword against
-  hybrid search, on questions that repeat the passage's words and on
-  paraphrases; that part is skipped otherwise.
+  hybrid search, on questions that repeat the passage's words, on paraphrases
+  and on a held-out set of paraphrases, and compares ways of merging the two
+  searches (`RETRIEVAL_QUERY_PREFIX` and `RETRIEVAL_DOCUMENT_PREFIX` add a
+  model's task prefixes); that part is skipped otherwise. Choose on the first
+  two sets and confirm on the held-out one: they have 41 questions between
+  them, so a difference of one or two is noise.
 - Prompt injection: `tests/server/chat/injection.test.ts` asks a real model to
   summarize a poisoned page with chibot's own instructions and tools, and
   counts how often it obeys; run it when changing the untrusted-content
