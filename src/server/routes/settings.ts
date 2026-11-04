@@ -6,7 +6,7 @@ import {
 import type { ToolInfo } from '../../shared/tools.ts'
 import type { ModelsResponse } from '../../shared/types.ts'
 import type { ModelRequests } from '../model-requests.ts'
-import type { McpServers } from '../mcp-servers.ts'
+import type { McpServers } from '../mcp/index.ts'
 import type { SettingsStore } from '../settings-store.ts'
 import type { ToolRegistry } from '../tool-registry.ts'
 import { json } from './helpers.ts'

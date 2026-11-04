@@ -2,13 +2,13 @@ import { mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
-import { McpAuthStore } from '../../src/server/mcp-auth.ts'
-import type { McpServerConfig } from '../../src/server/mcp-config.ts'
-import { McpServers } from '../../src/server/mcp-servers.ts'
+import { McpAuthStore } from '../../../src/server/mcp/mcp-auth.ts'
+import type { McpServerConfig } from '../../../src/server/mcp/mcp-config.ts'
+import { McpServers } from '../../../src/server/mcp/mcp-servers.ts'
 import {
   startOAuthServer,
   type OAuthFixture,
-} from '../fixtures/mcp-oauth-server.ts'
+} from '../../fixtures/mcp-oauth-server.ts'
 
 const redirectUrl = 'http://127.0.0.1:8787/api/mcp/oauth/callback'
 

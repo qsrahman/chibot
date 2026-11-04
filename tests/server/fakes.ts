@@ -17,7 +17,7 @@ import { FileStore } from '../../src/server/file-store.ts'
 import { InstructionWriter } from '../../src/server/projects/index.ts'
 import { MemoryStore } from '../../src/server/memory-store.ts'
 import { ProjectIndex } from '../../src/server/projects/index.ts'
-import { McpServers } from '../../src/server/mcp-servers.ts'
+import { McpServers } from '../../src/server/mcp/index.ts'
 import { ProjectStore } from '../../src/server/projects/index.ts'
 import {
   settingsDefaults,

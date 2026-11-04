@@ -3,13 +3,16 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { ResponseFunctionToolCall } from 'openai/resources/responses/responses'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
-import { openDatabase } from '../../src/server/database.ts'
-import type { FileStore } from '../../src/server/file-store.ts'
-import { McpServers } from '../../src/server/mcp-servers.ts'
-import { TOOL_STOPPED, ToolRegistry } from '../../src/server/tool-registry.ts'
-import { mcpTools, toOutput } from '../../src/server/tools/mcp-tool.ts'
-import { PNG } from '../fixtures/mcp-server.ts'
-import { EchoTool, testFiles } from './fakes.ts'
+import { openDatabase } from '../../../src/server/database.ts'
+import type { FileStore } from '../../../src/server/file-store.ts'
+import { McpServers } from '../../../src/server/mcp/mcp-servers.ts'
+import {
+  TOOL_STOPPED,
+  ToolRegistry,
+} from '../../../src/server/tool-registry.ts'
+import { mcpTools, toOutput } from '../../../src/server/mcp/mcp-tool.ts'
+import { PNG } from '../../fixtures/mcp-server.ts'
+import { EchoTool, testFiles } from '../fakes.ts'
 
 const call = (name: string, args = '{}'): ResponseFunctionToolCall => ({
   type: 'function_call',
@@ -32,7 +35,7 @@ describe('MCP tools', () => {
         fixture: {
           type: 'local',
           command: process.execPath,
-          args: [join(import.meta.dirname, '../fixtures/mcp-server.ts')],
+          args: [join(import.meta.dirname, '../../fixtures/mcp-server.ts')],
           env: { CHIBOT_SLOW_MARKER: started },
         },
       },

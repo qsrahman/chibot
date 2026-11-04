@@ -2,7 +2,7 @@ import type { CallToolResult } from '@modelcontextprotocol/client'
 import type { FunctionTool } from 'openai/resources/responses/responses'
 import { z } from 'zod'
 import type { FileStore } from '../file-store.ts'
-import type { McpServers, McpServerTool } from '../mcp-servers.ts'
+import type { McpServers, McpServerTool } from './mcp-servers.ts'
 import { Tool, type ToolContext } from '../tool.ts'
 
 const MAX_CHARS = 40_000

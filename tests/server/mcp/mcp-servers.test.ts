@@ -2,14 +2,14 @@ import { existsSync, mkdtempSync, realpathSync, rmSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { McpServerConfig } from '../../src/server/mcp-config.ts'
-import { McpServers } from '../../src/server/mcp-servers.ts'
+import type { McpServerConfig } from '../../../src/server/mcp/mcp-config.ts'
+import { McpServers } from '../../../src/server/mcp/mcp-servers.ts'
 
 // The fixture server, as a real child process over stdio.
 const fixture: McpServerConfig = {
   type: 'local',
   command: process.execPath,
-  args: [join(import.meta.dirname, '../fixtures/mcp-server.ts')],
+  args: [join(import.meta.dirname, '../../fixtures/mcp-server.ts')],
 }
 
 describe('MCP servers', () => {

@@ -11,7 +11,7 @@ import {
   StdioClientTransport,
 } from '@modelcontextprotocol/client/stdio'
 import { homedir } from 'node:os'
-import type { McpServerStatus } from '../shared/types.ts'
+import type { McpServerStatus } from '../../shared/types.ts'
 import { McpSignIn, type McpAuthStore } from './mcp-auth.ts'
 import type { McpServerConfig } from './mcp-config.ts'
 

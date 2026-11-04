@@ -2,16 +2,16 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
-import type { McpServerConfig } from '../../src/server/mcp-config.ts'
-import { Config } from '../../src/server/config.ts'
-import { McpAuthStore } from '../../src/server/mcp-auth.ts'
-import { McpServers } from '../../src/server/mcp-servers.ts'
-import type { McpServerStatus } from '../../src/shared/types.ts'
+import type { McpServerConfig } from '../../../src/server/mcp/mcp-config.ts'
+import { Config } from '../../../src/server/config.ts'
+import { McpAuthStore } from '../../../src/server/mcp/mcp-auth.ts'
+import { McpServers } from '../../../src/server/mcp/mcp-servers.ts'
+import type { McpServerStatus } from '../../../src/shared/types.ts'
 import {
   startOAuthServer,
   type OAuthFixture,
-} from '../fixtures/mcp-oauth-server.ts'
-import { testApp, testSettings } from './fakes.ts'
+} from '../../fixtures/mcp-oauth-server.ts'
+import { testApp, testSettings } from '../fakes.ts'
 
 const POST = { method: 'POST' }
 const CALLBACK = 'http://127.0.0.1:8787/api/mcp/oauth/callback'
@@ -40,7 +40,7 @@ describe('MCP routes', () => {
         fixture: {
           type: 'local',
           command: process.execPath,
-          args: [join(import.meta.dirname, '../fixtures/mcp-server.ts')],
+          args: [join(import.meta.dirname, '../../fixtures/mcp-server.ts')],
         },
         tracker: { type: 'remote', url: provider.url },
       },

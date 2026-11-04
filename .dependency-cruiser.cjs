@@ -49,7 +49,7 @@ module.exports = {
       comment:
         'A route file names the collaborators it uses; it does not take the app’s whole bag (app.ts composes the routes).',
       severity: 'error',
-      from: { path: '^src/server/(routes/|projects/routes\\.ts)' },
+      from: { path: '^src/server/(routes/|[a-z]+/routes\\.ts$)' },
       to: { path: '^src/server/app\\.ts$' },
     },
     {
@@ -59,7 +59,7 @@ module.exports = {
       severity: 'error',
       from: {
         pathNot:
-          '^src/server/(main|app)\\.ts$|^src/server/(routes/|projects/routes\\.ts$)',
+          '^src/server/(main|app)\\.ts$|^src/server/(routes/|[a-z]+/routes\\.ts$)',
       },
       to: { path: '^src/server/routes/' },
     },
@@ -92,6 +92,20 @@ module.exports = {
         path: '^src/server/projects/',
         pathNot: '^src/server/projects/index\\.ts$',
       },
+    },
+    {
+      name: 'mcp-through-its-index',
+      comment: 'Outside src/server/mcp/, import from its index.ts only.',
+      severity: 'error',
+      from: { pathNot: '^src/server/mcp/' },
+      to: { path: '^src/server/mcp/', pathNot: '^src/server/mcp/index\\.ts$' },
+    },
+    {
+      name: 'mcp-stands-alone',
+      comment: 'MCP knows nothing of the chat, conversations or projects.',
+      severity: 'error',
+      from: { path: '^src/server/mcp/' },
+      to: { path: '^src/server/(chat|conversations|projects)/' },
     },
     {
       name: 'database-takes-only-the-projects-schema',

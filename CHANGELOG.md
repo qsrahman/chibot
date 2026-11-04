@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- Code only: MCP is a feature folder, `src/server/mcp/` (config, connections, OAuth sign-in, routes and the tool, with an `index.ts` and tests under `tests/server/mcp/`); the dependency rules now also require MCP code to be imported through its index and keep it independent of chat, conversations and projects.
+
 ## [0.12.4] - 2026-11-04
 
 ### Changed
