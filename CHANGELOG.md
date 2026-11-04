@@ -14,10 +14,12 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- Accessibility is checked on rendered pages: an e2e spec runs axe (`@axe-core/playwright`, a new dev dependency) in both colour schemes over the new-chat page, an answer with code in six languages, maths, a table, a quote and a link, the menus, the image viewer, the search, shortcut, delete and Settings dialogs (every tab) and a toast, for WCAG 2.2 AA rules including colour contrast. It found the two fixes above. Also covered by new specs: following a streaming answer (and stopping when the user scrolls up, with and without reduced motion) and tablet, landscape and short-landscape screens, where nothing overflowed.
 - The composer's **+** menu no longer offers **Search the web**; the model still searches when it needs to (it is switched on or off in Settings → Tools). **Create an image** stays, and now says what it does under its name, as **Add photos & files** does.
 
 ### Fixed
 
+- The Delete button's text was white on the light red of the dark theme (2.5:1); it uses a new `--danger-fg` token (dark text there), and the colour test now checks it. Task-list boxes in answers (`- [x] done`) have a name ("Done" / "Not done"); they had none for a screen reader.
 - Keyboard shortcuts no longer act on the page behind a modal dialog. With Settings open, New chat navigated behind it, Search stacked a second dialog on it and the sidebar toggled; now they wait until the dialog closes (Esc still closes it).
 - **Import a chat** (Settings → Data) is a real button that a keyboard can reach; it was a label around a hidden file input, which Tab skipped.
 - When chibot can't be reached (the server stopped while the page was open), a failed message says "Can't reach chibot. Check that it is running, then try again." instead of the browser's bare "Failed to fetch", also when the server goes away in the middle of an answer. The message stays in the box to be sent again. The chat list says the same, with a **Try again** button, and reloads by itself when the window is back in front or the network returns, instead of staying stale; the projects' own message isn't repeated.

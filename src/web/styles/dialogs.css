@@ -85,7 +85,7 @@
 .button.danger {
   border-color: transparent;
   background: var(--danger);
-  color: #ffffff;
+  color: var(--danger-fg);
 }
 
 .dialog.search {

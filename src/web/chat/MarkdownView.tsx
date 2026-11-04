@@ -31,7 +31,12 @@ function useKatex(text: string): Katex | null {
   }, [needed, loaded])
   return loaded
 }
-const components: Components = { pre: CodeBlock, a: Link, img: Image }
+const components: Components = {
+  pre: CodeBlock,
+  a: Link,
+  img: Image,
+  input: TaskBox,
+}
 
 /**
  * Renders model output (see `Markdown`, which loads this). Raw HTML in the text is not rendered. Memoized: a
@@ -57,6 +62,15 @@ export const MarkdownView = memo(function MarkdownView({
     </div>
   )
 })
+
+/** A task-list box (`- [x] done`): read-only, and named by its state, since the text beside it isn't its label. */
+function TaskBox({
+  node: _node,
+  ...props
+}: ComponentProps<'input'> & ExtraProps) {
+  if (props.type !== 'checkbox') return <input {...props} />
+  return <input {...props} aria-label={props.checked ? 'Done' : 'Not done'} />
+}
 
 /** Blocks this long get line numbers (short ones read better without). */
 const NUMBERED_FROM = 12

@@ -270,7 +270,9 @@ invariants, API quirks. No line-by-line narration.
   (e.g. a focused composer, or the empty new-chat page) before typing or
   pressing shortcuts, and for `answered` before copying. Specs that change
   settings reset them afterwards (`resetSettings` restores the server's
-  defaults, so a new setting needs no change there). First run:
+  defaults, so a new setting needs no change there). `contrast.spec.ts` runs
+  axe over the main screens in both colour schemes; a new screen, dialog or
+  colour belongs in it. First run:
   `pnpm exec playwright install chromium`.
 
 ## Workflow

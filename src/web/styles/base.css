@@ -31,6 +31,8 @@
   --bubble-fg: light-dark(#2451da, #d9e6ff);
   --code-chip: light-dark(rgb(238 238 238 / 82%), rgb(42 42 42 / 82%));
   --danger: light-dark(#d93025, #ff6b6b);
+  /* Text on a danger-coloured button: white on the light red would be 2.5:1. */
+  --danger-fg: light-dark(#ffffff, #0d0d0d);
   /* Light: a soft layered drop shadow. Dark: an inset hairline instead. */
   --composer-shadow:
     0 0 0 1px light-dark(rgb(0 0 0 / 4%), transparent),

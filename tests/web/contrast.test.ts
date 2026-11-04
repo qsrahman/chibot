@@ -12,6 +12,7 @@ const css = readFileSync(
 const HEX = '#[0-9a-fA-F]{6}'
 
 function token(name: string, scheme: 'light' | 'dark'): string {
+  if (name.startsWith('#')) return name // a colour written in the CSS itself
   const pair = new RegExp(
     `--${name}:\\s*light-dark\\(\\s*(${HEX})\\s*,\\s*(${HEX})\\s*\\)`,
   ).exec(css)
@@ -56,6 +57,7 @@ const TEXT: [string, string][] = [
   ]),
   ...['bg', 'surface'].map((bg): [string, string] => ['danger', bg]),
   ['bubble-fg', 'bubble-bg'],
+  ['danger-fg', 'danger'],
   // Code sits on the page, and on a card if it is shown in one.
   ...CODE.flatMap((fg) =>
     ['bg', 'surface', 'surface-muted'].map((bg): [string, string] => [fg, bg]),
@@ -69,6 +71,8 @@ const INTERFACE: [string, string][] = [
   ['border-control', 'surface'],
   ['accent', 'bg'],
   ['accent', 'surface'],
+  // A switch's thumb is white (settings.css), on its track on and off.
+  ['#ffffff', 'accent'],
 ]
 
 describe.each(['light', 'dark'] as const)('colour tokens, %s', (scheme) => {
