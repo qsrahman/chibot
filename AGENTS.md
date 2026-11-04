@@ -237,6 +237,10 @@ invariants, API quirks. No line-by-line narration.
   e.g. Ollama's `nomic-embed-text-v2-moe`) it also scores keyword against
   hybrid search, on questions that repeat the passage's words and on
   paraphrases; that part is skipped otherwise.
+- Prompt injection: `tests/server/chat/injection.test.ts` asks a real model to
+  summarize a poisoned page with chibot's own instructions and tools, and
+  counts how often it obeys; run it when changing the untrusted-content
+  wording (`INJECTION_URL`, `INJECTION_MODELS`; skipped otherwise).
 - SQLite: use `':memory:'` databases.
 - Web: no component unit tests; pure helpers (e.g. `chat/turns.ts`, `chat/usage.ts`)
   get vitest tests. UI behaviour is covered by Playwright specs in

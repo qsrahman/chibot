@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Added
 
+- Code only: `tests/server/chat/injection.test.ts` (opt-in: `INJECTION_URL` and `INJECTION_MODELS`) asks a real model to summarize a page with planted instructions (reply with one word, save a memory, fetch an attacker's URL), using chibot's own instructions and the real memory and fetch tools, and fails if the shipped prompt lets more than one attack in nine through or the model stops summarizing a harmless page. Run locally on three Ollama models (240 calls, 5 samples per case): attacks that worked with no defense 8, 5 and 7 of 15 (all memory and fetch attacks; none made a model reply with the planted word), with the instructions' rule alone 0, 1 and 0, with the banner on the page text alone 0, 3 and 1, and with both (as shipped) 0, 0 and 0 (one reply in 15 matched the planted word and could not be confirmed as obedience).
 - Code only: `tests/server/projects/retrieval.test.ts` can also score search by meaning, when `RETRIEVAL_EMBEDDING_URL` and `RETRIEVAL_EMBEDDING_MODEL` name an embedding endpoint (skipped otherwise): it prints keyword-only against hybrid scores for the questions that repeat the passage's words and for 12 paraphrases, and fails if hybrid loses what keywords find or doesn't beat them on paraphrases. With Ollama's `nomic-embed-text-v2-moe`: paraphrases found among the first three hits 33% → 92% (first hit 33% → 58%); same-word questions 100% in the first three either way, first hit 90% → 86%.
 
 ## [0.12.5] - 2026-11-04
