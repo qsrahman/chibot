@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import { Check, ChevronDown, ChevronRight } from 'lucide-react'
 import { effortLabel, REASONING_EFFORTS } from '../shared/reasoning.ts'
 import type { Settings } from '../shared/settings.ts'
-import { listModels } from './api.ts'
+import { listModels } from './settings/api.ts'
 import { useAnchoredPopover } from './popover.ts'
 
 type Effort = Settings['reasoningEffort']

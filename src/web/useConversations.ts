@@ -5,7 +5,7 @@ import {
   listConversations,
   regenerateTitle,
   updateConversation,
-} from './api.ts'
+} from './conversations/api.ts'
 import { useLoad } from './useLoad.ts'
 
 /** Shown for conversations that have no title yet. */

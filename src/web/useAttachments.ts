@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { fileKind } from '../shared/documents.ts'
-import { uploadFile } from './api.ts'
+import { uploadFile } from './http.ts'
 import type { Attachment } from './turns.ts'
 
 /** A file added to the composer: uploading, uploaded or failed. */

@@ -5,9 +5,8 @@ import {
   createConversation,
   deleteConversation,
   getConversation,
-  streamTurn,
-  switchVersion as putVersion,
-} from './api.ts'
+} from './conversations/api.ts'
+import { streamTurn, switchVersion as putVersion } from './chat/api.ts'
 import { useQueue } from './useQueue.ts'
 import {
   toTurns,

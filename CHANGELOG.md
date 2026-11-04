@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- Code only: the web app's one `api.ts` is split by feature (`conversations/api.ts`, `chat/api.ts`, `projects/api.ts`, `settings/api.ts`), over the shared `http.ts` (`request`, `send`, `remove`, `uploadFile`). A stray doc comment on `regenerateTitle` now sits on `exportUrl`.
+
 ## [0.12.3] - 2026-11-04
 
 ### Changed

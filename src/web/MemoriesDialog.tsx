@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Pencil, Trash2 } from 'lucide-react'
 import { MAX_MEMORIES, MAX_MEMORY_LENGTH } from '../shared/memory.ts'
-import { deleteMemories, listMemories, updateMemory } from './api.ts'
+import { deleteMemories, listMemories, updateMemory } from './settings/api.ts'
 import { ConfirmDialog, Dialog } from './Dialog.tsx'
 import { useLoad } from './useLoad.ts'
 

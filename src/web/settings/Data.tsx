@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { importConversation } from '../api.ts'
+import { importConversation } from '../conversations/api.ts'
 import { Row, Section } from './parts.tsx'
 
 export function Data({

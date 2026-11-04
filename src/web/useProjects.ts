@@ -4,7 +4,7 @@ import {
   deleteProject,
   listProjects,
   updateProject,
-} from './api.ts'
+} from './projects/api.ts'
 import { useLoad } from './useLoad.ts'
 
 /** The projects (sidebar, "Move to project") and the actions that change them. */

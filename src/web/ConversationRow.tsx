@@ -14,7 +14,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import type { ConversationListItem } from '../shared/types.ts'
-import { exportUrl } from './api.ts'
+import { exportUrl } from './conversations/api.ts'
 import { useAnchoredPopover } from './popover.ts'
 import { UNTITLED } from './useConversations.ts'
 

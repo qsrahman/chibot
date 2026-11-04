@@ -6,7 +6,7 @@ import {
   reloadMcpServers,
   signInToMcpServer,
   signOutOfMcpServer,
-} from '../api.ts'
+} from './api.ts'
 import { describeMcpServer, isConnecting, withMember } from '../mcp.ts'
 import { useLoad } from '../useLoad.ts'
 import type { SettingsApi } from '../useSettings.ts'

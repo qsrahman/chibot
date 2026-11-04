@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { MessageSquare } from 'lucide-react'
 import type { ConversationListItem } from '../shared/types.ts'
-import { searchConversations } from './api.ts'
+import { searchConversations } from './conversations/api.ts'
 import { Dialog } from './Dialog.tsx'
 import { UNTITLED } from './useConversations.ts'
 

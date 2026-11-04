@@ -22,15 +22,17 @@ import type {
 } from '../shared/types.ts'
 import {
   addProjectFile,
-  deleteConversation,
   getProject,
   reindexProjectFile,
   removeProjectFile,
-  regenerateTitle,
   suggestProjectInstructions,
-  updateConversation,
   updateProject,
-} from './api.ts'
+} from './projects/api.ts'
+import {
+  deleteConversation,
+  regenerateTitle,
+  updateConversation,
+} from './conversations/api.ts'
 import { ConversationRow, MenuItem } from './ConversationRow.tsx'
 import { keepFolderFiles } from './folderFiles.ts'
 import { droppedFiles, pickedFiles } from './folders.ts'

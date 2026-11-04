@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { transcribe } from './api.ts'
+import { transcribe } from './chat/api.ts'
 
 /**
  * Voice input: records from the microphone in the browser's own format

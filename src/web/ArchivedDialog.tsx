@@ -6,7 +6,7 @@ import {
   deleteConversation,
   listConversations,
   updateConversation,
-} from './api.ts'
+} from './conversations/api.ts'
 import { DeleteChatDialog, Dialog } from './Dialog.tsx'
 import { UNTITLED } from './useConversations.ts'
 import { useLoad } from './useLoad.ts'
