@@ -17,6 +17,14 @@
   box-shadow: var(--composer-shadow);
 }
 
+/* The textarea has no outline of its own (it sits inside the box), so the box
+   shows that it has focus. A softer colour than the global ring: the message
+   box is focused most of the time. */
+.composer:has(textarea:focus-visible) {
+  outline: 2px solid var(--fg-muted);
+  outline-offset: 2px;
+}
+
 /* A message waiting for the answer to finish (it can't go yet). */
 .composer-queued {
   display: flex;

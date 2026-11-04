@@ -109,10 +109,14 @@
   padding: 0 20px;
   border: none;
   border-bottom: 1px solid var(--border);
-  outline: none;
   background: transparent;
   color: inherit;
   font: inherit;
+}
+
+.search-input:focus-visible {
+  /* The global ring, inside the field: the dialog clips what is outside. */
+  outline-offset: -2px;
 }
 
 .search-results {

@@ -7,6 +7,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Fixed
 
+- Keyboard focus is visible in the message box, the edit box of a sent message and the search field. They have no outline of their own (the first two sit inside a box), and the box showed nothing when they had focus, so only the caret marked it. The message box and edit box now draw a 2px outline when their textarea has focus (softer in the message box, which is focused most of the time), and the search field keeps the global ring, drawn inside it.
 - **Add files** and **Add folder** on a project's Files card can be reached and pressed with the keyboard. They were labels around `hidden` file inputs, which no keyboard can focus, so Tab skipped them; they are real buttons now (`FilePickerButton`) that open the picker.
 
 ## [0.12.7] - 2026-11-04
