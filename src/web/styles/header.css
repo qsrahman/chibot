@@ -85,7 +85,7 @@
   height: 36px;
   margin-bottom: 4px;
   padding: 0 10px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-control);
   border-radius: var(--radius-row);
   background: var(--surface);
   color: inherit;

@@ -113,7 +113,7 @@
 .settings-panel select,
 .settings-number,
 .settings-field textarea {
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-control);
   border-radius: var(--radius-row);
   background: var(--surface);
   color: inherit;
@@ -243,7 +243,7 @@ label.button {
   flex: 1;
   min-width: 0;
   padding: 8px 10px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-control);
   border-radius: var(--radius-row);
   background: var(--bg);
   color: inherit;

@@ -20,6 +20,9 @@
   --fg: light-dark(#0d0d0d, #ffffff);
   --fg-muted: light-dark(#5d5d5d, #cdcdcd);
   --border: light-dark(rgb(0 0 0 / 10%), rgb(255 255 255 / 15%));
+  /* The edge of a field (an input, a select), which has to show where it is:
+     3:1 against the page and cards; --border is for dividers and cards. */
+  --border-control: #8a8a8a;
   --accent: #3566f0;
   --accent-fg: #ffffff;
   --button: light-dark(#0d0d0d, #ffffff);
@@ -39,15 +42,16 @@
   --scrim: rgb(0 0 0 / 50%);
 
   /* Code highlighting, GitHub's palettes (highlight.js's theme files are
-     media-query based and can't follow the theme setting). */
-  --code-keyword: light-dark(#d73a49, #ff7b72);
+     media-query based and can't follow the theme setting), a little darker
+     (light) or lighter (dark) where they fell under 4.5:1. */
+  --code-keyword: light-dark(#cf222e, #ff7b72);
   --code-title: light-dark(#6f42c1, #d2a8ff);
   --code-number: light-dark(#005cc5, #79c0ff);
   --code-string: light-dark(#032f62, #a5d6ff);
-  --code-builtin: light-dark(#e36209, #ffa657);
-  --code-comment: light-dark(#6a737d, #8b949e);
-  --code-name: light-dark(#22863a, #7ee787);
-  --code-added: light-dark(#22863a, #aff5b4);
+  --code-builtin: light-dark(#bc4c00, #ffa657);
+  --code-comment: light-dark(#59636e, #9aa4af);
+  --code-name: light-dark(#1a7f37, #7ee787);
+  --code-added: light-dark(#1a7f37, #aff5b4);
   --code-added-bg: light-dark(#f0fff4, #033a16);
   --code-removed: light-dark(#b31d28, #ffdcd7);
   --code-removed-bg: light-dark(#ffeef0, #67060c);
