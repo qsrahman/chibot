@@ -12,9 +12,9 @@ import { Attachments } from './attachments.ts'
 import { ChatService } from './chat/index.ts'
 import { ModelRequests } from './chat/index.ts'
 import { TitleWriter } from './chat/index.ts'
-import { Config, loadEnvFiles } from './config.ts'
-import { mcpVariables, readConfigFile, toEnv } from './config-file.ts'
-import { locations } from './locations.ts'
+import { Config, layered, readEnvFiles } from './config.ts'
+import { mcpVariables, readConfigFile } from './config-file.ts'
+import { locations, ROOT } from './locations.ts'
 import { InstructionWriter } from './projects/index.ts'
 import { ConversationSearch } from './conversations/index.ts'
 import { ConversationStore } from './conversations/index.ts'
@@ -99,17 +99,26 @@ export function start({
   /** Settings beating the environment and `config.json` (command-line flags). */
   env?: Record<string, string>
 } = {}) {
-  const legacyEnv = loadEnvFiles()
-  // Lowest first: config.json, then the environment, then the flags.
-  const read = readConfigFile(locations({ ...process.env, ...env }).configDir)
-  const config = new Config({ ...toEnv(read.file), ...process.env, ...env })
+  const legacy = readEnvFiles()
+  // Where config.json is can itself come from an old .env, the environment or a flag.
+  const read = readConfigFile(
+    locations({ ...legacy.values, ...process.env, ...env }).configDir,
+  )
+  const config = new Config(
+    layered({
+      legacy: legacy.values,
+      file: read.file,
+      env: process.env,
+      flags: env,
+    }),
+  )
   if (read.exists) console.log(`Settings: ${read.path}`)
   if (read.tooOpen) {
     console.warn(
       `Warning: ${read.path} holds keys and others can read it. Run: chmod 600 "${read.path}"`,
     )
   }
-  for (const path of legacyEnv) {
+  for (const path of legacy.files) {
     console.warn(
       `Note: reading ${path}, which is no longer the place for settings. Run \`chibot init\` to move them into ${read.path}, then delete it.`,
     )
@@ -124,7 +133,8 @@ export function start({
       `Note: reading MCP servers from ${config.mcpConfigPath}; they can live in ${read.path} under "mcpServers". Run \`chibot init\` to move them.`,
     )
   }
-  mkdirSync(config.dataDir, { recursive: true })
+  // Chats and files: for the owner only (the config folder is 0700 too).
+  mkdirSync(config.dataDir, { recursive: true, mode: 0o700 })
   const db = openDatabase(config.databasePath)
   const store = new ConversationStore(db)
   const search = new ConversationSearch(db)
@@ -207,7 +217,17 @@ export function start({
 
   // In dev, Vite serves the web app. The production build only exists after `pnpm build`.
   const webRoot = join(import.meta.dirname, '../../dist/web')
-  if (existsSync(webRoot)) serveWebApp(app, webRoot)
+  if (existsSync(webRoot)) {
+    serveWebApp(app, webRoot)
+  } else {
+    // A linked `chibot` run before `pnpm build`: say so, not a bare 404.
+    app.get('*', (c) =>
+      c.text(
+        `chibot is running, but its web app is not built yet.\nIn ${ROOT}, run: pnpm build\n`,
+        503,
+      ),
+    )
+  }
 
   serve(
     { fetch: app.fetch, hostname: config.host, port: config.port },

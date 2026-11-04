@@ -1,29 +1,61 @@
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { parseEnv } from 'node:util'
 import type { ChatModel } from 'openai/resources/shared'
+import { settingOf, toEnv, type ConfigFile } from './config-file.ts'
 import { locations, ROOT } from './locations.ts'
 import { z } from 'zod'
 
 /**
- * Loads the repo's `.env`, which older versions used for all settings; it is
- * still read, below the real environment, until `chibot init` has moved its
- * values into `config.json`. The current folder's `.env` is not read: a global
- * command would otherwise take whatever keys the folder it runs in happens to
- * hold, and a hostile folder could point it at its own server.
+ * The settings in the repo's `.env`, which older versions used for all of
+ * them. They count for less than `config.json` (they are what `chibot init`
+ * moves into it, and a leftover file must not override a later `chibot config
+ * set`), and for less than the real environment. Read, not loaded into
+ * `process.env`, so nothing else sees them as the real environment either.
+ * The current folder's `.env` is not read: a global command would otherwise
+ * take whatever keys the folder it runs in happens to hold, and a hostile
+ * folder could point it at its own server.
  *
- * @returns the files that were found and loaded
+ * @returns the values, and the files they came from
  */
-export function loadEnvFiles(paths = [join(ROOT, '.env')]): string[] {
-  const loaded: string[] = []
-  for (const path of new Set(paths)) {
+export function readEnvFiles(paths = [join(ROOT, '.env')]): {
+  values: Record<string, string>
+  files: string[]
+} {
+  const values: Record<string, string> = {}
+  const files: string[] = []
+  // The first file wins, as with the real environment over a file.
+  for (const path of [...new Set(paths)].reverse()) {
+    let text: string
     try {
-      process.loadEnvFile(path)
-      loaded.push(path)
+      text = readFileSync(path, 'utf8')
     } catch (err) {
       // A missing file is fine: variables may come from elsewhere.
-      if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') continue
+      throw err
     }
+    Object.assign(values, parseEnv(text))
+    files.unshift(path)
   }
-  return loaded
+  return { values, files }
+}
+
+/**
+ * The settings from every place, lowest first: an old `.env`, `config.json`,
+ * the real environment, then the command line (`flags`, as variables).
+ */
+export function layered({
+  legacy,
+  file,
+  env,
+  flags,
+}: {
+  legacy: Record<string, string>
+  file: ConfigFile
+  env: NodeJS.ProcessEnv
+  flags: Record<string, string>
+}): NodeJS.ProcessEnv {
+  return { ...legacy, ...toEnv(file), ...env, ...flags }
 }
 
 /** Connection to an OpenAI or OpenAI-compatible (Responses API) server. */
@@ -131,9 +163,13 @@ export class Config {
   constructor(env: NodeJS.ProcessEnv) {
     const parsed = envSchema.safeParse(env)
     if (!parsed.success) {
-      throw new Error(
-        `Invalid configuration:\n${z.prettifyError(parsed.error)}`,
-      )
+      // Named as the variable and as the setting, since either may be wrong.
+      const problems = parsed.error.issues.map((issue) => {
+        const name = String(issue.path[0] ?? '')
+        const setting = settingOf(name)
+        return `  - ${name}${setting ? ` (${setting})` : ''}: ${issue.message}`
+      })
+      throw new Error(`Invalid configuration:\n${problems.join('\n')}`)
     }
     const e = parsed.data
     // On OpenAI, models have defaults; a compatible server needs them named.

@@ -63,10 +63,10 @@ while `<chibot folder>/data` and `<chibot folder>/mcp.json` exist and the
 standard places are empty, chibot keeps using them and says so at startup.
 
 **Precedence**, highest first: command-line flags (`--port`, `--host`), real
-environment variables, `config.json`, defaults. So a variable such as
+environment variables, `config.json`, an old `.env`, defaults. So a variable such as
 `OPENAI_API_KEY` always overrides the file, which is how a deployment, a test
 or a one-off run changes a value. The old `.env` in the chibot folder is still
-read below the environment (and tells you to run `chibot init`, which offers to
+read, below everything else (it tells you to run `chibot init`, which offers to
 move it into `config.json`); a `.env` in the folder you run chibot from is
 **not** read, since a command you can run anywhere must not take settings from
 whatever folder it is in.
@@ -178,7 +178,8 @@ offers to move its servers in.
   `chibot config set env.GITHUB_TOKEN <token>` (an empty value removes it;
   `chibot config show` lists the names, not the values). **Reload** re-reads
   `config.json`, so a changed block or server list applies; a variable
-  exported in your shell needs a restart. Names may use letters, digits, `-` and `_`.
+  exported in your shell needs a restart. Variable names use letters, digits and
+  `_`.
 
 Servers are only set up here, never from the web app. Their tools are offered
 as `<server>__<tool>` and run without asking first, so add only servers you

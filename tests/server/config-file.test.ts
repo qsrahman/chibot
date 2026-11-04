@@ -211,3 +211,19 @@ describe('variables for mcp.json', () => {
     })
   })
 })
+
+describe('values refused when set', () => {
+  it('a token under 16 characters, and an address that is not http(s)', () => {
+    expect(() => withSetting({}, 'token', 'short')).toThrow(/at least 16/)
+    expect(withSetting({}, 'token', 'a-token-of-16-chars').token).toBeDefined()
+    expect(() => withSetting({}, 'chat.baseURL', 'localhost:11434')).toThrow(
+      /chat\.baseURL|http\(s\) address/,
+    )
+    expect(() => withSetting({}, 'chat.baseURL', 'ftp://h/')).toThrow(
+      /http\(s\) address/,
+    )
+    expect(
+      withSetting({}, 'chat.baseURL', 'http://localhost:11434/v1').chat,
+    ).toEqual({ baseURL: 'http://localhost:11434/v1' })
+  })
+})

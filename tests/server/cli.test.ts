@@ -1,4 +1,10 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -47,6 +53,15 @@ describe('the chibot command', () => {
       expect.stringContaining(join(dir, 'data')),
       expect.stringContaining('mcp.json'),
     ])
+  })
+
+  it('still says where the settings are when the file is broken', async () => {
+    mkdirSync(join(dir, 'config'), { recursive: true })
+    writeFileSync(join(dir, 'config', 'config.json'), '{ nope')
+    await run(['config', 'path'])
+    expect(out[0]).toContain(join(dir, 'config', 'config.json'))
+    // Whatever reads it says what is wrong.
+    await expect(run(['config', 'show'])).rejects.toThrow(/isn't valid JSON/)
   })
 
   it('sets, shows (keys hidden) and removes settings', async () => {

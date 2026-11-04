@@ -16,9 +16,14 @@ import { z } from 'zod'
 // variables still win over it, so a deployment can override a value.
 
 const text = z.string().trim().min(1)
+// A server's address: refused when set if it is not one, not at startup.
+const address = z.url({
+  protocol: /^https?$/,
+  error: 'must be an http(s) address',
+})
 const endpoint = z
   .object({
-    baseURL: text.optional(),
+    baseURL: address.optional(),
     apiKey: text.optional(),
     model: text.optional(),
   })
@@ -41,7 +46,11 @@ export const configFileSchema = z
       .strict()
       .optional(),
     /** Required to use chibot (once per browser). */
-    token: text.optional(),
+    token: z
+      .string()
+      .trim()
+      .min(16, 'must be at least 16 characters (e.g. `openssl rand -hex 16`)')
+      .optional(),
     /**
      * MCP servers, in the usual `mcpServers` shape. Checked when they are
      * loaded, not here, so a mistake in one never stops chibot starting.
@@ -81,6 +90,11 @@ const SETTINGS: [path: string, variable: string][] = [
   ['server.port', 'PORT'],
   ['token', 'CHIBOT_TOKEN'],
 ]
+
+/** The setting (`chat.apiKey`) that the environment variable `variable` stands for, if any. */
+export function settingOf(variable: string): string | undefined {
+  return SETTINGS.find(([, name]) => name === variable)?.[0]
+}
 
 /** What is secret: shown as "set", never printed (all of `env`; `mcpServers` is listed by name). */
 const SECRETS = /(^|\.)(apiKey|braveApiKey|token)$|^env\./

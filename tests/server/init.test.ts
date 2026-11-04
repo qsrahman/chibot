@@ -89,3 +89,15 @@ describe('chibot init', () => {
     expect(has.asked[0]!.question).toContain('Choose')
   })
 })
+
+describe('chibot init, the provider question', () => {
+  it('asks again for anything but 1 or 2, instead of guessing', async () => {
+    const { prompts, said } = scripted(['x', '3', '1', 'sk-abc', '', ''])
+    expect(
+      await runInit(prompts, { existing: {}, legacyEnv: {}, legacyPath: null }),
+    ).toEqual({
+      chat: { apiKey: 'sk-abc' },
+    })
+    expect(said.filter((m) => m === 'Type 1 or 2.')).toHaveLength(2)
+  })
+})

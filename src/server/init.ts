@@ -46,8 +46,16 @@ export async function runInit(
   say('Where are your models?')
   say('  1) OpenAI')
   say('  2) An OpenAI-compatible server (Ollama, LM Studio, …)')
-  const where = (await ask(`Choose [${compatible ? 2 : 1}]`)).trim()
-  const useServer = where === '' ? compatible : where === '2'
+  let useServer = compatible
+  for (;;) {
+    const where = (await ask(`Choose [${compatible ? 2 : 1}]`)).trim()
+    if (where === '') break
+    if (where === '1' || where === '2') {
+      useServer = where === '2'
+      break
+    }
+    say('Type 1 or 2.')
+  }
 
   const next: NonNullable<ConfigFile['chat']> = {}
   if (useServer) {
@@ -144,13 +152,21 @@ export function terminalPrompts(): Prompts & { close(): void } {
     },
   })
   const rl = createInterface({ input: process.stdin, output, terminal: true })
+  // Ctrl+D (or a closed input) ends the questions: without this the pending
+  // one never settles, and Node exits with a warning about the unsettled await.
+  const closed = new Promise<never>((_, reject) =>
+    rl.once('close', () =>
+      reject(new Error('Setup cancelled; nothing was saved.')),
+    ),
+  )
+  closed.catch(() => {})
   return {
     async ask(question, { secret = false } = {}) {
       muted = false
       process.stdout.write(`${question}: `)
       muted = secret
       try {
-        return await rl.question('')
+        return await Promise.race([rl.question(''), closed])
       } finally {
         if (secret) process.stdout.write('\n')
         muted = false

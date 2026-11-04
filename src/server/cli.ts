@@ -3,13 +3,14 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
 import {
+  CONFIG_FILE,
   readConfigFile,
   readMcpServers,
   redacted,
   withSetting,
   writeConfigFile,
 } from './config-file.ts'
-import { loadEnvFiles } from './config.ts'
+import { readEnvFiles } from './config.ts'
 import { offerMcpImport, runInit, terminalPrompts } from './init.ts'
 import { locations, ROOT } from './locations.ts'
 import { start } from './main.ts'
@@ -63,13 +64,13 @@ export async function run(args: string[]): Promise<number | void> {
       return
     case 'init': {
       const { file, path } = readConfigFile(where.configDir)
-      const legacy = loadEnvFiles()[0] ?? null
+      const legacy = readEnvFiles()
       const prompts = terminalPrompts()
       try {
         let next = await runInit(prompts, {
           existing: file,
-          legacyEnv: process.env,
-          legacyPath: legacy,
+          legacyEnv: legacy.values,
+          legacyPath: legacy.files[0] ?? null,
         })
         // A named file (CHIBOT_MCP_CONFIG) is the user's choice: leave it.
         if (!where.mcpConfigExplicit) {
@@ -82,7 +83,9 @@ export async function run(args: string[]): Promise<number | void> {
         }
         writeConfigFile(where.configDir, next)
         console.log(`Saved to ${path} (readable by you only).`)
-        if (legacy) console.log(`You can delete ${legacy} now.`)
+        if (legacy.files[0]) {
+          console.log(`You can delete ${legacy.files[0]} now.`)
+        }
         console.log('Start chibot with: chibot')
       } finally {
         prompts.close()
@@ -91,16 +94,23 @@ export async function run(args: string[]): Promise<number | void> {
     }
     case 'config': {
       const [action, setting, value] = rest
-      const read = readConfigFile(where.configDir)
-      const { file, path } = read
       if (action === 'path') {
+        // Works even when the file is broken: that is when you need to find it.
+        const path = join(where.configDir, CONFIG_FILE)
+        let inFile = false
+        try {
+          inFile = Boolean(readConfigFile(where.configDir).file.mcpServers)
+        } catch {
+          // Reported by whatever reads it next.
+        }
         console.log(`Settings:    ${path}`)
         console.log(`Data:        ${where.dataDir}`)
         console.log(
-          `MCP servers: ${read.file.mcpServers && !where.mcpConfigExplicit ? `in ${path}` : where.mcpConfigPath}`,
+          `MCP servers: ${inFile && !where.mcpConfigExplicit ? `in ${path}` : where.mcpConfigPath}`,
         )
         return
       }
+      const { file } = readConfigFile(where.configDir)
       if (action === 'show') {
         return void console.log(JSON.stringify(redacted(file), null, 2))
       }
