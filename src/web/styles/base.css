@@ -83,6 +83,14 @@
   box-sizing: border-box;
 }
 
+/* What a spinner or the thinking dot does instead of turning or shrinking, for
+   people who ask for less motion: progress still shows. */
+@keyframes fade {
+  50% {
+    opacity: 0.4;
+  }
+}
+
 body {
   margin: 0;
   background: var(--bg);

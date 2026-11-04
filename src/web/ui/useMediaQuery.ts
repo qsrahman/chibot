@@ -6,6 +6,9 @@ export const NARROW = '(max-width: 767px)'
 /** Touch-only devices (a touchscreen laptop still has a fine pointer). */
 export const TOUCH_ONLY = '(hover: none) and (pointer: coarse)'
 
+/** For people who ask their system for less movement. */
+export const REDUCED_MOTION = '(prefers-reduced-motion: reduce)'
+
 /** Whether `query` matches, kept up to date. */
 export function useMediaQuery(query: string): boolean {
   return useSyncExternalStore(

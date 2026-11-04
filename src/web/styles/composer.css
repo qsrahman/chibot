@@ -117,6 +117,13 @@
   animation: spin 1s linear infinite;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .attachment-spinner,
+  .spin {
+    animation: fade 1.2s ease-in-out infinite;
+  }
+}
+
 .composer .icon-button,
 .composer-chip {
   align-self: flex-end;

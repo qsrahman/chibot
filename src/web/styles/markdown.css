@@ -197,6 +197,12 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .thinking {
+    animation: fade 1.2s ease-in-out infinite;
+  }
+}
+
 .error {
   padding: 12px 16px;
   border: 1px solid var(--danger);

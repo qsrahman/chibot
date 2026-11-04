@@ -20,6 +20,7 @@ import { Composer } from './Composer.tsx'
 import { ModelPicker } from './ModelPicker.tsx'
 import { ProjectDetails } from '../projects/ProjectDetails.tsx'
 import { ProjectHeading } from '../projects/ProjectHeading.tsx'
+import { REDUCED_MOTION } from '../ui/useMediaQuery.ts'
 import { SHORTCUTS, useShortcuts } from '../ui/shortcuts.ts'
 import { ToolInfoContext } from './toolInfo.ts'
 import { waitingCalls } from './turns.ts'
@@ -401,7 +402,10 @@ export function ChatPage({
                   followRef.current = true
                   endRef.current?.scrollIntoView({
                     block: 'end',
-                    behavior: 'smooth',
+                    // Gliding is movement: not for those who ask for less.
+                    behavior: matchMedia(REDUCED_MOTION).matches
+                      ? 'auto'
+                      : 'smooth',
                   })
                 }}
               >

@@ -1,56 +1,11 @@
-import { expect, test, type Page } from '@playwright/test'
-import { appReady } from './helpers.ts'
+import { expect, test } from '@playwright/test'
+import { appReady, longChat } from './helpers.ts'
 
 // A long chat is mostly offscreen, so the browser is told it may skip laying
 // out and painting the turns that are (`content-visibility: auto`): resizing
 // the window or toggling the sidebar re-lays-out only what is on screen.
 
 const TURNS = 80
-const ANSWER = [
-  'Here is a **summary** with code and a list.',
-  '```ts\nexport const retry = (n: number) => n * 2\n```',
-  '- First point\n- Second point\n- Third point',
-].join('\n\n')
-
-async function longChat(page: Page) {
-  const items = []
-  let id = 0
-  for (let i = 1; i <= TURNS; i++) {
-    items.push({
-      id: ++id,
-      parentId: id === 1 ? null : id - 1,
-      data: { role: 'user', content: `Question ${i}` },
-      usage: null,
-      model: null,
-      createdAt: id,
-    })
-    items.push({
-      id: ++id,
-      parentId: id - 1,
-      data: {
-        type: 'message',
-        role: 'assistant',
-        status: 'completed',
-        id: `msg_${id}`,
-        content: [{ type: 'output_text', text: ANSWER, annotations: [] }],
-      },
-      usage: null,
-      model: 'e2e-model',
-      createdAt: id,
-    })
-  }
-  const res = await page.request.post('/api/conversations/import', {
-    data: {
-      version: 2,
-      exportedAt: 0,
-      conversation: { title: 'Long chat', createdAt: 1, updatedAt: 2 },
-      currentLeafId: id,
-      items,
-      files: [],
-    },
-  })
-  return ((await res.json()) as { id: string }).id
-}
 
 // Whether what is inside a turn is laid out (it is not while the turn is
 // skipped; the turn's own box always is).
@@ -62,7 +17,7 @@ const rendered = (turn: import('@playwright/test').Locator) =>
 test('skips the turns that are offscreen, and starts at the end', async ({
   page,
 }) => {
-  const id = await longChat(page)
+  const id = await longChat(page, TURNS)
   await page.goto(`/c/${id}`)
   await appReady(page)
   const turns = page.locator('.turn')
@@ -77,7 +32,7 @@ test('skips the turns that are offscreen, and starts at the end', async ({
 test('still jumps back to the latest message after scrolling to the top', async ({
   page,
 }) => {
-  const id = await longChat(page)
+  const id = await longChat(page, TURNS)
   await page.goto(`/c/${id}`)
   await appReady(page)
   const turns = page.locator('.turn')
@@ -94,7 +49,7 @@ test('still jumps back to the latest message after scrolling to the top', async 
 })
 
 test('keeps its place while skipped turns are measured', async ({ page }) => {
-  const id = await longChat(page)
+  const id = await longChat(page, TURNS)
   await page.goto(`/c/${id}`)
   await appReady(page)
   const messages = page.locator('.messages')
@@ -131,7 +86,7 @@ test('keeps its place while skipped turns are measured', async ({ page }) => {
 test('leaves room for the focus ring of the first and last controls of a turn', async ({
   page,
 }) => {
-  const id = await longChat(page)
+  const id = await longChat(page, TURNS)
   await page.goto(`/c/${id}`)
   await appReady(page)
   // Content-visibility clips what pokes out of a turn, rings included.

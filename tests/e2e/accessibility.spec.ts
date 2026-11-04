@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { answered, appReady, send } from './helpers.ts'
+import { answered, appReady, longChat, send } from './helpers.ts'
 
 // What a keyboard or screen-reader user needs from the app's own controls.
 // (The project page's pickers are in projects.spec.ts, the phone drawer in
@@ -145,4 +145,94 @@ test('text follows the browser’s font size setting', async ({ page }) => {
   for (const [name, size] of Object.entries(large)) {
     expect(size / normal[name as keyof typeof normal], name).toBeCloseTo(1.5, 2)
   }
+})
+
+// What each animated part of the app is told to do, read from elements that
+// carry its classes.
+const motion = (page: Page) =>
+  page.evaluate(() => {
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      `<div id="probe">
+         <span class="spin"></span><span class="attachment-spinner"></span>
+         <div class="thinking"></div><div class="image-placeholder"></div>
+         <details class="thoughts"><summary><span class="live">x</span>
+           <span class="disclosure-chevron"></span></summary></details>
+         <input type="checkbox" class="switch">
+       </div>`,
+    )
+    const style = (selector: string) =>
+      getComputedStyle(document.querySelector(`#probe ${selector}`)!)
+    const result = {
+      spin: style('.spin').animationName,
+      attachmentSpinner: style('.attachment-spinner').animationName,
+      thinking: style('.thinking').animationName,
+      placeholder: style('.image-placeholder').animationName,
+      shimmer: style('.live').animationName,
+      chevron: style('.disclosure-chevron').transitionDuration,
+      switchTrack: style('.switch').transitionDuration,
+    }
+    document.querySelector('#probe')!.remove()
+    return result
+  })
+
+test('animates as usual, and under reduced motion only fades and stands still', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  expect(await motion(page)).toEqual({
+    spin: 'spin',
+    attachmentSpinner: 'spin',
+    thinking: 'pulse',
+    placeholder: 'shimmer',
+    shimmer: 'shimmer',
+    chevron: '0.15s',
+    switchTrack: '0.15s',
+  })
+
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  // Progress still shows (a fade, not a turn or a shrink); decoration stops.
+  expect(await motion(page)).toEqual({
+    spin: 'fade',
+    attachmentSpinner: 'fade',
+    thinking: 'fade',
+    placeholder: 'none',
+    shimmer: 'none',
+    chevron: '0s',
+    switchTrack: '0s',
+  })
+})
+
+test('jumps to the latest message at once under reduced motion, and glides otherwise', async ({
+  page,
+}) => {
+  const id = await longChat(page, 40)
+  await page.goto(`/c/${id}`)
+  await appReady(page)
+  await expect(page.locator('.turn')).toHaveCount(40)
+  const jumpAndCheck = () =>
+    page.evaluate(async () => {
+      const list = document.querySelector('.messages')!
+      list.scrollTop = 0
+      // The button comes once the scroll has been noticed.
+      let jump: HTMLButtonElement | null = null
+      for (let i = 0; i < 50 && !jump; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 20))
+        jump = document.querySelector<HTMLButtonElement>('button.jump-latest')
+      }
+      jump!.click()
+      // Right after the click: is the latest turn on screen, or still on its way?
+      const last = [...document.querySelectorAll('.turn')]
+        .at(-1)!
+        .getBoundingClientRect()
+      const view = list.getBoundingClientRect()
+      return last.bottom > view.top && last.top < view.bottom
+    })
+
+  expect(await jumpAndCheck()).toBe(false)
+  // Let that glide finish before the next one.
+  await expect(page.locator('button.jump-latest')).toHaveCount(0)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  expect(await jumpAndCheck()).toBe(true)
 })

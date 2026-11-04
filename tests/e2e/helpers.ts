@@ -55,3 +55,50 @@ export async function resetSettings(page: Page) {
   const res = await page.request.patch('/api/settings', { data: defaults })
   expect(res.ok()).toBe(true)
 }
+
+const ANSWER = [
+  'Here is a **summary** with code and a list.',
+  '```ts\nexport const retry = (n: number) => n * 2\n```',
+  '- First point\n- Second point\n- Third point',
+].join('\n\n')
+
+/** A saved chat of `turns` question-and-answer turns (answers have code and a list); its id. */
+export async function longChat(page: Page, turns: number) {
+  const items = []
+  let id = 0
+  for (let i = 1; i <= turns; i++) {
+    items.push({
+      id: ++id,
+      parentId: id === 1 ? null : id - 1,
+      data: { role: 'user', content: `Question ${i}` },
+      usage: null,
+      model: null,
+      createdAt: id,
+    })
+    items.push({
+      id: ++id,
+      parentId: id - 1,
+      data: {
+        type: 'message',
+        role: 'assistant',
+        status: 'completed',
+        id: `msg_${id}`,
+        content: [{ type: 'output_text', text: ANSWER, annotations: [] }],
+      },
+      usage: null,
+      model: 'e2e-model',
+      createdAt: id,
+    })
+  }
+  const res = await page.request.post('/api/conversations/import', {
+    data: {
+      version: 2,
+      exportedAt: 0,
+      conversation: { title: 'Long chat', createdAt: 1, updatedAt: 2 },
+      currentLeafId: id,
+      items,
+      files: [],
+    },
+  })
+  return ((await res.json()) as { id: string }).id
+}

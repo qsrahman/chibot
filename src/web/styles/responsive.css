@@ -101,9 +101,10 @@
   }
 }
 
+/* Transitions are only polish: none. (Animations are dealt with where they are
+   defined: a spinner that stood still would look stuck.) */
 @media (prefers-reduced-motion: reduce) {
   * {
-    animation: none !important;
     transition: none !important;
   }
 }

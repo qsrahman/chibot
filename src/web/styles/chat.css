@@ -739,3 +739,11 @@ details[open] > summary > .disclosure-chevron {
   color: var(--bubble-fg);
   white-space: pre-wrap;
 }
+
+/* Decoration only: still, for people who ask for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  .thoughts summary .live,
+  .image-placeholder {
+    animation: none;
+  }
+}
