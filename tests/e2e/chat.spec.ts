@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import {
   answer,
   answered,
@@ -508,4 +508,93 @@ test('a temporary chat has no suggestions, and an empty history says so', async 
     page.getByRole('heading', { name: 'Temporary chat' }),
   ).toBeVisible()
   await expect(page.locator('.suggestions')).toHaveCount(0)
+})
+
+// A saved chat whose one answer is `answer`.
+async function chatAnswering(page: Page, answer: string) {
+  const res = await page.request.post('/api/conversations/import', {
+    data: {
+      version: 2,
+      exportedAt: 0,
+      conversation: { title: 'Code chat', createdAt: 1, updatedAt: 2 },
+      currentLeafId: 2,
+      items: [
+        {
+          id: 1,
+          parentId: null,
+          data: { role: 'user', content: 'Show code' },
+          usage: null,
+          model: null,
+          createdAt: 1,
+        },
+        {
+          id: 2,
+          parentId: 1,
+          data: {
+            type: 'message',
+            role: 'assistant',
+            status: 'completed',
+            id: 'msg_2',
+            content: [{ type: 'output_text', text: answer, annotations: [] }],
+          },
+          usage: null,
+          model: 'e2e-model',
+          createdAt: 2,
+        },
+      ],
+      files: [],
+    },
+  })
+  return ((await res.json()) as { id: string }).id
+}
+
+test('code blocks: lines wrap on request, long ones are numbered, copying says so', async ({
+  page,
+}) => {
+  const long = Array.from(
+    { length: 14 },
+    (_, i) => `const line${i + 1} = ${i + 1}`,
+  )
+  long[2] = `const wide = '${'x'.repeat(300)}'`
+  const id = await chatAnswering(
+    page,
+    [
+      'Short:',
+      '```ts\nconst a = 1\n```',
+      'Long:',
+      '```ts\n' + long.join('\n') + '\n```',
+    ].join('\n\n'),
+  )
+  await page.goto(`/c/${id}`)
+  const short = page.locator('.code-block').nth(0)
+  const tall = page.locator('.code-block').nth(1)
+
+  // Only the long block is numbered, and the numbers are not in what is copied.
+  await expect(short.locator('.code-lines')).toHaveCount(0)
+  await expect(tall.locator('.code-lines')).toContainText('14')
+  await expect(tall.locator('.code-lines')).toHaveAttribute(
+    'aria-hidden',
+    'true',
+  )
+
+  // A long line scrolls sideways until wrapping is asked for.
+  const scrolls = () =>
+    tall.locator('pre').evaluate((el) => el.scrollWidth > el.clientWidth)
+  expect(await scrolls()).toBe(true)
+  const wrap = tall.getByRole('button', { name: 'Wrap lines' })
+  await expect(wrap).toHaveAttribute('aria-pressed', 'false')
+  await wrap.click()
+  await expect(wrap).toHaveAttribute('aria-pressed', 'true')
+  expect(await scrolls()).toBe(false)
+  // Wrapped lines would not line up with numbers, so they go.
+  await expect(tall.locator('.code-lines')).toHaveCount(0)
+  await wrap.click()
+  await expect(tall.locator('.code-lines')).toHaveCount(1)
+
+  // Copying is said to screen readers as well as shown.
+  await tall.getByRole('button', { name: 'Copy code' }).click()
+  await expect(page.locator('.toast-live')).toHaveText('Copied')
+  const copied = await page.evaluate(() => navigator.clipboard.readText())
+  expect(copied).toContain('const line1 = 1')
+  expect(copied).not.toMatch(/^1\n2\n/)
 })

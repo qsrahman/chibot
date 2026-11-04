@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Check, ChevronLeft, ChevronRight, Copy, X } from 'lucide-react'
+import { useToast } from '../ui/toast.tsx'
 import type { Versions } from './turns.ts'
 
 const FEEDBACK_MS = 2000
@@ -9,11 +10,14 @@ export function IconAction({
   label,
   onClick,
   disabled,
+  pressed,
   children,
 }: {
   label: string
   onClick: () => void
   disabled?: boolean
+  /** For a toggle: whether it is on. */
+  pressed?: boolean
   children: ReactNode
 }) {
   return (
@@ -21,6 +25,7 @@ export function IconAction({
       type="button"
       className="action"
       aria-label={label}
+      aria-pressed={pressed}
       title={label}
       disabled={disabled}
       onClick={onClick}
@@ -39,6 +44,7 @@ export function CopyButton({
   label?: string
 }) {
   const [result, setResult] = useState<'copied' | 'failed' | null>(null)
+  const { announce } = useToast()
 
   useEffect(() => {
     if (!result) return
@@ -59,8 +65,15 @@ export function CopyButton({
       // http on a LAN address doesn't), so failure is possible.
       onClick={() =>
         navigator.clipboard.writeText(text).then(
-          () => setResult('copied'),
-          () => setResult('failed'),
+          () => {
+            setResult('copied')
+            // The button's name changes, which a screen reader doesn't announce.
+            announce('Copied')
+          },
+          () => {
+            setResult('failed')
+            announce('Copy failed')
+          },
         )
       }
     >

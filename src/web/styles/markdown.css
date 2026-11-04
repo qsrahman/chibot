@@ -64,6 +64,44 @@
   line-height: 1rem;
 }
 
+.code-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.code-actions .action[aria-pressed='true'] {
+  background: var(--chip);
+  color: var(--fg);
+}
+
+/* The code scrolls sideways (its own `pre`) with its line numbers fixed beside it. */
+.code-body {
+  display: flex;
+}
+
+.code-lines {
+  flex: none;
+  padding-right: 16px;
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  line-height: 1.625rem;
+  text-align: right;
+  white-space: pre;
+  user-select: none;
+}
+
+.code-body pre {
+  flex: 1;
+  min-width: 0;
+}
+
+.code-body[data-wrap] pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .markdown pre {
   margin: 0;
   overflow-x: auto;

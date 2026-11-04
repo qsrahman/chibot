@@ -5,7 +5,8 @@ import rehypeHighlight from 'rehype-highlight'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import { dollarMath } from './math.ts'
-import { CopyButton } from './MessageActions.tsx'
+import { WrapText } from 'lucide-react'
+import { CopyButton, IconAction } from './MessageActions.tsx'
 
 const remarkPlugins = [remarkGfm, remarkMath]
 type Katex = typeof import('./katex.ts').rehypeKatex
@@ -57,6 +58,9 @@ export const MarkdownView = memo(function MarkdownView({
   )
 })
 
+/** Blocks this long get line numbers (short ones read better without). */
+const NUMBERED_FROM = 12
+
 /** A fenced code block, labelled with its language when one is given. */
 function CodeBlock({ node, ...props }: ComponentProps<'pre'> & ExtraProps) {
   const code = node?.children[0]
@@ -67,13 +71,35 @@ function CodeBlock({ node, ...props }: ComponentProps<'pre'> & ExtraProps) {
         .find((c) => c.startsWith('language-'))
         ?.slice('language-'.length)
     : undefined
+  const [wrap, setWrap] = useState(false)
+  const lineCount = node
+    ? toText(node).replace(/\n$/, '').split('\n').length
+    : 0
+  // Numbers line up with the code only while lines aren't wrapped.
+  const numbered = lineCount >= NUMBERED_FROM && !wrap
   return (
     <div className="code-block">
       <div className="code-header">
         <span className="code-label">{language}</span>
-        {node && <CopyButton text={toText(node)} label="Copy code" />}
+        <span className="code-actions">
+          <IconAction
+            label="Wrap lines"
+            pressed={wrap}
+            onClick={() => setWrap((on) => !on)}
+          >
+            <WrapText />
+          </IconAction>
+          {node && <CopyButton text={toText(node)} label="Copy code" />}
+        </span>
       </div>
-      <pre {...props} />
+      <div className="code-body" data-wrap={wrap || undefined}>
+        {numbered && (
+          <span className="code-lines" aria-hidden>
+            {Array.from({ length: lineCount }, (_, i) => i + 1).join('\n')}
+          </span>
+        )}
+        <pre {...props} />
+      </div>
     </div>
   )
 }
