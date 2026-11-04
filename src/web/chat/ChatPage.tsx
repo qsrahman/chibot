@@ -51,6 +51,17 @@ interface Props {
   inert?: boolean
 }
 
+/** Ways to start, for an empty chat: each puts the start of a message in the box. */
+const STARTERS = [
+  { label: 'Summarize a page', text: 'Summarize this page for me: ' },
+  { label: 'Explain a topic', text: 'Explain step by step how ' },
+  { label: 'Draft an email', text: 'Help me write an email to ' },
+  {
+    label: 'Review code',
+    text: 'Review this code for bugs and ways to simplify it:\n\n',
+  },
+] as const
+
 export function ChatPage({
   health,
   settings,
@@ -76,6 +87,9 @@ export function ChatPage({
   const draftKey = id ?? `new:${projectHome ?? ''}`
   const attachments = useAttachments(draftKey)
   const [dragging, setDragging] = useState(false)
+  const [prefill, setPrefill] = useState<{ text: string; n: number } | null>(
+    null,
+  )
   const waiting = pending ? [] : waitingCalls(turns)
   // Shown even when unavailable, saying why, so they can be found.
   const toolOptions: ToolOption[] = settings.tools.flatMap((tool) =>
@@ -331,11 +345,26 @@ export function ChatPage({
         ) : empty ? (
           <div className="greeting">
             <h1>{temporary ? 'Temporary chat' : 'What’s on your mind?'}</h1>
-            {temporary && (
+            {temporary ? (
               <p>
                 This chat won’t appear in your history or search, and it’s
                 deleted when you leave it.
               </p>
+            ) : (
+              <div className="suggestions">
+                {STARTERS.map(({ label, text }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    className="suggestion"
+                    onClick={() =>
+                      setPrefill((was) => ({ text, n: (was?.n ?? 0) + 1 }))
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
         ) : (
@@ -434,6 +463,7 @@ export function ChatPage({
             !!settings.settings?.transcribeModel
           }
           effort={settings.settings?.reasoningEffort ?? null}
+          prefill={prefill}
           onEffort={(reasoningEffort) =>
             void settings.update({ reasoningEffort })
           }

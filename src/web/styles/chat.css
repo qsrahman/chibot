@@ -264,6 +264,32 @@
   line-height: 2.125rem;
 }
 
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: 40rem;
+  margin: 16px auto 0;
+}
+
+.suggestion {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.suggestion:hover {
+  background: var(--chip);
+  color: var(--fg);
+}
+
 .greeting p {
   max-width: 28rem;
   margin: 8px auto 0;

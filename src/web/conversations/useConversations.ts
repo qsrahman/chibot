@@ -35,6 +35,8 @@ export function useConversations() {
 
   return {
     conversations: data ?? [],
+    /** Whether the first load has finished (an empty list means none, not "not yet"). */
+    loaded: data !== undefined,
     error,
     refresh: reload,
     update,

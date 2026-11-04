@@ -467,3 +467,45 @@ test('a message with other versions shows them without hovering', async ({
     .poll(() => copy.evaluate((el) => getComputedStyle(el).opacity))
     .toBe('0')
 })
+
+test('an empty chat offers ways to start, which fill the box', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  const box = page.getByRole('textbox', { name: 'Message' })
+  await page.getByRole('button', { name: 'Draft an email' }).click()
+  await expect(box).toHaveValue('Help me write an email to ')
+  await expect(box).toBeFocused()
+  // The caret is after the text, so typing carries on from it.
+  await page.keyboard.type('my landlord')
+  await expect(box).toHaveValue('Help me write an email to my landlord')
+  // Another suggestion replaces it.
+  await page.getByRole('button', { name: 'Explain a topic' }).click()
+  await expect(box).toHaveValue('Explain step by step how ')
+
+  await box.press('Enter')
+  await answered(page)
+  // Gone once there are messages.
+  await expect(page.locator('.suggestions')).toHaveCount(0)
+})
+
+test('a temporary chat has no suggestions, and an empty history says so', async ({
+  page,
+}) => {
+  await page.route('**/api/conversations', (route) =>
+    route.request().method() === 'GET'
+      ? route.fulfill({ json: [] })
+      : route.continue(),
+  )
+  await page.goto('/')
+  await appReady(page)
+  await expect(
+    page.getByText('No chats yet. Your conversations appear here.'),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Temporary chat' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Temporary chat' }),
+  ).toBeVisible()
+  await expect(page.locator('.suggestions')).toHaveCount(0)
+})

@@ -46,6 +46,8 @@ interface Props {
   /** Reasoning effort, picked as a mode (see `ModeSwitch`). */
   effort: Settings['reasoningEffort']
   onEffort: (effort: Settings['reasoningEffort']) => void
+  /** Text to put in the box (a starter prompt); a new `n` puts it again. */
+  prefill: { text: string; n: number } | null
 }
 
 export function Composer({
@@ -64,6 +66,7 @@ export function Composer({
   transcription,
   effort,
   onEffort,
+  prefill,
 }: Props) {
   // Each chat keeps its own unsent text and picked tool, so a draft doesn't
   // follow you to another chat. Texts are also kept in this browser, so a
@@ -98,6 +101,17 @@ export function Composer({
   const draftsRef = useRef(attachments.drafts)
   draftsRef.current = attachments.drafts
   const touchOnly = useMediaQuery(TOUCH_ONLY)
+  useEffect(() => {
+    if (!prefill) return
+    setText(prefill.text)
+    const box = inputRef.current
+    box?.focus()
+    // After React has put the text in, so the caret ends up after it.
+    requestAnimationFrame(() =>
+      box?.setSelectionRange(prefill.text.length, prefill.text.length),
+    )
+    // Only a new suggestion; the box's own text may change freely.
+  }, [prefill?.n])
   const dictation = useDictation((spoken) => {
     // At the cursor, for review before sending.
     const box = inputRef.current

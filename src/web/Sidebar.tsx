@@ -253,6 +253,13 @@ export function Sidebar({
                 </NavLink>
               ))}
             </section>
+            {conversations.loaded &&
+              !conversations.error &&
+              conversations.conversations.length === 0 && (
+                <p className="sidebar-note">
+                  No chats yet. Your conversations appear here.
+                </p>
+              )}
             {conversations.error && (
               <p className="sidebar-note" role="alert">
                 {conversations.error}{' '}
