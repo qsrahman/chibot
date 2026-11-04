@@ -623,7 +623,9 @@ for (const motion of ['no-preference', 'reduce'] as const) {
       .toBeGreaterThan(100)
     await expect.poll(fromBottom).toBeLessThan(40)
 
-    await list.evaluate((el) => el.scrollTo({ top: 0 }))
+    // As a person does it: the wheel, whose scroll the page sees as the user's.
+    await list.hover()
+    await page.mouse.wheel(0, -10_000)
     const jump = page.getByRole('button', { name: 'Jump to latest' })
     await expect(jump).toBeVisible()
     // More arrives; the view is not pulled back down.
