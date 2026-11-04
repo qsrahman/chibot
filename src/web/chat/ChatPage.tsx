@@ -85,6 +85,7 @@ export function ChatPage({
             name: tool.name,
             label: tool.chip.action,
             chip: tool.chip.text,
+            summary: tool.summary,
             icon: TOOL_ICONS[tool.chip.icon],
             unavailable:
               tool.unavailable ??

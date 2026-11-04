@@ -6,7 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
-- The composer's **+** menu no longer offers **Search the web**; the model still searches when it needs to (it is switched on or off in Settings → Tools). **Create an image** stays.
+- The composer's **+** menu no longer offers **Search the web**; the model still searches when it needs to (it is switched on or off in Settings → Tools). **Create an image** stays, and now says what it does under its name, as **Add photos & files** does.
 
 ## [0.12.8] - 2026-11-04
 

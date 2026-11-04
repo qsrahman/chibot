@@ -10,6 +10,8 @@ export interface ToolOption {
   label: string
   /** On the chip once picked, e.g. "Search". */
   chip: string
+  /** Under the label: what it does and what leaves the machine. */
+  summary: string
   icon: ReactNode
   /** Why it can't be used (not set up, or switched off), or `null`. */
   unavailable: string | null
@@ -81,7 +83,7 @@ export function AddMenu({
             key={option.name}
             type="button"
             role="menuitem"
-            className={option.unavailable ? 'menu-item has-hint' : 'menu-item'}
+            className="menu-item has-hint"
             disabled={option.unavailable !== null}
             onClick={() => {
               onPick(option)
@@ -91,9 +93,9 @@ export function AddMenu({
             {option.icon}
             <span className="menu-item-text">
               {option.label}
-              {option.unavailable && (
-                <span className="menu-hint">{option.unavailable}</span>
-              )}
+              <span className="menu-hint">
+                {option.unavailable ?? option.summary}
+              </span>
             </span>
           </button>
         ))}

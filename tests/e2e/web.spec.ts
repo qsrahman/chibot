@@ -102,7 +102,10 @@ test('the composer menu forces a tool for one message', async ({ page }) => {
   await page.goto('/')
   await appReady(page)
   await page.getByRole('button', { name: 'Add files and more' }).click()
-  await page.getByRole('menuitem', { name: 'Create an image' }).click()
+  const create = page.getByRole('menuitem', { name: 'Create an image' })
+  // Like "Add photos & files", it says what it does.
+  await expect(create).toContainText('the prompt goes to the image service')
+  await create.click()
   await expect(
     page.getByRole('button', { name: 'Remove Create an image' }),
   ).toBeVisible()
