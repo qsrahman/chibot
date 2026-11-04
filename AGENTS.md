@@ -232,7 +232,11 @@ invariants, API quirks. No line-by-line narration.
   such a fake with default stores and settings.
 - Retrieval: `tests/server/retrieval.test.ts` scores project search on a
   small corpus (`tests/fixtures/retrieval`); run it before and after changing
-  chunking or ranking, and add a question when search misses one.
+  chunking or ranking, and add a question when search misses one. With an
+  embedding endpoint (`RETRIEVAL_EMBEDDING_URL`, `RETRIEVAL_EMBEDDING_MODEL`,
+  e.g. Ollama's `nomic-embed-text-v2-moe`) it also scores keyword against
+  hybrid search, on questions that repeat the passage's words and on
+  paraphrases; that part is skipped otherwise.
 - SQLite: use `':memory:'` databases.
 - Web: no component unit tests; pure helpers (e.g. `chat/turns.ts`, `chat/usage.ts`)
   get vitest tests. UI behaviour is covered by Playwright specs in

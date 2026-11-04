@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- Code only: `tests/server/projects/retrieval.test.ts` can also score search by meaning, when `RETRIEVAL_EMBEDDING_URL` and `RETRIEVAL_EMBEDDING_MODEL` name an embedding endpoint (skipped otherwise): it prints keyword-only against hybrid scores for the questions that repeat the passage's words and for 12 paraphrases, and fails if hybrid loses what keywords find or doesn't beat them on paraphrases. With Ollama's `nomic-embed-text-v2-moe`: paraphrases found among the first three hits 33% → 92% (first hit 33% → 58%); same-word questions 100% in the first three either way, first hit 90% → 86%.
+
 ## [0.12.5] - 2026-11-04
 
 ### Changed

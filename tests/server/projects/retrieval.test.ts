@@ -1,8 +1,12 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { beforeAll, describe, expect, it } from 'vitest'
+import OpenAI from 'openai'
 import { openDatabase } from '../../../src/server/database.ts'
-import { ProjectIndex } from '../../../src/server/projects/project-index.ts'
+import {
+  ProjectIndex,
+  type EmbeddingDeps,
+} from '../../../src/server/projects/project-index.ts'
 import { ProjectStore } from '../../../src/server/projects/project-store.ts'
 import { pdfOf, testFiles } from '../fakes.ts'
 
@@ -160,72 +164,196 @@ const QUESTIONS: Question[] = [
   },
 ]
 
+// Questions that share no distinctive word with the passage that answers them
+// ("computer" for laptop, "missing" for lost), so only a search by meaning can
+// find them. Keyword search is expected to miss most; see the opt-in test.
+const PARAPHRASES: Question[] = [
+  {
+    ask: 'How long do mothers and fathers get off work after a baby arrives?',
+    file: 'handbook.md',
+    has: '16 weeks',
+  },
+  {
+    ask: 'How much may I spend on a place to sleep when I travel to a large city?',
+    file: 'handbook.md',
+    has: '180 euros per night',
+  },
+  {
+    ask: 'What should I do if my work computer goes missing?',
+    file: 'handbook.md',
+    has: 'within one hour',
+  },
+  {
+    ask: 'Can I do my job from my living room?',
+    file: 'handbook.md',
+    has: 'up to three days a week',
+  },
+  {
+    ask: 'When do I get my money back for things I paid out of pocket?',
+    file: 'handbook.md',
+    has: 'last Friday of the month',
+  },
+  {
+    ask: 'Why are we delaying the phone app launch?',
+    file: 'meeting-notes.txt',
+    has: 'payments SDK',
+  },
+  {
+    ask: 'Which old operating system will we stop supporting?',
+    file: 'meeting-notes.txt',
+    has: 'Android 8',
+  },
+  {
+    ask: 'How do we keep the program from calling the server too often?',
+    file: 'api.ts',
+    has: 'tryAcquire',
+  },
+  {
+    ask: 'What happens when a network call fails for a moment?',
+    file: 'api.ts',
+    has: 'exponential backoff',
+  },
+  {
+    ask: 'How do I make a loaf rise slowly in the cold?',
+    file: 'recipes.md',
+    has: 'proof overnight in the fridge',
+  },
+  {
+    ask: 'Which dessert uses citrus fruit?',
+    file: 'recipes.md',
+    has: 'zest of two lemons',
+  },
+  {
+    ask: 'How often should I remove limescale from the machine?',
+    file: 'manual.pdf',
+    has: 'citric acid',
+    page: 2,
+  },
+]
+
 // The lowest shares of questions whose answer is the first hit, and among
 // the first three.
 const RECALL_AT_1 = 0.8
 const RECALL_AT_3 = 0.95
 
+/** The corpus, indexed (by keyword, and by meaning with `embedding`). */
+async function buildIndex(embedding: EmbeddingDeps | null) {
+  const db = openDatabase(':memory:')
+  const files = testFiles(db)
+  const projects = new ProjectStore(db, files)
+  const index = new ProjectIndex(db, projects, files, embedding)
+  const projectId = projects.create('Corpus').id
+  const corpus: [string, Uint8Array][] = [
+    ['handbook.md', fixture('handbook.md')],
+    ['api.ts', fixture('api.ts')],
+    ['meeting-notes.txt', fixture('meeting-notes.txt')],
+    ['recipes.md', fixture('recipes.md')],
+    ['filler.md', new TextEncoder().encode(filler())],
+    [
+      'manual.pdf',
+      pdfOf([
+        'Espresso machine manual. Safety first.',
+        'Descale every three months with citric acid and rinse twice.',
+        'The warranty period is 24 months from purchase.',
+      ]),
+    ],
+  ]
+  for (const [name, bytes] of corpus) {
+    const file = files.save(null, name, 'application/octet-stream', bytes)
+    projects.addFile(projectId, file.id)
+    await index.index(file.id)
+  }
+  return { index, projectId }
+}
+
+/** How often the answer is the first hit, and among the first three. */
+async function score(
+  { index, projectId }: { index: ProjectIndex; projectId: string },
+  questions: Question[],
+) {
+  const missed = { 1: [] as string[], 3: [] as string[] }
+  for (const { ask, file, has, page } of questions) {
+    const hits = await index.search(projectId, ask)
+    const rank = hits.findIndex(
+      (h) =>
+        h.name === file &&
+        h.text.includes(has) &&
+        (page === undefined || pageOf(h.text, has) === page),
+    )
+    if (rank !== 0) missed[1].push(ask)
+    if (rank < 0 || rank >= 3) missed[3].push(ask)
+  }
+  const recall = (at: 1 | 3) => 1 - missed[at].length / questions.length
+  const summary =
+    `recall@1: ${(recall(1) * 100).toFixed(0)}%  recall@3: ${(recall(3) * 100).toFixed(0)}% (${questions.length} questions)` +
+    (missed[3].length ? `\nnot in the first 3: ${missed[3].join(' | ')}` : '') +
+    (missed[1].length ? `\nnot first: ${missed[1].join(' | ')}` : '')
+  return { recall, summary }
+}
+
 describe('project search quality', () => {
-  let index: ProjectIndex
-  let projectId: string
+  let corpus: Awaited<ReturnType<typeof buildIndex>>
   beforeAll(async () => {
-    const db = openDatabase(':memory:')
-    const files = testFiles(db)
-    const projects = new ProjectStore(db, files)
-    index = new ProjectIndex(db, projects, files, null)
-    projectId = projects.create('Corpus').id
-    const corpus: [string, Uint8Array][] = [
-      ['handbook.md', fixture('handbook.md')],
-      ['api.ts', fixture('api.ts')],
-      ['meeting-notes.txt', fixture('meeting-notes.txt')],
-      ['recipes.md', fixture('recipes.md')],
-      ['filler.md', new TextEncoder().encode(filler())],
-      [
-        'manual.pdf',
-        pdfOf([
-          'Espresso machine manual. Safety first.',
-          'Descale every three months with citric acid and rinse twice.',
-          'The warranty period is 24 months from purchase.',
-        ]),
-      ],
-    ]
-    for (const [name, bytes] of corpus) {
-      const file = files.save(null, name, 'application/octet-stream', bytes)
-      projects.addFile(projectId, file.id)
-      await index.index(file.id)
-    }
+    corpus = await buildIndex(null)
   })
 
   it('finds the passage that answers a question among the first hits', async () => {
-    const missed = { 1: [] as string[], 3: [] as string[] }
-    for (const { ask, file, has, page } of QUESTIONS) {
-      const hits = await index.search(projectId, ask)
-      const rank = hits.findIndex(
-        (h) =>
-          h.name === file &&
-          h.text.includes(has) &&
-          (page === undefined || pageOf(h.text, has) === page),
-      )
-      if (rank !== 0) missed[1].push(ask)
-      if (rank < 0 || rank >= 3) missed[3].push(ask)
-    }
-    const recall = (at: 1 | 3) => 1 - missed[at].length / QUESTIONS.length
-    console.log(
-      `recall@1: ${(recall(1) * 100).toFixed(0)}%  recall@3: ${(recall(3) * 100).toFixed(0)}% (${QUESTIONS.length} questions)` +
-        (missed[3].length
-          ? `\nnot in the first 3: ${missed[3].join(' | ')}`
-          : '') +
-        (missed[1].length ? `\nnot first: ${missed[1].join(' | ')}` : ''),
-    )
+    const { recall, summary } = await score(corpus, QUESTIONS)
+    console.log(summary)
     expect(recall(3)).toBeGreaterThanOrEqual(RECALL_AT_3)
     expect(recall(1)).toBeGreaterThanOrEqual(RECALL_AT_1)
   })
 
   it('answers a question about a long file with the right file first', async () => {
-    const [first] = await index.search(projectId, 'parental leave new parents')
+    const [first] = await corpus.index.search(
+      corpus.projectId,
+      'parental leave new parents',
+    )
     expect(first).toMatchObject({ name: 'handbook.md' })
     expect(first!.text).toContain('16 weeks')
   })
+})
+
+// Opt-in, with a real embedding endpoint (nothing here needs the network
+// otherwise). For a local one:
+//   RETRIEVAL_EMBEDDING_URL=http://localhost:11434/v1 \
+//   RETRIEVAL_EMBEDDING_MODEL=nomic-embed-text-v2-moe pnpm exec vitest run \
+//   tests/server/projects/retrieval.test.ts
+// It prints keyword-only against hybrid scores, for both question sets.
+const embeddingUrl = process.env.RETRIEVAL_EMBEDDING_URL
+describe.skipIf(!embeddingUrl)('project search by meaning', () => {
+  let keyword: Awaited<ReturnType<typeof buildIndex>>
+  let hybrid: Awaited<ReturnType<typeof buildIndex>>
+  beforeAll(async () => {
+    keyword = await buildIndex(null)
+    hybrid = await buildIndex({
+      client: new OpenAI({
+        baseURL: embeddingUrl,
+        apiKey: process.env.RETRIEVAL_EMBEDDING_KEY ?? 'none',
+      }),
+      model: process.env.RETRIEVAL_EMBEDDING_MODEL!,
+    })
+  }, 300_000)
+
+  it('does not lose what keyword search finds, and finds paraphrases', async () => {
+    const results = {
+      'keyword, same words': await score(keyword, QUESTIONS),
+      'hybrid, same words': await score(hybrid, QUESTIONS),
+      'keyword, paraphrases': await score(keyword, PARAPHRASES),
+      'hybrid, paraphrases': await score(hybrid, PARAPHRASES),
+    }
+    for (const [name, { summary }] of Object.entries(results)) {
+      console.log(`${name}\n${summary}\n`)
+    }
+    // Adding meaning to keywords must not cost what keywords find…
+    expect(results['hybrid, same words'].recall(3)).toBeGreaterThanOrEqual(
+      results['keyword, same words'].recall(3),
+    )
+    // …and is the only way to find a question put in other words.
+    expect(results['hybrid, paraphrases'].recall(3)).toBeGreaterThan(
+      results['keyword, paraphrases'].recall(3),
+    )
+  }, 300_000)
 })
 
 /** The `[Page n]` marker before `has` in a passage. */
