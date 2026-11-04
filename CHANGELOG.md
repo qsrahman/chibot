@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.12.3] - 2026-11-04
+
 ### Changed
 
 - Code only: the projects feature lives in `src/server/projects/` (store, search index, chunking, instruction writer, routes, its two tools and its schema SQL, with an `index.ts` for the rest of the server and tests under `tests/server/projects/`). `database.ts` still runs the migrations in one fixed order, now taking the projects SQL from `projects/schema.ts`; a fresh database has the identical schema and `user_version` as before.
