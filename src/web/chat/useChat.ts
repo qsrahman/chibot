@@ -7,6 +7,7 @@ import {
   getConversation,
 } from '../conversations/api.ts'
 import { streamTurn, switchVersion as putVersion } from './api.ts'
+import { applyEvent, startAnswer, turnSoFar } from './streamedAnswer.ts'
 import { useQueue } from './useQueue.ts'
 import {
   toTurns,
@@ -14,7 +15,6 @@ import {
   type Answer,
   type Attachment,
   type Question,
-  type ToolActivity,
   type Turn,
 } from './turns.ts'
 
@@ -159,35 +159,11 @@ export function useChat(
       return toTurns(loaded.items).length
     }
 
-    let answer = before?.text ?? ''
-    let thinking = before?.thinking ?? ''
-    let tools = before?.tools ?? []
-    let summaryIndex = 0
-    let newThoughts = false
+    let streamed = startAnswer(before)
     /** The turn as streamed so far. */
-    const turnSoFar = (key: string): Turn => ({
-      key,
-      question: display.question,
-      compacted: false,
-      answer:
-        answer || thinking || tools.length > 0
-          ? {
-              itemId: null,
-              text: answer,
-              thinking,
-              tools,
-              usage: null,
-              model: null,
-              versions: null,
-            }
-          : null,
-    })
+    const soFar = (key: string) => turnSoFar(display.question, streamed, key)
     const show = () =>
-      setPending({ keep: display.keep, turn: turnSoFar('pending') })
-    const updateTool = (callId: string, change: Partial<ToolActivity>) => {
-      tools = tools.map((t) => (t.callId === callId ? { ...t, ...change } : t))
-      show()
-    }
+      setPending({ keep: display.keep, turn: soFar('pending') })
     /** The answer is complete and saved (or waits for approval). */
     const finish = async (id: string, done = true) => {
       // Saved: from now on Stop or leaving mustn't abort the stream, which
@@ -205,7 +181,7 @@ export function useChat(
         setError((err as Error).message)
         setTurns((prev) => [
           ...prev.slice(0, display.keep),
-          turnSoFar(crypto.randomUUID()),
+          soFar(crypto.randomUUID()),
         ])
         setPending(null)
         if (done) drain(id, display.keep + 1)
@@ -246,64 +222,13 @@ export function useChat(
           if (live()) setTitle(event.title)
         }
         if (!live()) continue
-        if (event.type === 'response.output_text.delta') {
-          answer += event.delta
-          show()
-        } else if (event.type === 'response.reasoning_summary_text.delta') {
-          // Summaries can come in parts, and a turn with tool calls can
-          // think more than once; each new part starts a new paragraph.
-          if (thinking && (newThoughts || event.summary_index !== summaryIndex))
-            thinking += '\n\n'
-          newThoughts = false
-          summaryIndex = event.summary_index
-          thinking += event.delta
-          show()
-        } else if (event.type === 'response.output_item.added') {
-          const { item } = event
-          if (item.type === 'reasoning') newThoughts = true
-          // Messages after tool calls are paragraphs of the same answer.
-          if (item.type === 'message' && answer) answer += '\n\n'
-          if (item.type === 'function_call') {
-            tools = [
-              ...tools,
-              {
-                callId: item.call_id,
-                name: item.name,
-                arguments: item.arguments,
-                output: null,
-              },
-            ]
-            show()
-          }
-        } else if (
-          event.type === 'response.output_item.done' &&
-          event.item.type === 'function_call'
-        ) {
-          updateTool(event.item.call_id, { arguments: event.item.arguments })
-        } else if (event.type === 'chibot.tool_output') {
-          updateTool(event.call_id, { output: event.output })
-        } else if (
-          event.type === 'response.completed' ||
-          event.type === 'response.incomplete'
-        ) {
-          // Saved by now. Tool calls mean another response follows; otherwise
-          // the stream may stay open a little longer for the title, but the
-          // chat is free again.
-          if (!event.response.output.some((i) => i.type === 'function_call'))
-            await finish(id)
-        } else if (event.type === 'chibot.approval') {
-          await finish(id, false)
-        } else if (event.type === 'chibot.error') {
-          setError(
-            [event.message, event.requestId && `(request ${event.requestId})`]
-              .filter(Boolean)
-              .join(' '),
-          )
-        } else if (event.type === 'response.failed') {
-          setError(event.response.error?.message ?? 'The response failed.')
-        } else if (event.type === 'error') {
-          setError(event.message)
-        }
+        const applied = applyEvent(streamed, event)
+        streamed = applied.streamed
+        if (applied.changed) show()
+        const { effect } = applied
+        if (effect?.type === 'answered') await finish(id)
+        else if (effect?.type === 'approval') await finish(id, false)
+        else if (effect?.type === 'error') setError(effect.message)
       }
       accepted = true
       if (live() && !run.answered) await finish(id)
@@ -315,7 +240,7 @@ export function useChat(
         // actions stay hidden until the next reload.
         setTurns((prev) => [
           ...prev.slice(0, display.keep),
-          turnSoFar(crypto.randomUUID()),
+          soFar(crypto.randomUUID()),
         ])
         accepted = true
         // The saved partial becomes the new leaf, so a queued message can

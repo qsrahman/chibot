@@ -116,8 +116,9 @@ provider's message (`explainApiError` says what a 429 means).
 
 ## 7. Back in the browser
 
-`useChat.run` builds a *pending* turn from the events (answer text, reasoning
-summary, tool calls and their outputs), shown in place of the turns it
+`useChat.run` builds a *pending* turn from the events (`applyEvent` in
+`chat/streamedAnswer.ts`: answer text, reasoning summary, tool calls and their
+outputs), shown in place of the turns it
 replaces. On `response.completed` (the answer is saved) or `chibot.approval` it
 re-reads the chat (`getConversation`) and shows it as `toTurns(items)`
 (`chat/turns.ts`), which also finds sources and waiting calls. Then:
