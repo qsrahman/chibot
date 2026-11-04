@@ -97,8 +97,10 @@ Code uses `"SF Mono", SFMono-Regular, ui-monospace, Consolas, "Liberation Mono",
   It collapses to a 56 px icon rail, and the collapsed state is remembered.
   Below 768 px (phones) it's a drawer instead: hidden by default, opened by a
   panel button at the header's left, `min(300px, 85vw)` wide over the chat
-  with `--dialog-shadow` and a `--scrim` behind it; tapping the scrim or
-  opening a chat closes it. User bubbles may then take 85 % of the width. The
+  with `--dialog-shadow` and a `--scrim` behind it; tapping the scrim,
+  pressing Escape or opening a chat closes it. While it is open it acts as a
+  dialog: the chat behind is `inert`, focus moves into it, and returns to the
+  panel button on closing. User bubbles may then take 85 % of the width. The
   header then also shows the chat's title (500 weight, one line, ellipsis)
   after the panel button and any project breadcrumb, with the model name in
   `--fg-muted`; the header's token total is left to each answer.

@@ -46,6 +46,8 @@ interface Props {
   conversations: ConversationListItem[]
   /** On phones while the sidebar is hidden: a header button opens it. */
   onOpenSidebar?: () => void
+  /** Shut out while the phone drawer covers the page (nothing here can be reached). */
+  inert?: boolean
 }
 
 export function ChatPage({
@@ -55,6 +57,7 @@ export function ChatPage({
   onListChanged,
   conversations,
   onOpenSidebar,
+  inert,
 }: Props) {
   // `projectId`: a project's page, where a new chat starts in the project.
   const { id, projectId: projectHome } = useParams()
@@ -239,6 +242,7 @@ export function ChatPage({
         ]
           .filter(Boolean)
           .join(' ')}
+        inert={inert}
         {...dragHandlers}
       >
         <header className="topbar">

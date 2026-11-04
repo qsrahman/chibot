@@ -7,6 +7,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Fixed
 
+- The phone sidebar drawer behaves like the overlay it looks like. Opening it left focus on the page, the chat behind the dimmed area could still be tabbed into, and Escape did nothing. Now the page behind is `inert`, focus moves into the drawer and returns to the button that opened it (which stays in the header, behind the drawer, for that), and Escape closes it, but not while a menu or dialog of the drawer is open (that takes its Escape first) and without also stopping an answer, which Escape does elsewhere.
 - Keyboard focus is visible in the message box, the edit box of a sent message and the search field. They have no outline of their own (the first two sit inside a box), and the box showed nothing when they had focus, so only the caret marked it. The message box and edit box now draw a 2px outline when their textarea has focus (softer in the message box, which is focused most of the time), and the search field keeps the global ring, drawn inside it.
 - **Add files** and **Add folder** on a project's Files card can be reached and pressed with the keyboard. They were labels around `hidden` file inputs, which no keyboard can focus, so Tab skipped them; they are real buttons now (`FilePickerButton`) that open the picker.
 

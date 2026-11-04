@@ -34,6 +34,81 @@ test('the chat fills a phone, and the sidebar is a drawer', async ({
   await expect(sidebar).toBeHidden()
 })
 
+// The drawer covers the chat like a dialog, so it behaves like one: the page
+// behind can't be reached, focus moves in, Escape closes it, and focus goes
+// back to the button that opened it.
+test('the drawer takes focus, shuts out the page behind it, and closes on Escape', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  const open = page.getByRole('button', { name: 'Open sidebar' })
+  const drawer = page.locator('nav.sidebar')
+  await expect(page.locator('main')).toHaveJSProperty('inert', false)
+
+  await open.click()
+  await expect(drawer).toBeVisible()
+  await expect(page.locator('main')).toHaveJSProperty('inert', true)
+  await expect(drawer.locator(':focus')).toHaveCount(1)
+
+  // Tab goes round the drawer and never into the chat behind it.
+  for (let i = 0; i < 40; i++) {
+    await page.keyboard.press('Tab')
+    const behind = await page.evaluate(
+      () => document.activeElement?.closest('main') !== null,
+    )
+    expect(behind, `after ${i + 1} Tab presses`).toBe(false)
+  }
+
+  await page.keyboard.press('Escape')
+  await expect(drawer).toBeHidden()
+  await expect(page.locator('main')).toHaveJSProperty('inert', false)
+  await expect(open).toBeFocused()
+})
+
+test('Escape in the drawer closes it without stopping the answer behind it', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  await send(page, 'slow one')
+  await expect(page.getByRole('button', { name: 'Stop' }).first()).toBeVisible()
+
+  await page.getByRole('button', { name: 'Open sidebar' }).click()
+  await expect(page.locator('nav.sidebar')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.locator('nav.sidebar')).toBeHidden()
+
+  // Escape is also the shortcut for Stop; it must not have been taken twice.
+  await expect(page.getByRole('button', { name: 'Stop' }).first()).toBeVisible()
+  await page.getByRole('button', { name: 'Stop' }).first().click()
+  await answered(page)
+})
+
+test('Escape closes a menu in the drawer first, then the drawer', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  await send(page, 'Hello')
+  await answered(page)
+
+  await page.getByRole('button', { name: 'Open sidebar' }).click()
+  const drawer = page.locator('nav.sidebar')
+  const row = drawer.locator('.conversation-row').first()
+  await row.hover()
+  await row.getByRole('button', { name: /Options for/ }).click()
+  const menu = page.locator('.menu:popover-open')
+  await expect(menu).toBeVisible()
+
+  await page.keyboard.press('Escape')
+  await expect(menu).toBeHidden()
+  await expect(drawer).toBeVisible()
+
+  await page.keyboard.press('Escape')
+  await expect(drawer).toBeHidden()
+})
+
 test('a chosen tool’s chip leaves room to type', async ({ page }) => {
   await page.goto('/')
   await appReady(page)

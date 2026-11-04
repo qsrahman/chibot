@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactElement } from 'react'
+import { useEffect, useRef, useState, type ReactElement } from 'react'
 import {
   Link,
   NavLink,
@@ -56,6 +56,26 @@ export function Sidebar({
   settings,
 }: Props) {
   const navigate = useNavigate()
+  const nav = useRef<HTMLElement>(null)
+  // The phone drawer covers the page like a dialog: focus moves into it, and
+  // back to what opened it once it closes (the page behind is inert, and
+  // Escape closes it: see App and the nav's onKeyDown).
+  const open = drawer && !collapsed
+  useEffect(() => {
+    if (!open) return
+    const opener = document.activeElement
+    nav.current?.querySelector<HTMLElement>('button, a[href]')?.focus()
+    return () => {
+      // Unless something else has taken focus meanwhile (a chat opened).
+      // Hiding the drawer has usually sent it to the page by now.
+      const active = document.activeElement
+      const free =
+        !active || active === document.body || nav.current?.contains(active)
+      if (opener instanceof HTMLElement && opener.isConnected && free) {
+        opener.focus()
+      }
+    }
+  }, [open])
   const openId = useMatch('/c/:id')?.params.id
   const { pathname } = useLocation()
   // Opening a chat (or a new one) closes the drawer.
@@ -129,9 +149,25 @@ export function Sidebar({
         <div className="drawer-backdrop" aria-hidden onClick={onDismiss} />
       )}
       <nav
+        ref={nav}
         className={['sidebar', collapsed && 'collapsed', drawer && 'drawer']
           .filter(Boolean)
           .join(' ')}
+        // In the capture phase: an open menu or dialog closes itself on Escape
+        // before the event bubbles back, and would no longer be open to be seen.
+        onKeyDownCapture={(e) => {
+          // A menu or dialog of the drawer takes its own Escape first (focus
+          // may still be on the button that opened a menu, so look for any
+          // that is open).
+          const covered = e.currentTarget.querySelector(
+            ':popover-open, dialog[open]',
+          )
+          if (open && e.key === 'Escape' && !covered) {
+            // Not also the shortcut for Stop, which listens on the window.
+            e.stopPropagation()
+            onDismiss()
+          }
+        }}
       >
         <div className="sidebar-top">
           {!collapsed && (
