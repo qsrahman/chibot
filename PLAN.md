@@ -852,7 +852,10 @@ Configuration lives in three layers, split by who changes it and how often:
   variables, grouped (`chat.model` is `OPENAI_MODEL`: `SETTINGS` in
   `config-file.ts` maps each both ways), and is validated strictly, so a typo
   is an error. The old `<repo>/.env` is still read below the environment, with a
-  note to run `chibot init`, which offers to import it. The current folder's
+  note to run `chibot init`, which offers to import it. `config.json`'s `env`
+  block (`chibot config set env.NAME value`) feeds `${NAME}` in `mcp.json`
+  below the real environment, and is read again on each Reload; it reaches
+  nothing else. The current folder's
   `.env` is never read: a command that runs anywhere must not take another
   project's keys, or a hostile folder's `OPENAI_BASE_URL`.
 - **Installing:** `pnpm link -g` runs `src/server/cli.ts` from the checkout, so

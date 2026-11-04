@@ -13,7 +13,7 @@ import { ChatService } from './chat/index.ts'
 import { ModelRequests } from './chat/index.ts'
 import { TitleWriter } from './chat/index.ts'
 import { Config, loadEnvFiles } from './config.ts'
-import { readConfigFile, toEnv } from './config-file.ts'
+import { mcpVariables, readConfigFile, toEnv } from './config-file.ts'
 import { locations } from './locations.ts'
 import { InstructionWriter } from './projects/index.ts'
 import { ConversationSearch } from './conversations/index.ts'
@@ -147,7 +147,9 @@ export function start({
   })
   const mcp = new McpServers(mcpConfig(config), {
     disabled: () => settings.get().disabledMcpServers,
-    load: () => loadMcpConfig(config.mcpConfigPath, process.env),
+    // Read again on each Reload, so a changed `env` in config.json is picked up.
+    load: () =>
+      loadMcpConfig(config.mcpConfigPath, mcpVariables(config.configDir)),
     auth: {
       store: new McpAuthStore(join(config.dataDir, 'mcp-auth.json')),
       redirectUrl: oauthRedirectUrl(config),
@@ -215,7 +217,7 @@ export function start({
 /** The MCP servers in `mcp.json`; none, with the error, if it's invalid. */
 function mcpConfig(config: Config): Record<string, McpServerConfig> {
   try {
-    return loadMcpConfig(config.mcpConfigPath, process.env)
+    return loadMcpConfig(config.mcpConfigPath, mcpVariables(config.configDir))
   } catch (err) {
     console.error(`MCP servers are off: ${(err as Error).message}`)
     return {}

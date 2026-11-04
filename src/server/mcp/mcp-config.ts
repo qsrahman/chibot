@@ -63,7 +63,9 @@ function fill(value: unknown, env: NodeJS.ProcessEnv): unknown {
     return value.replace(/\$\{(\w+)\}/g, (_, name: string) => {
       const filled = env[name]
       if (filled === undefined) {
-        throw new Error(`mcp.json uses \${${name}}, which isn’t set`)
+        throw new Error(
+          `mcp.json uses \${${name}}, which isn’t set: export it, or run chibot config set env.${name} <value>`,
+        )
       }
       return filled
     })

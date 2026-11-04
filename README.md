@@ -165,9 +165,12 @@ shows it; [mcp.example.json](mcp.example.json) shows the format), then
   page and comes back to chibot (sign in on the machine running chibot).
   Tokens are kept in `mcp-auth.json` in the data folder, readable only by you; **Sign out**
   removes them. A server with its own `Authorization` header doesn't sign in.
-- `${VAR}` anywhere is filled from the environment (variables exported in your
-  shell), so secrets stay out of `mcp.json`. Reload re-reads `mcp.json` only: a
-  changed variable needs a restart. Names may use letters, digits, `-` and `_`.
+- `${VAR}` anywhere is filled from the environment, then from the `env` block of
+  `config.json`, so secrets stay out of `mcp.json`. Keep a server's token with
+  the rest of your keys: `chibot config set env.GITHUB_TOKEN <token>` (an empty
+  value removes it; `chibot config show` lists the names, not the values).
+  **Reload** re-reads `mcp.json` and that block; a variable exported in your
+  shell needs a restart. Names may use letters, digits, `-` and `_`.
 
 Servers are only set up here, never from the web app. Their tools are offered
 as `<server>__<tool>` and run without asking first, so add only servers you

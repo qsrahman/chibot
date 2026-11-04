@@ -25,7 +25,8 @@ Usage:
 
 Settings: chat.baseURL, chat.apiKey, chat.model, image.*, embedding.*,
 transcription.* (each baseURL, apiKey, model), braveApiKey, server.host,
-server.port, token. Environment variables such as OPENAI_API_KEY override them.`
+server.port, token, and env.<NAME>: a variable for \${NAME} in mcp.json.
+Environment variables such as OPENAI_API_KEY override the settings.`
 
 /** Runs the command line; resolves to the exit code (not returned while the server runs). */
 export async function run(args: string[]): Promise<number | void> {

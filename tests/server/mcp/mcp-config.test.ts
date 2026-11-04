@@ -69,7 +69,9 @@ describe('mcp.json', () => {
     expect(() => loadMcpConfig(path, {})).toThrow(/my files/)
 
     write({ mcpServers: { files: { type: 'local', command: '${NOPE}' } } })
-    expect(() => loadMcpConfig(path, {})).toThrow(/NOPE.*isn’t set/)
+    expect(() => loadMcpConfig(path, {})).toThrow(
+      /NOPE.*isn’t set.*chibot config set env\.NOPE/,
+    )
 
     writeFileSync(path, '{ not json')
     expect(() => loadMcpConfig(path, {})).toThrow(/mcp\.json/)

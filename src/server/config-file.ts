@@ -42,6 +42,14 @@ export const configFileSchema = z
       .optional(),
     /** Required to use chibot (once per browser). */
     token: text.optional(),
+    /**
+     * Variables for `${NAME}` in `mcp.json`, below the real environment, so an
+     * MCP server's secret needs no place of its own. They are not passed to chibot's
+     * own settings or to the servers; only a `${NAME}` in `mcp.json` reads them.
+     */
+    env: z
+      .record(z.string().regex(/^\w+$/, 'letters, digits and _'), z.string())
+      .optional(),
   })
   .strict()
 
@@ -69,8 +77,8 @@ const SETTINGS: [path: string, variable: string][] = [
   ['token', 'CHIBOT_TOKEN'],
 ]
 
-/** What is secret: shown as "set", never printed. */
-const SECRETS = /(^|\.)(apiKey|braveApiKey|token)$/
+/** What is secret: shown as "set", never printed (all of `env`). */
+const SECRETS = /(^|\.)(apiKey|braveApiKey|token)$|^env\./
 
 function get(object: unknown, path: string): unknown {
   return path
@@ -164,9 +172,24 @@ export function withSetting(
   path: string,
   value: string,
 ): ConfigFile {
+  // `env.NAME`: a variable for mcp.json, named freely.
+  const variable = /^env\.(.+)$/.exec(path)?.[1]
+  if (variable !== undefined) {
+    const env = { ...file.env }
+    if (value === '') delete env[variable]
+    else env[variable] = value
+    const parsed = configFileSchema.safeParse({
+      ...file,
+      env: Object.keys(env).length > 0 ? env : undefined,
+    })
+    if (!parsed.success) {
+      throw new Error(`Invalid ${path}:\n${z.prettifyError(parsed.error)}`)
+    }
+    return parsed.data
+  }
   if (!SETTINGS.some(([known]) => known === path)) {
     throw new Error(
-      `Unknown setting "${path}". Settings: ${SETTINGS.map(([p]) => p).join(', ')}`,
+      `Unknown setting "${path}". Settings: ${SETTINGS.map(([p]) => p).join(', ')}, env.<NAME>`,
     )
   }
   const next = structuredClone(file) as Record<string, unknown>
@@ -192,6 +215,14 @@ export function withSetting(
   return parsed.data
 }
 
+/**
+ * What `${NAME}` in `mcp.json` is filled from: the real environment, over the
+ * `env` of `config.json` (read afresh, so Reload sees a change).
+ */
+export function mcpVariables(dir: string): NodeJS.ProcessEnv {
+  return { ...readConfigFile(dir).file.env, ...process.env }
+}
+
 /** `file` for printing: secrets show as "set". */
 export function redacted(file: ConfigFile): Record<string, unknown> {
   const out: Record<string, unknown> = {}
@@ -199,6 +230,12 @@ export function redacted(file: ConfigFile): Record<string, unknown> {
     const value = get(file, path)
     if (value !== undefined)
       setPath(out, path, SECRETS.test(path) ? 'set' : value)
+  }
+  // Which variables exist, not their values.
+  if (file.env) {
+    out.env = Object.fromEntries(
+      Object.keys(file.env).map((name) => [name, 'set']),
+    )
   }
   return out
 }

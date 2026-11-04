@@ -13,6 +13,7 @@ import { Config } from '../../src/server/config.ts'
 import {
   configFileSchema,
   fromEnv,
+  mcpVariables,
   readConfigFile,
   redacted,
   toEnv,
@@ -169,5 +170,44 @@ describe('changing a setting', () => {
     expect(JSON.stringify(redacted(full))).not.toMatch(
       /sk-chat|sk-img|brave"|a-token/,
     )
+  })
+})
+
+describe('variables for mcp.json', () => {
+  it('are set with env.NAME, removed with an empty value, and shown only as names', () => {
+    const one = withSetting({}, 'env.GITHUB_TOKEN', 'ghp-secret')
+    expect(one).toEqual({ env: { GITHUB_TOKEN: 'ghp-secret' } })
+    expect(redacted(one)).toEqual({ env: { GITHUB_TOKEN: 'set' } })
+    expect(JSON.stringify(redacted(one))).not.toContain('ghp-secret')
+    expect(withSetting(one, 'env.GITHUB_TOKEN', '')).toEqual({})
+    // Not Chibot's own settings: they do not reach Config.
+    expect(toEnv(one)).toEqual({})
+  })
+
+  it('refuse a name that mcp.json could not use', () => {
+    expect(() => withSetting({}, 'env.my-token', 'x')).toThrow(/env/)
+    expect(() => withSetting({}, 'env.a b', 'x')).toThrow(/env/)
+  })
+
+  describe('in the environment', () => {
+    let dir: string
+    beforeEach(() => {
+      dir = mkdtempSync(join(tmpdir(), 'chibot-mcpenv-'))
+      writeConfigFile(dir, { env: { CHIBOT_T_A: 'file', CHIBOT_T_B: 'file' } })
+      process.env.CHIBOT_T_A = 'real'
+    })
+    afterEach(() => {
+      delete process.env.CHIBOT_T_A
+      rmSync(dir, { recursive: true })
+    })
+
+    it('lose to the real environment, and are read again each time', () => {
+      expect(mcpVariables(dir)).toMatchObject({
+        CHIBOT_T_A: 'real',
+        CHIBOT_T_B: 'file',
+      })
+      writeConfigFile(dir, { env: { CHIBOT_T_B: 'changed' } })
+      expect(mcpVariables(dir).CHIBOT_T_B).toBe('changed')
+    })
   })
 })
