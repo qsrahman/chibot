@@ -167,6 +167,11 @@ pnpm start
 
 Then open http://127.0.0.1:3000.
 
+**As an app:** chibot has a web manifest and icons, so a browser can install
+it (Chrome and Edge: the install button in the address bar; Safari: Share →
+Add to Dock or Home Screen). It then opens in a window of its own. It still
+needs the server running: there is no offline mode, since the server is local.
+
 ## Using it
 
 - Type a message and press **Enter** to send. **Shift+Enter** adds a new line.

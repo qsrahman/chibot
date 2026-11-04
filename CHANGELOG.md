@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Added
 
+- chibot can be installed as an app: a web manifest (`manifest.webmanifest`) and icons (192 and 512 px, a maskable one, and Apple's touch icon, drawn from the favicon) let Chrome, Edge and Safari open it in a window of its own. The manifest link sends credentials, so it also loads where a `CHIBOT_TOKEN` cookie is required. There is no service worker, deliberately: the server is local, so an offline copy of the page would only go stale after an upgrade.
 - Voice input shows a clock and a level bar while it records, so it is clear the microphone hears you (on phones only the clock, to leave the message box its room). They are for the eyes; screen readers are told "Recording" and "Transcribing" once instead of hearing a timer.
 - Links in an answer to a page it searched or read are numbered like the **Sources** list under it (which is numbered now), and hovering or focusing one shows a card saying which page it is (title, site, "Source 2 of 5"). Esc hides the card without also stopping the answer. Other links are left as they were.
 - A tool call's row says what it came to without opening it: "Searched the web · 2 results", "Read web pages · example.com", "Created an image · a red robot", "Nothing found", or the first line of an error in red. MCP tools show the first line of their text.

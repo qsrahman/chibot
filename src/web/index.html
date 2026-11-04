@@ -20,6 +20,14 @@
       media="(prefers-color-scheme: dark)"
     />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- With credentials, so it loads when a CHIBOT_TOKEN cookie is needed. -->
+    <link
+      rel="manifest"
+      href="/manifest.webmanifest"
+      crossorigin="use-credentials"
+    />
+    <meta name="mobile-web-app-capable" content="yes" />
     <script>
       // Apply a saved theme before first paint (see theme.ts).
       try {
