@@ -4,6 +4,9 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- A long chat is cheaper to lay out. Turns that are offscreen are skipped (`content-visibility: auto` on `.turn`, with an estimated height of 600px until one has been drawn), so resizing the window or toggling the sidebar re-lays-out only what is on screen: for a 120-turn chat of code, tables and lists, 21.8 ms a pass became 0.5 ms (116 of the 120 turns skipped, in a 1280x800 window). Turns got 6px of padding, taken back by negative margins, so the spacing is unchanged and the focus rings of their first and last controls (which that property would clip) have room. Checked by e2e specs on an 80-turn chat: offscreen turns are skipped, it opens at the end, Jump to latest still works, the page doesn't move while skipped turns are measured, and the rings have room.
 
 ### Fixed
 
