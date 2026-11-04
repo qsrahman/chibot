@@ -319,6 +319,32 @@ export function imagesOf(tool: ToolActivity): (string | 'pending')[] {
     : []
 }
 
+/** The proportions generate_image's `size` gives, so the space is held before the picture arrives. */
+const RATIOS: Record<string, string> = {
+  square: '1 / 1',
+  landscape: '3 / 2',
+  portrait: '2 / 3',
+}
+
+/** What describes a tool's image: alt text, and its proportions when known. */
+export function imageInfo(tool: ToolActivity): {
+  alt: string
+  ratio: string | undefined
+} {
+  const { prompt, size } = parseJson<{ prompt?: unknown; size?: unknown }>(
+    tool.arguments,
+  )
+  const text = typeof prompt === 'string' ? prompt.trim() : ''
+  const label = tool.name === 'edit_image' ? 'Edited image' : 'Generated image'
+  return {
+    alt: text ? `${label}: ${text.slice(0, 120)}` : label,
+    ratio:
+      tool.name === 'generate_image' && typeof size === 'string'
+        ? RATIOS[size]
+        : undefined,
+  }
+}
+
 function parseJson<T extends object>(text: string): Partial<T> {
   try {
     const value: unknown = JSON.parse(text)

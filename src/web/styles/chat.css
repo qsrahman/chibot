@@ -594,7 +594,8 @@ details[open] > summary > .disclosure-chevron {
 
 .image img {
   display: block;
-  max-width: min(100%, 400px);
+  width: min(100%, 400px);
+  max-width: 100%;
   height: auto;
   border-radius: var(--radius-card);
 }

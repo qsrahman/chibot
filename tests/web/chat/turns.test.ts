@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { ResponseInputItem } from 'openai/resources/responses/responses'
 import type { StoredItem } from '../../../src/shared/types.ts'
 import {
+  imageInfo,
   imagesOf,
   sourcesOf,
   summarizeTool,
@@ -232,6 +233,43 @@ describe('sourcesOf and imagesOf', () => {
       { url: 'https://fetch.test/x', title: 'https://fetch.test/x' },
       { url: '/c/a%2Fb', title: 'Chat', kind: 'chat' },
     ])
+  })
+
+  it('describes an image by its prompt, and reserves space from the size asked for', () => {
+    expect(
+      imageInfo(
+        tool(
+          'generate_image',
+          { prompt: 'a red robot', size: 'landscape' },
+          null,
+        ),
+      ),
+    ).toEqual({ alt: 'Generated image: a red robot', ratio: '3 / 2' })
+    expect(
+      imageInfo(tool('generate_image', { prompt: 'x', size: 'portrait' }, null))
+        .ratio,
+    ).toBe('2 / 3')
+    // "auto" and edits take their shape from the model or the source image.
+    expect(
+      imageInfo(tool('generate_image', { prompt: 'x', size: 'auto' }, null))
+        .ratio,
+    ).toBeUndefined()
+    expect(imageInfo(tool('edit_image', { prompt: 'bluer' }, null))).toEqual({
+      alt: 'Edited image: bluer',
+      ratio: undefined,
+    })
+    expect(imageInfo(tool('generate_image', {}, null)).alt).toBe(
+      'Generated image',
+    )
+    expect(
+      imageInfo(
+        tool(
+          'generate_image',
+          { prompt: 'p'.repeat(500), size: 'square' },
+          null,
+        ),
+      ).alt,
+    ).toHaveLength('Generated image: '.length + 120)
   })
 
   it('finds images made by image tools and returned by MCP tools', () => {

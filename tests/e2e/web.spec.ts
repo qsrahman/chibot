@@ -53,6 +53,14 @@ test('creates an image, keeps it, and edits it', async ({ page }) => {
   const image = turns(page).first().locator('.image img')
   await expect(image).toHaveAttribute('src', /^\/api\/files\/[\w-]+$/)
   const first = await image.getAttribute('src')
+  // Described by its prompt, loaded when near, and its space was held (square).
+  await expect(image).toHaveAttribute(
+    'alt',
+    'Generated image: Please draw a robot',
+  )
+  await expect(image).toHaveAttribute('loading', 'lazy')
+  const box = await image.boundingBox()
+  expect(box!.width).toBeCloseTo(box!.height, 0)
   expect(
     await page.evaluate(
       (src) => fetch(src!).then((r) => r.headers.get('content-type')),

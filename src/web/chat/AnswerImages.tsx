@@ -1,6 +1,6 @@
 import { Download } from 'lucide-react'
 import { opensViewer } from './ImageViewer.tsx'
-import { type Answer, imagesOf } from './turns.ts'
+import { type Answer, imageInfo, imagesOf } from './turns.ts'
 
 /** Images the answer's tools made, or placeholders while they're made. */
 export function AnswerImages({
@@ -13,19 +13,22 @@ export function AnswerImages({
   onView: (fileId: string) => void
 }) {
   const images = answer.tools.flatMap((tool) => {
+    const info = imageInfo(tool)
     return imagesOf(tool).map((image, i) => ({
       key: `${tool.callId}-${i}`,
       image,
+      ...info,
     }))
   })
   if (images.length === 0) return null
   return (
     <div className="images">
-      {images.map(({ key, image }) =>
+      {images.map(({ key, image, alt, ratio }) =>
         image === 'pending' ? (
           <div
             key={key}
             className="image-placeholder"
+            style={{ aspectRatio: ratio }}
             aria-label="Creating image"
           />
         ) : (
@@ -38,7 +41,10 @@ export function AnswerImages({
             >
               <img
                 src={`/api/files/${image}`}
-                alt="Generated image"
+                alt={alt}
+                style={{ aspectRatio: ratio }}
+                loading="lazy"
+                decoding="async"
                 onLoad={onLoad}
               />
             </a>

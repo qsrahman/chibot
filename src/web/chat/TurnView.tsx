@@ -89,6 +89,8 @@ export function TurnView({
                       <img
                         src={`/api/files/${fileId}`}
                         alt="Attached image"
+                        loading="lazy"
+                        decoding="async"
                         onLoad={onImageLoad}
                       />
                     ) : (
