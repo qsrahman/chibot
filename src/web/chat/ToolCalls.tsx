@@ -6,7 +6,7 @@ import { SourceLink } from './Sources.tsx'
 import { Summary } from '../ui/Summary.tsx'
 import { ToolInfoContext } from './toolInfo.ts'
 import { mcpToolName } from '../settings/mcp.ts'
-import { summarizeTool, type ToolActivity } from './turns.ts'
+import { summarizeTool, toolPreview, type ToolActivity } from './turns.ts'
 
 /**
  * What a tool call shows while it runs, and once it's done: the words the
@@ -57,9 +57,20 @@ function ToolCall({ tool }: { tool: ToolActivity }) {
   const infos = useContext(ToolInfoContext)
   const running = tool.output === null
   const [busyLabel, doneLabel] = labelsOf(tool.name, infos)
+  const preview = toolPreview(tool)
   return (
     <details className="thoughts tool-call">
-      <Summary live={running}>{running ? busyLabel : doneLabel}</Summary>
+      <Summary live={running}>
+        {running ? busyLabel : doneLabel}
+        {preview && (
+          <span
+            className={preview.failed ? 'tool-preview failed' : 'tool-preview'}
+          >
+            {' · '}
+            {preview.text}
+          </span>
+        )}
+      </Summary>
       <div className="thoughts-body">
         <ToolDetails tool={tool} />
       </div>

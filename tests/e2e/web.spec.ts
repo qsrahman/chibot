@@ -26,6 +26,8 @@ test('searches the web and lists the sources', async ({ page }) => {
   await answered(page)
   await expect(answer(page, 0)).toContainText('All about robots.')
   await expect(page.getByText('Searched the web')).toBeVisible()
+  // The row says what it came to without opening it.
+  await expect(page.locator('.tool-preview')).toHaveText(' · 1 result')
 
   await sources(page, 0).getByText('Sources · 1').click()
   await expect(

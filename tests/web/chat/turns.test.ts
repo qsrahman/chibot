@@ -4,6 +4,7 @@ import type { StoredItem } from '../../../src/shared/types.ts'
 import {
   imageInfo,
   imagesOf,
+  toolPreview,
   sourcesOf,
   summarizeTool,
   toTurns,
@@ -313,6 +314,45 @@ describe('sourcesOf and imagesOf', () => {
         ),
       ).alt,
     ).toHaveLength('Generated image: '.length + 120)
+  })
+
+  it('previews what a finished call came to, in a few words', () => {
+    const results = JSON.stringify({
+      results: [
+        { title: 'A', url: 'https://a.test/' },
+        { title: 'B', url: 'https://b.test/' },
+      ],
+    })
+    expect(toolPreview(tool('web_search', { query: 'q' }, null))).toBeNull()
+    expect(toolPreview(tool('web_search', { query: 'q' }, results))).toEqual({
+      text: '2 results',
+      failed: false,
+    })
+    expect(
+      toolPreview(
+        tool('web_search', { query: 'q' }, JSON.stringify({ results: [] })),
+      )?.text,
+    ).toBe('Nothing found')
+    expect(
+      toolPreview(
+        tool('fetch_url', { url: 'https://example.com/page?x=1' }, 'text'),
+      )?.text,
+    ).toBe('example.com')
+    expect(
+      toolPreview(tool('generate_image', { prompt: 'a red robot' }, '{}'))
+        ?.text,
+    ).toBe('a red robot')
+    // Errors say so, in the first line, cut to fit.
+    expect(
+      toolPreview(
+        tool('fetch_url', {}, `Error: ${'x'.repeat(100)}\nmore detail`),
+      ),
+    ).toEqual({ text: `${'x'.repeat(59)}…`, failed: true })
+    // An MCP tool shows the first line of its text; unknown tools show nothing.
+    expect(
+      toolPreview(tool('files__ls', {}, '{"result":"3 files\\nmore"}'))?.text,
+    ).toBe('3 files')
+    expect(toolPreview(tool('mystery', {}, 'x'))).toBeNull()
   })
 
   it('finds images made by image tools and returned by MCP tools', () => {

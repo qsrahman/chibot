@@ -560,6 +560,14 @@ details[open] > summary > .disclosure-chevron {
   margin: 0;
 }
 
+.tool-preview {
+  color: var(--fg-muted);
+}
+
+.tool-preview.failed {
+  color: var(--danger);
+}
+
 .tool-input {
   color: var(--fg);
   overflow-wrap: anywhere;
