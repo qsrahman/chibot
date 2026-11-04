@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.12.8] - 2026-11-04
+
 ### Changed
 
 - Colours are checked, and the ones that fell short are fixed. A new test (`tests/web/contrast.test.ts`) reads the colour tokens from `base.css` in both colour schemes and requires 4.5:1 for text and 3:1 for the edge of a field. It found: five code-highlight colours in the light theme under 4.5:1 (the orange for built-ins was 3.2:1), the grey of code comments in the dark theme on a card, and field borders at about 1.3:1, which don't show where a field is. Code colours are a little darker (light) or lighter (dark) in the same hues, and text fields (dialogs, project instructions, the settings fields, the model search, memory and chat renames) have a new `--border-control` edge at 3.4:1 or better; dividers and cards keep the faint `--border`.
