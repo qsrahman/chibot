@@ -1,14 +1,17 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type OpenAI from 'openai'
 import type { ResponseFunctionToolCall } from 'openai/resources/responses/responses'
-import type { ConversationStore } from '../../src/server/conversation-store.ts'
-import { openDatabase } from '../../src/server/database.ts'
-import type { FileStore } from '../../src/server/file-store.ts'
-import { ProjectIndex } from '../../src/server/project-index.ts'
-import { ProjectStore } from '../../src/server/project-store.ts'
-import { TOOL_STOPPED, ToolRegistry } from '../../src/server/tool-registry.ts'
-import { SearchProjectFilesTool } from '../../src/server/tools/project-files.ts'
-import { ReadProjectFileTool } from '../../src/server/tools/read-project-file.ts'
+import type { ConversationStore } from '../../../src/server/conversation-store.ts'
+import { openDatabase } from '../../../src/server/database.ts'
+import type { FileStore } from '../../../src/server/file-store.ts'
+import { ProjectIndex } from '../../../src/server/projects/project-index.ts'
+import { ProjectStore } from '../../../src/server/projects/project-store.ts'
+import {
+  TOOL_STOPPED,
+  ToolRegistry,
+} from '../../../src/server/tool-registry.ts'
+import { SearchProjectFilesTool } from '../../../src/server/projects/search-files.ts'
+import { ReadProjectFileTool } from '../../../src/server/projects/read-file.ts'
 import {
   answerEvents,
   drain,
@@ -16,7 +19,7 @@ import {
   testFiles,
   type FakeCall,
   testChat,
-} from './fakes.ts'
+} from '../fakes.ts'
 
 /**
  * "Embeddings" that put texts about travel and about food on two axes, so

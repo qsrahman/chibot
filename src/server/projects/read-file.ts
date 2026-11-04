@@ -1,9 +1,9 @@
 import { z } from 'zod'
 import type { Conversation } from '../../shared/types.ts'
-import type { ProjectIndex } from '../project-index.ts'
-import type { ProjectStore } from '../project-store.ts'
+import type { ProjectIndex } from './project-index.ts'
+import type { ProjectStore } from './project-store.ts'
 import { Tool, type ToolContext } from '../tool.ts'
-import { projectFile } from './project-files.ts'
+import { projectFile } from './search-files.ts'
 
 /** Reads a project file in order, for questions about the whole of it. */
 export class ReadProjectFileTool extends Tool {

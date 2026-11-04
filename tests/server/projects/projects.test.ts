@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ConversationStore } from '../../src/server/conversation-store.ts'
-import { openDatabase } from '../../src/server/database.ts'
-import type { FileStore } from '../../src/server/file-store.ts'
-import { ProjectStore } from '../../src/server/project-store.ts'
+import type { ConversationStore } from '../../../src/server/conversation-store.ts'
+import { openDatabase } from '../../../src/server/database.ts'
+import type { FileStore } from '../../../src/server/file-store.ts'
+import { ProjectStore } from '../../../src/server/projects/project-store.ts'
 import type {
   Conversation,
   ConversationListItem,
@@ -10,8 +10,8 @@ import type {
   ProjectFile,
   ProjectWithContents,
   StoredFile,
-} from '../../src/shared/types.ts'
-import { memoryStore, testApp, testFiles } from './fakes.ts'
+} from '../../../src/shared/types.ts'
+import { memoryStore, testApp, testFiles } from '../fakes.ts'
 
 describe('projects', () => {
   let store: ConversationStore

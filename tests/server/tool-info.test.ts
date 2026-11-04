@@ -5,8 +5,8 @@ import { ConversationSearch } from '../../src/server/conversation-search.ts'
 import { openDatabase } from '../../src/server/database.ts'
 import { defaultTools } from '../../src/server/main.ts'
 import { MemoryStore } from '../../src/server/memory-store.ts'
-import { ProjectIndex } from '../../src/server/project-index.ts'
-import { ProjectStore } from '../../src/server/project-store.ts'
+import { ProjectIndex } from '../../src/server/projects/index.ts'
+import { ProjectStore } from '../../src/server/projects/index.ts'
 import {
   EditImageTool,
   GenerateImageTool,

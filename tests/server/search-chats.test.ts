@@ -3,7 +3,7 @@ import { ConversationSearch } from '../../src/server/conversation-search.ts'
 import type { ConversationStore } from '../../src/server/conversation-store.ts'
 import { openDatabase } from '../../src/server/database.ts'
 import { SearchChatsTool } from '../../src/server/tools/search-chats.ts'
-import { ProjectStore } from '../../src/server/project-store.ts'
+import { ProjectStore } from '../../src/server/projects/index.ts'
 import { memoryStore, testFiles } from './fakes.ts'
 
 describe('SearchChatsTool', () => {

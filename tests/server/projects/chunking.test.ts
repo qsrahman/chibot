@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { chunkPages, chunkStyle, chunkText } from '../../src/server/chunking.ts'
+import {
+  chunkPages,
+  chunkStyle,
+  chunkText,
+} from '../../../src/server/projects/chunking.ts'
 
 describe('chunkStyle', () => {
   it('splits markdown by section and source by unit, the rest as prose', () => {

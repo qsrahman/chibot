@@ -1,6 +1,8 @@
 import { DatabaseSync } from 'node:sqlite'
 import { getLoadablePath } from 'sqlite-vec'
 import { messageText } from '../shared/messages.ts'
+// The schema file only, not the feature's index, which imports this module.
+import { PROJECT_MIGRATIONS } from './projects/schema.ts'
 
 // Applied in order; PRAGMA user_version records how many have run. A function
 // migration is for steps SQL alone can't do.
@@ -65,46 +67,12 @@ const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
      created_at INTEGER NOT NULL,
      updated_at INTEGER NOT NULL
    );`,
-  // Projects. A project's chats and files are deleted with it (by
-  // ProjectStore, which also clears their chunks and vectors). The vec0
-  // table of chunk embeddings is created by the indexer, sized for the
-  // embedding model; embedding_model records which. (vec0 reserves the
-  // names chunk_vectors_*, for its own tables.)
-  `CREATE TABLE projects (
-     id TEXT PRIMARY KEY,
-     name TEXT NOT NULL,
-     instructions TEXT NOT NULL DEFAULT '',
-     created_at INTEGER NOT NULL,
-     updated_at INTEGER NOT NULL
-   );
-   ALTER TABLE conversations ADD COLUMN project_id TEXT REFERENCES projects(id);
-   CREATE INDEX conversations_project ON conversations(project_id);
-   CREATE TABLE project_files (
-     project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-     file_id TEXT NOT NULL,
-     status TEXT NOT NULL, -- indexing, ready or failed
-     error TEXT,
-     PRIMARY KEY (project_id, file_id)
-   );
-   CREATE TABLE chunks (
-     id INTEGER PRIMARY KEY AUTOINCREMENT,
-     file_id TEXT NOT NULL,
-     position INTEGER NOT NULL,
-     text TEXT NOT NULL
-   );
-   CREATE INDEX chunks_file ON chunks(file_id);
-   -- rowid = chunks.id
-   CREATE VIRTUAL TABLE chunks_fts USING fts5(text);
-   CREATE TABLE embedding_model (model TEXT NOT NULL, dimensions INTEGER NOT NULL);`,
+  PROJECT_MIGRATIONS.create,
   // Attachments: the id of the provider's (Files API) copy, uploaded once.
   `ALTER TABLE files ADD COLUMN provider_file_id TEXT;`,
-  // Which chunker (CHUNKER_VERSION) made a project file's chunks, so a better
-  // one re-indexes the files made with an older one.
-  `ALTER TABLE project_files ADD COLUMN chunker INTEGER NOT NULL DEFAULT 0;`,
-  // A line that tells projects apart in lists.
-  `ALTER TABLE projects ADD COLUMN description TEXT NOT NULL DEFAULT '';`,
-  // The PDF page a chunk starts on, when it has pages.
-  `ALTER TABLE chunks ADD COLUMN page INTEGER;`,
+  PROJECT_MIGRATIONS.chunker,
+  PROJECT_MIGRATIONS.description,
+  PROJECT_MIGRATIONS.page,
 ]
 
 /**

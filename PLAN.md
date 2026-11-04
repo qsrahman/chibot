@@ -512,7 +512,7 @@ Models differ in dimensions, so a model change means re-embedding.
   `project_files` (with indexing status), `chunks` with an FTS5 index, and a
   `chunk_vectors` vec0 table created for the embedding model in use (§4),
   partitioned by project so nearest-neighbour search stays in one project. A
-  `ProjectStore` handles projects, their files and their chats. Deleting a
+  `ProjectStore` (in `src/server/projects/`, with the rest of the feature) handles projects, their files and their chats. Deleting a
   project deletes its chats and files (the confirm says so).
 - **Config.** `OPENAI_EMBEDDING_BASE_URL` / `_API_KEY` / `_MODEL`, inheriting
   the chat endpoint; the model defaults to `text-embedding-3-small` on OpenAI

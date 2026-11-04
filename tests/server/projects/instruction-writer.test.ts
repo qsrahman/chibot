@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import OpenAI from 'openai'
 import type { ResponseCreateParams } from 'openai/resources/responses/responses'
-import { InstructionWriter } from '../../src/server/instruction-writer.ts'
-import { openDatabase } from '../../src/server/database.ts'
-import type { FileStore } from '../../src/server/file-store.ts'
-import { ProjectIndex } from '../../src/server/project-index.ts'
-import { ProjectStore } from '../../src/server/project-store.ts'
-import { fakeClient, testApp, testFiles, testSettings } from './fakes.ts'
+import { InstructionWriter } from '../../../src/server/projects/instruction-writer.ts'
+import { openDatabase } from '../../../src/server/database.ts'
+import type { FileStore } from '../../../src/server/file-store.ts'
+import { ProjectIndex } from '../../../src/server/projects/project-index.ts'
+import { ProjectStore } from '../../../src/server/projects/project-store.ts'
+import { fakeClient, testApp, testFiles, testSettings } from '../fakes.ts'
 
 describe('InstructionWriter', () => {
   let files: FileStore

@@ -14,11 +14,11 @@ import { ConversationSearch } from '../../src/server/conversation-search.ts'
 import { ConversationStore } from '../../src/server/conversation-store.ts'
 import { openDatabase } from '../../src/server/database.ts'
 import { FileStore } from '../../src/server/file-store.ts'
-import { InstructionWriter } from '../../src/server/instruction-writer.ts'
+import { InstructionWriter } from '../../src/server/projects/index.ts'
 import { MemoryStore } from '../../src/server/memory-store.ts'
-import { ProjectIndex } from '../../src/server/project-index.ts'
+import { ProjectIndex } from '../../src/server/projects/index.ts'
 import { McpServers } from '../../src/server/mcp-servers.ts'
-import { ProjectStore } from '../../src/server/project-store.ts'
+import { ProjectStore } from '../../src/server/projects/index.ts'
 import {
   settingsDefaults,
   SettingsStore,

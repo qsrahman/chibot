@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- Code only: the projects feature lives in `src/server/projects/` (store, search index, chunking, instruction writer, routes, its two tools and its schema SQL, with an `index.ts` for the rest of the server and tests under `tests/server/projects/`). `database.ts` still runs the migrations in one fixed order, now taking the projects SQL from `projects/schema.ts`; a fresh database has the identical schema and `user_version` as before.
 - Code only: `ChatService` (480 lines, from 654) keeps the turn loop; the request fallbacks (optional features, attachments, listing models) are `ModelRequests` (`model-requests.ts`) and chat titles are `TitleWriter` (`title-writer.ts`), both injected, so the routes for titles, models and tools use them directly (`ToolRegistry.info` lists the tools). Behavior is unchanged.
 - Code only: each route file (`routes/*.ts`) declares the few collaborators it uses instead of taking the whole `AppDeps` from `app.ts`, which removes the six import cycles between `app.ts` and the routes; `app.ts` still composes them from `AppDeps`.
 

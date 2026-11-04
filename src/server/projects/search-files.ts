@@ -4,8 +4,8 @@ import {
   DEFAULT_RESULTS,
   MAX_RESULTS,
   type ProjectIndex,
-} from '../project-index.ts'
-import type { ProjectStore } from '../project-store.ts'
+} from './project-index.ts'
+import type { ProjectStore } from './project-store.ts'
 import { Tool, type ToolContext } from '../tool.ts'
 
 // Every project file's name goes into the instructions of every request.

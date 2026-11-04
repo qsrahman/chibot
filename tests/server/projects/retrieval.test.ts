@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { openDatabase } from '../../src/server/database.ts'
-import { ProjectIndex } from '../../src/server/project-index.ts'
-import { ProjectStore } from '../../src/server/project-store.ts'
-import { pdfOf, testFiles } from './fakes.ts'
+import { openDatabase } from '../../../src/server/database.ts'
+import { ProjectIndex } from '../../../src/server/projects/project-index.ts'
+import { ProjectStore } from '../../../src/server/projects/project-store.ts'
+import { pdfOf, testFiles } from '../fakes.ts'
 
 // How often a project search puts the passage that answers a question among
 // its first hits, over a small corpus (tests/fixtures/retrieval) plus filler
@@ -14,7 +14,7 @@ import { pdfOf, testFiles } from './fakes.ts'
 // what the current code reaches, so a drop fails.
 
 const fixture = (name: string) =>
-  readFileSync(join(import.meta.dirname, '../fixtures/retrieval', name))
+  readFileSync(join(import.meta.dirname, '../../fixtures/retrieval', name))
 
 /** Sections that talk about leave, travel, security… without answering the questions. */
 function filler(): string {

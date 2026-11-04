@@ -2,10 +2,10 @@ import type OpenAI from 'openai'
 import {
   INSTRUCTION_WRITER_INSTRUCTIONS,
   instructionWriterInput,
-} from './prompts.ts'
+} from '../prompts.ts'
 import type { ProjectIndex } from './project-index.ts'
 import type { ProjectStore } from './project-store.ts'
-import type { SettingsStore } from './settings-store.ts'
+import type { SettingsStore } from '../settings-store.ts'
 
 /** Thrown when there is nothing to base instructions on. */
 export class NothingToSuggestFrom extends Error {}

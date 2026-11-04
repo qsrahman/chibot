@@ -3,16 +3,18 @@ import { join } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type OpenAI from 'openai'
-import { openDatabase } from '../../src/server/database.ts'
-import type { FileStore } from '../../src/server/file-store.ts'
-import { ProjectIndex } from '../../src/server/project-index.ts'
-import { ProjectStore } from '../../src/server/project-store.ts'
-import { documentKind } from '../../src/shared/documents.ts'
-import { documentText } from '../../src/server/text.ts'
-import { pdfOf, testFiles } from './fakes.ts'
+import { openDatabase } from '../../../src/server/database.ts'
+import type { FileStore } from '../../../src/server/file-store.ts'
+import { ProjectIndex } from '../../../src/server/projects/project-index.ts'
+import { ProjectStore } from '../../../src/server/projects/project-store.ts'
+import { documentKind } from '../../../src/shared/documents.ts'
+import { documentText } from '../../../src/server/text.ts'
+import { pdfOf, testFiles } from '../fakes.ts'
 
 const fixture = (name: string) =>
-  new Uint8Array(readFileSync(join(import.meta.dirname, '../fixtures', name)))
+  new Uint8Array(
+    readFileSync(join(import.meta.dirname, '../../fixtures', name)),
+  )
 
 /** Embeddings that are 3 letter counts (a, e, i): deterministic and cheap. */
 function fakeEmbeddings(calls: string[][], { fail = false } = {}) {

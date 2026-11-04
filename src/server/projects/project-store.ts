@@ -1,7 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite'
-import type { Project, ProjectFile } from '../shared/types.ts'
-import { transaction } from './database.ts'
-import type { FileStore } from './file-store.ts'
+import type { Project, ProjectFile } from '../../shared/types.ts'
+import { transaction } from '../database.ts'
+import type { FileStore } from '../file-store.ts'
 
 // Rows as `Project` objects.
 const PROJECT =

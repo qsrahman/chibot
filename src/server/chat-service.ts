@@ -14,7 +14,7 @@ import type {
 } from '../shared/types.ts'
 import type { Attachments } from './attachments.ts'
 import type { ConversationStore } from './conversation-store.ts'
-import type { ProjectStore } from './project-store.ts'
+import type { ProjectStore } from './projects/index.ts'
 import type { SettingsStore } from './settings-store.ts'
 import type { ModelRequests } from './model-requests.ts'
 import { chatInstructions } from './prompts.ts'

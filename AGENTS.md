@@ -18,10 +18,14 @@ How a message becomes an answer lives in [TURN.md](TURN.md).
 ```
 src/server/   main.ts (start(): wiring + listen, defaultTools()), app.ts (Hono
               app: access checks, health, mounts routes/*.ts, one file per
-              area, each `xRoutes(deps)` returning a Hono app), prompts.ts
-              (what chibot tells the model), database.ts (one SQLite
-              connection + migrations), one class per file; tools/ holds the
-              shipped Tool subclasses
+              area, each `xRoutes({ …what it uses })` returning a Hono app),
+              prompts.ts (what chibot tells the model), database.ts (one
+              SQLite connection + the ordered migrations), one class per
+              file; tools/ holds the shipped Tool subclasses
+src/server/projects/
+              a feature folder: its store, search index, chunking,
+              instruction writer, routes, tools and schema. index.ts is what
+              the rest of the server may import (see Design conventions)
 src/shared/   used by both server and web: API record types, chibot's own SSE
               events, message text extraction, zod schemas (requests,
               settings, export) and reasoning efforts (zod-free, so the web
@@ -90,6 +94,14 @@ transpiles it.
 - **Constructor injection.** Classes receive their collaborators (OpenAI
   client, store, config). Only `main.ts` constructs real ones. Tests pass
   fakes.
+- **Features own their files.** Code that belongs to one feature (a store, its
+  routes and tools, its schema) lives in `src/server/<feature>/` (so far
+  `projects/`), with an `index.ts` listing what the rest of the server may
+  use; import from the index, not from files inside, so the feature can change
+  inside. Routes name the collaborators they use (`xRoutes({ store, files })`)
+  and never import `app.ts`. The one exception: `database.ts` imports
+  `projects/schema.ts` (SQL only) because migrations run in one fixed order.
+  Tests mirror the folders (`tests/server/projects/`).
 - **Private state** uses `#fields`.
 - **Validation** uses zod schemas in `src/shared` (`requests.ts`, `settings.ts`),
   applied to routes with `json(schema)` (`@hono/zod-validator`). Shared types

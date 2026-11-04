@@ -1,8 +1,8 @@
 import type { DatabaseSync } from 'node:sqlite'
 import type OpenAI from 'openai'
-import { documentKind } from '../shared/documents.ts'
-import { anyWordQuery, transaction } from './database.ts'
-import type { FileStore } from './file-store.ts'
+import { documentKind } from '../../shared/documents.ts'
+import { anyWordQuery, transaction } from '../database.ts'
+import type { FileStore } from '../file-store.ts'
 import type { ProjectStore } from './project-store.ts'
 import {
   CHUNKER_VERSION,
@@ -10,7 +10,7 @@ import {
   chunkStyle,
   chunkText,
 } from './chunking.ts'
-import { documentText } from './text.ts'
+import { documentText } from '../text.ts'
 
 // About 1,500 chunks: plenty for notes and documents, bounded for embedding.
 const MAX_TEXT = 5_000_000

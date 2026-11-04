@@ -10,12 +10,12 @@ import type { ProjectWithContents } from '../../shared/types.ts'
 import type { Attachments } from '../attachments.ts'
 import type { ConversationStore } from '../conversation-store.ts'
 import type { FileStore } from '../file-store.ts'
-import type { InstructionWriter } from '../instruction-writer.ts'
-import type { ProjectIndex } from '../project-index.ts'
-import type { ProjectStore } from '../project-store.ts'
+import type { InstructionWriter } from './instruction-writer.ts'
+import type { ProjectIndex } from './project-index.ts'
+import type { ProjectStore } from './project-store.ts'
 import { explainApiError } from '../api-errors.ts'
-import { NothingToSuggestFrom } from '../instruction-writer.ts'
-import { json, notFound } from './helpers.ts'
+import { NothingToSuggestFrom } from './instruction-writer.ts'
+import { json, notFound } from '../routes/helpers.ts'
 
 export function projectRoutes({
   store,
