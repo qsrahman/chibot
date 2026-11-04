@@ -860,7 +860,7 @@ Configuration lives in three layers, split by who changes it and how often:
   nothing else. The current folder's
   `.env` is never read: a command that runs anywhere must not take another
   project's keys, or a hostile folder's `OPENAI_BASE_URL`.
-- **Installing:** `pnpm link -g` runs `src/server/cli.ts` from the checkout, so
+- **Installing:** `pnpm add -g .` (a link; pnpm 12 rejects `pnpm link -g`) runs `src/server/cli.ts` from the checkout, so
   Node still strips the types (it refuses to under `node_modules`, which rules
   out a registry package without a build step); `pnpm build` first builds the
   web app.

@@ -8,7 +8,7 @@ How a message becomes an answer lives in [TURN.md](TURN.md).
 
 - **Node ≥ 26** runs the server's TypeScript directly, with no build step
   (which also means it can't be installed from a registry: Node won't strip
-  types under `node_modules`; `pnpm link -g` runs it from the checkout).
+  types under `node_modules`; `pnpm add -g .` links it to the checkout, which runs it from there).
 - **pnpm** (version pinned in `package.json` → `devEngines`).
 - **Server:** Hono + `@hono/node-server`, `openai` SDK, `node:sqlite`.
 - **Web:** React 19 + Vite (`src/web`), built to `dist/web`.
@@ -73,7 +73,7 @@ pnpm deps         # import rules (dependency-cruiser; also part of pnpm test)
 pnpm format       # prettier --write
 pnpm build        # build the web app into dist/web
 pnpm start        # production: serves the API and dist/web (= `chibot`)
-pnpm link -g      # puts `chibot` on your PATH (run `pnpm build` first)
+pnpm add -g .     # puts `chibot` on your PATH, linked to the checkout (run `pnpm build` first)
 pnpm release      # patch|minor|major|X.Y.Z: bump, CHANGELOG, checks, commit
 ```
 

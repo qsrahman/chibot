@@ -3,7 +3,7 @@ import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import envPaths from 'env-paths'
 
-/** The repo root: a checkout, or where `pnpm link -g` points. */
+/** The repo root: a checkout, or where a global `pnpm add -g .` links to. */
 export const ROOT = join(import.meta.dirname, '../..')
 
 export interface Locations {

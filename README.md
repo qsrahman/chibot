@@ -27,14 +27,16 @@ Responses API, such as [Ollama](https://docs.ollama.com/openai) and
 ```bash
 pnpm install
 pnpm build        # the web app, once (and again after pulling changes)
-pnpm link -g      # puts the `chibot` command on your PATH
+pnpm add -g .     # puts the `chibot` command on your PATH (a link to this folder)
 chibot init       # asks where your models are, and for the key
 chibot            # then open http://127.0.0.1:3000
 ```
 
-`pnpm link -g` points the command at this folder, so it keeps working from any
-folder and picks up changes you pull (rebuild the web app after them). `chibot
---help` lists the commands. To work on chibot itself, `pnpm dev` (see
+`pnpm add -g .` links the command to this folder (pnpm 12 no longer accepts
+`pnpm link -g`; the global bin folder must be on your PATH, which `pnpm setup`
+arranges), so it keeps working from any folder and picks up changes you pull
+(rebuild the web app after them). `pnpm remove -g chibot` takes it off again.
+`chibot --help` lists the commands. To work on chibot itself, `pnpm dev` (see
 [Running](#running)) reads the same settings.
 
 ## Configuration
