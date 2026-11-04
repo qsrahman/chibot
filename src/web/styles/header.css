@@ -96,6 +96,7 @@
 .model-list {
   max-height: 50dvh;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .model-id {

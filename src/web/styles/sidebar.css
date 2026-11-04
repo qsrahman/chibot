@@ -112,6 +112,7 @@
   flex: 1;
   margin: 8px 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .sidebar-heading {

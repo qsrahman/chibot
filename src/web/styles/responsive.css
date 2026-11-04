@@ -140,3 +140,39 @@
     transition: none !important;
   }
 }
+
+/* Forced colours (Windows High Contrast) replace backgrounds with the
+   system's, so what is shown only by a background (the open chat, the marked
+   result, a switch's state) needs system colours or a border of its own. */
+@media (forced-colors: active) {
+  .sidebar-row.active,
+  .settings-tabs [aria-current='page'],
+  .search-result[aria-selected='true'],
+  .menu-item:hover,
+  .menu-item:focus-visible {
+    background: Highlight;
+    color: HighlightText;
+  }
+
+  .switch {
+    border: 1px solid ButtonText;
+    background: Canvas;
+  }
+
+  .switch::after {
+    background: ButtonText;
+  }
+
+  .switch:checked {
+    background: Highlight;
+  }
+
+  .switch:checked::after {
+    background: HighlightText;
+  }
+
+  .button.primary,
+  .icon-button.primary {
+    border: 1px solid ButtonText;
+  }
+}

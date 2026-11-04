@@ -27,6 +27,7 @@
    instructions and chats, all scrolling together. */
 .chat.project-home {
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding-bottom: 24px;
 }
 
@@ -257,6 +258,7 @@
 
 .greeting h1 {
   margin: 0;
+  text-wrap: balance;
   font-size: 1.75rem;
   font-weight: 400;
   line-height: 2.125rem;
@@ -274,6 +276,7 @@
 .messages {
   flex: 1;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* Sticks to the bottom of the scrolled list, just above the composer; the

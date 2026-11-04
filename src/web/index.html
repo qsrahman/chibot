@@ -2,14 +2,33 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content"
+    />
     <meta name="color-scheme" content="light dark" />
+    <!-- The browser's own bars, matching --bg; theme.ts sets both when the
+         theme is chosen over the system's. -->
+    <meta
+      name="theme-color"
+      content="#fcfcfc"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#000000"
+      media="(prefers-color-scheme: dark)"
+    />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <script>
       // Apply a saved theme before first paint (see theme.ts).
       try {
+        const saved = localStorage.getItem('chibot.colorScheme')
         document.querySelector('meta[name="color-scheme"]').content =
-          localStorage.getItem('chibot.colorScheme') ?? 'light dark'
+          saved ?? 'light dark'
+        if (saved)
+          for (const m of document.querySelectorAll('meta[name="theme-color"]'))
+            m.content = saved === 'dark' ? '#000000' : '#fcfcfc'
       } catch {}
     </script>
     <title>chibot</title>

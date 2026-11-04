@@ -17,8 +17,17 @@ function load(): ColorScheme {
   }
 }
 
+// --bg in base.css, for the browser's own bars (a <meta> can't take light-dark()).
+const THEME_COLORS = { light: '#fcfcfc', dark: '#000000' }
+
 function apply(scheme: ColorScheme) {
   meta().content = scheme ?? 'light dark'
+  for (const bar of document.querySelectorAll<HTMLMetaElement>(
+    'meta[name="theme-color"]',
+  )) {
+    const media = bar.media.includes('dark') ? 'dark' : 'light'
+    bar.content = THEME_COLORS[scheme ?? media]
+  }
 }
 
 /**

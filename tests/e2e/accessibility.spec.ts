@@ -306,3 +306,59 @@ test('the menus on a chat row and on a project are menus', async ({ page }) => {
     page.getByRole('menuitem', { name: 'Delete project' }),
   ).toBeVisible()
 })
+
+test('in forced colours the open chat and a switch’s state still show', async ({
+  page,
+}) => {
+  await page.emulateMedia({ forcedColors: 'active' })
+  await chatsTitled(page, 'High contrast chat', 'Another')
+  await page.goto('/')
+  await appReady(page)
+  await page.getByRole('link', { name: 'High contrast chat' }).click()
+  await expect(page).toHaveURL(/\/c\//)
+  const background = (selector: string) =>
+    page
+      .locator(selector)
+      .first()
+      .evaluate((el) => getComputedStyle(el).backgroundColor)
+  // The open chat's row is not drawn like the others (it has system colours).
+  const plain = await page
+    .locator('.sidebar-row:not(.active)')
+    .first()
+    .evaluate((el) => getComputedStyle(el).backgroundColor)
+  expect(await background('.sidebar-row.active')).not.toBe(plain)
+
+  await page.keyboard.press('ControlOrMeta+,')
+  const dialog = page.getByRole('dialog', { name: 'Settings' })
+  await dialog.getByRole('button', { name: 'Tools' }).click()
+  const toggle = dialog.getByRole('switch').first()
+  const before = await toggle.evaluate(
+    (el) => getComputedStyle(el).backgroundColor,
+  )
+  await toggle.click()
+  await expect
+    .poll(() => toggle.evaluate((el) => getComputedStyle(el).backgroundColor))
+    .not.toBe(before)
+  await toggle.click() // as it was
+})
+
+test('the browser’s bars follow the theme chosen in Settings', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  const bars = () =>
+    page.evaluate(() =>
+      [
+        ...document.querySelectorAll<HTMLMetaElement>(
+          'meta[name="theme-color"]',
+        ),
+      ].map((m) => m.content),
+    )
+  expect(await bars()).toEqual(['#fcfcfc', '#000000'])
+  await page.evaluate(() => localStorage.setItem('chibot.colorScheme', 'dark'))
+  await page.reload()
+  await appReady(page)
+  expect(await bars()).toEqual(['#000000', '#000000'])
+  await page.evaluate(() => localStorage.removeItem('chibot.colorScheme'))
+})

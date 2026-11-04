@@ -30,6 +30,7 @@
   max-height: min(70dvh, 560px);
   overflow-y: auto;
   padding-right: 4px;
+  overscroll-behavior: contain;
 }
 
 .settings-section + .settings-section {
