@@ -486,3 +486,52 @@ for (const [name, size] of [
     expect(await inside('dialog[open]')).toBe(true)
   })
 }
+
+test('shortcuts leave a modal dialog alone, and ? opens the shortcut list', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  await send(page, 'Shortcut chat')
+  await answered(page)
+  const url = page.url()
+
+  await page.keyboard.press('ControlOrMeta+,')
+  const settings = page.getByRole('dialog', { name: 'Settings' })
+  await expect(settings).toBeVisible()
+  // None of these may act on the page behind, or stack a second dialog.
+  for (const keys of [
+    'ControlOrMeta+Shift+o',
+    'ControlOrMeta+k',
+    'ControlOrMeta+/',
+  ]) {
+    await page.keyboard.press(keys)
+  }
+  await page.waitForTimeout(300)
+  expect(page.url()).toBe(url)
+  await expect(page.locator('dialog[open]')).toHaveCount(1)
+  await page.keyboard.press('Escape')
+  await expect(settings).toBeHidden()
+
+  // ? while typing is a question mark; outside text fields it opens the list.
+  const box = page.getByRole('textbox', { name: 'Message' })
+  await box.focus()
+  await page.keyboard.press('Shift+Slash')
+  await expect(box).toHaveValue('?')
+  await expect(
+    page.getByRole('dialog', { name: 'Keyboard shortcuts' }),
+  ).toBeHidden()
+  await box.fill('')
+  await page.locator('.messages').click({ position: { x: 5, y: 5 } })
+  await page.keyboard.press('Shift+Slash')
+  await expect(
+    page.getByRole('dialog', { name: 'Keyboard shortcuts' }),
+  ).toBeVisible()
+
+  // Every shortcut listed has keys of its own.
+  const combos = await page
+    .locator('.shortcut dd')
+    .evaluateAll((all) => all.map((dd) => dd.textContent))
+  expect(combos.length).toBeGreaterThan(8)
+  expect(new Set(combos).size).toBe(combos.length)
+})

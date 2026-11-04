@@ -13,12 +13,19 @@ export const SHORTCUTS = {
   editLast: { keys: 'ArrowUp', label: 'Edit your last message (empty box)' },
   settings: { keys: '$mod+,', label: 'Open settings' },
   showShortcuts: { keys: '$mod+/', label: 'Show keyboard shortcuts' },
+  // Not while typing (the sidebar checks), or it could not be typed.
+  showShortcutsHint: {
+    keys: 'Shift+?',
+    label: 'Show them, outside text fields',
+  },
 } as const
 
 /**
  * Binds `bindings` on the window while the component is mounted. Unlike
- * tinykeys' default, shortcuts also work while typing (as on ChatGPT); only
- * key repeats and IME composition are ignored.
+ * tinykeys' default, shortcuts also work while typing (as on ChatGPT); key
+ * repeats and IME composition are ignored, and so is everything while a modal
+ * dialog is open: it has the user's attention, and a shortcut would act on the
+ * page behind it (or stack a second dialog on it).
  */
 export function useShortcuts(bindings: KeybindingsMap) {
   // Handlers change every render (e.g. while an answer streams); only the
@@ -32,7 +39,10 @@ export function useShortcuts(bindings: KeybindingsMap) {
       handlers[key] = (event) => latest.current[key]?.(event)
     }
     return tinykeys(window, handlers, {
-      ignore: (event) => event.repeat || event.isComposing,
+      ignore: (event) =>
+        event.repeat ||
+        event.isComposing ||
+        document.querySelector('dialog:modal') !== null,
     })
   }, [keys])
 }
@@ -42,6 +52,19 @@ const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform)
 const KEY_NAMES: Record<string, string> = isMac
   ? { $mod: '⌘', Shift: '⇧', Escape: 'Esc', ArrowUp: '↑' }
   : { $mod: 'Ctrl', Escape: 'Esc', ArrowUp: '↑' }
+
+/** Whether typing goes into `target` (so a plain key there is text, not a shortcut). */
+export function isTyping(target: EventTarget | null): boolean {
+  // Duck-typed, so this file also compiles where the tests have no DOM types.
+  const el = target as {
+    isContentEditable?: boolean
+    matches?: (selector: string) => boolean
+  } | null
+  return (
+    el?.isContentEditable === true ||
+    el?.matches?.('input, textarea, select') === true
+  )
+}
 
 /** The keys of a binding as shown to the user, e.g. ['⌘', '⇧', 'O']. */
 export function keyCaps(keys: string): string[] {

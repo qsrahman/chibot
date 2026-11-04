@@ -621,7 +621,7 @@ for (const motion of ['no-preference', 'reduce'] as const) {
         timeout: 15_000,
       })
       .toBeGreaterThan(100)
-    expect(await fromBottom()).toBeLessThan(40)
+    await expect.poll(fromBottom).toBeLessThan(40)
 
     await list.evaluate((el) => el.scrollTo({ top: 0 }))
     const jump = page.getByRole('button', { name: 'Jump to latest' })
@@ -635,13 +635,13 @@ for (const motion of ['no-preference', 'reduce'] as const) {
 
     await jump.click()
     await expect(jump).toHaveCount(0)
-    expect(await fromBottom()).toBeLessThan(40)
+    await expect.poll(fromBottom).toBeLessThan(40)
     // …and it follows again.
     const was = await list.evaluate((el) => el.scrollHeight)
     await expect
       .poll(() => list.evaluate((el) => el.scrollHeight), { timeout: 15_000 })
       .toBeGreaterThan(was + 30)
-    expect(await fromBottom()).toBeLessThan(40)
+    await expect.poll(fromBottom).toBeLessThan(40)
     await page.getByRole('button', { name: 'Stop' }).click()
   })
 }

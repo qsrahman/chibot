@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Added
 
+- `?` opens the keyboard shortcut list when you are not typing in a text field (it is still a question mark in the message box); it is listed in the dialog.
 - Code blocks have a **Wrap lines** toggle (long lines scroll sideways otherwise) and, from 12 lines, line numbers in a fixed column beside the code (they are left out of what is selected or copied, hidden from screen readers, and give way while lines wrap, since they would no longer line up). Copying code or a message is now also announced to screen readers ("Copied" / "Copy failed"); the button only changed its name, which isn't announced.
 - An empty chat offers four ways to start (Summarize a page, Explain a topic, Draft an email, Review code): each puts the start of a message in the box, with the caret after it, for you to finish. They go once the chat has messages, and a temporary chat has none. An empty chat list in the sidebar says "No chats yet" instead of showing nothing.
 - Toasts: brief feedback at the bottom of the window (`ui/toast.tsx`, also announced to screen readers through a polite live region). Archiving a chat says "Chat archived" with an **Undo** button, restoring, deleting and importing a chat say so too. A toast stays while the pointer or keyboard focus is on it, and goes after 6 seconds otherwise. Deleting is permanent, so it still asks first (undoing it would need chats to be kept after deletion, which they aren't).
@@ -17,6 +18,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Fixed
 
+- Keyboard shortcuts no longer act on the page behind a modal dialog. With Settings open, New chat navigated behind it, Search stacked a second dialog on it and the sidebar toggled; now they wait until the dialog closes (Esc still closes it).
 - **Import a chat** (Settings → Data) is a real button that a keyboard can reach; it was a label around a hidden file input, which Tab skipped.
 - When chibot can't be reached (the server stopped while the page was open), a failed message says "Can't reach chibot. Check that it is running, then try again." instead of the browser's bare "Failed to fetch", also when the server goes away in the middle of an answer. The message stays in the box to be sent again. The chat list says the same, with a **Try again** button, and reloads by itself when the window is back in front or the network returns, instead of staying stale; the projects' own message isn't repeated.
 - A message with other versions (an edit, a regenerated answer) shows its `< 2/3 >` switcher all the time, not only while hovered, so the versions can be found; copy and edit still wait for the pointer.

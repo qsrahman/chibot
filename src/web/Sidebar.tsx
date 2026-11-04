@@ -29,7 +29,7 @@ import {
 import { SearchDialog } from './conversations/SearchDialog.tsx'
 import { SettingsDialog, type SettingsTab } from './settings/SettingsDialog.tsx'
 import { ShortcutsDialog } from './ShortcutsDialog.tsx'
-import { SHORTCUTS, useShortcuts } from './ui/shortcuts.ts'
+import { isTyping, SHORTCUTS, useShortcuts } from './ui/shortcuts.ts'
 import { useToast } from './ui/toast.tsx'
 import type { ConversationsApi } from './conversations/useConversations.ts'
 import type { ProjectsApi } from './projects/useProjects.ts'
@@ -116,6 +116,11 @@ export function Sidebar({
       setSettingsOpen(true)
     },
     [SHORTCUTS.showShortcuts.keys]: (e) => {
+      e.preventDefault()
+      setShortcutsOpen(true)
+    },
+    [SHORTCUTS.showShortcutsHint.keys]: (e) => {
+      if (isTyping(e.target)) return
       e.preventDefault()
       setShortcutsOpen(true)
     },
