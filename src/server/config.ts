@@ -115,14 +115,16 @@ export class Config {
   readonly braveApiKey: string | null
   readonly host: string
   readonly port: number
-  /** Holds `config.json` and `mcp.json`. */
+  /** Holds `config.json`. */
   readonly configDir: string
   /** Holds the database and stored files. */
   readonly dataDir: string
   /** Required to use chibot, or `null`: no login. */
   readonly token: string | null
-  /** MCP servers' config file (`mcp.json`); it may not exist. */
+  /** A standalone MCP servers file (`mcp.json`, older than `config.json`'s `mcpServers`); it may not exist. */
   readonly mcpConfigPath: string
+  /** `CHIBOT_MCP_CONFIG` was given. */
+  readonly mcpConfigExplicit: boolean
   /** Notes for the startup message: older locations still in use. */
   readonly legacyNotes: string[]
 
@@ -164,6 +166,7 @@ export class Config {
     this.configDir = where.configDir
     this.dataDir = where.dataDir
     this.mcpConfigPath = where.mcpConfigPath
+    this.mcpConfigExplicit = where.mcpConfigExplicit
     this.legacyNotes = where.legacy
     this.token = e.CHIBOT_TOKEN ?? null
   }

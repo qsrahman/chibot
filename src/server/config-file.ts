@@ -43,9 +43,14 @@ export const configFileSchema = z
     /** Required to use chibot (once per browser). */
     token: text.optional(),
     /**
-     * Variables for `${NAME}` in `mcp.json`, below the real environment, so an
-     * MCP server's secret needs no place of its own. They are not passed to chibot's
-     * own settings or to the servers; only a `${NAME}` in `mcp.json` reads them.
+     * MCP servers, in the usual `mcpServers` shape. Checked when they are
+     * loaded, not here, so a mistake in one never stops chibot starting.
+     */
+    mcpServers: z.record(z.string(), z.unknown()).optional(),
+    /**
+     * Variables for `${NAME}` in the MCP servers, below the real environment,
+     * so a server's secret needs no place of its own. They reach nothing else:
+     * not chibot's settings, and not the servers unless a value is passed on.
      */
     env: z
       .record(z.string().regex(/^\w+$/, 'letters, digits and _'), z.string())
@@ -77,7 +82,7 @@ const SETTINGS: [path: string, variable: string][] = [
   ['token', 'CHIBOT_TOKEN'],
 ]
 
-/** What is secret: shown as "set", never printed (all of `env`). */
+/** What is secret: shown as "set", never printed (all of `env`; `mcpServers` is listed by name). */
 const SECRETS = /(^|\.)(apiKey|braveApiKey|token)$|^env\./
 
 function get(object: unknown, path: string): unknown {
@@ -172,7 +177,7 @@ export function withSetting(
   path: string,
   value: string,
 ): ConfigFile {
-  // `env.NAME`: a variable for mcp.json, named freely.
+  // `env.NAME`: a variable for the MCP servers, named freely.
   const variable = /^env\.(.+)$/.exec(path)?.[1]
   if (variable !== undefined) {
     const env = { ...file.env }
@@ -186,6 +191,11 @@ export function withSetting(
       throw new Error(`Invalid ${path}:\n${z.prettifyError(parsed.error)}`)
     }
     return parsed.data
+  }
+  if (path === 'mcpServers' || path.startsWith('mcpServers.')) {
+    throw new Error(
+      'MCP servers are edited in config.json itself (`chibot config path` shows where): add them under "mcpServers", in the usual shape.',
+    )
   }
   if (!SETTINGS.some(([known]) => known === path)) {
     throw new Error(
@@ -215,8 +225,23 @@ export function withSetting(
   return parsed.data
 }
 
+/** The `mcpServers` of a standalone `mcp.json`, or `null` if it has none (or isn't JSON). */
+export function readMcpServers(path: string): Record<string, unknown> | null {
+  try {
+    const json = JSON.parse(readFileSync(path, 'utf8')) as {
+      mcpServers?: unknown
+    } | null
+    const servers = json?.mcpServers
+    return servers && typeof servers === 'object' && !Array.isArray(servers)
+      ? (servers as Record<string, unknown>)
+      : null
+  } catch {
+    return null
+  }
+}
+
 /**
- * What `${NAME}` in `mcp.json` is filled from: the real environment, over the
+ * What `${NAME}` in the MCP servers is filled from: the real environment, over the
  * `env` of `config.json` (read afresh, so Reload sees a change).
  */
 export function mcpVariables(dir: string): NodeJS.ProcessEnv {
@@ -231,7 +256,12 @@ export function redacted(file: ConfigFile): Record<string, unknown> {
     if (value !== undefined)
       setPath(out, path, SECRETS.test(path) ? 'set' : value)
   }
-  // Which variables exist, not their values.
+  // Which servers and variables exist, not their commands, headers or values.
+  if (file.mcpServers) {
+    out.mcpServers = Object.fromEntries(
+      Object.keys(file.mcpServers).map((name) => [name, 'set']),
+    )
+  }
   if (file.env) {
     out.env = Object.fromEntries(
       Object.keys(file.env).map((name) => [name, 'set']),

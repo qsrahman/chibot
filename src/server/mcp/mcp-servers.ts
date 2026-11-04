@@ -40,7 +40,7 @@ interface Server {
 }
 
 /**
- * The MCP servers from `mcp.json`: connects the enabled ones, keeps their
+ * The MCP servers from the config: connects the enabled ones, keeps their
  * status and tool lists current, and calls their tools.
  */
 export class McpServers {
@@ -103,7 +103,7 @@ export class McpServers {
    * @throws Error if the file is invalid (nothing then changes)
    */
   async reload(): Promise<void> {
-    if (!this.#load) throw new Error('This server has no mcp.json to reload')
+    if (!this.#load) throw new Error('This server has no config to reload')
     const configs = this.#load()
     for (const [name, server] of [...this.#servers]) {
       const config = configs[name]

@@ -168,7 +168,7 @@ export interface ModelsResponse {
   models: string[] | null
 }
 
-/** An MCP server from `mcp.json`, as `GET /api/mcp` reports it. */
+/** An MCP server from the config, as `GET /api/mcp` reports it. */
 export interface McpServerStatus {
   name: string
   type: 'local' | 'remote'

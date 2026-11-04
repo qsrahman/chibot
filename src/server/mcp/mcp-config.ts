@@ -50,30 +50,48 @@ export function loadMcpConfig(
   } catch (err) {
     throw new Error(`${basename(path)}: ${(err as Error).message}`)
   }
-  const parsed = mcpConfigSchema.safeParse(fill(json, env))
+  return parseMcpConfig(json, env, basename(path))
+}
+
+/**
+ * The servers in `json` (`{ "mcpServers": { … } }`, from a file or from
+ * `config.json`), with `${VAR}` filled from `env`. `source` names it in errors.
+ *
+ * @throws Error saying what's wrong (the server and field)
+ */
+export function parseMcpConfig(
+  json: unknown,
+  env: NodeJS.ProcessEnv,
+  source: string,
+): Record<string, McpServerConfig> {
+  const parsed = mcpConfigSchema.safeParse(fill(json, env, source))
   if (!parsed.success) {
-    throw new Error(`${basename(path)}:\n${z.prettifyError(parsed.error)}`)
+    throw new Error(`${source}:\n${z.prettifyError(parsed.error)}`)
   }
   return parsed.data.mcpServers
 }
 
 /** Every string in `value` with `${VAR}` replaced from `env`. */
-function fill(value: unknown, env: NodeJS.ProcessEnv): unknown {
+function fill(value: unknown, env: NodeJS.ProcessEnv, source: string): unknown {
   if (typeof value === 'string') {
     return value.replace(/\$\{(\w+)\}/g, (_, name: string) => {
       const filled = env[name]
       if (filled === undefined) {
         throw new Error(
-          `mcp.json uses \${${name}}, which isn’t set: export it, or run chibot config set env.${name} <value>`,
+          `${source} uses \${${name}}, which isn’t set: export it, or run chibot config set env.${name} <value>`,
         )
       }
       return filled
     })
   }
-  if (Array.isArray(value)) return value.map((entry) => fill(entry, env))
+  if (Array.isArray(value))
+    return value.map((entry) => fill(entry, env, source))
   if (value && typeof value === 'object') {
     return Object.fromEntries(
-      Object.entries(value).map(([key, entry]) => [key, fill(entry, env)]),
+      Object.entries(value).map(([key, entry]) => [
+        key,
+        fill(entry, env, source),
+      ]),
     )
   }
   return value

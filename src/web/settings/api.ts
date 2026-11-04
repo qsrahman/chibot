@@ -26,7 +26,7 @@ export const listTools = () => request<{ tools: ToolInfo[] }>('/api/tools')
 export const listMcpServers = () =>
   request<{ servers: McpServerStatus[] }>('/api/mcp')
 
-/** Reads mcp.json again; the server answers with the new status. */
+/** Reads the MCP servers from the config again; the server answers with the new status. */
 export const reloadMcpServers = () =>
   request<{ servers: McpServerStatus[] }>('/api/mcp/reload', {
     method: 'POST',

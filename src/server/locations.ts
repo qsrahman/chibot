@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs'
+import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import envPaths from 'env-paths'
 
@@ -10,9 +11,34 @@ export interface Locations {
   configDir: string
   /** Holds the database, stored files and MCP sign-in tokens. */
   dataDir: string
+  /** A standalone MCP file, used when `config.json` has no `mcpServers`. */
   mcpConfigPath: string
+  /** `CHIBOT_MCP_CONFIG` names it: it is then used even if `config.json` has servers. */
+  mcpConfigExplicit: boolean
   /** Older places still in use (checkout folders), for a note at startup. */
   legacy: string[]
+}
+
+/**
+ * The XDG folders (`~/.config`, `~/.local/share`, or `XDG_CONFIG_HOME` and
+ * `XDG_DATA_HOME`): where command-line tools keep their files on Linux, and
+ * what developers expect on a Mac too, rather than `~/Library`.
+ */
+export function xdgPaths(
+  home: string,
+  env: Record<string, string | undefined>,
+): { config: string; data: string } {
+  return {
+    config: join(env.XDG_CONFIG_HOME || join(home, '.config'), 'chibot'),
+    data: join(env.XDG_DATA_HOME || join(home, '.local', 'share'), 'chibot'),
+  }
+}
+
+/** The platform's folders: XDG on Linux and macOS, `env-paths`' on Windows. */
+function platformPaths(): { config: string; data: string } {
+  return process.platform === 'win32'
+    ? envPaths('chibot', { suffix: '' })
+    : xdgPaths(homedir(), process.env)
 }
 
 /** What decides where things live (`CHIBOT_*` in the environment). */
@@ -31,7 +57,7 @@ interface Overrides {
 export function locations(
   env: Overrides,
   {
-    paths = envPaths('chibot', { suffix: '' }),
+    paths = platformPaths(),
     root = ROOT,
     exists = existsSync,
   }: {
@@ -62,10 +88,14 @@ export function locations(
   if (env.CHIBOT_MCP_CONFIG) {
     mcpConfigPath = resolve(env.CHIBOT_MCP_CONFIG)
   } else if (!exists(mcpConfigPath) && exists(join(root, 'mcp.json'))) {
+    // main.ts says so when that file is really the one used: config.json may have the servers.
     mcpConfigPath = join(root, 'mcp.json')
-    legacy.push(
-      `Your MCP servers are still in ${mcpConfigPath}. To use the standard place, move it to ${join(configDir, 'mcp.json')}.`,
-    )
   }
-  return { configDir, dataDir, mcpConfigPath, legacy }
+  return {
+    configDir,
+    dataDir,
+    mcpConfigPath,
+    mcpConfigExplicit: Boolean(env.CHIBOT_MCP_CONFIG),
+    legacy,
+  }
 }

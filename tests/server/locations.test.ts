@@ -1,6 +1,6 @@
 import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { locations } from '../../src/server/locations.ts'
+import { locations, xdgPaths } from '../../src/server/locations.ts'
 
 const paths = {
   config: '/home/u/.config/chibot',
@@ -16,6 +16,7 @@ describe('locations', () => {
       configDir: paths.config,
       dataDir: paths.data,
       mcpConfigPath: join(paths.config, 'mcp.json'),
+      mcpConfigExplicit: false,
       legacy: [],
     })
   })
@@ -43,9 +44,9 @@ describe('locations', () => {
     expect(found.dataDir).toBe('/repo/data')
     expect(found.mcpConfigPath).toBe('/repo/mcp.json')
     // It says so, and where to move them.
-    expect(found.legacy).toHaveLength(2)
+    // (The MCP file is mentioned at startup only if no config.json replaces it.)
+    expect(found.legacy).toHaveLength(1)
     expect(found.legacy[0]).toContain(paths.data)
-    expect(found.legacy[1]).toContain(join(paths.config, 'mcp.json'))
   })
 
   it('prefers the standard places once they have been used', () => {
@@ -68,5 +69,24 @@ describe('locations', () => {
     expect(found.dataDir).toBe(resolve('d'))
     expect(found.mcpConfigPath).toBe(resolve('m.json'))
     expect(found.legacy).toEqual([])
+  })
+})
+
+describe('xdgPaths', () => {
+  it('are ~/.config and ~/.local/share, as on Linux, also on a Mac', () => {
+    expect(xdgPaths('/Users/u', {})).toEqual({
+      config: '/Users/u/.config/chibot',
+      data: '/Users/u/.local/share/chibot',
+    })
+  })
+
+  it('follow XDG_CONFIG_HOME and XDG_DATA_HOME', () => {
+    expect(
+      xdgPaths('/Users/u', { XDG_CONFIG_HOME: '/c', XDG_DATA_HOME: '/d' }),
+    ).toEqual({ config: '/c/chibot', data: '/d/chibot' })
+    // An empty one counts as unset, as the specification says.
+    expect(xdgPaths('/h', { XDG_CONFIG_HOME: '' }).config).toBe(
+      '/h/.config/chibot',
+    )
   })
 })

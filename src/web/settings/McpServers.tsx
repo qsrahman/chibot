@@ -12,7 +12,7 @@ import { useLoad } from '../ui/useLoad.ts'
 import type { SettingsApi } from './useSettings.ts'
 import { Row, Section } from './parts.tsx'
 
-/** The servers in `mcp.json`: a switch, status and actions each, and tools. */
+/** The MCP servers from the config: a switch, status and actions each, and tools. */
 export function McpServers({
   settings,
   onChange,
@@ -58,11 +58,11 @@ export function McpServers({
     <>
       <Section title="MCP servers">
         <Row
-          label="mcp.json"
+          label="Servers"
           description={
             servers.length === 0
-              ? 'No servers yet. Add them to mcp.json in chibot’s folder (mcp.example.json shows how), then reload.'
-              : 'Servers are set up in this file, not here. After editing it, reload to apply the changes.'
+              ? 'No servers yet. Add them under "mcpServers" in chibot’s config.json (`chibot config path` shows where; mcp.example.json shows how), then reload.'
+              : 'Servers are set up in chibot’s config file, not here. After editing it, reload to apply the changes.'
           }
         >
           <button

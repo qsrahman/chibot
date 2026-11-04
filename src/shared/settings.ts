@@ -24,7 +24,7 @@ export const settingsSchema = z.object({
   compactThreshold: z.number().int().min(1000).max(10_000_000).nullable(),
   /** Tools switched off in Settings: never offered to the model. */
   disabledTools: z.array(z.string().max(100)).max(500),
-  /** MCP servers switched off in Settings: not connected (`mcp.json`). */
+  /** MCP servers switched off in Settings: not connected (`mcpServers`). */
   disabledMcpServers: z.array(z.string().max(100)).max(100),
   /** MCP servers whose tool calls wait for Approve / Deny. */
   askMcpServers: z.array(z.string().max(100)).max(100),

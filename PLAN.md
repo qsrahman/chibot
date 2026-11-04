@@ -631,11 +631,12 @@ is set to; `local` and `remote` servers, the latter with OAuth sign-in; a
 switch per server and per tool in Settings; tools only. Built before the code
 runner (now Phase 11).
 
-- **Config.** `mcp.json` (git-ignored; `mcp.example.json` shows the format),
-  at `CHIBOT_MCP_CONFIG` or the chibot folder, in the common `mcpServers`
-  shape with a `type` per server: `local` (`command`, `args`, `env`, `cwd`,
+- **Config.** The `mcpServers` of `config.json` (`mcp.example.json` shows the
+  format; `CHIBOT_MCP_CONFIG` names a standalone file instead, and an older
+  `mcp.json` is read while `config.json` has none; `chibot init` moves it in),
+  in the common `mcpServers` shape with a `type` per server: `local` (`command`, `args`, `env`, `cwd`,
   by default the home folder) or `remote` (`url`, optional `headers`).
-  `${VAR}` is filled from the environment, so secrets stay in `.env`.
+  `${VAR}` is filled from the environment, then `config.json`'s `env`.
   Validated with zod; errors name the server and field, and a bad file
   disables MCP with a startup error rather than stopping chibot. Servers run
   commands with the owner's rights and chibot has no login, so the web app can
@@ -842,9 +843,9 @@ Configuration lives in three layers, split by who changes it and how often:
   responses. (MCP servers live in `mcp.json`, with `${VAR}` from the
   environment, and their OAuth tokens in `data/mcp-auth.json`, mode 0600.)
   Settings shows only whether a key is configured.
-- **Where things are:** the platform's folders (`env-paths`): settings
-  (`config.json`, `mcp.json`) in the config folder, the database, files and MCP
-  tokens in the data folder (`CHIBOT_CONFIG_DIR` / `CHIBOT_DATA_DIR` override).
+- **Where things are:** the XDG folders (`~/.config/chibot`, `~/.local/share/chibot`, also on a Mac; `env-paths` for Windows): settings
+  (`config.json`, with the MCP servers in it) in the config folder, the database,
+  files and MCP tokens in the data folder (`CHIBOT_CONFIG_DIR` / `CHIBOT_DATA_DIR` override).
   A checkout's `<repo>/data` and `<repo>/mcp.json` stay in use while the
   standard places are empty (`locations()`), so upgrading hides no chats.
 - **Lookup, highest first:** command-line flags, real environment variables,
@@ -881,8 +882,8 @@ Environment variables:
 | `HOST` | `127.0.0.1` | Interface to listen on; `0.0.0.0` exposes it on the LAN, so set `CHIBOT_TOKEN` too |
 | `PORT` | `3000` | API server port |
 | `CHIBOT_TOKEN` | — | Requires a token, remembered per browser in a cookie (v0.10.2) |
-| `CHIBOT_MCP_CONFIG` | `<repo>/mcp.json` | MCP servers' config file (Phase 10) |
-| `CHIBOT_DATA_DIR` | `<repo>/data` | Holds `chibot.db` (Phase 1), `files/` (Phase 6) and `mcp-auth.json` (Phase 10). The default is resolved from the package location, not the current directory. |
+| `CHIBOT_MCP_CONFIG` | — | A standalone MCP servers file, used instead of `mcpServers` in `config.json` (Phase 10) |
+| `CHIBOT_DATA_DIR` | `~/.local/share/chibot` | Holds `chibot.db` (Phase 1), `files/` (Phase 6) and `mcp-auth.json` (Phase 10). Also `CHIBOT_CONFIG_DIR` for `config.json` (default `~/.config/chibot`). A checkout's `<repo>/data` stays in use while the new place is empty. |
 
 ## 7. Risks & open items
 

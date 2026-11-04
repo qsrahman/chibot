@@ -21,7 +21,11 @@ import { ConversationStore } from './conversations/index.ts'
 import { openDatabase } from './database.ts'
 import { FileStore } from './file-store.ts'
 import { McpAuthStore } from './mcp/index.ts'
-import { loadMcpConfig, type McpServerConfig } from './mcp/index.ts'
+import {
+  loadMcpConfig,
+  parseMcpConfig,
+  type McpServerConfig,
+} from './mcp/index.ts'
 import { McpServers } from './mcp/index.ts'
 import { MemoryStore } from './memory-store.ts'
 import { ProjectIndex } from './projects/index.ts'
@@ -111,6 +115,15 @@ export function start({
     )
   }
   config.legacyNotes.forEach((note) => console.warn(`Note: ${note}`))
+  if (
+    !config.mcpConfigExplicit &&
+    !read.file.mcpServers &&
+    existsSync(config.mcpConfigPath)
+  ) {
+    console.warn(
+      `Note: reading MCP servers from ${config.mcpConfigPath}; they can live in ${read.path} under "mcpServers". Run \`chibot init\` to move them.`,
+    )
+  }
   mkdirSync(config.dataDir, { recursive: true })
   const db = openDatabase(config.databasePath)
   const store = new ConversationStore(db)
@@ -147,9 +160,8 @@ export function start({
   })
   const mcp = new McpServers(mcpConfig(config), {
     disabled: () => settings.get().disabledMcpServers,
-    // Read again on each Reload, so a changed `env` in config.json is picked up.
-    load: () =>
-      loadMcpConfig(config.mcpConfigPath, mcpVariables(config.configDir)),
+    // Read again on each Reload, so a changed config.json is picked up.
+    load: () => loadMcpServers(config),
     auth: {
       store: new McpAuthStore(join(config.dataDir, 'mcp-auth.json')),
       redirectUrl: oauthRedirectUrl(config),
@@ -214,10 +226,31 @@ export function start({
   )
 }
 
-/** The MCP servers in `mcp.json`; none, with the error, if it's invalid. */
+/**
+ * The MCP servers to use. `CHIBOT_MCP_CONFIG`, if given, names the file;
+ * otherwise `mcpServers` in `config.json`, else the older standalone
+ * `mcp.json`. `${VAR}` is filled from the environment, then `config.json`'s
+ * `env`. Throws, saying what is wrong, so Reload can show it.
+ */
+export function loadMcpServers(
+  config: Config,
+): Record<string, McpServerConfig> {
+  const { file } = readConfigFile(config.configDir)
+  const variables = mcpVariables(config.configDir)
+  if (file.mcpServers && !config.mcpConfigExplicit) {
+    return parseMcpConfig(
+      { mcpServers: file.mcpServers },
+      variables,
+      'config.json',
+    )
+  }
+  return loadMcpConfig(config.mcpConfigPath, variables)
+}
+
+/** The MCP servers at startup; none, with the error, if they are invalid. */
 function mcpConfig(config: Config): Record<string, McpServerConfig> {
   try {
-    return loadMcpConfig(config.mcpConfigPath, mcpVariables(config.configDir))
+    return loadMcpServers(config)
   } catch (err) {
     console.error(`MCP servers are off: ${(err as Error).message}`)
     return {}

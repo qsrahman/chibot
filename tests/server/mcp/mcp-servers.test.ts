@@ -73,7 +73,7 @@ describe('MCP servers', () => {
 
   it('has nothing to reload without a loader', async () => {
     await start({ fixture })
-    await expect(servers.reload()).rejects.toThrow(/no mcp.json/)
+    await expect(servers.reload()).rejects.toThrow(/no config/)
   })
 
   it('connects and lists each server’s tools, prefixed by its name', async () => {

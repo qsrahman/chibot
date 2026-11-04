@@ -4,12 +4,13 @@ import { join } from 'node:path'
 import { parseArgs } from 'node:util'
 import {
   readConfigFile,
+  readMcpServers,
   redacted,
   withSetting,
   writeConfigFile,
 } from './config-file.ts'
 import { loadEnvFiles } from './config.ts'
-import { runInit, terminalPrompts } from './init.ts'
+import { offerMcpImport, runInit, terminalPrompts } from './init.ts'
 import { locations, ROOT } from './locations.ts'
 import { start } from './main.ts'
 
@@ -25,7 +26,7 @@ Usage:
 
 Settings: chat.baseURL, chat.apiKey, chat.model, image.*, embedding.*,
 transcription.* (each baseURL, apiKey, model), braveApiKey, server.host,
-server.port, token, and env.<NAME>: a variable for \${NAME} in mcp.json.
+server.port, token, mcpServers (MCP servers: edit config.json), and env.<NAME>:\na variable for \${NAME} in them.
 Environment variables such as OPENAI_API_KEY override the settings.`
 
 /** Runs the command line; resolves to the exit code (not returned while the server runs). */
@@ -65,11 +66,20 @@ export async function run(args: string[]): Promise<number | void> {
       const legacy = loadEnvFiles()[0] ?? null
       const prompts = terminalPrompts()
       try {
-        const next = await runInit(prompts, {
+        let next = await runInit(prompts, {
           existing: file,
           legacyEnv: process.env,
           legacyPath: legacy,
         })
+        // A named file (CHIBOT_MCP_CONFIG) is the user's choice: leave it.
+        if (!where.mcpConfigExplicit) {
+          next = await offerMcpImport(
+            prompts,
+            next,
+            where.mcpConfigPath,
+            readMcpServers(where.mcpConfigPath),
+          )
+        }
         writeConfigFile(where.configDir, next)
         console.log(`Saved to ${path} (readable by you only).`)
         if (legacy) console.log(`You can delete ${legacy} now.`)
@@ -81,11 +91,14 @@ export async function run(args: string[]): Promise<number | void> {
     }
     case 'config': {
       const [action, setting, value] = rest
-      const { file, path } = readConfigFile(where.configDir)
+      const read = readConfigFile(where.configDir)
+      const { file, path } = read
       if (action === 'path') {
         console.log(`Settings:    ${path}`)
         console.log(`Data:        ${where.dataDir}`)
-        console.log(`MCP servers: ${where.mcpConfigPath}`)
+        console.log(
+          `MCP servers: ${read.file.mcpServers && !where.mcpConfigExplicit ? `in ${path}` : where.mcpConfigPath}`,
+        )
         return
       }
       if (action === 'show') {

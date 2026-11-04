@@ -52,14 +52,15 @@ chibot config set chat.model gpt-6-astra  # change one (an empty value removes i
 
 chibot keeps its files in your system's usual folders:
 
-| | macOS | Linux | Windows |
-|---|---|---|---|
-| Settings (`config.json`, `mcp.json`) | `~/Library/Preferences/chibot` | `~/.config/chibot` | `%APPDATA%\chibot\Config` |
-| Data (chats, files, sign-ins) | `~/Library/Application Support/chibot` | `~/.local/share/chibot` | `%LOCALAPPDATA%\chibot\Data` |
+| | macOS and Linux | Windows |
+|---|---|---|
+| Settings (`config.json`: keys, MCP servers) | `~/.config/chibot` | `%APPDATA%\chibot\Config` |
+| Data (chats, files, sign-ins) | `~/.local/share/chibot` | `%LOCALAPPDATA%\chibot\Data` |
 
-(Linux follows `XDG_CONFIG_HOME` and `XDG_DATA_HOME`.) Existing checkouts keep
-working: while `<chibot folder>/data` and `<chibot folder>/mcp.json` exist and
-the standard places are empty, chibot keeps using them and says so at startup.
+(`XDG_CONFIG_HOME` and `XDG_DATA_HOME` move them, as for other command-line
+tools; a Mac uses these too, not `~/Library`.) Existing checkouts keep working:
+while `<chibot folder>/data` and `<chibot folder>/mcp.json` exist and the
+standard places are empty, chibot keeps using them and says so at startup.
 
 **Precedence**, highest first: command-line flags (`--port`, `--host`), real
 environment variables, `config.json`, defaults. So a variable such as
@@ -82,9 +83,9 @@ whatever folder it is in.
 | `transcription.baseURL` / `.apiKey` / `.model` | `OPENAI_TRANSCRIBE_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Voice input; the model defaults to `gpt-transcribe` on OpenAI, and must be named on other servers (without one, the mic is off). With chat on Ollama, point this at OpenAI |
 | `braveApiKey` | `BRAVE_API_KEY` | — | Turns on web search ([Brave Search API](https://brave.com/search/api/)) |
 | `token` | `CHIBOT_TOKEN` | — | Requires a token (16+ characters) to use chibot; set it when `server.host` exposes chibot |
-| — | `CHIBOT_CONFIG_DIR` | see above | Where `config.json` and `mcp.json` are |
+| — | `CHIBOT_CONFIG_DIR` | see above | Where `config.json` is |
 | — | `CHIBOT_DATA_DIR` | see above | Where the database, generated images and MCP sign-ins are kept |
-| — | `CHIBOT_MCP_CONFIG` | `mcp.json` in the settings folder | The MCP servers to use (see below) |
+| — | `CHIBOT_MCP_CONFIG` | — | A standalone MCP servers file to use instead of `mcpServers` in `config.json` (see below) |
 
 For example, to chat with a local Ollama model:
 
@@ -140,9 +141,11 @@ to the name you use.
 ### MCP servers
 
 chibot can use the tools of [MCP](https://modelcontextprotocol.io) servers.
-List them in `mcp.json` in chibot's settings folder (`chibot config path`
-shows it; [mcp.example.json](mcp.example.json) shows the format), then
-**Reload** it in Settings → Tools (or restart chibot):
+List them under `mcpServers` in `config.json` (`chibot config path` shows
+where it is; [mcp.example.json](mcp.example.json) shows the format, which is
+the usual one, so a snippet from an MCP server's docs fits as it is), then
+**Reload** in Settings → Tools (or restart chibot). The file is readable only by
+you, so a server's token or header can sit in it directly:
 
 ```json
 {
@@ -157,6 +160,11 @@ shows it; [mcp.example.json](mcp.example.json) shows the format), then
 }
 ```
 
+In `config.json`, the `mcpServers` entry sits beside the other settings. An older
+standalone `mcp.json` of this shape is still read while `config.json` has no
+`mcpServers` (and always when `CHIBOT_MCP_CONFIG` names it); `chibot init`
+offers to move its servers in.
+
 - A **`local`** server is a command chibot runs (`command`, `args`, `env`,
   `cwd`, by default your home folder) with your rights. It gets only a safe
   environment (`PATH`, `HOME`, …) plus its own `env`, never chibot's keys.
@@ -166,11 +174,11 @@ shows it; [mcp.example.json](mcp.example.json) shows the format), then
   Tokens are kept in `mcp-auth.json` in the data folder, readable only by you; **Sign out**
   removes them. A server with its own `Authorization` header doesn't sign in.
 - `${VAR}` anywhere is filled from the environment, then from the `env` block of
-  `config.json`, so secrets stay out of `mcp.json`. Keep a server's token with
-  the rest of your keys: `chibot config set env.GITHUB_TOKEN <token>` (an empty
-  value removes it; `chibot config show` lists the names, not the values).
-  **Reload** re-reads `mcp.json` and that block; a variable exported in your
-  shell needs a restart. Names may use letters, digits, `-` and `_`.
+  `config.json`, to keep a token out of a server's definition. Set one with
+  `chibot config set env.GITHUB_TOKEN <token>` (an empty value removes it;
+  `chibot config show` lists the names, not the values). **Reload** re-reads
+  `config.json`, so a changed block or server list applies; a variable
+  exported in your shell needs a restart. Names may use letters, digits, `-` and `_`.
 
 Servers are only set up here, never from the web app. Their tools are offered
 as `<server>__<tool>` and run without asking first, so add only servers you

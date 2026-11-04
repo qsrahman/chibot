@@ -159,8 +159,10 @@ transpiles it.
 - **Configuration layers** (PLAN.md §6): secrets and startup settings in
   `config.json` (`config-file.ts`, mode 0600) under the environment (via
   `Config`; flags beat the environment, which beats the file), MCP servers in
-  `mcp.json` (`loadMcpConfig`, with `${VAR}` from the environment) and their
-  OAuth tokens in `mcp-auth.json` in the data folder (`McpAuthStore`); where
+  that file's `mcpServers` (`loadMcpServers`, checked when loaded so a mistake
+  never stops chibot starting; `${VAR}` from the environment, then its `env`;
+  a standalone `mcp.json` still works) and their OAuth tokens in
+  `mcp-auth.json` in the data folder (`McpAuthStore`); where
   these folders are comes from `locations()`, never from `ROOT` directly. User
   preferences in SQLite
   (`SettingsStore`, Phase 4), and browser preferences in `localStorage`. Never

@@ -109,6 +109,31 @@ export async function runInit(
   }
 }
 
+/**
+ * Offers to move the servers of a standalone `mcp.json` into the config, where
+ * they sit with the rest of the settings (readable by you only). The file
+ * itself is left for you to delete.
+ */
+export async function offerMcpImport(
+  { ask, say }: Prompts,
+  file: ConfigFile,
+  mcpPath: string,
+  servers: Record<string, unknown> | null,
+): Promise<ConfigFile> {
+  if (file.mcpServers || !servers || Object.keys(servers).length === 0) {
+    return file
+  }
+  const names = Object.keys(servers).join(', ')
+  const yes = await ask(
+    `Found MCP servers in ${mcpPath} (${names}). Move them into chibot's config? [Y/n]`,
+  )
+  if (/^n/i.test(yes)) return file
+  say(
+    `Moved. You can delete ${mcpPath}. \${NAME} in them is still filled from your environment, or from \`chibot config set env.NAME <value>\`.`,
+  )
+  return { ...file, mcpServers: servers }
+}
+
 /** Prompts on the terminal; a secret is not echoed as it is typed. */
 export function terminalPrompts(): Prompts & { close(): void } {
   let muted = false

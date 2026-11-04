@@ -18,7 +18,7 @@ export function mcpRoutes({ mcp }: { mcp: McpServers }) {
       await next()
     },
   )
-  // mcp.json may have been edited since chibot started.
+  // The config may have been edited since chibot started.
   app.post('/api/mcp/reload', async (c) => {
     try {
       await mcp.reload()
