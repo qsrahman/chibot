@@ -65,6 +65,16 @@ export function createApp(deps: AppDeps) {
         host === config.host)
     )
   }
+  // The app's pages load images only from here (or inline): a planted page
+  // can make an answer hold an image whose address carries the user's data,
+  // and this stops that whatever the renderer does. (Not the API: uploads
+  // set their own policy, and a `sandbox` one would break the PDF viewer.)
+  app.use(async (c, next) => {
+    if (!c.req.path.startsWith('/api/')) {
+      c.header('Content-Security-Policy', "img-src 'self' data: blob:")
+    }
+    await next()
+  })
   app.use(async (c, next) => {
     if (!allowedHost(c.req.url)) {
       return c.text('chibot only answers to this machine’s addresses', 403)

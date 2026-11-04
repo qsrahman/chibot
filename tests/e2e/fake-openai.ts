@@ -43,6 +43,22 @@ app.get('/debug/last-request', (c) => c.json(lastRequest))
 app.get('/debug/requests', (c) => c.json(requests.slice(-10)))
 app.get('/debug/last-image-request', (c) => c.json(lastImageRequest))
 
+// A tracking pixel on another origin than chibot's (port 4010, not 4011), and
+// what it was asked: the specs check that chibot never loads it by itself.
+const pixelHits: string[] = []
+app.get('/debug/pixel', (c) => {
+  pixelHits.push(c.req.url)
+  return c.body(
+    Uint8Array.from(
+      atob('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'),
+      (ch) => ch.charCodeAt(0),
+    ),
+    200,
+    { 'Content-Type': 'image/gif' },
+  )
+})
+app.get('/debug/pixel-hits', (c) => c.json(pixelHits))
+
 app.get('/brave/res/v1/web/search', (c) => {
   const q = c.req.query('q')
   return c.json({
@@ -369,6 +385,13 @@ const TRIGGERS: {
     tool: 'fetch_url',
     when: /^(?=.*read)(?:.*?)(https?:\/\/\S+)/s,
     args: (found) => ({ url: found![1] }),
+  },
+  // An address the model chose itself, as a planted page could make it do
+  // (the data rides along in the query), with no URL in the question.
+  {
+    tool: 'fetch_url',
+    when: /follow the link/,
+    args: () => ({ url: `http://127.0.0.1:${PORT}/pages/robots?d=secret` }),
   },
   { tool: 'e2e_note', when: /approve/, args: () => ({ text: 'hello' }) },
 ]

@@ -48,18 +48,28 @@ export class ToolRegistry {
    * Whether `call` waits for the user's Approve / Deny: its tool always asks
    * (`requiresApproval`), or asks once the chat's `history` holds a call to
    * a tool whose output carries others' text (`untrustedOutput`), which may
-   * have planted instructions for the model.
+   * have planted instructions for the model (a tool may still let the calls
+   * it can vouch for through: `Tool.askAfterUntrusted`).
    */
   needsApproval(
     call: ResponseFunctionToolCall,
     history: ResponseInputItem[],
   ): boolean {
-    const rule = this.get(call.name)?.requiresApproval
-    if (rule !== 'after-untrusted') return rule === true
-    return history.some(
+    const tool = this.get(call.name)
+    const rule = tool?.requiresApproval
+    if (!tool || rule !== 'after-untrusted') return rule === true
+    const untrusted = history.some(
       (item) =>
         item.type === 'function_call' && this.get(item.name)?.untrustedOutput,
     )
+    if (!untrusted) return false
+    let args: unknown
+    try {
+      args = JSON.parse(call.arguments)
+    } catch {
+      // Not JSON: the call can't run (see `run`).
+    }
+    return tool.askAfterUntrusted(args, history)
   }
 
   /**

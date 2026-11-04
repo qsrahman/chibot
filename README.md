@@ -214,6 +214,10 @@ Then open http://127.0.0.1:3000.
     fact twice, and merges related ones when the list is nearly full. In a
     chat that read web pages or search results, memory changes ask first, so a
     page can't plant one.
+    For the same reason, once a chat holds text from a page or a search, reading
+    an address that neither you nor a search gave asks first (a page could
+    tell chibot to open an address that carries your data), and an image from
+    another site in an answer is shown as a link instead of loading by itself.
   - **Past chats:** ask about something you discussed before ("what did we
     decide about…?"). chibot searches your other chats (on this machine) and
     links the ones it used under **Sources**.

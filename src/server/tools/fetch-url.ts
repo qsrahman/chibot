@@ -1,7 +1,9 @@
 import { lookup, type LookupAddress } from 'node:dns'
 import { BlockList, isIP } from 'node:net'
 import { Agent, buildConnector, fetch } from 'undici'
+import type { ResponseInputItem } from 'openai/resources/responses/responses'
 import { z } from 'zod'
+import { messageText } from '../../shared/messages.ts'
 import { htmlToText, tidy } from '../text.ts'
 import { abortAfter, Tool, type ToolContext } from '../tool.ts'
 
@@ -81,10 +83,14 @@ export class FetchUrlTool extends Tool {
   readonly label = 'Read web pages'
   override readonly group = 'The web'
   override readonly summary =
-    'Reads pages you link or it finds. Never addresses on this machine or your network.'
+    'Reads pages you link or it finds. Never addresses on this machine or your network. Once the chat holds web text, it asks before opening an address that neither you nor a search gave.'
   override readonly running = 'Reading a page…'
   override readonly done = 'Read a page'
   override readonly untrustedOutput = true
+  // A page can tell the model to fetch an address that carries the user's data
+  // (https://evil.example/c?d=…), which leaks it. Once the chat holds others'
+  // text, only an address the user or a search gave runs without asking.
+  override readonly requiresApproval = 'after-untrusted'
   readonly description =
     'Reads a web page and returns its main text: a search result to read in ' +
     'full, or a URL the user gave. Works for HTML, plain text, Markdown, ' +
@@ -98,6 +104,13 @@ export class FetchUrlTool extends Tool {
   constructor({ allowed = publicOnly }: { allowed?: AddressGuard } = {}) {
     super()
     this.#agent = guardedAgent(allowed)
+  }
+
+  override askAfterUntrusted(args: unknown, history: ResponseInputItem[]) {
+    const parsed = this.parameters.safeParse(args)
+    // A call that can't run (see `run`) fetches nothing.
+    const url = parsed.success ? normalizedUrl(parsed.data.url) : null
+    return url !== null && !knownUrls(history).has(url)
   }
 
   async run({ url }: { url: string }, { signal }: ToolContext) {
@@ -146,6 +159,54 @@ export class FetchUrlTool extends Tool {
       truncated ? `${text.slice(0, MAX_CHARS)}\n\n[truncated]` : text,
     ].join('\n')
   }
+}
+
+const normalizedUrl = (raw: string) => URL.parse(raw)?.href ?? null
+
+/**
+ * The addresses in the chat that the model did not make up: those the user
+ * wrote, and those a web search returned (a page can't change what the search
+ * engine answers). An address with anything added to one of them is another
+ * address, so data can't ride along.
+ */
+export function knownUrls(history: ResponseInputItem[]): Set<string> {
+  const known = new Set<string>()
+  const add = (raw: string) => {
+    const url = normalizedUrl(raw)
+    if (url) known.add(url)
+  }
+  const searches = new Set<string>()
+  for (const item of history) {
+    if (item.type === 'function_call' && item.name === 'web_search') {
+      searches.add(item.call_id)
+    } else if (
+      item.type === 'function_call_output' &&
+      item.call_id != null &&
+      searches.has(item.call_id)
+    ) {
+      try {
+        const { results } = JSON.parse(item.output as string) as {
+          results?: { url?: unknown }[]
+        }
+        for (const { url } of results ?? []) {
+          if (typeof url === 'string') add(url)
+        }
+      } catch {
+        // Not a search result.
+      }
+    } else {
+      const message = messageText(item)
+      if (message?.role !== 'user') continue
+      for (const [written] of message.text.matchAll(
+        /https?:\/\/[^\s<>"'`]+/gi,
+      )) {
+        add(written)
+        // "(see https://a.example/x)." ends with punctuation that isn't the address.
+        add(written.replace(/[.,;:!?)\]}>]+$/, ''))
+      }
+    }
+  }
+  return known
 }
 
 /** Text, JSON and XML (feeds, `application/ld+json`, …) read as they are. */

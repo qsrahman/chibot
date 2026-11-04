@@ -201,7 +201,9 @@ transpiles it.
    (sends, writes, deletes, spends): the turn then waits for Approve / Deny.
    Use `'after-untrusted'` to ask only in chats that hold untrusted content
    (like `memory`), and mark tools whose output carries others' text
-   (pages, search results, your old chats) `untrustedOutput = true`. Tools that read or keep
+   (pages, search results, your old chats) `untrustedOutput = true`; an
+   `'after-untrusted'` tool that can vouch for a call (`fetch_url` for an
+   address the user or a search gave) overrides `askAfterUntrusted`. Tools that read or keep
    the user's history override `offeredIn(conversation)` to leave out
    temporary chats, and a tool can add to the chat's instructions while
    offered by overriding `instructions()`.

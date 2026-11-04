@@ -83,4 +83,19 @@ describe('who may reach chibot', () => {
       ).toThrow(/CHIBOT_TOKEN/)
     })
   })
+
+  it('has the app’s pages load images only from chibot, so a planted page cannot send data out in one', async () => {
+    const chibot = app()
+    const policy = "img-src 'self' data: blob:"
+    // A page (the web app is mounted by main.ts; any non-API path will do)…
+    const page = await chibot.request('http://127.0.0.1:3000/c/some-chat')
+    expect(page.headers.get('content-security-policy')).toBe(policy)
+    // …even one that is refused…
+    const refused = await chibot.request('http://evil.example:3000/')
+    expect(refused.status).toBe(403)
+    expect(refused.headers.get('content-security-policy')).toBe(policy)
+    // …but not the API, whose uploads set their own.
+    const api = await chibot.request('http://127.0.0.1:3000/api/health')
+    expect(api.headers.get('content-security-policy')).toBeNull()
+  })
 })

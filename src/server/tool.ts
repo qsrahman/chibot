@@ -1,5 +1,8 @@
 import { zodResponsesFunction } from 'openai/helpers/zod'
-import type { FunctionTool } from 'openai/resources/responses/responses'
+import type {
+  FunctionTool,
+  ResponseInputItem,
+} from 'openai/resources/responses/responses'
 import type { z } from 'zod'
 import type { ToolChip, ToolGroup, ToolInfo } from '../shared/tools.ts'
 import type { Conversation } from '../shared/types.ts'
@@ -49,6 +52,17 @@ export abstract class Tool<Parameters extends z.ZodObject = z.ZodObject> {
   readonly requiresApproval: boolean | 'after-untrusted' = false
   /** The output holds text from others (web pages, search results). */
   readonly untrustedOutput: boolean = false
+  /**
+   * For `'after-untrusted'` tools, once the chat holds others' text: whether
+   * this call asks. The default is every call. A tool that can tell a call
+   * the user or a trusted source steered from one planted text may be
+   * steering (e.g. an address nobody gave) overrides it. `args` is the call's
+   * arguments as sent (parsed JSON, not validated), `undefined` if they
+   * aren't JSON.
+   */
+  askAfterUntrusted(_args: unknown, _history: ResponseInputItem[]): boolean {
+    return true
+  }
   /**
    * Whether the tool is offered in `conversation`. E.g. tools that read or
    * keep the user's history (memory, chat search) aren't in temporary chats,
