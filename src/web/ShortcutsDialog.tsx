@@ -1,5 +1,5 @@
-import { Dialog } from './Dialog.tsx'
-import { keyCaps, SHORTCUTS } from './shortcuts.ts'
+import { Dialog } from './ui/Dialog.tsx'
+import { keyCaps, SHORTCUTS } from './ui/shortcuts.ts'
 
 export function ShortcutsDialog({
   open,

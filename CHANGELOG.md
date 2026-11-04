@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- Code only: the web app's files are in feature folders: `chat/`, `conversations/` (the chat list, search, archive and delete dialogs), `projects/`, `settings/` (with Memories and the MCP helpers), and `ui/` (dialogs, popovers, hooks and shortcuts used by all); `App.tsx`, `Sidebar.tsx`, `ShortcutsDialog.tsx` and `http.ts` stay at the root. `DeleteChatDialog` moved from `ui/Dialog.tsx` to `conversations/` and `mcpToolName` from `chat/turns.ts` to `settings/mcp.ts`, so `ui` depends on no feature and `settings` on no chat code. Tests under `tests/web/` follow the folders.
 - Code only: the web app's one `api.ts` is split by feature (`conversations/api.ts`, `chat/api.ts`, `projects/api.ts`, `settings/api.ts`), over the shared `http.ts` (`request`, `send`, `remove`, `uploadFile`). A stray doc comment on `regenerateTitle` now sits on `exportUrl`.
 
 ## [0.12.3] - 2026-11-04

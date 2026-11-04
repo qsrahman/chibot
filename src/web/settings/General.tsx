@@ -1,4 +1,4 @@
-import { useColorScheme, type ColorScheme } from '../theme.ts'
+import { useColorScheme, type ColorScheme } from '../ui/theme.ts'
 import { Row, Section } from './parts.tsx'
 
 export function General() {

@@ -1,6 +1,6 @@
-import { withMember } from '../mcp.ts'
-import { mcpToolName } from '../turns.ts'
-import type { SettingsApi } from '../useSettings.ts'
+import { withMember } from './mcp.ts'
+import { mcpToolName } from './mcp.ts'
+import type { SettingsApi } from './useSettings.ts'
 import { Row, Section } from './parts.tsx'
 
 /** chibot's own tools, by the section each says it belongs to. */

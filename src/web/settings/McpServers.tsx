@@ -7,9 +7,9 @@ import {
   signInToMcpServer,
   signOutOfMcpServer,
 } from './api.ts'
-import { describeMcpServer, isConnecting, withMember } from '../mcp.ts'
-import { useLoad } from '../useLoad.ts'
-import type { SettingsApi } from '../useSettings.ts'
+import { describeMcpServer, isConnecting, withMember } from './mcp.ts'
+import { useLoad } from '../ui/useLoad.ts'
+import type { SettingsApi } from './useSettings.ts'
 import { Row, Section } from './parts.tsx'
 
 /** The servers in `mcp.json`: a switch, status and actions each, and tools. */

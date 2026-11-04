@@ -17,19 +17,22 @@ import {
   SquarePen,
 } from 'lucide-react'
 import type { ConversationListItem } from '../shared/types.ts'
-import { ArchivedDialog } from './ArchivedDialog.tsx'
-import { ConversationRow } from './ConversationRow.tsx'
-import { MemoriesDialog } from './MemoriesDialog.tsx'
-import { groupConversations } from './dates.ts'
-import { DeleteChatDialog } from './Dialog.tsx'
-import { MoveToProjectDialog, ProjectNameDialog } from './ProjectDialogs.tsx'
-import { SearchDialog } from './SearchDialog.tsx'
-import { SettingsDialog, type SettingsTab } from './SettingsDialog.tsx'
+import { ArchivedDialog } from './conversations/ArchivedDialog.tsx'
+import { ConversationRow } from './conversations/ConversationRow.tsx'
+import { MemoriesDialog } from './settings/MemoriesDialog.tsx'
+import { groupConversations } from './conversations/dates.ts'
+import { DeleteChatDialog } from './conversations/DeleteChatDialog.tsx'
+import {
+  MoveToProjectDialog,
+  ProjectNameDialog,
+} from './projects/ProjectDialogs.tsx'
+import { SearchDialog } from './conversations/SearchDialog.tsx'
+import { SettingsDialog, type SettingsTab } from './settings/SettingsDialog.tsx'
 import { ShortcutsDialog } from './ShortcutsDialog.tsx'
-import { SHORTCUTS, useShortcuts } from './shortcuts.ts'
-import type { ConversationsApi } from './useConversations.ts'
-import type { ProjectsApi } from './useProjects.ts'
-import type { SettingsApi } from './useSettings.ts'
+import { SHORTCUTS, useShortcuts } from './ui/shortcuts.ts'
+import type { ConversationsApi } from './conversations/useConversations.ts'
+import type { ProjectsApi } from './projects/useProjects.ts'
+import type { SettingsApi } from './settings/useSettings.ts'
 
 interface Props {
   collapsed: boolean

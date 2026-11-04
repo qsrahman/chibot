@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Settings } from '../../shared/settings.ts'
-import type { SettingsApi } from '../useSettings.ts'
+import type { SettingsApi } from './useSettings.ts'
 import { Row, Section } from './parts.tsx'
 
 export function Personalization({
