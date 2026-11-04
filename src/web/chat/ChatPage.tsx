@@ -429,7 +429,10 @@ export function ChatPage({
           tools={toolOptions}
           attachments={attachments}
           draftKey={draftKey}
-          transcription={health?.features.transcription ?? false}
+          transcription={
+            (health?.features.transcription ?? false) &&
+            !!settings.settings?.transcribeModel
+          }
           effort={settings.settings?.reasoningEffort ?? null}
           onEffort={(reasoningEffort) =>
             void settings.update({ reasoningEffort })

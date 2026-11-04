@@ -118,7 +118,7 @@ describe('ProjectIndex', () => {
     const calls: string[][] = []
     const index = new ProjectIndex(db, projects, files, {
       client: fakeEmbeddings(calls),
-      model: 'emb',
+      model: () => 'emb',
     })
     const id = add('notes.md', 'Alpha beta.\n\nGamma delta.')
     await index.index(id)
@@ -171,7 +171,7 @@ describe('ProjectIndex', () => {
   it('keeps a file searchable by keywords when embedding fails', async () => {
     const index = new ProjectIndex(db, projects, files, {
       client: fakeEmbeddings([], { fail: true }),
-      model: 'emb',
+      model: () => 'emb',
     })
     await index.index(add('notes.md', 'Alpha.'))
     expect(projects.files(projectId)[0]).toMatchObject({
@@ -209,10 +209,30 @@ describe('ProjectIndex', () => {
     }
   })
 
+  it('follows the embedding model as it changes, and is by keyword while none is chosen', async () => {
+    let model = ''
+    const calls: string[][] = []
+    const index = new ProjectIndex(db, projects, files, {
+      client: fakeEmbeddings(calls),
+      model: () => model,
+    })
+    await index.index(add('a.txt', 'Alpha.'))
+    expect(calls).toEqual([])
+    expect(await index.candidates(projectId, 'alpha')).toMatchObject({
+      meaning: null,
+    })
+    model = 'emb'
+    await index.resume()
+    expect(calls).toEqual([['Alpha.']])
+    expect(db.prepare('SELECT model FROM embedding_model').get()).toEqual({
+      model: 'emb',
+    })
+  })
+
   it('resumes unfinished files and re-embeds for a new model', async () => {
     const first = new ProjectIndex(db, projects, files, {
       client: fakeEmbeddings([]),
-      model: 'old',
+      model: () => 'old',
     })
     await first.index(add('a.md', 'Alpha.'))
     add('b.md', 'Beta.') // added, but the server stopped before indexing it
@@ -220,7 +240,7 @@ describe('ProjectIndex', () => {
     const calls: string[][] = []
     await new ProjectIndex(db, projects, files, {
       client: fakeEmbeddings(calls),
-      model: 'new',
+      model: () => 'new',
     }).resume()
 
     expect(calls.flat().sort()).toEqual(['Alpha.', 'Beta.'])
@@ -276,7 +296,7 @@ describe('ProjectIndex', () => {
     const calls: string[][] = []
     await new ProjectIndex(db, projects, files, {
       client: fakeEmbeddings(calls),
-      model: 'emb',
+      model: () => 'emb',
     }).resume()
 
     expect(calls).toEqual([['Alpha.']])
@@ -290,7 +310,7 @@ describe('ProjectIndex', () => {
   it('removes chunks and vectors with the file', async () => {
     const index = new ProjectIndex(db, projects, files, {
       client: fakeEmbeddings([]),
-      model: 'emb',
+      model: () => 'emb',
     })
     const id = add('a.md', 'Alpha.')
     await index.index(id)
@@ -315,7 +335,7 @@ describe('ProjectIndex', () => {
     } as unknown as OpenAI
     const index = new ProjectIndex(db, projects, files, {
       client: slow,
-      model: 'emb',
+      model: () => 'emb',
     })
     const id = add('a.md', 'Alpha.')
     const indexing = index.index(id)

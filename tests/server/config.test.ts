@@ -78,13 +78,18 @@ describe('Config', () => {
         OPENAI_MODEL: 'gpt-6-astra',
       }).image?.model,
     ).toBe('gpt-image-2')
-    // A compatible chat server has no image model unless one is named.
+    // A compatible chat server has no image model unless one is named (it
+    // can be chosen in Settings).
     const ollama = {
       OPENAI_BASE_URL: 'http://localhost:11434/v1',
       OPENAI_MODEL: 'gemma4',
       OPENAI_API_KEY: 'sk-openai',
     }
-    expect(new Config(ollama).image).toBeNull()
+    expect(new Config(ollama).image).toEqual({
+      baseURL: 'http://localhost:11434/v1',
+      apiKey: 'sk-openai',
+      model: '',
+    })
     expect(
       new Config({
         ...ollama,
@@ -106,7 +111,11 @@ describe('Config', () => {
       OPENAI_BASE_URL: 'http://localhost:11434/v1',
       OPENAI_MODEL: 'gemma4',
     }
-    expect(new Config(ollama).embedding).toBeNull()
+    expect(new Config(ollama).embedding).toEqual({
+      baseURL: 'http://localhost:11434/v1',
+      apiKey: 'unused',
+      model: '',
+    })
     expect(
       new Config({ ...ollama, OPENAI_EMBEDDING_MODEL: 'nomic-embed-text' })
         .embedding,
@@ -126,7 +135,11 @@ describe('Config', () => {
       OPENAI_MODEL: 'gemma4',
       OPENAI_API_KEY: 'sk-openai',
     }
-    expect(new Config(ollama).transcription).toBeNull()
+    expect(new Config(ollama).transcription).toEqual({
+      baseURL: 'http://localhost:11434/v1',
+      apiKey: 'sk-openai',
+      model: '',
+    })
     expect(
       new Config({
         ...ollama,

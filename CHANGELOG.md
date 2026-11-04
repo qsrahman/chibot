@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- **Settings → Other models** sets the image, embedding (project search) and transcription (voice input) models, which could only be changed in `.env`. They apply at once, without a restart. `.env` keeps the servers and keys, and gives each model's starting value (`OPENAI_IMAGE_MODEL` and the like), shown as the placeholder with a **Reset** button; a model with no server or key in `.env` is greyed out saying what to set. An empty model turns the feature off: image tools are listed as unavailable (saying where to choose one), the microphone is disabled, and project search goes by keywords only. Changing the embedding model indexes the project files again in the background. A feature whose server is set up but whose model isn't (Ollama for chat, say) can now be switched on here instead of in `.env`: `Config` no longer drops an endpoint for lacking a model.
+
 ### Changed
 
 - The composer's **+** menu no longer offers **Search the web**; the model still searches when it needs to (it is switched on or off in Settings → Tools). **Create an image** stays, and now says what it does under its name, as **Add photos & files** does.

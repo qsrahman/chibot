@@ -29,7 +29,10 @@ describe('POST /api/transcriptions', () => {
   it('transcribes a recording', async () => {
     const seen: File[] = []
     const app = testApp({
-      transcription: new Transcription(fakeAudio('Hello there.', seen), 't-1'),
+      transcription: new Transcription(
+        fakeAudio('Hello there.', seen),
+        () => 't-1',
+      ),
     })
     const res = await record(app)
     expect(await res.json()).toEqual({ text: 'Hello there.' })
@@ -37,6 +40,21 @@ describe('POST /api/transcriptions', () => {
     expect(await (await app.request('/api/health')).json()).toMatchObject({
       features: { transcription: true },
     })
+  })
+
+  it('is off while no transcription model is chosen, and follows a change', async () => {
+    let model = ''
+    const seen: File[] = []
+    const app = testApp({
+      transcription: new Transcription(fakeAudio('Hi.', seen), () => model),
+    })
+    const off = await record(app)
+    expect(off.status).toBe(501)
+    expect(((await off.json()) as { error: string }).error).toMatch(
+      /Choose a transcription model in Settings/,
+    )
+    model = 't-2'
+    expect(await (await record(app)).json()).toEqual({ text: 'Hi.' })
   })
 
   it('is off without a transcription endpoint', async () => {
@@ -53,12 +71,15 @@ describe('POST /api/transcriptions', () => {
       new Headers(),
     )
     const app = testApp({
-      transcription: new Transcription(fakeAudio(missing), 'gemma4:cloud'),
+      transcription: new Transcription(
+        fakeAudio(missing),
+        () => 'gemma4:cloud',
+      ),
     })
     const res = await record(app)
     expect(res.status).toBe(502)
     expect(((await res.json()) as { error: string }).error).toMatch(
-      /^Transcription at http:\/\/localhost:11434\/v1 \(model gemma4:cloud\) failed: .*not found\. It needs a transcription model .*OPENAI_TRANSCRIBE_MODEL/,
+      /^Transcription at http:\/\/localhost:11434\/v1 \(model gemma4:cloud\) failed: .*not found\. It needs a transcription model .*model in Settings → Other models and OPENAI_TRANSCRIBE_BASE_URL/,
     )
     vi.restoreAllMocks()
   })

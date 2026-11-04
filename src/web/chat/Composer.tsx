@@ -108,7 +108,7 @@ export function Composer({
   })
   const recording = dictation.state === 'recording'
   const micLabel = !transcription
-    ? 'Voice input needs a transcription model (OPENAI_TRANSCRIBE_MODEL)'
+    ? 'Voice input needs a transcription model: choose one in Settings → Other models'
     : recording
       ? 'Stop recording'
       : dictation.state === 'transcribing'

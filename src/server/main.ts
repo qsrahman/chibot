@@ -49,6 +49,7 @@ export interface ToolDeps {
   memories: MemoryStore
   projects: ProjectStore
   index: ProjectIndex
+  settings: SettingsStore
 }
 
 /** The shipped tools whose setup exists (e.g. a Brave key for web search). */
@@ -59,10 +60,11 @@ export function defaultTools({
   memories,
   projects,
   index,
+  settings,
 }: ToolDeps): Tool[] {
   const image = config.image && {
     client: imageClient(config.image),
-    model: config.image.model,
+    model: () => settings.get().imageModel,
     files,
   }
   return [
@@ -93,7 +95,14 @@ export function start({
   const db = openDatabase(config.databasePath)
   const store = new ConversationStore(db)
   const search = new ConversationSearch(db)
-  const settings = new SettingsStore(db, settingsDefaults(config.chat.model))
+  const settings = new SettingsStore(
+    db,
+    settingsDefaults(config.chat.model, {
+      imageModel: config.image?.model,
+      embeddingModel: config.embedding?.model,
+      transcribeModel: config.transcription?.model,
+    }),
+  )
   const files = new FileStore(db, join(config.dataDir, 'files'))
   const memories = new MemoryStore(db)
   const projects = new ProjectStore(db, files)
@@ -106,7 +115,7 @@ export function start({
         baseURL: config.embedding.baseURL,
         apiKey: config.embedding.apiKey,
       }),
-      model: config.embedding.model,
+      model: () => settings.get().embeddingModel,
     },
   )
   void index.resume()
@@ -126,7 +135,7 @@ export function start({
   })
   void mcp.start()
   const registry = new ToolRegistry(
-    tools({ config, search, files, memories, projects, index }),
+    tools({ config, search, files, memories, projects, index, settings }),
     mcpTools(mcp, files, () => settings.get().askMcpServers),
   )
   const attachments = new Attachments(client, files)
@@ -155,7 +164,11 @@ export function start({
     attachments,
     mcp,
     transcription:
-      config.transcription && Transcription.from(config.transcription),
+      config.transcription &&
+      Transcription.from(
+        config.transcription,
+        () => settings.get().transcribeModel,
+      ),
   })
 
   // In dev, Vite serves the web app. The production build only exists after `pnpm build`.

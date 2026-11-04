@@ -1,4 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
+import {
+  SERVICE_MODELS,
+  type ServiceModel,
+} from '../../shared/service-models.ts'
 import type { Settings, SettingsPatch } from '../../shared/settings.ts'
 import type { ToolInfo } from '../../shared/tools.ts'
 import { getSettings, listTools, updateSettings } from './api.ts'
@@ -7,37 +11,55 @@ import { getSettings, listTools, updateSettings } from './api.ts'
 export function useSettings() {
   const [settings, setSettings] = useState<Settings | null>(null)
   const [defaults, setDefaults] = useState<Settings | null>(null)
+  // Which of the other services have a server and key in .env.
+  const [endpoints, setEndpoints] = useState<Record<ServiceModel, boolean>>({
+    imageModel: false,
+    embeddingModel: false,
+    transcribeModel: false,
+  })
   const [error, setError] = useState<string | null>(null)
   // The server's tools; whether each is on comes from `disabledTools`.
   const [tools, setTools] = useState<ToolInfo[]>([])
+
+  const reloadTools = useCallback(
+    () =>
+      listTools().then(
+        (res) => setTools(res.tools),
+        (err: Error) => setError(err.message),
+      ),
+    [],
+  )
 
   useEffect(() => {
     getSettings().then(
       (res) => {
         setSettings(res.settings)
         setDefaults(res.defaults)
+        setEndpoints(res.endpoints)
       },
       (err: Error) => setError(err.message),
     )
-    listTools().then(
-      (res) => setTools(res.tools),
-      (err: Error) => setError(err.message),
-    )
-  }, [])
+    reloadTools()
+  }, [reloadTools])
 
   /** Saves `patch`; resolves to whether it worked (errors land in `error`). */
-  const update = useCallback(async (patch: SettingsPatch) => {
-    try {
-      setSettings(await updateSettings(patch))
-      setError(null)
-      return true
-    } catch (err) {
-      setError((err as Error).message)
-      return false
-    }
-  }, [])
+  const update = useCallback(
+    async (patch: SettingsPatch) => {
+      try {
+        setSettings(await updateSettings(patch))
+        setError(null)
+        // A model decides whether a tool can be used (image creation).
+        if (SERVICE_MODELS.some((key) => key in patch)) void reloadTools()
+        return true
+      } catch (err) {
+        setError((err as Error).message)
+        return false
+      }
+    },
+    [reloadTools],
+  )
 
-  return { settings, defaults, tools, error, update }
+  return { settings, defaults, endpoints, tools, error, update }
 }
 
 export type SettingsApi = ReturnType<typeof useSettings>

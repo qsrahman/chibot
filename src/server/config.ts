@@ -33,6 +33,7 @@ export interface Endpoint {
   /** `undefined` means the SDK's default (OpenAI). */
   baseURL: string | undefined
   apiKey: string
+  /** `''` for a feature's endpoint with no model named: it can be set in Settings. */
   model: string
 }
 
@@ -105,7 +106,7 @@ const envSchema = z
 /** Typed, validated settings read from environment variables. */
 export class Config {
   readonly chat: Endpoint
-  /** Image generation, or `null` when there's no image model to use. */
+  /** Image generation, or `null` without a server or key to use. */
   readonly image: Endpoint | null
   /** Project file embeddings, or `null`: then search is by keywords only. */
   readonly embedding: Endpoint | null
@@ -179,13 +180,13 @@ function isOpenAI(baseURL: string | undefined): boolean {
   return !baseURL || URL.parse(baseURL)?.hostname === 'api.openai.com'
 }
 
-/** An endpoint, or `null` when it can't be used: no model, or OpenAI without a key. */
+/** An endpoint, or `null` when there's no server and no key (OpenAI needs one). */
 function endpoint(
   baseURL: string | undefined,
   apiKey: string | undefined,
   model: string | undefined,
 ): Endpoint | null {
-  if (!model || (!baseURL && !apiKey)) return null
+  if (!baseURL && !apiKey) return null
   // Local servers (Ollama, LM Studio) ignore the key, but the SDK refuses an empty one.
-  return { baseURL, apiKey: apiKey ?? 'unused', model }
+  return { baseURL, apiKey: apiKey ?? 'unused', model: model ?? '' }
 }

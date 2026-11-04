@@ -79,6 +79,12 @@ and model failed, and what to set.
 For project files, embeddings can stay local:
 `ollama pull nomic-embed-text`, then `OPENAI_EMBEDDING_MODEL=nomic-embed-text`.
 
+The `OPENAI_IMAGE_MODEL`, `OPENAI_EMBEDDING_MODEL` and
+`OPENAI_TRANSCRIBE_MODEL` variables only give the starting models: the image,
+embedding and transcription models can be changed (or emptied, to turn the
+feature off) in **Settings → Other models**, without a restart. The servers
+and keys behind them stay in `.env`.
+
 chibot has no login, and anyone who can reach it spends your API key. It
 therefore listens only on this machine by default. To use it from another
 device on your network, set `HOST=0.0.0.0` (this applies to both `pnpm dev`

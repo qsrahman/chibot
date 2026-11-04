@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import {
+  FAKE_OPENAI,
   answer,
   answered,
   appReady,
@@ -21,7 +22,7 @@ async function openSettings(page: Page, tab: string) {
   await appReady(page)
   await page.keyboard.press('ControlOrMeta+,')
   const dialog = page.getByRole('dialog', { name: 'Settings' })
-  await dialog.getByRole('button', { name: tab }).click()
+  await dialog.getByRole('button', { name: tab, exact: true }).click()
   return dialog
 }
 
@@ -264,4 +265,58 @@ test('compacts long chats and continues from the compaction', async ({
     'message',
     'user',
   ])
+})
+
+test('chooses the models of images, search and voice input', async ({
+  page,
+}) => {
+  await page.goto('/')
+  const dialog = await openSettings(page, 'Other models')
+  const image = dialog.getByLabel('Image model')
+  const embedding = dialog.getByLabel('Embedding model')
+  const voice = dialog.getByLabel('Transcription model')
+  // Each shows what .env gives.
+  await expect(image).toHaveValue('e2e-image')
+
+  // A new image model is used by the next image.
+  await image.fill('e2e-image-2')
+  await image.press('Enter')
+  await expect(dialog.getByRole('button', { name: 'Reset' })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await send(page, 'Please draw a robot')
+  await answered(page)
+  const imageRequest = await page.request.get(
+    `${FAKE_OPENAI}/debug/last-image-request`,
+  )
+  expect(await imageRequest.json()).toMatchObject({ model: 'e2e-image-2' })
+
+  // Emptying the voice model turns the microphone off, and says where to turn it on.
+  await page.keyboard.press('ControlOrMeta+,')
+  await voice.fill('')
+  await voice.press('Enter')
+  await page.keyboard.press('Escape')
+  await expect(
+    page.getByRole('button', {
+      name: /Voice input needs a transcription model/,
+    }),
+  ).toHaveAttribute('aria-disabled', 'true')
+
+  // Emptying the image model turns the image tools off, in Settings → Tools too.
+  await page.keyboard.press('ControlOrMeta+,')
+  await image.fill('')
+  await image.press('Enter')
+  await dialog.getByRole('button', { name: 'Tools' }).click()
+  await expect(
+    dialog.getByRole('switch', { name: 'Create images' }),
+  ).toBeDisabled()
+  await expect(
+    dialog
+      .getByText('Choose an image model in Settings → Other models')
+      .first(),
+  ).toBeVisible()
+
+  await dialog.getByRole('button', { name: 'Other models' }).click()
+  await expect(embedding).toBeEnabled()
+  await dialog.getByRole('button', { name: 'Reset' }).first().click()
+  await expect(image).toHaveValue('e2e-image')
 })

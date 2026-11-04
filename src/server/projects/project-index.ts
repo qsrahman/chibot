@@ -39,7 +39,8 @@ export interface Passage {
 /** The embedding endpoint's client and model. */
 export interface EmbeddingDeps {
   client: OpenAI
-  model: string
+  /** Read at each use, since Settings can change it; `''` is off. */
+  model: () => string
 }
 
 /**
@@ -66,6 +67,11 @@ export class ProjectIndex {
     this.#embedding = embedding
   }
 
+  /** The embedding model now in use, or `null`: no meaning search. */
+  #model(): string | null {
+    return this.#embedding?.model() || null
+  }
+
   /** Queues a file for indexing; resolves once it's done (or failed). */
   index(fileId: string): Promise<void> {
     const done = this.#queue
@@ -86,7 +92,7 @@ export class ProjectIndex {
    */
   resume(): Promise<void> {
     const info = this.#vectorInfo()
-    const model = this.#embedding?.model
+    const model = this.#model()
     const fileIds = new Set(
       this.#projects.unfinishedFiles().map((f) => f.fileId),
     )
@@ -124,9 +130,10 @@ export class ProjectIndex {
       const ids = this.#saveChunks(fileId, chunks)
       this.#projects.setChunker(fileId, CHUNKER_VERSION)
       let note = cut
-      if (this.#embedding) {
+      const model = this.#model()
+      if (model) {
         try {
-          await this.#embed(fileId, projectId, ids, chunks)
+          await this.#embed(model, fileId, projectId, ids, chunks)
         } catch (err) {
           const keywords = `Searchable by keywords only: ${(err as Error).message}`
           note = cut ? `${keywords}. ${cut}` : keywords
@@ -161,6 +168,7 @@ export class ProjectIndex {
   }
 
   async #embed(
+    model: string,
     fileId: string,
     projectId: string,
     ids: number[],
@@ -168,6 +176,7 @@ export class ProjectIndex {
   ): Promise<void> {
     for (let start = 0; start < texts.length; start += EMBED_BATCH) {
       const vectors = await this.#vectors(
+        model,
         texts.slice(start, start + EMBED_BATCH),
       )
       // Removed while this batch was embedded: drop what was saved for it.
@@ -177,7 +186,7 @@ export class ProjectIndex {
       }
       transaction(this.#db, () => {
         for (const [i, vector] of vectors.entries()) {
-          this.#ensureVectors(this.#embedding!.model, vector.length)
+          this.#ensureVectors(model, vector.length)
           this.#db
             .prepare(
               `INSERT INTO chunk_vectors (rowid, project_id, embedding)
@@ -192,10 +201,11 @@ export class ProjectIndex {
 
   /** Embeddings of `texts`, in order. */
   async #vectors(
+    model: string,
     texts: string[],
     signal?: AbortSignal,
   ): Promise<Float32Array[]> {
-    const { client, model } = this.#embedding!
+    const { client } = this.#embedding!
     const { data } = await client.embeddings.create(
       { model, input: texts },
       { signal },
@@ -244,14 +254,12 @@ export class ProjectIndex {
     // Only this file's chunks, when the search is limited to one.
     const only = fileId ? this.#chunkIds(fileId) : null
     const keyword = this.#keywordHits(projectId, query, fileId)
-    if (
-      !this.#embedding ||
-      this.#vectorInfo()?.model !== this.#embedding.model
-    ) {
+    const model = this.#model()
+    if (!model || this.#vectorInfo()?.model !== model) {
       return { keyword, meaning: null }
     }
     try {
-      const [vector] = await this.#vectors([query], signal)
+      const [vector] = await this.#vectors(model, [query], signal)
       const nearest = this.#db
         .prepare(
           // The ids are our own integers, so listing them is safe.

@@ -145,7 +145,10 @@ transpiles it.
   `<memories>`) so it reads as data; and keep the static text first and the
   changing text (memories, time) last, so OpenAI's prompt cache can reuse the
   longest prefix.
-- **Models come from config**, never string literals in logic.
+- **Models come from config**, never string literals in logic (the chat model and
+  the image, embedding and transcription models start from `Config`; the user
+  changes them in Settings, so code reads the setting when it runs, through a
+  `() => string`, and treats `''` as the feature being off).
 - **Configuration layers** (PLAN.md §6): secrets and startup settings in the
   environment / `.env` (via `Config`), MCP servers in `mcp.json`
   (`loadMcpConfig`, with `${VAR}` from the environment) and their OAuth

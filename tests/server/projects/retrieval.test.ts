@@ -420,7 +420,7 @@ describe.skipIf(!embeddingUrl)('project search by meaning', () => {
         baseURL: embeddingUrl,
         apiKey: process.env.RETRIEVAL_EMBEDDING_KEY ?? 'none',
       }),
-      model: process.env.RETRIEVAL_EMBEDDING_MODEL!,
+      model: () => process.env.RETRIEVAL_EMBEDDING_MODEL!,
     })
   }, 300_000)
 
@@ -517,7 +517,7 @@ describe.skipIf(!embeddingUrl)('project search by meaning', () => {
       )
       const prefixed = await buildIndex({
         client,
-        model: process.env.RETRIEVAL_EMBEDDING_MODEL!,
+        model: () => process.env.RETRIEVAL_EMBEDDING_MODEL!,
       })
       state.mode = 'query'
       lines.push('')

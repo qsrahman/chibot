@@ -4,16 +4,25 @@ import type { Endpoint } from './config.ts'
 /** Voice input: recordings to text, through the transcription endpoint. */
 export class Transcription {
   readonly #client: OpenAI
-  readonly #model: string
+  readonly #model: () => string
 
-  constructor(client: OpenAI, model: string) {
+  /** @param model read at each call, since Settings can change it; `''` is off */
+  constructor(client: OpenAI, model: () => string) {
     this.#client = client
     this.#model = model
   }
 
   /** From `Config.transcription`. */
-  static from({ baseURL, apiKey, model }: Endpoint): Transcription {
+  static from(
+    { baseURL, apiKey }: Endpoint,
+    model: () => string,
+  ): Transcription {
     return new Transcription(new OpenAI({ baseURL, apiKey }), model)
+  }
+
+  /** Whether there is a model to transcribe with. */
+  get available(): boolean {
+    return this.#model() !== ''
   }
 
   /**
@@ -22,9 +31,10 @@ export class Transcription {
    * server without transcription is the usual cause).
    */
   async transcribe(audio: File, signal?: AbortSignal): Promise<string> {
+    const model = this.#model()
     try {
       const { text } = await this.#client.audio.transcriptions.create(
-        { file: audio, model: this.#model },
+        { file: audio, model },
         { signal },
       )
       return text
@@ -35,12 +45,12 @@ export class Transcription {
         err instanceof OpenAI.NotFoundError ||
         err instanceof OpenAI.APIConnectionError
       throw new Error(
-        `Transcription at ${this.#client.baseURL} (model ${this.#model}) ` +
+        `Transcription at ${this.#client.baseURL} (model ${model}) ` +
           `failed: ${err.message.replace(/\.$/, '')}` +
           (setup
             ? '. It needs a transcription model (e.g. gpt-transcribe) on a ' +
-              'server that transcribes: check OPENAI_TRANSCRIBE_MODEL and ' +
-              'OPENAI_TRANSCRIBE_BASE_URL in .env.'
+              'server that transcribes: check the model in Settings → ' +
+              'Other models and OPENAI_TRANSCRIBE_BASE_URL in .env.'
             : '.'),
         { cause: err },
       )

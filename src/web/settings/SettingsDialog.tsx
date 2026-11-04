@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import {
+  Boxes,
   Database,
   Settings as SettingsIcon,
   Sparkles,
@@ -13,6 +14,7 @@ import { General } from './General.tsx'
 import { McpServers } from './McpServers.tsx'
 import { Memory, Personalization } from './Personalization.tsx'
 import { Model } from './Model.tsx'
+import { OtherModels } from './OtherModels.tsx'
 import { Tools } from './Tools.tsx'
 import type { SettingsApi } from './useSettings.ts'
 
@@ -20,6 +22,7 @@ const TABS = [
   { id: 'general', label: 'General', icon: <SettingsIcon /> },
   { id: 'personalization', label: 'Personalization', icon: <UserRound /> },
   { id: 'model', label: 'Model', icon: <Sparkles /> },
+  { id: 'other-models', label: 'Other models', icon: <Boxes /> },
   { id: 'tools', label: 'Tools', icon: <Wrench /> },
   { id: 'data', label: 'Data', icon: <Database /> },
 ] as const
@@ -117,6 +120,14 @@ export function SettingsDialog({
             <Model
               settings={current}
               defaults={settings.defaults}
+              onChange={settings.update}
+            />
+          )}
+          {tab === 'other-models' && current && settings.defaults && (
+            <OtherModels
+              settings={current}
+              defaults={settings.defaults}
+              endpoints={settings.endpoints}
               onChange={settings.update}
             />
           )}

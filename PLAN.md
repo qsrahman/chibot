@@ -856,9 +856,9 @@ Environment variables:
 | `OPENAI_API_KEY` | — | Required for OpenAI; optional with `OPENAI_BASE_URL` |
 | `OPENAI_MODEL` | `gpt-6-astra` | Chat model; required with `OPENAI_BASE_URL` |
 | `OPENAI_<FEATURE>_BASE_URL` / `_API_KEY` / `_MODEL` | inherit chat endpoint | Per-feature override, `<FEATURE>` ∈ `IMAGE` (Phase 6), `EMBEDDING` (Phase 8), `TRANSCRIBE` (Phase 9) |
-| `OPENAI_TRANSCRIBE_MODEL` | `gpt-transcribe` on OpenAI | Voice input transcription (Phase 9) |
-| `OPENAI_IMAGE_MODEL` | `gpt-image-2` on OpenAI | Image generation tool (Phase 6) |
-| `OPENAI_EMBEDDING_MODEL` | `text-embedding-3-small` on OpenAI | Project file embeddings (Phase 8) |
+| `OPENAI_TRANSCRIBE_MODEL` | `gpt-transcribe` on OpenAI | Voice input transcription (Phase 9); the starting value of Settings → Other models |
+| `OPENAI_IMAGE_MODEL` | `gpt-image-2` on OpenAI | Image generation tool (Phase 6); the starting value of Settings → Other models |
+| `OPENAI_EMBEDDING_MODEL` | `text-embedding-3-small` on OpenAI | Project file embeddings (Phase 8); the starting value of Settings → Other models |
 | `BRAVE_API_KEY` | — (optional) | Enables the web search tool (Phase 6) |
 | `HOST` | `127.0.0.1` | Interface to listen on; `0.0.0.0` exposes it on the LAN, so set `CHIBOT_TOKEN` too |
 | `PORT` | `3000` | API server port |

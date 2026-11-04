@@ -105,6 +105,7 @@ export function createApp(deps: AppDeps) {
       model: config.chat.model,
       // Never expose the key.
       baseURL: config.chat.baseURL ?? null,
+      // The endpoint; the web app also needs the transcription model setting.
       features: { transcription: transcription !== null },
     } satisfies Health),
   )

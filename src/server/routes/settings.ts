@@ -7,20 +7,28 @@ import type { ToolInfo } from '../../shared/tools.ts'
 import type { ModelsResponse } from '../../shared/types.ts'
 import type { ModelRequests } from '../chat/index.ts'
 import type { McpServers } from '../mcp/index.ts'
+import type { ProjectIndex } from '../projects/index.ts'
+import type { Config } from '../config.ts'
 import type { SettingsStore } from '../settings-store.ts'
 import type { ToolRegistry } from '../tool-registry.ts'
 import { json } from './helpers.ts'
+
+type ServiceEndpoints = 'image' | 'embedding' | 'transcription'
 
 export function settingsRoutes({
   settings,
   registry,
   model,
   mcp,
+  index,
+  config,
 }: {
   settings: SettingsStore
   registry: ToolRegistry
   model: ModelRequests
   mcp: McpServers
+  index: ProjectIndex
+  config: Pick<Config, ServiceEndpoints>
 }) {
   const app = new Hono()
 
@@ -28,6 +36,11 @@ export function settingsRoutes({
     c.json({
       settings: settings.get(),
       defaults: settings.defaults,
+      endpoints: {
+        imageModel: config.image !== null,
+        embeddingModel: config.embedding !== null,
+        transcribeModel: config.transcription !== null,
+      },
     } satisfies SettingsResponse),
   )
 
@@ -37,7 +50,11 @@ export function settingsRoutes({
   )
 
   app.patch('/api/settings', json(settingsPatchSchema), async (c) => {
-    const updated = settings.update(c.req.valid('json'))
+    const patch = c.req.valid('json')
+    const updated = settings.update(patch)
+    // A new embedding model: files are embedded again in the background
+    // (vectors of different models don't mix); searching meanwhile is by keyword.
+    if (patch.embeddingModel !== undefined) void index.resume()
     // Switched MCP servers connect or stop.
     await mcp.sync()
     return c.json(updated)

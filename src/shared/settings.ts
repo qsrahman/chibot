@@ -2,10 +2,18 @@
 // so zod stays out of the browser bundle.
 import { z } from 'zod'
 import { REASONING_EFFORTS } from './reasoning.ts'
+import type { ServiceModel } from './service-models.ts'
 
 export const settingsSchema = z.object({
   /** Chat model for new turns. Defaults to `OPENAI_MODEL`. */
   model: z.string().trim().min(1).max(200),
+  /**
+   * The models of the other services, over the endpoints in `.env`: `''`
+   * turns the service off (image creation, search by meaning, voice input).
+   */
+  imageModel: z.string().trim().max(200),
+  embeddingModel: z.string().trim().max(200),
+  transcribeModel: z.string().trim().max(200),
   /** `null` sends no effort, so the model uses its own default. */
   reasoningEffort: z.enum(REASONING_EFFORTS).nullable(),
   /** Custom instructions: what chibot should know about the user. */
@@ -32,4 +40,6 @@ export type SettingsPatch = z.infer<typeof settingsPatchSchema>
 export interface SettingsResponse {
   settings: Settings
   defaults: Settings
+  /** Which of the other services have a server and key in `.env`; without one a model does nothing. */
+  endpoints: Record<ServiceModel, boolean>
 }

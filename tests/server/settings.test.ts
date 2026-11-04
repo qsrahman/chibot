@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DatabaseSync } from 'node:sqlite'
 import { Config } from '../../src/server/config.ts'
 import { openDatabase } from '../../src/server/database.ts'
@@ -7,6 +7,7 @@ import {
   settingsDefaults,
   SettingsStore,
 } from '../../src/server/settings-store.ts'
+import { ProjectIndex, ProjectStore } from '../../src/server/projects/index.ts'
 import {
   answerEvents,
   drain,
@@ -14,6 +15,7 @@ import {
   type FakeCall,
   testApp,
   testChat,
+  testFiles,
 } from './fakes.ts'
 
 describe('SettingsStore', () => {
@@ -37,6 +39,27 @@ describe('SettingsStore', () => {
       askMcpServers: [],
     })
     expect(DEFAULT_COMPACT_THRESHOLD).toBe(64_000)
+  })
+
+  it('has the other services’ models from the environment, off without one', () => {
+    expect(settings.get()).toMatchObject({
+      imageModel: '',
+      embeddingModel: '',
+      transcribeModel: '',
+    })
+    const store = new SettingsStore(
+      db,
+      settingsDefaults('m', { imageModel: 'gpt-image-2' }),
+    )
+    expect(store.get().imageModel).toBe('gpt-image-2')
+    // Changed, and turned off with an empty name.
+    store.update({ imageModel: 'other', embeddingModel: ' nomic ' })
+    expect(store.get()).toMatchObject({
+      imageModel: 'other',
+      embeddingModel: 'nomic',
+    })
+    store.update({ imageModel: '' })
+    expect(store.get().imageModel).toBe('')
   })
 
   it('saves partial updates over the defaults', () => {
@@ -112,6 +135,41 @@ describe('settings routes and use', () => {
     }
     expect(got.settings.model).toBe('gpt-x')
     expect(got.defaults.model).toBe('env-model')
+  })
+
+  it('says which other services have a server and key, and saves their models', async () => {
+    const got = async () =>
+      (await (await app.request('/api/settings')).json()) as {
+        endpoints: Record<string, boolean>
+      }
+    expect((await got()).endpoints).toEqual({
+      imageModel: true,
+      embeddingModel: true,
+      transcribeModel: true,
+    })
+    const res = await patch({ imageModel: ' my-image ', transcribeModel: '' })
+    expect(await res.json()).toMatchObject({
+      imageModel: 'my-image',
+      transcribeModel: '',
+    })
+  })
+
+  it('embeds project files again when the embedding model changes, and only then', async () => {
+    const db = openDatabase(':memory:')
+    const files = testFiles(db)
+    const index = new ProjectIndex(db, new ProjectStore(db, files), files, null)
+    const resume = vi.spyOn(index, 'resume').mockResolvedValue()
+    const withIndex = testApp({ config, settings, index })
+    const send = (body: unknown) =>
+      withIndex.request('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+    await send({ imageModel: 'x' })
+    expect(resume).not.toHaveBeenCalled()
+    await send({ embeddingModel: 'nomic-embed-text' })
+    expect(resume).toHaveBeenCalledTimes(1)
   })
 
   it('rejects invalid or unknown settings', async () => {

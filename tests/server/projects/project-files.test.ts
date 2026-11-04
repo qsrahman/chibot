@@ -51,7 +51,7 @@ describe('project file search', () => {
     projects = new ProjectStore(db, files)
     index = new ProjectIndex(db, projects, files, {
       client: fakeEmbeddings,
-      model: 'emb',
+      model: () => 'emb',
     })
     projectId = projects.create('Japan').id
   })
@@ -192,7 +192,7 @@ describe('project file search', () => {
     } as unknown as OpenAI
     const slow = new ProjectIndex(db, projects, files, {
       client: hanging,
-      model: 'emb',
+      model: () => 'emb',
     })
     const registry = new ToolRegistry([
       new SearchProjectFilesTool(projects, slow),

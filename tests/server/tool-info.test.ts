@@ -11,6 +11,10 @@ import {
   EditImageTool,
   GenerateImageTool,
 } from '../../src/server/tools/images.ts'
+import {
+  settingsDefaults,
+  SettingsStore,
+} from '../../src/server/settings-store.ts'
 import { WebSearchTool } from '../../src/server/tools/web-search.ts'
 import { EchoTool, testFiles } from './fakes.ts'
 
@@ -21,8 +25,15 @@ function shipped(env: Record<string, string>) {
   const db = openDatabase(':memory:')
   const files = testFiles(db)
   const projects = new ProjectStore(db, files)
+  const config = new Config(env)
   return defaultTools({
-    config: new Config(env),
+    config,
+    settings: new SettingsStore(
+      db,
+      settingsDefaults(config.chat.model, {
+        imageModel: config.image?.model,
+      }),
+    ),
     search: new ConversationSearch(db),
     files,
     memories: new MemoryStore(db),
@@ -93,8 +104,11 @@ describe('shipped tools', () => {
     const hint = (name: string) =>
       unconfigured.find((tool) => tool.name === name)!.unavailable
     expect(hint('web_search')).toBe('Needs BRAVE_API_KEY in .env')
-    expect(hint('generate_image')).toMatch(/Needs an image model/)
-    expect(hint('edit_image')).toMatch(/Needs an image model/)
+    expect(hint('generate_image')).toMatch(/Choose an image model in Settings/)
+    expect(hint('edit_image')).toMatch(/Choose an image model in Settings/)
+    expect(new GenerateImageTool(null).unavailable()).toMatch(
+      /image server or key/,
+    )
     expect(hint('fetch_url')).toBeNull()
   })
 

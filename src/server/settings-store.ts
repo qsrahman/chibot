@@ -4,15 +4,25 @@ import {
   type Settings,
   type SettingsPatch,
 } from '../shared/settings.ts'
+import type { ServiceModel } from '../shared/service-models.ts'
 import { transaction } from './database.ts'
 
 /** Compact the context past this many tokens unless the user changes it. */
 export const DEFAULT_COMPACT_THRESHOLD = 64_000
 
-/** Settings before the user changes anything; `model` comes from the environment. */
-export function settingsDefaults(model: string): Settings {
+/**
+ * Settings before the user changes anything; the models come from the
+ * environment (`''` for a service without one).
+ */
+export function settingsDefaults(
+  model: string,
+  services: Partial<Pick<Settings, ServiceModel>> = {},
+): Settings {
   return {
     model,
+    imageModel: services.imageModel ?? '',
+    embeddingModel: services.embeddingModel ?? '',
+    transcribeModel: services.transcribeModel ?? '',
     reasoningEffort: null,
     aboutUser: '',
     responseStyle: '',

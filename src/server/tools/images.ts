@@ -23,7 +23,14 @@ const FORMATS: Record<string, { extension: string; mime: string }> = {
 }
 const DEFAULT_FORMAT = FORMATS.png!
 
-const SETUP = 'Needs an image model (OPENAI_IMAGE_MODEL)'
+const SETUP =
+  'Needs an image server or key (OPENAI_IMAGE_BASE_URL or OPENAI_API_KEY) in .env'
+const NO_MODEL = 'Choose an image model in Settings → Other models'
+
+/** Why the tools can't run, or `null`. */
+function missing(deps: ImageDeps | null) {
+  return !deps ? SETUP : deps.model() ? null : NO_MODEL
+}
 
 const SHOWN =
   'The image is shown to the user automatically: don’t link to it or ' +
@@ -48,7 +55,8 @@ export function imageClient({
 /** The image endpoint's client and model, and where images are kept. */
 export interface ImageDeps {
   client: OpenAI
-  model: string
+  /** Read at each call, since Settings can change it; `''` is off. */
+  model: () => string
   files: FileStore
 }
 
@@ -77,14 +85,14 @@ export class GenerateImageTool extends Tool {
   })
   readonly #deps: ImageDeps | null
 
-  /** @param deps `null` without an image model: listed, but not offered */
+  /** @param deps `null` without an image server or key: listed, but not offered */
   constructor(deps: ImageDeps | null) {
     super()
     this.#deps = deps
   }
 
   override unavailable() {
-    return this.#deps ? null : SETUP
+    return missing(this.#deps)
   }
 
   async run(
@@ -93,8 +101,9 @@ export class GenerateImageTool extends Tool {
   ) {
     const deps = this.#deps
     if (!deps) throw new Error('image generation is not set up')
-    const { client, model } = deps
-    const response = await fromImageService(deps, () =>
+    const { client } = deps
+    const model = deps.model()
+    const response = await fromImageService(deps, model, () =>
       client.images.generate(
         { model, prompt, size: SIZES[size], quality: QUALITY },
         { signal },
@@ -119,14 +128,14 @@ export class EditImageTool extends Tool {
   })
   readonly #deps: ImageDeps | null
 
-  /** @param deps `null` without an image model: listed, but not offered */
+  /** @param deps `null` without an image server or key: listed, but not offered */
   constructor(deps: ImageDeps | null) {
     super()
     this.#deps = deps
   }
 
   override unavailable() {
-    return this.#deps ? null : SETUP
+    return missing(this.#deps)
   }
 
   async run(
@@ -135,7 +144,8 @@ export class EditImageTool extends Tool {
   ) {
     const deps = this.#deps
     if (!deps) throw new Error('image generation is not set up')
-    const { client, model, files } = deps
+    const { client, files } = deps
+    const model = deps.model()
     const file = files.get(image_id)
     // Only this chat's images: ids from other chats aren't the model's to use.
     if (file?.conversationId !== conversationId) {
@@ -144,7 +154,7 @@ export class EditImageTool extends Tool {
     const image = await toFile(files.read(file.id), file.name, {
       type: file.mime,
     })
-    const response = await fromImageService(deps, () =>
+    const response = await fromImageService(deps, model, () =>
       client.images.edit(
         { model, image, prompt, quality: QUALITY },
         { signal },
@@ -162,7 +172,8 @@ export class EditImageTool extends Tool {
  * those also say what to set.
  */
 async function fromImageService<T>(
-  { client, model }: ImageDeps,
+  { client }: ImageDeps,
+  model: string,
   call: () => Promise<T>,
 ): Promise<T> {
   try {
@@ -174,12 +185,13 @@ async function fromImageService<T>(
       err instanceof OpenAI.NotFoundError
         ? '. This server has no images endpoint (e.g. Ollama removed image ' +
           'generation in 0.32.6), or doesn’t know this model: tell the user ' +
-          'to set OPENAI_IMAGE_BASE_URL=https://api.openai.com/v1 (with ' +
-          'OPENAI_IMAGE_API_KEY and an image model such as gpt-image-2) in .env.'
+          'to set OPENAI_IMAGE_BASE_URL=https://api.openai.com/v1 and ' +
+          'OPENAI_IMAGE_API_KEY in .env, and an image model such as ' +
+          'gpt-image-2 in Settings → Other models.'
         : err instanceof OpenAI.APIConnectionError
           ? '. Images need an image model (e.g. gpt-image-2) on a server ' +
-            'that makes images: tell the user to check OPENAI_IMAGE_MODEL ' +
-            'and OPENAI_IMAGE_BASE_URL in .env.'
+            'that makes images: tell the user to check the image model in ' +
+            'Settings → Other models and OPENAI_IMAGE_BASE_URL in .env.'
           : ''
     throw new Error(
       `the image service at ${client.baseURL} (model ${model}) failed: ` +

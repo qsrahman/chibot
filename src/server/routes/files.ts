@@ -57,6 +57,12 @@ export function fileRoutes({
       if (!transcription) {
         return c.json({ error: 'No transcription endpoint is set up' }, 501)
       }
+      if (!transcription.available) {
+        return c.json(
+          { error: 'Choose a transcription model in Settings → Other models' },
+          501,
+        )
+      }
       const { file } = c.req.valid('form')
       try {
         const text = await transcription.transcribe(file, c.req.raw.signal)

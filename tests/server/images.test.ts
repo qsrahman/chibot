@@ -33,7 +33,21 @@ describe('image tools', () => {
   beforeEach(() => {
     files = testFiles(openDatabase(':memory:'))
     calls = []
-    deps = { client: fakeImages(calls), model: 'img-1', files }
+    deps = { client: fakeImages(calls), model: () => 'img-1', files }
+  })
+
+  it('reads the model when it runs, and is unavailable while none is chosen', async () => {
+    let model = ''
+    const tool = new GenerateImageTool({
+      client: fakeImages(calls),
+      model: () => model,
+      files,
+    })
+    expect(tool.unavailable()).toMatch(/Choose an image model in Settings/)
+    model = 'img-2'
+    expect(tool.unavailable()).toBeNull()
+    await tool.run({ prompt: 'a cat', size: 'square' }, { conversationId: 'c' })
+    expect(calls[0]).toMatchObject({ model: 'img-2' })
   })
 
   it('generates an image, keeps it with the chat and returns its id', async () => {
@@ -69,7 +83,10 @@ describe('image tools', () => {
 
     const { image_id } = JSON.parse(output) as { image_id: string }
     expect(image_id).not.toBe(original.id)
-    expect(calls[0]).toMatchObject({ model: 'img-1', prompt: 'make it bluer' })
+    expect(calls[0]).toMatchObject({
+      model: 'img-1',
+      prompt: 'make it bluer',
+    })
     const image = calls[0]!.image as File
     expect(image.name).toBe('image.png')
     expect(Buffer.from(await image.arrayBuffer())).toEqual(PNG)
@@ -141,7 +158,7 @@ describe('image tools', () => {
       message: 'Connection error.',
     })
     await expect(run(unreachable)).rejects.toThrow(
-      /Connection error\. Images need an image model .*OPENAI_IMAGE_MODEL and OPENAI_IMAGE_BASE_URL/,
+      /Connection error\. Images need an image model .*image model in Settings → Other models and OPENAI_IMAGE_BASE_URL/,
     )
     const refused = new OpenAI.BadRequestError(
       400,
@@ -166,7 +183,11 @@ describe('image tools', () => {
         baseURL: `http://127.0.0.1:${(server.address() as AddressInfo).port}/v1`,
         apiKey: 'k',
       })
-      const tool = new GenerateImageTool({ client, model: 'img-1', files })
+      const tool = new GenerateImageTool({
+        client,
+        model: () => 'img-1',
+        files,
+      })
       await expect(
         tool.run(
           { prompt: 'a robot', size: 'auto' },
