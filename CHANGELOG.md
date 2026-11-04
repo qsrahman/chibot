@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.12.6] - 2026-11-04
+
 ### Fixed
 
 - Text planted in a page, a search result or an old chat could make the model send your data to an attacker in two ways that needed no click or approval, both found while testing models against prompt injection. `fetch_url` ran without asking, so the model could be told to open `https://evil.example/c?d=<your data>`; and an answer could hold a Markdown image with such an address, which the browser loaded by itself. Now: once the chat holds text from others, `fetch_url` asks before opening an address that neither you nor a web search gave (exactly: anything added to one of those addresses makes it another, so it asks; `Tool.askAfterUntrusted` is the hook); the Markdown renderer shows an image from another site as a link to open on purpose, and the app's pages are served with `Content-Security-Policy: img-src 'self' data: blob:`, so the browser refuses one even if something slips through. Reproduced first, in a real browser (the page requested the other site's image itself) and in a unit test (`fetch_url` never asked); `tests/e2e/exfiltration.spec.ts` has the five checks, and the opt-in injection test now also runs each tool call a model obeyed through the approval gate (0 got past it on two local models, though they obeyed 3 of 12 and 4 of 12 tool attacks with no defense).
