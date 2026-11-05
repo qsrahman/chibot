@@ -4,6 +4,12 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Removed
+
+- chibot's own **web search** (Brave) and **page reader** tools (`web_search`, `fetch_url`), and what only they used: the `braveApiKey` setting and `BRAVE_API_KEY`, the `undici` dependency, the unused `The web` tool section and globe icon, the `askAfterUntrusted` hook (nothing else used it) and the fake Brave API and test page of the e2e suite. Web search and reading pages come from MCP servers now (Settings → Tools). A `braveApiKey` left in `config.json` does not stop chibot starting: it is read without it, named in a note at startup, and left out the next time the file is saved. Chats made with the old tools still show their sources and tool rows.
+- **What this changes for safety:** a page reader or search server that is an MCP server runs outside chibot, so chibot's refusal of addresses on this machine and your network no longer covers them, and nothing asks before it opens an address a page chose, unless you switch on **Ask before using its tools** for that server (do, for a server that reads pages or searches). Memory still asks first in a chat that used any MCP tool, and images from other sites are still shown as links.
+
+
 ### Added
 
 - A `chibot` command (`src/server/cli.ts`, which `pnpm start` and a global `pnpm add -g .` run): `chibot` starts it (`--port`, `--host`), `chibot init` asks where the models are and for the key (not echoed) and writes the settings, `chibot config path|show|set` shows where everything is, shows the settings with keys as "set", and changes one (`chibot config set chat.model gpt-6-astra`; an empty value removes it), `--version`, `--help`. `pnpm add -g .` after `pnpm build` makes it available from any folder (`pnpm link -g` is rejected by pnpm 12).

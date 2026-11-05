@@ -268,7 +268,7 @@ a 13 px muted hint that a new message denies it, and Deny (secondary) /
 Approve (primary) at the bottom right.
 
 **Composer tools.** A 24 px `Plus` button at the composer's left opens a menu
-above it (Add photos & files, then Search the web and Create an image).
+above it (Add photos & files, then Create an image).
 "Add photos & files" has a muted hint line ("Images, PDF, Word, text and
 code"); a tool that isn't set up or is switched off stays listed, disabled in
 `--fg-muted`, with the reason as its hint line. The picked tool shows as a pill
@@ -342,7 +342,7 @@ equivalents use a 1.5 px stroke:
 | Temporary chat / shortcuts | `MessageCircleDashed` / `Keyboard` |
 | Tool approval / Settings → Tools | `Wrench` |
 | Project / new project / move in / remove / add files | `Folder` / `FolderPlus` / `FolderInput` / `FolderMinus` / `Upload` |
-| Search the web / create an image / download | `Globe` / `ImagePlus` / `Download` |
+| Create an image / download | `ImagePlus` / `Download` |
 
 **Brand.** The mark is a forked path whose right arm ends in the accent dot:
 drawn on a 32-unit grid with a 3.2-unit round stroke, the stem forks into two

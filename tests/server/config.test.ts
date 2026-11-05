@@ -164,16 +164,6 @@ describe('Config', () => {
     ).toBe('/etc/chibot.json')
   })
 
-  it('reads the Brave key, treating blank as unset', () => {
-    expect(new Config({ OPENAI_API_KEY: 'k' }).braveApiKey).toBeNull()
-    expect(
-      new Config({ OPENAI_API_KEY: 'k', BRAVE_API_KEY: ' ' }).braveApiKey,
-    ).toBeNull()
-    expect(
-      new Config({ OPENAI_API_KEY: 'k', BRAVE_API_KEY: 'b' }).braveApiKey,
-    ).toBe('b')
-  })
-
   it.each(['abc', '0', '70000', '3.5'])('rejects PORT=%s', (port) => {
     expect(() => new Config({ OPENAI_API_KEY: 'k', PORT: port })).toThrow(
       /PORT/,

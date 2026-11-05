@@ -1,4 +1,4 @@
-// Plain text from documents, for fetch_url and project files.
+// Plain text from documents, for project files.
 import { Readability } from '@mozilla/readability'
 import { parseHTML } from 'linkedom'
 import mammoth from 'mammoth'

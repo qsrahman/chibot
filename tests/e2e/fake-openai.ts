@@ -3,11 +3,10 @@
 // contains "slow" streams a long answer slowly (to act mid-answer), "drip"
 // streams a normal one slowly (to queue a message), "think"
 // first streams a reasoning summary, and "compact" returns a compaction item.
-// A question's words can call a tool ("approve", "search", "read <url>",
-// "draw", "remember <fact>", "mcp echo <text>", …): `TRIGGERS` below lists
+// A question's words can call a tool ("approve", "draw", "remember <fact>",
+// "mcp echo <text>", …): `TRIGGERS` below lists
 // them. A forced tool_choice is followed. Once the tool's output arrives, the
-// answer quotes it. It also fakes the Brave Search API (/brave/…), serves a test page
-// (/pages/robots), makes 1×1 images (/v1/images/…), embeds text as counts
+// answer quotes it. It also makes 1×1 images (/v1/images/…), embeds text as counts
 // of a few letters (/v1/embeddings) and transcribes any recording as
 // "Hello from the microphone" (/v1/audio/transcriptions). Its Files API
 // (/v1/files) keeps uploads until POST /debug/forget-files; a request naming
@@ -58,32 +57,6 @@ app.get('/debug/pixel', (c) => {
   )
 })
 app.get('/debug/pixel-hits', (c) => c.json(pixelHits))
-
-app.get('/brave/res/v1/web/search', (c) => {
-  const q = c.req.query('q')
-  return c.json({
-    web: {
-      results: [
-        {
-          title: `Result for <strong>${q}</strong>`,
-          url: `http://127.0.0.1:${PORT}/pages/robots`,
-          description: 'All about <strong>robots</strong>.',
-        },
-      ],
-    },
-  })
-})
-
-app.get('/pages/robots', (c) =>
-  c.html(`<!doctype html><html><head><title>Robots</title></head><body>
-    <nav>Home · About</nav><article><h1>Robots</h1>
-    <p>Robots are machines that can carry out a series of actions on their
-       own. They are used in factories, homes and space, and they keep
-       getting cheaper, smaller and more capable every year.</p>
-    <p>This paragraph is here so that Readability finds enough text to be
-       sure it found the article and not the navigation around it.</p>
-    </article></body></html>`),
-)
 
 // A 1×1 transparent PNG.
 const PNG =
@@ -361,12 +334,6 @@ const TRIGGERS: {
     args: (found) => ({ query: found![1], after: null, before: null }),
   },
   {
-    tool: 'web_search',
-    when: /search/,
-    forced: true,
-    args: (_, { question }) => ({ query: question, freshness: null }),
-  },
-  {
     tool: 'generate_image',
     when: /draw/,
     forced: true,
@@ -379,19 +346,6 @@ const TRIGGERS: {
       image_id: lastImageId(input),
       prompt: 'make it bluer',
     }),
-  },
-  // "read" and a URL, in any order.
-  {
-    tool: 'fetch_url',
-    when: /^(?=.*read)(?:.*?)(https?:\/\/\S+)/s,
-    args: (found) => ({ url: found![1] }),
-  },
-  // An address the model chose itself, as a planted page could make it do
-  // (the data rides along in the query), with no URL in the question.
-  {
-    tool: 'fetch_url',
-    when: /follow the link/,
-    args: () => ({ url: `http://127.0.0.1:${PORT}/pages/robots?d=secret` }),
   },
   { tool: 'e2e_note', when: /approve/, args: () => ({ text: 'hello' }) },
 ]

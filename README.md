@@ -8,9 +8,9 @@ Responses API, such as [Ollama](https://docs.ollama.com/openai) and
 
 > **Status: v0.11, phases 0–10 complete.** Chat with a sidebar, message
 > versions, a model picker, visible reasoning, custom instructions, long-chat
-> compaction, export/import, themes, tools the model can call (web search with
-> sources, reading pages, creating and editing images, memory, searching past
-> chats), projects with their own files, attachments, voice input, and MCP
+> compaction, export/import, themes, tools the model can call (creating and
+> editing images, memory, searching past chats and project files, plus any MCP
+> server's, such as web search), projects with their own files, attachments, voice input, and MCP
 > servers' tools. Next: multiple providers and a code runner. See
 > [PLAN.md](PLAN.md) for the roadmap and [CHANGELOG.md](CHANGELOG.md) for what
 > changed.
@@ -83,7 +83,6 @@ whatever folder it is in.
 | `image.baseURL` / `.apiKey` / `.model` | `OPENAI_IMAGE_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Image generation; the model must be an image-generation model (not a chat model), and defaults to `gpt-image-2` on OpenAI |
 | `embedding.baseURL` / `.apiKey` / `.model` | `OPENAI_EMBEDDING_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Project file search by meaning; the model defaults to `text-embedding-3-small` on OpenAI, and must be named on other servers (without one, project files are searched by keywords) |
 | `transcription.baseURL` / `.apiKey` / `.model` | `OPENAI_TRANSCRIBE_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Voice input; the model defaults to `gpt-transcribe` on OpenAI, and must be named on other servers (without one, the mic is off). With chat on Ollama, point this at OpenAI |
-| `braveApiKey` | `BRAVE_API_KEY` | — | Turns on web search ([Brave Search API](https://brave.com/search/api/)) |
 | `token` | `CHIBOT_TOKEN` | — | Requires a token (16+ characters) to use chibot; set it when `server.host` exposes chibot |
 | — | `CHIBOT_CONFIG_DIR` | see above | Where `config.json` is |
 | — | `CHIBOT_DATA_DIR` | see above | Where the database, generated images and MCP sign-ins are kept |
@@ -255,12 +254,15 @@ needs the server running: there is no offline mode, since the server is local.
   default, or None to Max; also in Settings → Model), shown next to the model name
   when set.
 - **Tools:** the model uses chibot's tools on its own when they help, and the
-  answer shows what it did ("Searched the web", "Memory updated"; several
+  answer shows what it did ("Created an image", "Memory updated"; several
   calls share one row, which opens to each; open one to see the details):
-  - **Web search** (with `BRAVE_API_KEY`): answers cite their sources, and a
-    **Sources** list under the answer links every page found or read.
-  - **Reading pages:** paste a URL and ask about it. chibot never reads
-    addresses on this machine or your network.
+  - **Web search and reading pages** come from an MCP server (chibot ships
+    neither): add one, such as a search server and a page-reading one, under
+    `mcpServers` (see [MCP servers](#mcp-servers)). They run outside chibot, so
+    its refusal of addresses on this machine or your network does not apply to
+    them; switch on **Ask before using its tools** for such a server, which
+    also covers a page telling the model to fetch an address that carries your
+    data.
   - **Images:** ask for a picture, then for changes ("make it bluer"). Click an
     image (or an attached photo) to see it full size over the chat, with
     Download; ⌘/Ctrl-click opens it in a new tab. They're kept with the chat, and
@@ -271,12 +273,10 @@ needs the server running: there is no offline mode, since the server is local.
     something, or edit or delete memories in Settings → Personalization →
     Memory (which shows how many of the 100 are used). It won't save the same
     fact twice, and merges related ones when the list is nearly full. In a
-    chat that read web pages or search results, memory changes ask first, so a
-    page can't plant one.
-    For the same reason, once a chat holds text from a page or a search, reading
-    an address that neither you nor a search gave asks first (a page could
-    tell chibot to open an address that carries your data), and an image from
-    another site in an answer is shown as a link instead of loading by itself.
+    chat that used an MCP tool or searched your chats (text from others),
+    memory changes ask first, so it can't plant one. For the same reason an
+    image from another site in an answer is shown as a link instead of loading
+    by itself.
   - **Past chats:** ask about something you discussed before ("what did we
     decide about…?"). chibot searches your other chats (on this machine) and
     links the ones it used under **Sources**.

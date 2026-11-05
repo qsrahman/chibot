@@ -238,9 +238,6 @@ importers:
       tinykeys:
         specifier: ^4.0.1
         version: 4.0.1
-      undici:
-        specifier: 8.12.3
-        version: 8.12.3
       unpdf:
         specifier: 2.1.0
         version: 2.1.0
@@ -3322,7 +3319,8 @@ snapshots:
 
   undici-types@8.9.0: {}
 
-  undici@8.12.3: {}
+  undici@8.12.3:
+    optional: true
 
   unified@11.0.5:
     dependencies:

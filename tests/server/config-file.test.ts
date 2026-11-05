@@ -35,7 +35,6 @@ const full: ConfigFile = {
   },
   embedding: { model: 'nomic-embed-text' },
   transcription: { model: 'gpt-transcribe' },
-  braveApiKey: 'brave',
   server: { host: '0.0.0.0', port: 8080 },
   token: 'a-token-of-16-chars',
 }
@@ -50,7 +49,6 @@ describe('config.json', () => {
       OPENAI_IMAGE_API_KEY: 'sk-img',
       OPENAI_EMBEDDING_MODEL: 'nomic-embed-text',
       OPENAI_TRANSCRIBE_MODEL: 'gpt-transcribe',
-      BRAVE_API_KEY: 'brave',
       HOST: '0.0.0.0',
       PORT: '8080',
       CHIBOT_TOKEN: 'a-token-of-16-chars',
@@ -60,7 +58,6 @@ describe('config.json', () => {
     const config = new Config(env)
     expect(config.chat).toMatchObject({ model: 'gemma4', apiKey: 'sk-chat' })
     expect(config.port).toBe(8080)
-    expect(config.braveApiKey).toBe('brave')
   })
 
   it('ignores unset and blank variables when importing', () => {
@@ -137,10 +134,12 @@ describe('changing a setting', () => {
 
   it('removes one with an empty value, and the section when it is empty', () => {
     expect(
-      withSetting({ chat: { model: 'a' }, braveApiKey: 'b' }, 'chat.model', ''),
-    ).toEqual({
-      braveApiKey: 'b',
-    })
+      withSetting(
+        { chat: { model: 'a' }, token: 'a-token-of-16-chars' },
+        'chat.model',
+        '',
+      ),
+    ).toEqual({ token: 'a-token-of-16-chars' })
   })
 
   it('refuses an unknown setting or a bad value, and leaves the file as it was', () => {
@@ -163,13 +162,10 @@ describe('changing a setting', () => {
         model: 'gemma4',
       },
       image: { apiKey: 'set' },
-      braveApiKey: 'set',
       token: 'set',
       server: { host: '0.0.0.0', port: 8080 },
     })
-    expect(JSON.stringify(redacted(full))).not.toMatch(
-      /sk-chat|sk-img|brave"|a-token/,
-    )
+    expect(JSON.stringify(redacted(full))).not.toMatch(/sk-chat|sk-img|a-token/)
   })
 })
 
@@ -225,5 +221,31 @@ describe('values refused when set', () => {
     expect(
       withSetting({}, 'chat.baseURL', 'http://localhost:11434/v1').chat,
     ).toEqual({ baseURL: 'http://localhost:11434/v1' })
+  })
+})
+
+describe('a setting that no longer does anything', () => {
+  let dir: string
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'chibot-obsolete-'))
+  })
+  afterEach(() => rmSync(dir, { recursive: true }))
+
+  it('is read without it, named, and left out when the file is saved', () => {
+    writeFileSync(
+      join(dir, 'config.json'),
+      JSON.stringify({ chat: { model: 'm' }, braveApiKey: 'brave-secret' }),
+    )
+    const read = readConfigFile(dir)
+    expect(read.file).toEqual({ chat: { model: 'm' } })
+    expect(read.obsolete).toEqual(['braveApiKey'])
+    writeConfigFile(dir, withSetting(read.file, 'chat.model', 'n'))
+    expect(readFileSync(join(dir, 'config.json'), 'utf8')).not.toContain(
+      'brave',
+    )
+    expect(readConfigFile(dir).obsolete).toEqual([])
+    // Other unknown settings are still refused (typos).
+    writeFileSync(join(dir, 'config.json'), '{"brave":"x"}')
+    expect(() => readConfigFile(dir)).toThrow(/Unrecognized key/)
   })
 })

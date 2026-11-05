@@ -167,7 +167,9 @@ export interface Source {
 }
 
 /**
- * The pages an answer found with `web_search` or read with `fetch_url`, the
+ * The pages an answer found with `web_search` or read with `fetch_url` (tools
+ * of chats made before web search and reading pages moved to MCP servers: they
+ * are still shown, the new ones are not parsed), the
  * chats it found with `search_chats`, and the project files it found with
  * `search_project_files`.
  */

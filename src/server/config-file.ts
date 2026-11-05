@@ -36,8 +36,6 @@ export const configFileSchema = z
     image: endpoint.optional(),
     embedding: endpoint.optional(),
     transcription: endpoint.optional(),
-    /** Enables the web search tool. */
-    braveApiKey: text.optional(),
     server: z
       .object({
         host: text.optional(),
@@ -71,6 +69,13 @@ export type ConfigFile = z.infer<typeof configFileSchema>
 
 export const CONFIG_FILE = 'config.json'
 
+/**
+ * Settings that no longer do anything. A file that still has one is read
+ * without it (and says so at startup) rather than refused, and the next save
+ * leaves it out.
+ */
+const OBSOLETE = ['braveApiKey']
+
 /** Each setting's place in the file, and the environment variable that overrides it. */
 const SETTINGS: [path: string, variable: string][] = [
   ['chat.baseURL', 'OPENAI_BASE_URL'],
@@ -85,7 +90,6 @@ const SETTINGS: [path: string, variable: string][] = [
   ['transcription.baseURL', 'OPENAI_TRANSCRIBE_BASE_URL'],
   ['transcription.apiKey', 'OPENAI_TRANSCRIBE_API_KEY'],
   ['transcription.model', 'OPENAI_TRANSCRIBE_MODEL'],
-  ['braveApiKey', 'BRAVE_API_KEY'],
   ['server.host', 'HOST'],
   ['server.port', 'PORT'],
   ['token', 'CHIBOT_TOKEN'],
@@ -97,7 +101,7 @@ export function settingOf(variable: string): string | undefined {
 }
 
 /** What is secret: shown as "set", never printed (all of `env`; `mcpServers` is listed by name). */
-const SECRETS = /(^|\.)(apiKey|braveApiKey|token)$|^env\./
+const SECRETS = /(^|\.)(apiKey|token)$|^env\./
 
 function get(object: unknown, path: string): unknown {
   return path
@@ -150,23 +154,30 @@ export function readConfigFile(dir: string): {
   exists: boolean
   /** Readable by others (POSIX), which it shouldn't be. */
   tooOpen: boolean
+  /** Settings in the file that are no longer used (and were left out). */
+  obsolete: string[]
 } {
   const path = join(dir, CONFIG_FILE)
-  if (!existsSync(path))
-    return { file: {}, path, exists: false, tooOpen: false }
+  if (!existsSync(path)) {
+    return { file: {}, path, exists: false, tooOpen: false, obsolete: [] }
+  }
   let json: unknown
   try {
     json = JSON.parse(readFileSync(path, 'utf8'))
   } catch (err) {
     throw new Error(`${path} isn't valid JSON: ${(err as Error).message}`)
   }
+  const obsolete = OBSOLETE.filter(
+    (name) => json !== null && typeof json === 'object' && name in json,
+  )
+  for (const name of obsolete) delete (json as Record<string, unknown>)[name]
   const parsed = configFileSchema.safeParse(json)
   if (!parsed.success) {
     throw new Error(`${path} has a problem:\n${z.prettifyError(parsed.error)}`)
   }
   const tooOpen =
     process.platform !== 'win32' && (statSync(path).mode & 0o077) !== 0
-  return { file: parsed.data, path, exists: true, tooOpen }
+  return { file: parsed.data, path, exists: true, tooOpen, obsolete }
 }
 
 /** Saves `file` to `dir` readable by the owner only, replacing it whole or not at all. */

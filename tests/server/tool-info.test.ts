@@ -15,8 +15,6 @@ import {
   settingsDefaults,
   SettingsStore,
 } from '../../src/server/settings-store.ts'
-import { WebSearchTool } from '../../src/server/tools/web-search.ts'
-import { FetchUrlTool } from '../../src/server/tools/fetch-url.ts'
 import { MemoryTool } from '../../src/server/tools/memory.ts'
 import { EchoTool, testFiles } from './fakes.ts'
 
@@ -60,10 +58,6 @@ describe('Tool.info', () => {
   })
 
   it('tells the approval card why a tool asks, in plain words', () => {
-    const shipped = new FetchUrlTool().info.approval
-    expect(shipped).toMatch(
-      /nothing you wrote or searched for gave this address/,
-    )
     expect(
       new MemoryTool(new MemoryStore(openDatabase(':memory:'))).info.approval,
     ).toMatch(/plant a memory/)
@@ -72,20 +66,18 @@ describe('Tool.info', () => {
       override readonly requiresApproval = true
     }
     expect(new Asks().info.approval).toMatch(/asks before it runs/)
-    expect(new WebSearchTool('k').info.approval).toBeNull()
+    expect(new GenerateImageTool(null).info.approval).toBeNull()
   })
 
   it('carries the tool’s own wording and its setup hint', () => {
-    expect(new WebSearchTool(null).info).toMatchObject({
-      name: 'web_search',
-      group: 'The web',
-      running: 'Searching the web…',
-      done: 'Searched the web',
-      chip: null,
-      unavailable:
-        'Needs a Brave Search key: chibot config set braveApiKey <key>',
+    expect(new GenerateImageTool(null).info).toMatchObject({
+      name: 'generate_image',
+      group: 'Images',
+      running: 'Creating an image…',
+      done: 'Created an image',
+      chip: { action: 'Create an image', text: 'Image', icon: 'image' },
+      unavailable: 'Needs an API key or server: run `chibot init`',
     })
-    expect(new WebSearchTool('key').info.unavailable).toBeNull()
   })
 })
 
@@ -94,16 +86,14 @@ describe('shipped tools', () => {
     shipped(env).map((tool) => tool.info)
 
   it('each describe themselves: a section, a summary and their own words', () => {
-    const all = infos({ OPENAI_API_KEY: 'k', BRAVE_API_KEY: 'b' })
+    const all = infos({ OPENAI_API_KEY: 'k' })
     expect(all.map((tool) => tool.name).sort()).toEqual([
       'edit_image',
-      'fetch_url',
       'generate_image',
       'memory',
       'read_project_file',
       'search_chats',
       'search_project_files',
-      'web_search',
     ])
     // A new tool that forgets this would show under "Other", unexplained, as
     // "Used <label>".
@@ -123,21 +113,15 @@ describe('shipped tools', () => {
     })
     const hint = (name: string) =>
       unconfigured.find((tool) => tool.name === name)!.unavailable
-    expect(hint('web_search')).toBe(
-      'Needs a Brave Search key: chibot config set braveApiKey <key>',
-    )
     expect(hint('generate_image')).toMatch(/Choose an image model in Settings/)
     expect(hint('edit_image')).toMatch(/Choose an image model in Settings/)
     expect(new GenerateImageTool(null).unavailable()).toMatch(
       /Needs an API key or server/,
     )
-    expect(hint('fetch_url')).toBeNull()
+    expect(hint('memory')).toBeNull()
   })
 
   it('refuse to run without their setup', async () => {
-    await expect(
-      new WebSearchTool(null).run({ query: 'x', freshness: null }, context),
-    ).rejects.toThrow('not set up')
     await expect(
       new GenerateImageTool(null).run({ prompt: 'x', size: 'auto' }, context),
     ).rejects.toThrow('not set up')
@@ -159,13 +143,11 @@ describe('sortTools', () => {
     const sorted = sortTools([
       tool('Zed', 'Other'),
       tool('Memory', 'Your chats and files'),
-      tool('Search the web', 'The web'),
       tool('Edit images', 'Images'),
-      tool('Read web pages', 'The web'),
+      tool('Create images', 'Images'),
     ])
     expect(sorted.map((t) => t.label)).toEqual([
-      'Read web pages',
-      'Search the web',
+      'Create images',
       'Edit images',
       'Memory',
       'Zed',

@@ -52,9 +52,8 @@ tests/        mirrors src/ (tests/server/*.test.ts, tests/web/*.test.ts);
               behind a fake OAuth provider)
               tests/server/fakes.ts: fake OpenAI client + stream events
 tests/e2e/    Playwright specs (*.spec.ts), fake-openai.ts, and server.ts
-              (starts chibot with a fake web search, a page reader allowed on
-              127.0.0.1, a test-only tool that needs approval, and the MCP
-              fixtures as `fixture` and `tracker`)
+              (starts chibot with a test-only tool that needs approval and the
+              MCP fixtures as `fixture` and `tracker`)
 scripts/      release.ts (`pnpm release`)
 data/         a checkout's older local data (git-ignored); chibot now keeps the
               SQLite database (with sqlite-vec loaded), files/ and
@@ -217,8 +216,7 @@ transpiles it.
    Use `'after-untrusted'` to ask only in chats that hold untrusted content
    (like `memory`), and mark tools whose output carries others' text
    (pages, search results, your old chats) `untrustedOutput = true`; an
-   `'after-untrusted'` tool that can vouch for a call (`fetch_url` for an
-   address the user or a search gave) overrides `askAfterUntrusted`. Tools that read or keep
+   `'after-untrusted'` tool asks on every call once the chat holds such text. Tools that read or keep
    the user's history override `offeredIn(conversation)` to leave out
    temporary chats, and a tool can add to the chat's instructions while
    offered by overriding `instructions()`.
@@ -227,11 +225,12 @@ transpiles it.
 5. Add it to `defaultTools()` (`main.ts`). A tool that needs setup (keys,
    endpoints, from `Config`) is always added, given `null` for what's
    missing, and overrides `unavailable()` to say what to set: Settings lists
-   it with that hint and it's never offered to the model (see `web_search`).
+   it with that hint and it's never offered to the model (see `generate_image`).
    Take collaborators (clients, `FileStore`) in the constructor, and test
    `run` directly, like `tests/server/memory.test.ts`.
 6. Anything that reaches the network on the model's behalf must refuse private
-   addresses, like `fetch_url` (`tools/fetch-url.ts`).
+   addresses (web search and reading pages are MCP servers' job, not chibot's;
+   an MCP server runs outside this guard).
 
 ## Comments
 
@@ -270,9 +269,9 @@ invariants, API quirks. No line-by-line narration.
   `Answer #n to: <question>`; a question containing "slow" streams a long
   answer slowly, "drip" a normal one slowly (to queue a message while it
   streams), "think" adds a reasoning summary, "compact" a compaction item,
-  and a question's words call a tool ("approve", "search", "read <url>", …:
+  and a question's words call a tool ("approve", "draw", "mcp echo <text>", …:
   the `TRIGGERS` table in the file lists them, and a new tool needs one row
-  there). It also fakes Brave, the images API, embeddings, transcription
+  there). It also fakes the images API, embeddings, transcription
   (`/debug/last-transcription`) and a Files API (`/debug/files`,
   `/debug/forget-files`; unknown file ids get a 404), and serves a test page;
   the model `e2e-other` refuses `input_file` parts, as Ollama does. Chromium

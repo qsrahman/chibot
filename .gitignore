@@ -12,3 +12,6 @@ playwright-report/
 
 # MCP servers (see mcp.example.json); may hold commands for this machine
 mcp.json
+
+# Backups of local data (may hold chats and keys)
+data.bak/

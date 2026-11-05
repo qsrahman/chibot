@@ -96,7 +96,6 @@ const envSchema = z
     OPENAI_TRANSCRIBE_BASE_URL: optional,
     OPENAI_TRANSCRIBE_API_KEY: optional,
     OPENAI_TRANSCRIBE_MODEL: optional,
-    BRAVE_API_KEY: optional,
     // Loopback by default: the app has no auth and spends the owner's API key.
     HOST: optional.transform((host) => host ?? '127.0.0.1'),
     PORT: optional
@@ -143,8 +142,6 @@ export class Config {
   readonly embedding: Endpoint | null
   /** Voice input, or `null`: then the mic is off. */
   readonly transcription: Endpoint | null
-  /** Enables the web search tool. */
-  readonly braveApiKey: string | null
   readonly host: string
   readonly port: number
   /** Holds `config.json`. */
@@ -195,7 +192,6 @@ export class Config {
     this.image = feature('IMAGE', 'gpt-image-2')
     this.embedding = feature('EMBEDDING', 'text-embedding-3-small')
     this.transcription = feature('TRANSCRIBE', 'gpt-transcribe')
-    this.braveApiKey = e.BRAVE_API_KEY ?? null
     this.host = e.HOST
     this.port = e.PORT
     const where = locations(e)

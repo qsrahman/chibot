@@ -34,7 +34,6 @@ import { settingsDefaults, SettingsStore } from './settings-store.ts'
 import type { Tool } from './tool.ts'
 import { ToolRegistry } from './tool-registry.ts'
 import { Transcription } from './transcription.ts'
-import { FetchUrlTool } from './tools/fetch-url.ts'
 import {
   EditImageTool,
   GenerateImageTool,
@@ -45,7 +44,6 @@ import { MemoryTool } from './tools/memory.ts'
 import { SearchProjectFilesTool } from './projects/index.ts'
 import { ReadProjectFileTool } from './projects/index.ts'
 import { SearchChatsTool } from './tools/search-chats.ts'
-import { WebSearchTool } from './tools/web-search.ts'
 
 /** What tools may need to be built. */
 export interface ToolDeps {
@@ -58,7 +56,7 @@ export interface ToolDeps {
   settings: SettingsStore
 }
 
-/** The shipped tools whose setup exists (e.g. a Brave key for web search). */
+/** The shipped tools; web search and reading pages come from MCP servers. */
 export function defaultTools({
   config,
   search,
@@ -74,13 +72,11 @@ export function defaultTools({
     files,
   }
   return [
-    new FetchUrlTool(),
     new MemoryTool(memories),
     new SearchChatsTool(search),
     new SearchProjectFilesTool(projects, index),
     new ReadProjectFileTool(projects, index),
     // Listed in Settings even without their setup, saying what's missing.
-    new WebSearchTool(config.braveApiKey),
     new GenerateImageTool(image),
     new EditImageTool(image),
   ]
@@ -113,6 +109,11 @@ export function start({
     }),
   )
   if (read.exists) console.log(`Settings: ${read.path}`)
+  for (const name of read.obsolete) {
+    console.warn(
+      `Note: ${name} in ${read.path} is no longer used (web search and reading pages come from MCP servers) and is left out the next time chibot saves it.`,
+    )
+  }
   if (read.tooOpen) {
     console.warn(
       `Warning: ${read.path} holds keys and others can read it. Run: chmod 600 "${read.path}"`,

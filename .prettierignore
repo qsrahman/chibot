@@ -1,3 +1,4 @@
 *.md
 pnpm-lock.yaml
 node_modules
+data.bak/

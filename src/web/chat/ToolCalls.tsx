@@ -28,7 +28,7 @@ function labelsOf(
 
 /**
  * An answer's tool calls. Several sit in one collapsed group, labelled with
- * what they did ("Searched the web, Memory updated": a memory change stays
+ * what they did ("Created an image, Memory updated": a memory change stays
  * visible) or, while one runs, with what it's doing; each opens on its own.
  */
 export function ToolCalls({ tools }: { tools: ToolActivity[] }) {

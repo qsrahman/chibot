@@ -26,7 +26,7 @@ Usage:
   chibot --version | --help
 
 Settings: chat.baseURL, chat.apiKey, chat.model, image.*, embedding.*,
-transcription.* (each baseURL, apiKey, model), braveApiKey, server.host,
+transcription.* (each baseURL, apiKey, model), server.host,
 server.port, token, mcpServers (MCP servers: edit config.json), and env.<NAME>:\na variable for \${NAME} in them.
 Environment variables such as OPENAI_API_KEY override the settings.`
 

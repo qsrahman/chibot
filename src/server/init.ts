@@ -11,8 +11,7 @@ export interface Prompts {
 const OLLAMA = 'http://localhost:11434/v1'
 
 /**
- * The setup conversation: where the models are, the key, the model, and
- * optionally a web search key. An empty answer keeps what `existing` has.
+ * The setup conversation: where the models are, the key and the model. An empty answer keeps what `existing` has.
  * `legacyEnv` holds what an old `.env` set: offered as is, if there is no
  * config yet.
  */
@@ -103,18 +102,7 @@ export async function runInit(
     if (model || chat.model) next.model = model || chat.model!
   }
 
-  const brave = (
-    await ask(
-      `Brave Search API key, to let it search the web (optional)${existing.braveApiKey ? ' [keep the saved one]' : ''}`,
-      { secret: true },
-    )
-  ).trim()
-  const braveApiKey = brave || existing.braveApiKey
-  return {
-    ...existing,
-    chat: next,
-    ...(braveApiKey && { braveApiKey }),
-  }
+  return { ...existing, chat: next }
 }
 
 /**

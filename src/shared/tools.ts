@@ -3,20 +3,15 @@
 // per-tool tables.
 
 /** Settings' sections, in the order they're shown. */
-export const TOOL_GROUPS = [
-  'The web',
-  'Images',
-  'Your chats and files',
-  'Other',
-] as const
+export const TOOL_GROUPS = ['Images', 'Your chats and files', 'Other'] as const
 export type ToolGroup = (typeof TOOL_GROUPS)[number]
 
 /** The icons the composer's menu can show for a tool. */
-export type ToolIcon = 'globe' | 'image'
+export type ToolIcon = 'image'
 
 /** How the composer's "+" menu offers a tool for the next message. */
 export interface ToolChip {
-  /** The menu entry: "Search the web". */
+  /** The menu entry: "Create an image". */
   action: string
   /** The chip once picked: "Search". */
   text: string
@@ -26,7 +21,7 @@ export interface ToolChip {
 /** A tool in `GET /api/tools` (`{ tools: ToolInfo[] }`). */
 export interface ToolInfo {
   name: string
-  /** What the user sees, e.g. in Settings: "Search the web". */
+  /** What the user sees, e.g. in Settings: "Create images". */
   label: string
   group: ToolGroup
   /** What it does and what (if anything) leaves this machine. */

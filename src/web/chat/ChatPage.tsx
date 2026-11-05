@@ -8,7 +8,6 @@ import {
 import { Link, useNavigate, useParams } from 'react-router'
 import {
   ArrowDown,
-  Globe,
   ImagePlus,
   MessageCircleDashed,
   PanelLeft,
@@ -34,7 +33,6 @@ import type { SettingsApi } from '../settings/useSettings.ts'
 
 /** The composer's icons for a tool, by the name the server gives. */
 const TOOL_ICONS: Record<ToolIcon, ReactNode> = {
-  globe: <Globe size={18} strokeWidth={1.5} aria-hidden />,
   image: <ImagePlus size={18} strokeWidth={1.5} aria-hidden />,
 }
 

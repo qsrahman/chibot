@@ -1,6 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
 import {
-  FAKE_OPENAI,
   answer,
   answered,
   lastRequest,
@@ -91,11 +90,12 @@ test('a temporary chat neither sees nor saves memories', async ({ page }) => {
   expect(await memories(page)).toEqual(['I like tea'])
 })
 
-test('asks before a memory change in a chat that read the web', async ({
+test('asks before a memory change in a chat that used a tool with others’ text', async ({
   page,
 }) => {
   await page.goto('/')
-  await send(page, `Please read ${FAKE_OPENAI}/pages/robots`)
+  // An MCP server's output is others' text, which may have planted this.
+  await send(page, 'Please mcp echo robots are described here')
   await answered(page)
   await send(page, 'Please remember robots are great')
   const card = page.getByRole('region', { name: 'Tool approval' })

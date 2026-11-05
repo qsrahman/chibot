@@ -6,7 +6,7 @@ import { useAnchoredPopover } from '../ui/popover.ts'
 /** A tool the user can pick for the next message ("+" menu). */
 export interface ToolOption {
   name: string
-  /** In the menu, e.g. "Search the web". */
+  /** In the menu, e.g. "Create an image". */
   label: string
   /** On the chip once picked, e.g. "Search". */
   chip: string

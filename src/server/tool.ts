@@ -1,8 +1,5 @@
 import { zodResponsesFunction } from 'openai/helpers/zod'
-import type {
-  FunctionTool,
-  ResponseInputItem,
-} from 'openai/resources/responses/responses'
+import type { FunctionTool } from 'openai/resources/responses/responses'
 import type { z } from 'zod'
 import type { ToolChip, ToolGroup, ToolInfo } from '../shared/tools.ts'
 import type { Conversation } from '../shared/types.ts'
@@ -17,19 +14,13 @@ export interface ToolContext {
   signal?: AbortSignal
 }
 
-/** `signal` (the stop button), also aborting after `ms`, for slow requests. */
-export const abortAfter = (ms: number, signal?: AbortSignal) =>
-  signal
-    ? AbortSignal.any([signal, AbortSignal.timeout(ms)])
-    : AbortSignal.timeout(ms)
-
 /**
  * A function the model can call. Subclasses set the fields and implement
  * `run`; `ToolRegistry` validates the arguments against `parameters` first.
  */
 export abstract class Tool<Parameters extends z.ZodObject = z.ZodObject> {
   abstract readonly name: string
-  /** What the user sees, e.g. in Settings: "Search the web". */
+  /** What the user sees, e.g. in Settings: "Create images". */
   abstract readonly label: string
   /** Tells the model what the tool does and when to use it. */
   abstract readonly description: string
@@ -57,17 +48,6 @@ export abstract class Tool<Parameters extends z.ZodObject = z.ZodObject> {
   readonly approvalReason: string | undefined = undefined
   /** The output holds text from others (web pages, search results). */
   readonly untrustedOutput: boolean = false
-  /**
-   * For `'after-untrusted'` tools, once the chat holds others' text: whether
-   * this call asks. The default is every call. A tool that can tell a call
-   * the user or a trusted source steered from one planted text may be
-   * steering (e.g. an address nobody gave) overrides it. `args` is the call's
-   * arguments as sent (parsed JSON, not validated), `undefined` if they
-   * aren't JSON.
-   */
-  askAfterUntrusted(_args: unknown, _history: ResponseInputItem[]): boolean {
-    return true
-  }
   /**
    * Whether the tool is offered in `conversation`. E.g. tools that read or
    * keep the user's history (memory, chat search) aren't in temporary chats,

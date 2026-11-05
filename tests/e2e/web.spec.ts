@@ -1,7 +1,6 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import {
   FAKE_OPENAI,
-  answer,
   answered,
   appReady,
   lastRequest,
@@ -10,42 +9,11 @@ import {
   turns,
 } from './helpers.ts'
 
-// Phase 6: web search, reading pages, images and tool switches, against
-// tests/e2e/fake-openai.ts (which also fakes Brave and the images API).
+// Phase 6: images and tool switches, against tests/e2e/fake-openai.ts (which
+// also fakes the images API).
 
 test.afterEach(async ({ page }) => {
   await resetSettings(page)
-})
-
-const sources = (page: Page, index: number) =>
-  turns(page).nth(index).locator('.sources')
-
-test('searches the web and lists the sources', async ({ page }) => {
-  await page.goto('/')
-  await send(page, 'Please search for robots')
-  await answered(page)
-  await expect(answer(page, 0)).toContainText('All about robots.')
-  await expect(page.getByText('Searched the web')).toBeVisible()
-  // The row says what it came to without opening it.
-  await expect(page.locator('.tool-preview')).toHaveText(' · 1 result')
-
-  await sources(page, 0).getByText('Sources · 1').click()
-  await expect(
-    sources(page, 0).getByRole('link', { name: /Result for Please search/ }),
-  ).toHaveAttribute('href', `${FAKE_OPENAI}/pages/robots`)
-})
-
-test('reads a pasted URL, but not a local address', async ({ page }) => {
-  await page.goto('/')
-  await send(page, `Please read ${FAKE_OPENAI}/pages/robots`)
-  await answered(page)
-  await expect(answer(page, 0)).toContainText('Robots are machines')
-  await expect(answer(page, 0)).toContainText('untrusted page content')
-  await expect(answer(page, 0)).not.toContainText('Home · About')
-
-  await send(page, 'Please read http://localhost:4010/pages/robots')
-  await answered(page)
-  await expect(answer(page, 1)).toContainText('private or local address')
 })
 
 test('creates an image, keeps it, and edits it', async ({ page }) => {
@@ -156,7 +124,7 @@ test('a tool switched off in Settings is greyed out and not sent', async ({
     (tool) => tool.name,
   )
   expect(names).not.toContain('generate_image')
-  expect(names).toContain('web_search')
+  expect(names).toContain('memory')
 })
 
 test('menus move with the arrow keys', async ({ page }) => {

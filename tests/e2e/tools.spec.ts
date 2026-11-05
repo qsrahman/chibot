@@ -82,8 +82,8 @@ test('groups an answer’s tool calls under one row', async ({ page }) => {
       output,
     }),
   ]
-  const results = (url: string) =>
-    JSON.stringify({ results: [{ title: url, url }] })
+  const results = (id: string) =>
+    JSON.stringify({ results: [{ chat_id: id, title: `Chat ${id}` }] })
   const res = await page.request.post('/api/conversations/import', {
     data: {
       version: 2,
@@ -92,18 +92,8 @@ test('groups an answer’s tool calls under one row', async ({ page }) => {
       files: [],
       items: [
         item(1, { role: 'user', content: 'Compare two things' }),
-        ...call(
-          1,
-          'web_search',
-          { query: 'first' },
-          results('https://a.example/'),
-        ),
-        ...call(
-          2,
-          'web_search',
-          { query: 'second' },
-          results('https://b.example/'),
-        ),
+        ...call(1, 'search_chats', { query: 'first' }, results('a')),
+        ...call(2, 'search_chats', { query: 'second' }, results('b')),
         ...call(3, 'memory', { action: 'save' }, 'Saved memory 1: "Likes tea"'),
         item(8, { role: 'assistant', content: 'Here is the comparison.' }),
       ],
@@ -115,14 +105,14 @@ test('groups an answer’s tool calls under one row', async ({ page }) => {
   // One row, saying what was done (a memory change stays visible)…
   const group = turns(page).first().locator('.tool-calls')
   await expect(group.locator('> summary')).toHaveText(
-    'Searched the web, Memory updated',
+    'Searched your chats, Memory updated',
   )
   await expect(turns(page).first().locator('.tool-call').first()).toBeHidden()
   // …opening to each call, each with its own details.
   await group.locator('> summary').click()
   const calls = group.locator('.tool-call')
   await expect(calls).toHaveCount(3)
-  await expect(calls.nth(0)).toContainText('Searched the web')
+  await expect(calls.nth(0)).toContainText('Searched your chats')
   await calls.nth(1).locator('> summary').click()
   await expect(calls.nth(1).locator('.tool-input')).toHaveText('second')
 })
