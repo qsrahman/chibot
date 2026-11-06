@@ -897,3 +897,26 @@ details[open] > summary > .disclosure-chevron {
     animation: none;
   }
 }
+
+/* Next to selected text in the chat: quotes it in the message box. */
+.quote-button {
+  position: fixed;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-raised);
+  color: var(--fg);
+  box-shadow: var(--dialog-shadow);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.quote-button:hover {
+  background: var(--surface-muted);
+}

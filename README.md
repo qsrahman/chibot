@@ -361,6 +361,9 @@ needs the server running: there is no offline mode, since the server is local.
 - **Edit** a message (hover it, then the pencil) or **regenerate** an answer
   (the circular arrow). Either makes a new version; `< 2/3 >` switches
   between them, and each version keeps its own follow-up messages.
+- **Quote:** select text in an answer or message and click **Quote** beside it:
+  it is added to the message box as a block quote, under what you have
+  written, to ask about that part.
 - **Copy** buttons sit under messages and answers, and on code blocks.
 - **Context usage:** each answer shows the context it sent against the
   window (e.g. `12.4K / 32K context`), turning red once it reaches where

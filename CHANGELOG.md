@@ -7,6 +7,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 ### Added
 
 - **Settings → Tools → Add server** adds, edits and removes MCP servers without editing the config file, with presets (web pages, Brave search, files in a folder). Keys in the environment and header rows are kept in the file and never shown again; it works only while chibot listens on this machine or `CHIBOT_TOKEN` is set.
+- Select text in the chat and click **Quote** to add it to the message box as a quote.
 - **+** → **Take a photo** attaches a picture from the device's camera: a preview opens, and nothing is captured until you click the shutter.
 
 ### Changed

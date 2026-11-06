@@ -17,6 +17,8 @@ import type { ToolIcon } from '../../shared/tools.ts'
 import type { ConversationListItem, Health } from '../../shared/types.ts'
 import type { ToolOption } from './AddMenu.tsx'
 import { Composer } from './Composer.tsx'
+import { quoteText } from './quote.ts'
+import { QuoteSelection } from './QuoteSelection.tsx'
 import { ModelPicker } from './ModelPicker.tsx'
 import { ProjectDetails } from '../projects/ProjectDetails.tsx'
 import { ProjectHeading } from '../projects/ProjectHeading.tsx'
@@ -92,9 +94,11 @@ export function ChatPage({
   const draftKey = id ?? `new:${projectHome ?? ''}`
   const attachments = useAttachments(draftKey)
   const [dragging, setDragging] = useState(false)
-  const [prefill, setPrefill] = useState<{ text: string; n: number } | null>(
-    null,
-  )
+  const [prefill, setPrefill] = useState<{
+    text: string
+    n: number
+    append?: boolean
+  } | null>(null)
   const waiting = pending ? [] : waitingCalls(turns)
   // Shown even when unavailable, saying why, so they can be found.
   const toolOptions: ToolOption[] = settings.tools.flatMap((tool) =>
@@ -488,6 +492,16 @@ export function ChatPage({
               )}
             </div>
           )}
+          <QuoteSelection
+            within={threadRef}
+            onQuote={(text) =>
+              setPrefill((was) => ({
+                text: quoteText(text),
+                n: (was?.n ?? 0) + 1,
+                append: true,
+              }))
+            }
+          />
           <Composer
             busy={busy}
             onSend={following(chat.send)}

@@ -9,6 +9,7 @@ import { ArrowUp, LoaderCircle, Mic, Square, X } from 'lucide-react'
 import type { Settings } from '../../shared/settings.ts'
 import { AddMenu, type ToolOption } from './AddMenu.tsx'
 import { loadDrafts, saveDrafts } from './composerDrafts.ts'
+import { appendQuote } from './quote.ts'
 import { DictationMeter } from './DictationMeter.tsx'
 import { DraftAttachments } from './DraftAttachments.tsx'
 import { ModeSwitch } from './ModeSwitch.tsx'
@@ -49,7 +50,8 @@ interface Props {
   effort: Settings['reasoningEffort']
   onEffort: (effort: Settings['reasoningEffort']) => void
   /** Text to put in the box (a starter prompt); a new `n` puts it again. */
-  prefill: { text: string; n: number } | null
+  /** Text to put in the box: replacing what is there, or (`append`) added under it. */
+  prefill: { text: string; n: number; append?: boolean } | null
 }
 
 export function Composer({
@@ -105,13 +107,16 @@ export function Composer({
   const touchOnly = useMediaQuery(TOUCH_ONLY)
   useEffect(() => {
     if (!prefill) return
-    setText(prefill.text)
+    setText((current) =>
+      prefill.append ? appendQuote(current, prefill.text) : prefill.text,
+    )
     const box = inputRef.current
     box?.focus()
     // After React has put the text in, so the caret ends up after it.
-    requestAnimationFrame(() =>
-      box?.setSelectionRange(prefill.text.length, prefill.text.length),
-    )
+    requestAnimationFrame(() => {
+      const end = box?.value.length ?? 0
+      box?.setSelectionRange(end, end)
+    })
     // Only a new suggestion; the box's own text may change freely.
   }, [prefill?.n])
   const dictation = useDictation((spoken) => {

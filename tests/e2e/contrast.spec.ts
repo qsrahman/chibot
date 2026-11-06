@@ -104,6 +104,14 @@ for (const scheme of ['light', 'dark'] as const) {
       await send(page, 'Please draw a robot')
       await answered(page)
 
+      await page
+        .locator('.message.assistant p')
+        .first()
+        .click({ clickCount: 3 })
+      await expect(page.getByRole('button', { name: 'Quote' })).toBeVisible()
+      expect(await violations(page), 'Quote').toEqual([])
+      await page.getByRole('button', { name: 'Quote' }).click()
+
       await page.getByRole('button', { name: 'Add files and more' }).click()
       expect(await violations(page)).toEqual([])
       await page.keyboard.press('Escape')

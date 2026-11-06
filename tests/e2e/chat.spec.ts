@@ -794,3 +794,25 @@ test('links to an answer’s sources are numbered, and say which page they are',
   await page.getByText('Sources · 2').click()
   await expect(page.locator('.sources .source-num').first()).toHaveText('1')
 })
+
+test('quotes selected text from an answer into the message box', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await send(page, 'Quote me')
+  await answered(page)
+  const box = page.getByRole('textbox', { name: 'Message' })
+  await box.fill('My reply')
+
+  await page.locator('.message.assistant p').first().click({ clickCount: 3 })
+  await page.getByRole('button', { name: 'Quote' }).click()
+  await expect(box).toHaveValue(/^My reply\n\n> Answer #\d+ to: Quote me\n\n$/)
+  await expect(box).toBeFocused()
+  // The selection is cleared with the button.
+  await expect(page.getByRole('button', { name: 'Quote' })).toHaveCount(0)
+
+  // Text selected in the message box itself is not offered.
+  await box.selectText()
+  await page.waitForTimeout(300)
+  await expect(page.getByRole('button', { name: 'Quote' })).toHaveCount(0)
+})
