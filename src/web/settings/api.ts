@@ -9,6 +9,7 @@ import type {
   McpServerStatus,
   Memory,
   ModelsResponse,
+  ModelWindowResponse,
 } from '../../shared/types.ts'
 import { remove, request, send } from '../http.ts'
 
@@ -19,6 +20,10 @@ export const getSettings = () => request<SettingsResponse>('/api/settings')
 export const updateSettings = (patch: SettingsPatch) =>
   request<Settings>('/api/settings', send('PATCH', patch))
 
+export const modelWindow = (model: string) =>
+  request<ModelWindowResponse>(
+    `/api/models/window?model=${encodeURIComponent(model)}`,
+  )
 export const listModels = () => request<ModelsResponse>('/api/models')
 
 export const listTools = () => request<{ tools: ToolInfo[] }>('/api/tools')

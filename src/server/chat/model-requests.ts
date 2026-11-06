@@ -83,6 +83,45 @@ export class ModelRequests {
   }
 
   /**
+   * The context window the server reports for `model`, in tokens, or `null`
+   * when it doesn't say. Servers differ: OpenRouter's model list has
+   * `context_length` and LM Studio's `max_context_length`; Ollama's
+   * `/api/show` lists `num_ctx` only when the model sets one (otherwise the
+   * window in use is the server's default, which isn't reported, so none is
+   * guessed). Never throws.
+   */
+  async contextWindow(model: string): Promise<number | null> {
+    try {
+      for await (const entry of this.#client.models.list()) {
+        if (entry.id !== model) continue
+        const listed = entry as unknown as Record<string, unknown>
+        const window = listed.context_length ?? listed.max_context_length
+        if (typeof window === 'number' && window > 0) return window
+      }
+    } catch {
+      // Not listed: try Ollama's own API next.
+    }
+    try {
+      const base = new URL(this.#client.baseURL)
+      const res = await fetch(new URL('/api/show', base.origin), {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          authorization: `Bearer ${this.#client.apiKey}`,
+        },
+        body: JSON.stringify({ model }),
+        signal: AbortSignal.timeout(3000),
+      })
+      if (!res.ok) return null
+      const { parameters } = (await res.json()) as { parameters?: unknown }
+      const match = /^num_ctx\s+(\d+)/m.exec(String(parameters ?? ''))
+      return match ? Number(match[1]) : null
+    } catch {
+      return null
+    }
+  }
+
+  /**
    * Calls `send` with `optional` request features, or without them where
    * they're rejected: models without reasoning (or without that effort) answer 400. A 400 is retried once
    * without them; if that works, the combination is remembered so later

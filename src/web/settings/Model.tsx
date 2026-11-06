@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { effortLabel, REASONING_EFFORTS } from '../../shared/reasoning.ts'
 import type { Settings } from '../../shared/settings.ts'
 import type { SettingsApi } from './useSettings.ts'
+import { modelWindow } from './api.ts'
 import { Row, Section } from './parts.tsx'
 
 type NumberSetting =
@@ -14,6 +15,20 @@ export function Model({
   settings: Settings
   onChange: SettingsApi['update']
 }) {
+  // What the server says about the chat model's window, when it says.
+  const [reported, setReported] = useState<number | null>(null)
+  useEffect(() => {
+    let current = true
+    setReported(null)
+    modelWindow(settings.model).then(
+      ({ window }) => current && setReported(window),
+      () => {},
+    )
+    return () => {
+      current = false
+    }
+  }, [settings.model])
+
   return (
     <>
       <Section title="Reasoning">
@@ -67,6 +82,11 @@ export function Model({
           min={2000}
           step={1000}
           onChange={onChange}
+          suggestion={
+            reported !== null && reported !== settings.contextWindow
+              ? { value: reported, from: settings.model }
+              : null
+          }
         />
         {settings.autoCompact && (
           <>
@@ -120,6 +140,7 @@ function NumberRow({
   max,
   step,
   onChange,
+  suggestion = null,
 }: {
   id: string
   label: string
@@ -130,6 +151,8 @@ function NumberRow({
   max?: number
   step: number
   onChange: SettingsApi['update']
+  /** A value the server reports, offered with one click. */
+  suggestion?: { value: number; from: string } | null
 }) {
   const current = settings[setting]
   const [draft, setDraft] = useState(String(current))
@@ -161,6 +184,19 @@ function NumberRow({
         onBlur={save}
         onKeyDown={(e) => e.key === 'Enter' && save()}
       />
+      {suggestion && (
+        <button
+          type="button"
+          className="button"
+          title={`What the server reports for ${suggestion.from}`}
+          onClick={() => {
+            setDraft(String(suggestion.value))
+            void onChange({ [setting]: suggestion.value })
+          }}
+        >
+          Use {suggestion.value.toLocaleString()}
+        </button>
+      )}
     </Row>
   )
 }

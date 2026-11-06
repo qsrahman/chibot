@@ -200,6 +200,11 @@ export interface ModelsResponse {
   models: string[] | null
 }
 
+/** `GET /api/models/window?model=`: the context window the server reports, or `null`. */
+export interface ModelWindowResponse {
+  window: number | null
+}
+
 /** An MCP server from the config, as `GET /api/mcp` reports it. */
 export interface McpServerStatus {
   name: string

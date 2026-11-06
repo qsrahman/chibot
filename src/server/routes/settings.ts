@@ -4,7 +4,7 @@ import {
   type SettingsResponse,
 } from '../../shared/settings.ts'
 import type { ToolInfo } from '../../shared/tools.ts'
-import type { ModelsResponse } from '../../shared/types.ts'
+import type { ModelsResponse, ModelWindowResponse } from '../../shared/types.ts'
 import type { ModelRequests } from '../chat/index.ts'
 import type { McpServers } from '../mcp/index.ts'
 import type { ProjectIndex } from '../projects/index.ts'
@@ -62,6 +62,14 @@ export function settingsRoutes({
 
   app.get('/api/models', async (c) =>
     c.json({ models: await model.listModels() } satisfies ModelsResponse),
+  )
+
+  app.get('/api/models/window', async (c) =>
+    c.json({
+      window: await model.contextWindow(
+        c.req.query('model') || settings.get().model,
+      ),
+    } satisfies ModelWindowResponse),
   )
 
   return app
