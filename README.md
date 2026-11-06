@@ -6,12 +6,14 @@ It works with OpenAI and with OpenAI-compatible servers that implement the
 Responses API, such as [Ollama](https://docs.ollama.com/openai) and
 [LM Studio](https://lmstudio.ai/).
 
-> **Status: v0.11, phases 0–10 complete.** Chat with a sidebar, message
+> **Status: v0.13, phases 0–10 complete.** Chat with a sidebar, message
 > versions, a model picker, visible reasoning, custom instructions, long-chat
 > compaction, export/import, themes, tools the model can call (creating and
 > editing images, memory, searching past chats and project files, plus any MCP
 > server's, such as web search), projects with their own files, attachments, voice input, and MCP
-> servers' tools. Next: multiple providers and a code runner. See
+> servers' tools, summaries that keep long chats going on any server, a
+> camera, quoting, and backup and restore. Next: multiple providers and a code
+> runner. See
 > [PLAN.md](PLAN.md) for the roadmap and [CHANGELOG.md](CHANGELOG.md) for what
 > changed.
 

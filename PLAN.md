@@ -6,9 +6,11 @@ via the official `openai` Node SDK. It works with OpenAI and with any
 OpenAI-compatible server that implements the Responses API (e.g. Ollama,
 LM Studio).
 
-**Status:** phases 0–10 are complete (v0.11.x). Next: Phase 11a (multiple
-providers, agreed) and Phase 11 (code runner). Releases between phases bump
-the patch version; see [CHANGELOG.md](CHANGELOG.md).
+**Status:** phases 0–10 are complete, and v0.12–0.13 added the config file,
+the `chibot` command and provider-neutral long-chat summaries (see *Between
+phases*). Next: Phase 11a (multiple providers, design agreed) and Phase 11
+(code runner). Releases between phases bump the patch version; see
+[CHANGELOG.md](CHANGELOG.md).
 
 ## 1. Goals
 
@@ -31,8 +33,9 @@ the patch version; see [CHANGELOG.md](CHANGELOG.md).
 - OpenAI-hosted tools (`web_search`, `file_search`, `image_generation`,
   `code_interpreter`, remote MCP). Every tool is our own function tool.
 - Providers that only implement Chat Completions (`/v1/chat/completions`).
-- Several chat providers at once. One chat provider is configured in `.env`;
-  switching means editing it and restarting.
+- Several chat providers at once (until Phase 11a): one chat provider is
+  configured in `config.json` or the environment; switching means changing it
+  and restarting.
 - A git remote or CI. Commits stay local; checks run before each commit.
 - Dollar cost estimates. The SDK has no pricing data and a hand-kept price
   table would go stale, so usage is shown in tokens only.
@@ -53,7 +56,7 @@ the patch version; see [CHANGELOG.md](CHANGELOG.md).
 | Tools | Our own function tools only, no OpenAI-hosted tools | Full control over behaviour, storage and what leaves the machine. Web search uses Brave; project files use local RAG. |
 | Tool approval | Per-tool `requiresApproval` flag (`true`, or `'after-untrusted'` from Phase 7); a call needing approval ends the turn, and Approve/Deny resumes it with a new request | Read-only tools run automatically; tools with side effects wait for Approve/Deny in the chat. `'after-untrusted'` asks only in chats whose history holds output of a tool marked `untrustedOutput` (web content), against prompt injection. A pending approval is stored state (the path ends in an unanswered call), so it survives a reload and needs no in-memory wait. |
 | Tool loop | chibot's own loop in `ChatService`; tools declared with the SDK's `zodResponsesFunction` | The SDK's `ResponsesToolRunner` was tested: it fails on Ollama `gpt-oss` (its stream accumulator, with the cause hidden), runs the whole loop in one call (no approval across requests) and doesn't let chibot persist each step before relaying `response.completed`. |
-| MCP | chibot's own client (`@modelcontextprotocol/client`); servers only in `mcp.json`, and their tools become function tools | The tool loop, approvals and Settings switches apply unchanged. A server runs commands with the owner's rights, and chibot has no login, so the web app never adds one. |
+| MCP | chibot's own client (`@modelcontextprotocol/client`); servers in `config.json` (or `mcp.json`), edited by hand or in Settings, and their tools become function tools | The tool loop, approvals and Settings switches apply unchanged. A server runs commands with the owner's rights, and chibot has no login, so the web app never adds one. |
 | Attachments | Original kept in `data/files/`; stored messages reference it by chibot's own file id. Each request sends it by Files API `file_id` where the endpoint supports it (uploaded once, expiring after 30 days), otherwise inline as base64, or as its extracted text when the model rejects files | Requests stay small on OpenAI (stateless chats would otherwise re-send every attachment each turn), compatible servers without a Files API still work, and the local copy is the source of truth: a file the provider no longer has gets re-uploaded. |
 | Providers | One Responses-API endpoint for chat, set by `OPENAI_BASE_URL` / `OPENAI_API_KEY` / `OPENAI_MODEL` | The SDK's own env names, and the same code path for OpenAI, Ollama, LM Studio and other Open Responses servers. The key is optional when a base URL is set, since local servers ignore it. |
 | Feature endpoints | Transcription, images and embeddings each have an optional endpoint override, inheriting the chat endpoint | Lets chat run locally while, say, images use OpenAI. With a compatible endpoint and no model configured, the feature is off with a clear message. |
@@ -90,7 +93,7 @@ the patch version; see [CHANGELOG.md](CHANGELOG.md).
   model summarize the start of the chat. OpenAI's own `compaction` option is
   not used; compatible servers ignore it.
 - **Compatible providers** may not support every request option above
-  (`store`, `include`, `context_management`). Phase 1 verifies chat against a
+  (`store`, `include`). Phase 1 verifies chat against a
   local Ollama with `gemma4:cloud`. An option a provider rejects gets a per-endpoint switch, added
   only once a real provider needs it.
 
@@ -181,6 +184,13 @@ chunk_vectors USING vec0(embedding float[N])  -- sqlite-vec, rowid = chunks.id;
                                               -- N from the embedding model
 memories(id INTEGER PK AUTOINCREMENT, text TEXT,          -- Phase 7
          created_at INTEGER, updated_at INTEGER)
+compactions(id INTEGER PK AUTOINCREMENT,                  -- v0.13
+            conversation_id TEXT FK → conversations ON DELETE CASCADE,
+            up_to_item_id INTEGER FK → items,   -- the summary stands in for the path up to here
+            summary TEXT, summary_model TEXT,
+            tokens_before INTEGER, tokens_after INTEGER,
+            previous_id INTEGER NULL,           -- the summary this one builds on
+            degraded INTEGER DEFAULT 0, created_at INTEGER)
 ```
 
 Search indexes the plain text of user and assistant messages (no reasoning or
@@ -205,7 +215,11 @@ tool payloads), written in the same transaction as the item.
 | `GET /api/memories` · `PATCH/DELETE /api/memories/:id` · `DELETE /api/memories` | 7 | View / edit / delete one or all memories |
 | `/api/projects[/:id]` (CRUD) · `/api/projects/:id/files[/:fileId]` · `POST /api/files` | 8 | Projects; their files (list, attach, detach, with indexing status); upload a file (project files; Phase 9 attachments, ≤ 50 MB). Conversation `PATCH` gains `projectId`. |
 | `POST /api/transcriptions` | 9 | Transcribe a recording (≤ 25 MB). Phase 9 adds `fileIds` to turns and `features` to health. |
-| `GET /api/mcp` · `POST /api/mcp/reload` · `POST /api/mcp/:name/{reconnect,sign-in,sign-out}` · `GET /api/mcp/oauth/callback` | 10 | MCP servers' status and tools; reconnect; OAuth sign-in and sign-out (servers themselves are only set up in `mcp.json`) |
+| `GET /api/mcp` · `POST /api/mcp/reload` · `POST /api/mcp/:name/{reconnect,sign-in,sign-out}` · `GET /api/mcp/oauth/callback` | 10 | MCP servers' status and tools; reconnect; OAuth sign-in and sign-out |
+| `GET /api/mcp/definitions` · `PUT/DELETE /api/mcp/servers/:name` | after 0.13 | Add, change and remove servers in the config file from Settings (only on loopback or with `CHIBOT_TOKEN`); `env` and `headers` values are write-only |
+| `POST /api/conversations/:id/compact` · `DELETE /api/conversations/:id/compactions/:compactionId` | 0.13 | Summarize the start of a chat now (optional focus); undo a summary. `GET /api/conversations/:id` also returns its `compactions`. |
+| `GET /api/models/window?model=` | 0.13 | The context window the server reports for a model, or `null` |
+| `GET /api/media` | 0.13 | Fetch a linked image, sound or video for an answer (never private addresses) |
 
 ## 5. Phases
 
@@ -226,8 +240,8 @@ bumps the minor version. Work stops after each phase for review.
 | 8 | Projects with files and local search | v0.9.0 | ✅ |
 | 9 | Attachments and voice input | v0.10.0 | ✅ |
 | 10 | MCP client | v0.11.0 | ✅ |
-| 11a | Multiple providers | v0.12.0 | agreed, not built |
-| 11 | Code runner | v0.13.0 | planned |
+| 11a | Multiple providers | v0.14.0 | design agreed, not built |
+| 11 | Code runner | v0.15.0 | planned |
 
 ### Phase 0 — Foundations ✅
 - Dependencies, `Config` (OpenAI or compatible endpoint), Hono app with
@@ -754,6 +768,19 @@ Shipped as patch releases (details in the CHANGELOG):
   `SettingsDialog.tsx`, `TurnView.tsx` and `chat-service.ts` were split into
   smaller files.
 
+- **v0.12.x.** `config.json`, the `chibot` command (`init`, `config`) and
+  platform folders for settings and data (0.12.0–0.12.10), details in the
+  CHANGELOG.
+- **v0.13.0.** Long chats work on any server: chibot's own summaries with
+  pruning, **Compact now**, Undo, a summary model and the window setting;
+  OpenAI's compaction and chibot's own web search and page reader removed (an
+  MCP server does those); images and media from other sites in answers.
+  Design in [CONTEXT.md](CONTEXT.md).
+- **Since v0.13.0 (unreleased).** Review fixes to the summaries; **Compact
+  now** as an icon; **Take a photo** (camera); MCP servers added, edited and
+  removed in Settings, with presets; **Quote** selected text; `chibot backup`
+  and `chibot restore`.
+
 ### Phase 11a — Multiple providers (design agreed, not built)
 Decisions (agreed; the design was drawn up against Chatbox's provider code,
 `src/shared/providers`, keeping its idea of per-model capabilities but not its
@@ -932,7 +959,7 @@ after the MCP client (Phase 10) and multiple providers (Phase 11a).
   DESIGN.md gets the card spec.
 - **Commits.** Sandbox probe and runner → package setup → `run_python` tool →
   `.xlsx` attachments → UI → e2e specs (the fake server's "run code" calls
-  `run_python`) → docs → release v0.13.0.
+  `run_python`) → docs → release v0.15.0.
 - **Done when:** with `gemma4:cloud` and OpenAI, pandas reads an attached CSV
   and an `.xlsx`, matplotlib draws a chart that shows in the answer, and code
   that tries to fetch a URL or read `process.env` fails. Unit tests run real
@@ -1026,5 +1053,16 @@ Environment variables:
   sources list comes from the tool result, which it understands only for chibot's
   own tools and chats made with the removed `web_search` and `fetch_url`: an MCP
   search server's results show as that tool's text, without a Sources list.
+- **Known gaps in long-chat summaries** (left out on purpose, see
+  [CONTEXT.md](CONTEXT.md)): images that an MCP tool returns inside an array
+  are not pruned; a JSON export leaves out summaries; the summary is a separate
+  user-role message, which a strict chat template might refuse; an overflow
+  reported inside an already-started stream is not recovered (only one that
+  fails the request is); and Undo can leave the usage-based size reading low
+  until the next answer (the reactive retry covers it).
+- **Not planned yet** (from comparing Chatbox and nanobot): saved prompts
+  inserted with `/`, a conversation minimap, and chats side by side. Not
+  wanted: shell and file tools, scheduled automations, team sharing and
+  interface translations.
 - **`node:sqlite` stability:** it's built into Node 26. If its API shifts,
   `database.ts` and the stores are the places to change.

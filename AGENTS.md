@@ -39,7 +39,7 @@ src/server/<feature>/
               (config, connections, OAuth, routes, the tool)
 src/shared/   used by both server and web: API record types, chibot's own SSE
               events, message text extraction, zod schemas (requests,
-              settings, export) and reasoning efforts (zod-free, so the web
+              settings, export, MCP server shape and presets) and reasoning efforts (zod-free, so the web
               can import it)
 src/web/      Vite root: index.html, main.tsx, App.tsx and the shell
               (Sidebar, ShortcutsDialog), http.ts (fetch helpers, uploads),

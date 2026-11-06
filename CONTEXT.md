@@ -1,5 +1,8 @@
 # Context management: research and design
 
+> **Status: built** (phases 1–3 in v0.13.0; review fixes since). This file is the
+> design and its reasoning; README.md and PLAN.md describe how it behaves now.
+
 How chibot keeps a long chat inside the model's context window, based on how
 six open-source agents do it. Written because chibot's current approach is tied
 to one company's API and does not work on the servers chibot is meant for. The
@@ -384,7 +387,7 @@ Over the items *outside* the kept tail:
 answer's reported `input_tokens` (estimate: characters ÷ 4, CJK × 1.5, if the
 server reports none) is at or above the trigger **after pruning**. It shows
 "Summarizing earlier messages…" with Stop, in the chat: nothing generates in
-the background. "Compact now" in the chat menu does it by hand, with an
+the background. "Compact now" (an icon under the latest answer) does it by hand, with an
 optional focus (up to 800 characters).
 
 **The cut.** Walk back from the newest item until *Keep recent* is reached; a
@@ -534,6 +537,12 @@ Settled by the owner:
    re-summarize.
 
 All decisions are settled; nothing is left open before phase 1.
+
+Left out deliberately after the review of v0.13: pruning of images that an MCP
+tool returns inside an array; summaries in the JSON export; a strict chat
+template that refuses the summary's separate user-role message; recovering an
+overflow reported inside a stream that has begun; and a low size reading after
+Undo until the next answer.
 
 ## 8. Sources
 

@@ -275,6 +275,24 @@ code"); a tool that isn't set up or is switched off stays listed, disabled in
 chip (`--bubble-bg` / `--bubble-fg`, 36 px tall, icon + "Search"/"Image" +
 `X`) before the text; it applies to one message.
 
+**Take a photo.** A menu item under Add photos & files, shown only where the
+browser offers a camera. It opens a dialog with a mirrored live preview
+(`--surface-muted` while it loads), Cancel and a primary "Take photo" button
+that is disabled until the first frame; the picture attaches as a JPEG like an
+uploaded image. The camera runs only while the dialog is open.
+
+**Quote.** Selecting text in the chat shows a 32 px pill button ("Quote",
+`Quote` icon, `--surface-raised`, `--border`, dialog shadow) above the
+selection, or below it on touch screens so it clears the phone's own menu. It
+adds the text to the message box as a Markdown block quote and clears the
+selection.
+
+**MCP server form.** A dialog (560 px) from Settings → Tools: preset, name,
+kind, then command, arguments (one per line) and working folder, or URL; a
+list of name / value rows for environment variables or headers (values are
+password fields that show "Saved (hidden)" when editing); a note that local
+servers run with the user's rights; errors in a `role="alert"` line.
+
 **Images.** Generated images sit above the answer text, up to 400 px wide with
 16 px radius; a square shimmer placeholder stands in while one is made. A
 `Download` icon button appears over the top-right corner on hover.
@@ -308,7 +326,9 @@ with "Project name /" (muted, a link) before the model name.
 lower 40% of the window.
 
 **Compaction note.** A 12 px muted line between hairlines: "Earlier messages
-were summarized to save context."
+were summarized to save context." **Compact now** is an action-row icon
+(`ListCollapse`) under the latest answer with the tooltip "Compact now"; it
+opens a one-line form for what the summary should keep in mind.
 
 **Theme.** Every colour token is `light-dark(light, dark)`. `color-scheme`
 follows the system unless `<meta name="color-scheme">` is set to `light` or
@@ -335,6 +355,7 @@ equivalents use a 1.5 px stroke:
 | Regenerate | `RefreshCw` |
 | Versions | `ChevronLeft` / `ChevronRight` |
 | Attach / voice | `Plus` / `Mic` |
+| Take a photo / quote / compact now | `Camera` / `Quote` / `ListCollapse` |
 | Sidebar toggle | `PanelLeft` |
 | Settings | `Settings` |
 | Model picker | `ChevronDown`, `Check` |
