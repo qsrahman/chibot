@@ -754,67 +754,137 @@ Shipped as patch releases (details in the CHANGELOG):
   `SettingsDialog.tsx`, `TurnView.tsx` and `chat-service.ts` were split into
   smaller files.
 
-### Phase 11a — Multiple providers (agreed, not built)
-Decisions (agreed before building): today's single-provider `.env`
-setup keeps working unchanged; secrets never go in SQLite; the model picker
-groups models by provider; providers come from the environment first, then
-from Settings. Once built, this replaces the "one chat provider" non-goal
-(§2) and the Providers and Feature endpoints decisions (§3).
+### Phase 11a — Multiple providers (design agreed, not built)
+Decisions (agreed; the design was drawn up against Chatbox's provider code,
+`src/shared/providers`, keeping its idea of per-model capabilities but not its
+one-factory-per-provider registry, since chibot speaks one API):
+- Providers live in **`config.json`** (mode 0600, with the keys). No
+  `data/providers.json`, and no `PROVIDERS` / `PROVIDER_<ID>_*` environment
+  variables: one mechanism. The legacy `OPENAI_*` variables and the `chat`,
+  `image`, `embedding` and `transcription` endpoints keep working.
+- The **model choice is global** (as today); each answer records its
+  provider as well as its model. Per-chat choice can come later.
+- **Capability overrides are in the UI from the start** (vision, context
+  window), because servers often don't say.
+- **Presets:** OpenAI, OpenRouter, Ollama, LM Studio (below).
+- Attaching an image to a model known to be unable to see it **warns and
+  still sends**.
+- Once built, this replaces the "one chat provider" non-goal (§2) and the
+  Providers and Feature endpoints decisions (§3). Chat-completions-only
+  providers stay a non-goal.
 
-- **Config.** `Config` also reads providers from the environment (a
-  `PROVIDERS` JSON value, or `PROVIDER_<ID>_*` variables). The existing
-  `OPENAI_*` variables stay one provider, created as `default` when no others
-  are set. A provider has an id, a name, a base URL, an API key, an enabled
-  flag and an optional cached model list.
-- **Registry.** A `ProviderRegistry` (`src/server/providers.ts`) holds an
-  `OpenAI` client per provider, built lazily. It is a lookup, not a `Provider`
-  abstraction: the SDK client stays the abstraction (§4). `ChatService` takes
-  it (or a resolver) instead of one client and sends each request through the
-  client of the selected provider; `main.ts` builds it from `Config`.
-- **Secrets.** Keys come from the environment (referenced by name) or, when
-  entered in Settings, are kept in `data/providers.json` (mode 0600, like
-  `mcp-auth.json`). They never go in the `settings` table, exports or API
-  responses: the web app can write a key but never read it back.
-- **Models and settings.** `GET /api/models` returns models grouped by
-  provider; a provider that can't list models falls back to the free-text
-  field. Settings gains `providers` (non-secret metadata),
-  `selectedProviderId`, `selectedModel` and per-feature overrides
-  (`providerOverrides` for images, embeddings and transcription, which
-  otherwise inherit the chat provider). `GET`/`PATCH /api/settings` strip
-  secrets.
-- **Routes.** `GET`/`POST`/`PUT`/`DELETE /api/providers`, and
-  `POST /api/providers/:id/test` (a connection check that returns a status,
-  never a response body).
-- **Web.** Settings → Providers: add, remove, enable, test, and set the
-  default for chat and for features, with keys shown masked (and a note when
-  one comes from the environment). `ModelPicker.tsx` groups models by provider
-  with a badge and searches across all of them; choosing one sets provider and
-  model together. Feature routing sits in Settings → Model while several
-  providers are configured.
-- **Compatibility.** A setup with only the legacy variables behaves exactly as
-  before, and feature endpoints still inherit from the chat provider unless
-  overridden.
+- **Config.** `config.json` gains `providers`: id → `{ name, baseURL,
+  apiKey?, enabled? }` (ids as for MCP servers: letters, digits, `-`, `_`).
+  The legacy endpoints are registered as read-only providers: `default` (the
+  chat endpoint, from `chibot init` or the environment), and `image`,
+  `embedding`, `transcription` where set. They show in Settings, marked as
+  coming from the config, and are changed where they are set today.
+- **Selection.** Each model setting gets a provider beside it:
+  `model` + `modelProvider`, `summaryModel` + `summaryProvider`,
+  `imageModel` + `imageProvider`, and so on for embeddings and
+  transcription. The provider defaults to `default` (the feature endpoints
+  default to their own legacy provider), so existing settings stay valid with
+  no migration of values. The picker sets provider and model together. A
+  provider that is removed or disabled while selected falls back to `default`
+  and says so.
+- **Registry.** `ProviderRegistry` (`src/server/providers.ts`) holds one
+  `OpenAI` client per provider, built lazily and rebuilt when its entry
+  changes. It is a lookup, not a `Provider` abstraction (§4). `ModelRequests`,
+  `Attachments`, `TitleWriter`, `Compactor`, `InstructionWriter` and the
+  image, embedding and transcription services take the registry and a provider
+  id instead of one client. Per-model memory in `ModelRequests`
+  (`#unsupported`) and `Attachments` (`#textModels`) is keyed by provider and
+  model.
+- **Capabilities.** Per `{ provider, model }`: `vision` and `contextWindow`
+  (reasoning support is left out: `#withOptional` already copes). Resolution:
+  the user's override (a `model_overrides(provider, model, vision,
+  context_window)` table, null = not overridden), then what the server
+  reports (the model list's `context_length`, Ollama's `/api/show`,
+  and an image-input flag where a list has one; kept in memory), then unknown
+  (vision) or the global setting (window). Nothing is fetched from models.dev
+  or any remote manifest.
+- **Hazards across providers.**
+  1. *File ids.* `files.provider_file_id` holds one id per file. It becomes a
+     `provider_files(file_id, provider, provider_file_id)` table (existing ids
+     move under `default`); `Attachments` uploads once per provider.
+  2. *Reasoning replay.* Stored reasoning items (encrypted content) decrypt
+     only for the provider that wrote them, so a request replays a response's
+     reasoning items only when that response's recorded provider is the one
+     asked now (none recorded counts as `default`). Items gain a nullable
+     `provider` column, set where `model` is.
+  3. *Budgets.* `limitsFrom` reads the window of the selected model's
+     capabilities, then the global setting. The summary request goes to the
+     summary provider; the shared-prefix request only when it is the chat's
+     provider and model.
+  4. *Keys follow the URL.* A saved key is sent to its provider's base URL, so
+     changing the URL requires typing the key again (a blank key keeps the
+     saved one only when the URL is unchanged), as does `test`.
+- **Secrets.** Keys are write-only: the API says whether one is set, never
+  what it is, and they never go in SQLite, exports or responses (the same
+  pattern as MCP `env` / `headers`, `McpServerFile`).
+- **Routes.** `GET /api/providers` (id, name, base URL, key set, enabled,
+  source, editable), `PUT` / `DELETE /api/providers/:id`,
+  `POST /api/providers/:id/test` (a status, never a response body).
+  `GET /api/models` returns `{ providers: [{ id, name, models | null, error }] }`,
+  each listed in parallel with a short timeout so one provider that is down
+  doesn't hold the rest. `GET` / `PUT` / `DELETE /api/model-overrides` for the
+  capabilities. Editing providers has the gate of the MCP editor: only on
+  loopback or with `CHIBOT_TOKEN`, since the browser can then make the server
+  connect anywhere; the connection test is under the same gate.
+- **Web.** Settings → Providers: the list (name, address, whether a key is
+  set, test result, switch, Edit, Remove) and an Add dialog that starts from a
+  preset. `ModelPicker` groups models by provider and searches across all of
+  them. Settings → Model shows the selected model's details: *Vision* (Auto /
+  Yes / No) and *Context window* (Auto / a number), with where each value came
+  from. Feature models (image, embeddings, voice) pick a provider beside the
+  model. When the composer holds an image and the selected model's vision is
+  known to be off, it shows a notice ("<model> can't see images, so it will
+  not know what is in this one") and still sends.
+- **Presets** (starting points, every field editable):
+
+  | Preset | Base URL | State of its Responses support (checked 2026-11) |
+  |---|---|---|
+  | OpenAI | `https://api.openai.com/v1` | The reference. |
+  | OpenRouter | `https://openrouter.ai/api/v1` | `/responses` exists, marked beta; its docs warn of breaking changes. |
+  | Ollama | `http://localhost:11434/v1` | `/v1/responses` since 0.13.3, stateless only (fine: chibot is stateless). Images on this endpoint not documented. |
+  | LM Studio | `http://localhost:1234/v1` | `/v1/responses` documented with streaming and reasoning. Function tools and images not documented. |
+
+  Before the presets ship, each is probed with a real request for what chibot
+  needs (streaming, a function call and its output, an image, replayed
+  reasoning), as Ollama was probed earlier; the README then says which
+  preset does what. Whether Ollama's `/api/show` and OpenRouter's model list
+  report image input is checked at the same time; where they don't, the
+  override is the only source.
+- **Compatibility.** A setup with only the legacy configuration behaves
+  exactly as before: one `default` provider, no new setting needed.
 - **Risk.** Providers set in Settings let the web app point chibot at any
-  endpoint. By default only the owner's browser reaches it (host and
-  cross-site checks, `CHIBOT_TOKEN` for the LAN), and unlike an MCP server a
-  provider runs no commands, but the connection test connects wherever it is
-  told, so it gets the same checks as every other route.
-- **Testing.** Unit tests: config parsing (legacy and several providers), the
-  registry, `ChatService` routing to different clients, and keys never
-  leaking. Playwright: a second fake provider, switching in the picker, and
-  requests reaching the right endpoint.
-- **Docs.** README (setup examples such as OpenRouter, Groq and two Ollama
-  instances), DESIGN.md if the UI patterns change, the CHANGELOG, and the
-  places that describe one provider: this plan's §2, §3, §4 and §6, and
-  AGENTS.md's configuration layers.
-- **Commits.** Config and registry → server routing → routes and settings →
-  web (providers tab, grouped picker) → feature overrides → tests and docs →
-  release v0.12.0.
+  address, including private ones (a second Ollama on the LAN is the point),
+  so the provider clients are not under the media guard. By default only the
+  owner's browser reaches the API (host and cross-site checks, `CHIBOT_TOKEN`
+  for the LAN), and unlike an MCP server a provider runs no commands.
+- **Testing.** Unit: config parsing (legacy only, several providers,
+  invalid), the registry (lazy clients, rebuilt on change, fallback for a
+  removed provider), `ChatService` and the compactor routing to different
+  clients, capability resolution order, reasoning items dropped across a
+  provider change, files uploaded once per provider, keys never in responses
+  (and required again when the URL changes). Playwright: a second fake
+  provider on another port, switching in the picker, the request reaching the
+  right endpoint, the grouped picker, the vision notice and an override
+  turning it off, and the Providers tab (add, test, edit, remove); the
+  contrast spec covers the new tab and dialog.
+- **Docs.** README (setup examples for each preset), DESIGN.md if the UI
+  patterns change, CHANGELOG, and the places that describe one provider: §2,
+  §3, §4 and §6 here, and AGENTS.md's layout and configuration layers.
+- **Commits.** Config and registry → per-provider file ids and the
+  reasoning-replay guard → capabilities and per-model budgets → routes and
+  the editable gate → Providers tab and grouped picker → feature routing and
+  the vision notice → probes, presets, tests and docs → release v0.14.0.
 - **Done when:** two providers (say OpenAI and Ollama) can be added in
-  Settings and switched between in the model picker; chat and images can use
-  different providers; existing single-provider `.env` setups work unchanged;
-  API keys never appear in API responses or SQLite exports; and all tests
-  pass.
+  Settings and switched between in the picker, mid-chat, without errors from
+  replayed reasoning or file ids; images and chat can use different providers;
+  attaching a photo to a model set to "no vision" warns and still sends;
+  existing single-provider setups work unchanged; keys never appear in API
+  responses, SQLite or exports; and all tests pass.
 
 ### Phase 11 — Code runner (planned)
 Decisions (agreed before building; the sandbox is probed on Node 26 first):
