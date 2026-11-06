@@ -58,6 +58,44 @@ app.get('/debug/pixel', (c) => {
 })
 app.get('/debug/pixel-hits', (c) => c.json(pixelHits))
 
+// A tenth of a second of silence: a sound a browser can play.
+function wav(): Uint8Array {
+  const samples = 800
+  const bytes = new Uint8Array(44 + samples * 2)
+  const view = new DataView(bytes.buffer)
+  const text = (at: number, value: string) =>
+    [...value].forEach((ch, i) => view.setUint8(at + i, ch.charCodeAt(0)))
+  text(0, 'RIFF')
+  view.setUint32(4, 36 + samples * 2, true)
+  text(8, 'WAVEfmt ')
+  view.setUint32(16, 16, true)
+  view.setUint16(20, 1, true) // PCM
+  view.setUint16(22, 1, true) // mono
+  view.setUint32(24, 8000, true)
+  view.setUint32(28, 16000, true)
+  view.setUint16(32, 2, true)
+  view.setUint16(34, 16, true)
+  text(36, 'data')
+  view.setUint32(40, samples * 2, true)
+  return bytes
+}
+app.get('/media/beep.wav', (c) => {
+  const bytes = wav()
+  const range = /^bytes=(\d+)-(\d*)$/.exec(c.req.header('range') ?? '')
+  if (!range) {
+    return c.body(bytes as unknown as ArrayBuffer, 200, {
+      'Content-Type': 'audio/wav',
+      'Accept-Ranges': 'bytes',
+    })
+  }
+  const start = Number(range[1])
+  const end = Math.min(Number(range[2] || bytes.length - 1), bytes.length - 1)
+  return c.body(bytes.slice(start, end + 1) as unknown as ArrayBuffer, 206, {
+    'Content-Type': 'audio/wav',
+    'Content-Range': `bytes ${start}-${end}/${bytes.length}`,
+  })
+})
+
 // A 1×1 transparent PNG.
 const PNG =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='

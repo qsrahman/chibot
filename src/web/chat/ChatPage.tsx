@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
   type DragEvent,
@@ -21,6 +22,8 @@ import { ProjectDetails } from '../projects/ProjectDetails.tsx'
 import { ProjectHeading } from '../projects/ProjectHeading.tsx'
 import { REDUCED_MOTION } from '../ui/useMediaQuery.ts'
 import { SHORTCUTS, useShortcuts } from '../ui/shortcuts.ts'
+import { knownUrls } from '../../shared/media.ts'
+import { MediaContext } from './mediaContext.ts'
 import { ToolInfoContext } from './toolInfo.ts'
 import { waitingCalls } from './turns.ts'
 import { ApprovalCard, TurnView } from './TurnView.tsx'
@@ -217,6 +220,18 @@ export function ChatPage({
   // and text when the first message moves it to the bottom.
   const empty = turns.length === 0 && !pending && !error && !chat.loading
 
+  // The addresses in answers that may load by themselves: those the user wrote
+  // and tools returned (the server checks the same, and which it knows).
+  const media = useMemo(() => {
+    if (!id) return null
+    const shown = pending ? [...turns, pending.turn] : turns
+    const texts = shown.flatMap(({ question, answer }) => [
+      question.text,
+      ...(answer?.tools.map((tool) => tool.output ?? '') ?? []),
+    ])
+    return { conversationId: id, known: knownUrls(texts) }
+  }, [id, turns, pending])
+
   // Content that grows after the scroll (the saved answer's actions, images)
   // must not leave the view short of the end.
   useEffect(() => {
@@ -250,246 +265,250 @@ export function ChatPage({
 
   return (
     <ToolInfoContext value={settings.tools}>
-      <main
-        className={[
-          'chat',
-          empty && 'empty',
-          empty && projectHome && 'project-home',
-          dragging && 'dragging',
-        ]
-          .filter(Boolean)
-          .join(' ')}
-        inert={inert}
-        {...dragHandlers}
-      >
-        <header className="topbar">
-          <span className="topbar-start">
-            {onOpenSidebar && (
-              <button
-                type="button"
-                className="icon-button"
-                aria-label="Open sidebar"
-                title="Open sidebar"
-                onClick={onOpenSidebar}
-              >
-                <PanelLeft size={20} strokeWidth={1.5} />
-              </button>
-            )}
-            {id && project && (
-              <Link className="breadcrumb" to={`/projects/${project.id}`}>
-                {project.name} /
-              </Link>
-            )}
-            {/* Phones only: with the sidebar hidden, say which chat this is. */}
-            {id && pageTitle && (
-              <span className="topbar-title" title={pageTitle}>
-                {pageTitle}
-              </span>
-            )}
-            {!health ? (
-              <span className="model">Server unreachable</span>
-            ) : settings.settings && settings.defaults ? (
-              <span title={health.baseURL ?? 'OpenAI'}>
-                <ModelPicker
-                  model={settings.settings.model}
-                  defaultModel={settings.defaults.model}
-                  onSelect={(model) => void settings.update({ model })}
-                  effort={settings.settings.reasoningEffort}
-                  onEffort={(reasoningEffort) =>
-                    void settings.update({ reasoningEffort })
-                  }
-                />
-              </span>
-            ) : null}
-          </span>
-          {projectHome ? null : id ? (
-            <span className="topbar-info">
-              {chatUsage && (
-                <span
-                  className="usage"
-                  title={`This chat, all versions: ${chatUsage.detail}`}
+      <MediaContext value={media}>
+        <main
+          className={[
+            'chat',
+            empty && 'empty',
+            empty && projectHome && 'project-home',
+            dragging && 'dragging',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          inert={inert}
+          {...dragHandlers}
+        >
+          <header className="topbar">
+            <span className="topbar-start">
+              {onOpenSidebar && (
+                <button
+                  type="button"
+                  className="icon-button"
+                  aria-label="Open sidebar"
+                  title="Open sidebar"
+                  onClick={onOpenSidebar}
                 >
-                  {chatUsage.short}
+                  <PanelLeft size={20} strokeWidth={1.5} />
+                </button>
+              )}
+              {id && project && (
+                <Link className="breadcrumb" to={`/projects/${project.id}`}>
+                  {project.name} /
+                </Link>
+              )}
+              {/* Phones only: with the sidebar hidden, say which chat this is. */}
+              {id && pageTitle && (
+                <span className="topbar-title" title={pageTitle}>
+                  {pageTitle}
                 </span>
               )}
-              {temporary && (
-                <span
-                  className="badge"
-                  title="Not saved: this chat is deleted when you leave it"
-                >
-                  Temporary chat
-                </span>
-              )}
-            </span>
-          ) : (
-            <button
-              type="button"
-              className={temporaryMode ? 'icon-button active' : 'icon-button'}
-              aria-label="Temporary chat"
-              aria-pressed={temporaryMode}
-              title="Temporary chat"
-              onClick={() => setTemporaryMode((on) => !on)}
-            >
-              <MessageCircleDashed size={20} strokeWidth={1.5} />
-            </button>
-          )}
-        </header>
-        {empty && projectHome ? (
-          project ? (
-            <ProjectHeading
-              project={project}
-              onEdit={(patch) => void projects.update(project.id, patch)}
-              onDelete={() =>
-                void projects.remove(project.id).then((gone) => {
-                  if (gone) navigate('/')
-                })
-              }
-            />
-          ) : (
-            <div className="greeting">
-              <h1>{projects.error ?? ''}</h1>
-            </div>
-          )
-        ) : empty ? (
-          <div className="greeting">
-            <h1>{temporary ? 'Temporary chat' : 'What’s on your mind?'}</h1>
-            {temporary ? (
-              <p>
-                This chat won’t appear in your history or search, and it’s
-                deleted when you leave it.
-              </p>
-            ) : (
-              <div className="suggestions">
-                {STARTERS.map(({ label, text }) => (
-                  <button
-                    key={label}
-                    type="button"
-                    className="suggestion"
-                    onClick={() =>
-                      setPrefill((was) => ({ text, n: (was?.n ?? 0) + 1 }))
+              {!health ? (
+                <span className="model">Server unreachable</span>
+              ) : settings.settings && settings.defaults ? (
+                <span title={health.baseURL ?? 'OpenAI'}>
+                  <ModelPicker
+                    model={settings.settings.model}
+                    defaultModel={settings.defaults.model}
+                    onSelect={(model) => void settings.update({ model })}
+                    effort={settings.settings.reasoningEffort}
+                    onEffort={(reasoningEffort) =>
+                      void settings.update({ reasoningEffort })
                     }
+                  />
+                </span>
+              ) : null}
+            </span>
+            {projectHome ? null : id ? (
+              <span className="topbar-info">
+                {chatUsage && (
+                  <span
+                    className="usage"
+                    title={`This chat, all versions: ${chatUsage.detail}`}
                   >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div
-            className="messages"
-            onScroll={(e) => {
-              const el = e.currentTarget
-              const atEnd =
-                el.scrollHeight - el.scrollTop - el.clientHeight < 40
-              // Only scrolling up leaves the end: a scroll event measured after
-              // the content grew (while following) isn't the user's.
-              const up = el.scrollTop < scrollTopRef.current
-              scrollTopRef.current = el.scrollTop
-              if (atEnd) followRef.current = true
-              else if (up) followRef.current = false
-              setAway(!atEnd)
-            }}
-          >
-            <div className="thread" ref={threadRef}>
-              {turns.map((turn, i) => (
-                <TurnView
-                  key={turn.key}
-                  turn={turn}
-                  latest={!pending && i === turns.length - 1}
-                  busy={busy}
-                  approval={
-                    i === turns.length - 1 && waiting.length > 0 ? (
-                      <ApprovalCard
-                        calls={waiting}
-                        busy={busy}
-                        onAnswer={following(chat.approve)}
-                      />
-                    ) : undefined
-                  }
-                  editing={editingTurn === turn.key}
-                  onEditingChange={(on) => setEditingTurn(on ? turn.key : null)}
-                  onEdit={following((text: string) => chat.edit(i, text))}
-                  onRegenerate={following(() => chat.regenerate(i))}
-                  onContinue={following(() => chat.send(CONTINUE))}
-                  onSwitch={(itemId) => void chat.switchVersion(itemId)}
-                  onImageLoad={follow}
-                  compactThreshold={compactThreshold}
-                />
-              ))}
-              {pending && (
-                <TurnView
-                  turn={pending.turn}
-                  pending
-                  onImageLoad={follow}
-                  compactThreshold={compactThreshold}
-                />
-              )}
-              {error && (
-                <p className="error" role="alert">
-                  {error}
-                </p>
-              )}
-              <div ref={endRef} />
-            </div>
-            {away && (
+                    {chatUsage.short}
+                  </span>
+                )}
+                {temporary && (
+                  <span
+                    className="badge"
+                    title="Not saved: this chat is deleted when you leave it"
+                  >
+                    Temporary chat
+                  </span>
+                )}
+              </span>
+            ) : (
               <button
                 type="button"
-                className="jump-latest"
-                aria-label="Jump to latest"
-                title="Jump to latest"
-                onClick={() => {
-                  followRef.current = true
-                  endRef.current?.scrollIntoView({
-                    block: 'end',
-                    // Gliding is movement: not for those who ask for less.
-                    behavior: matchMedia(REDUCED_MOTION).matches
-                      ? 'auto'
-                      : 'smooth',
-                  })
-                }}
+                className={temporaryMode ? 'icon-button active' : 'icon-button'}
+                aria-label="Temporary chat"
+                aria-pressed={temporaryMode}
+                title="Temporary chat"
+                onClick={() => setTemporaryMode((on) => !on)}
               >
-                <ArrowDown size={18} strokeWidth={2} />
+                <MessageCircleDashed size={20} strokeWidth={1.5} />
               </button>
             )}
-          </div>
-        )}
-        <Composer
-          busy={busy}
-          onSend={following(chat.send)}
-          onStop={chat.stop}
-          queued={chat.queued}
-          onQueue={chat.enqueue}
-          onCancelQueued={chat.cancelQueued}
-          onTakeQueued={chat.takeQueued}
-          onEditLast={editLast}
-          inputRef={composerRef}
-          tools={toolOptions}
-          attachments={attachments}
-          draftKey={draftKey}
-          transcription={
-            (health?.features.transcription ?? false) &&
-            !!settings.settings?.transcribeModel
-          }
-          effort={settings.settings?.reasoningEffort ?? null}
-          prefill={prefill}
-          onEffort={(reasoningEffort) =>
-            void settings.update({ reasoningEffort })
-          }
-        />
-        {empty && projectHome && (
-          <ProjectDetails
-            projectId={projectHome}
-            onChatsChanged={onListChanged}
+          </header>
+          {empty && projectHome ? (
+            project ? (
+              <ProjectHeading
+                project={project}
+                onEdit={(patch) => void projects.update(project.id, patch)}
+                onDelete={() =>
+                  void projects.remove(project.id).then((gone) => {
+                    if (gone) navigate('/')
+                  })
+                }
+              />
+            ) : (
+              <div className="greeting">
+                <h1>{projects.error ?? ''}</h1>
+              </div>
+            )
+          ) : empty ? (
+            <div className="greeting">
+              <h1>{temporary ? 'Temporary chat' : 'What’s on your mind?'}</h1>
+              {temporary ? (
+                <p>
+                  This chat won’t appear in your history or search, and it’s
+                  deleted when you leave it.
+                </p>
+              ) : (
+                <div className="suggestions">
+                  {STARTERS.map(({ label, text }) => (
+                    <button
+                      key={label}
+                      type="button"
+                      className="suggestion"
+                      onClick={() =>
+                        setPrefill((was) => ({ text, n: (was?.n ?? 0) + 1 }))
+                      }
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div
+              className="messages"
+              onScroll={(e) => {
+                const el = e.currentTarget
+                const atEnd =
+                  el.scrollHeight - el.scrollTop - el.clientHeight < 40
+                // Only scrolling up leaves the end: a scroll event measured after
+                // the content grew (while following) isn't the user's.
+                const up = el.scrollTop < scrollTopRef.current
+                scrollTopRef.current = el.scrollTop
+                if (atEnd) followRef.current = true
+                else if (up) followRef.current = false
+                setAway(!atEnd)
+              }}
+            >
+              <div className="thread" ref={threadRef}>
+                {turns.map((turn, i) => (
+                  <TurnView
+                    key={turn.key}
+                    turn={turn}
+                    latest={!pending && i === turns.length - 1}
+                    busy={busy}
+                    approval={
+                      i === turns.length - 1 && waiting.length > 0 ? (
+                        <ApprovalCard
+                          calls={waiting}
+                          busy={busy}
+                          onAnswer={following(chat.approve)}
+                        />
+                      ) : undefined
+                    }
+                    editing={editingTurn === turn.key}
+                    onEditingChange={(on) =>
+                      setEditingTurn(on ? turn.key : null)
+                    }
+                    onEdit={following((text: string) => chat.edit(i, text))}
+                    onRegenerate={following(() => chat.regenerate(i))}
+                    onContinue={following(() => chat.send(CONTINUE))}
+                    onSwitch={(itemId) => void chat.switchVersion(itemId)}
+                    onImageLoad={follow}
+                    compactThreshold={compactThreshold}
+                  />
+                ))}
+                {pending && (
+                  <TurnView
+                    turn={pending.turn}
+                    pending
+                    onImageLoad={follow}
+                    compactThreshold={compactThreshold}
+                  />
+                )}
+                {error && (
+                  <p className="error" role="alert">
+                    {error}
+                  </p>
+                )}
+                <div ref={endRef} />
+              </div>
+              {away && (
+                <button
+                  type="button"
+                  className="jump-latest"
+                  aria-label="Jump to latest"
+                  title="Jump to latest"
+                  onClick={() => {
+                    followRef.current = true
+                    endRef.current?.scrollIntoView({
+                      block: 'end',
+                      // Gliding is movement: not for those who ask for less.
+                      behavior: matchMedia(REDUCED_MOTION).matches
+                        ? 'auto'
+                        : 'smooth',
+                    })
+                  }}
+                >
+                  <ArrowDown size={18} strokeWidth={2} />
+                </button>
+              )}
+            </div>
+          )}
+          <Composer
+            busy={busy}
+            onSend={following(chat.send)}
+            onStop={chat.stop}
+            queued={chat.queued}
+            onQueue={chat.enqueue}
+            onCancelQueued={chat.cancelQueued}
+            onTakeQueued={chat.takeQueued}
+            onEditLast={editLast}
+            inputRef={composerRef}
+            tools={toolOptions}
+            attachments={attachments}
+            draftKey={draftKey}
+            transcription={
+              (health?.features.transcription ?? false) &&
+              !!settings.settings?.transcribeModel
+            }
+            effort={settings.settings?.reasoningEffort ?? null}
+            prefill={prefill}
+            onEffort={(reasoningEffort) =>
+              void settings.update({ reasoningEffort })
+            }
           />
-        )}
-        <p className="visually-hidden" role="status">
-          {announcement}
-        </p>
-        <p className="disclaimer">
-          chibot can make mistakes. Check important info.
-        </p>
-      </main>
+          {empty && projectHome && (
+            <ProjectDetails
+              projectId={projectHome}
+              onChatsChanged={onListChanged}
+            />
+          )}
+          <p className="visually-hidden" role="status">
+            {announcement}
+          </p>
+          <p className="disclaimer">
+            chibot can make mistakes. Check important info.
+          </p>
+        </main>
+      </MediaContext>
     </ToolInfoContext>
   )
 }

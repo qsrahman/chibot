@@ -14,6 +14,7 @@ import { ModelRequests } from './chat/index.ts'
 import { TitleWriter } from './chat/index.ts'
 import { Config, layered, readEnvFiles } from './config.ts'
 import { mcpVariables, readConfigFile } from './config-file.ts'
+import { MediaProxy, type AddressGuard } from './media-proxy.ts'
 import { locations, openFolders, ROOT } from './locations.ts'
 import { InstructionWriter } from './projects/index.ts'
 import { ConversationSearch } from './conversations/index.ts'
@@ -90,10 +91,13 @@ export function defaultTools({
 export function start({
   tools = defaultTools,
   env = {},
+  mediaGuard,
 }: {
   tools?: (deps: ToolDeps) => Tool[]
   /** Settings beating the environment and `config.json` (command-line flags). */
   env?: Record<string, string>
+  /** Which addresses linked images and media may be fetched from (tests allow their own). */
+  mediaGuard?: AddressGuard
 } = {}) {
   const legacy = readEnvFiles()
   // Where config.json is can itself come from an old .env, the environment or a flag.
@@ -213,6 +217,7 @@ export function start({
     instructionWriter: new InstructionWriter(client, settings, projects, index),
     attachments,
     mcp,
+    media: new MediaProxy(mediaGuard && { allowed: mediaGuard }),
     transcription:
       config.transcription &&
       Transcription.from(

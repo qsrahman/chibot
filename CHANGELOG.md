@@ -4,10 +4,14 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- Images, sound and video from other sites can be shown in answers. They are fetched by chibot's server (`GET /api/media`), never by the browser, whose page policy still only allows its own address (`media-src 'self' blob:` added beside `img-src`). One whose address the user wrote or a tool returned, exactly, shows by itself (`![](https://…)` as an image, a link to a sound or video as a player that can seek); any other, such as one a model wrote, shows "image from example.com" with **Load** and **Open**, because a model under a planted page's influence could add the user's data to an address (`…?d=<chat>`) and have it sent without a click. The server checks the same rule, so the page cannot skip it, and fetches only public addresses (every connection checked, redirects too, so `localhost` and the local network are refused), only PNG, JPEG, GIF, WebP, common audio and MP4/WebM/Ogg video (never SVG or HTML) up to 20 MB, 100 MB and 500 MB, with no cookies or referrer, and answers only requests the browser marks same-origin. Until a new chat is saved, an image stays a link.
+
 ### Removed
 
 - chibot's own **web search** (Brave) and **page reader** tools (`web_search`, `fetch_url`), and what only they used: the `braveApiKey` setting and `BRAVE_API_KEY`, the `undici` dependency, the unused `The web` tool section and globe icon, the `askAfterUntrusted` hook (nothing else used it) and the fake Brave API and test page of the e2e suite. Web search and reading pages come from MCP servers now (Settings → Tools). A `braveApiKey` left in `config.json` does not stop chibot starting: it is read without it, named in a note at startup, and left out the next time the file is saved. Chats made with the old tools still show their sources and tool rows.
-- **What this changes for safety:** a page reader or search server that is an MCP server runs outside chibot, so chibot's refusal of addresses on this machine and your network no longer covers them, and nothing asks before it opens an address a page chose, unless you switch on **Ask before using its tools** for that server (do, for a server that reads pages or searches). Memory still asks first in a chat that used any MCP tool, and images from other sites are still shown as links.
+- **What this changes for safety:** a page reader or search server that is an MCP server runs outside chibot, so chibot's refusal of addresses on this machine and your network no longer covers them, and nothing asks before it opens an address a page chose, unless you switch on **Ask before using its tools** for that server (do, for a server that reads pages or searches). Memory still asks first in a chat that used any MCP tool, and images from other sites still do not load unless their address is one you or a tool gave (see above).
 
 
 ### Added

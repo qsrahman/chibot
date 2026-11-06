@@ -274,9 +274,17 @@ needs the server running: there is no offline mode, since the server is local.
     Memory (which shows how many of the 100 are used). It won't save the same
     fact twice, and merges related ones when the list is nearly full. In a
     chat that used an MCP tool or searched your chats (text from others),
-    memory changes ask first, so it can't plant one. For the same reason an
-    image from another site in an answer is shown as a link instead of loading
-    by itself.
+    memory changes ask first, so it can't plant one.
+  - **Images and media from other sites** in an answer (`![](https://…)`, or a
+    link to a sound or video) are fetched by chibot's server, never by your
+    browser. One whose address you wrote or a tool returned, exactly, shows by
+    itself (a sound or video gets a player with seeking). Any other shows a line
+    with the site's name and **Load** (or **Open**), because the model could
+    have added your data to its address (`…/c?d=<your chat>`), which a planted
+    page can make it do. Only PNG, JPEG, GIF and WebP images, common audio and
+    MP4/WebM/Ogg video are shown (never SVG), up to 20 MB (images), 100 MB
+    (sound) or 500 MB (video), and never addresses on this machine or your
+    network.
   - **Past chats:** ask about something you discussed before ("what did we
     decide about…?"). chibot searches your other chats (on this machine) and
     links the ones it used under **Sources**.

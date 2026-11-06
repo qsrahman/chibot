@@ -7,6 +7,7 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { z } from 'zod'
 import { defaultTools, start } from '../../src/server/main.ts'
+import { publicOnly } from '../../src/server/media-proxy.ts'
 import { Tool } from '../../src/server/tool.ts'
 import { startOAuthServer } from '../fixtures/mcp-oauth-server.ts'
 
@@ -41,4 +42,6 @@ writeFileSync(
 start({
   // The shipped tools, and one test-only tool that needs approval.
   tools: (deps) => [...defaultTools(deps), new NoteTool()],
+  // Linked images and media may also come from the fake server on 127.0.0.1.
+  mediaGuard: (address) => address === '127.0.0.1' || publicOnly(address),
 })

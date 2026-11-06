@@ -229,8 +229,9 @@ transpiles it.
    Take collaborators (clients, `FileStore`) in the constructor, and test
    `run` directly, like `tests/server/memory.test.ts`.
 6. Anything that reaches the network on the model's behalf must refuse private
-   addresses (web search and reading pages are MCP servers' job, not chibot's;
-   an MCP server runs outside this guard).
+   addresses (`MediaProxy` does, for linked images and media; web search and
+   reading pages are MCP servers' job, not chibot's, and run outside this
+   guard).
 
 ## Comments
 

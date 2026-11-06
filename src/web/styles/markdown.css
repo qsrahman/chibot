@@ -296,3 +296,42 @@
   color: var(--danger);
   font-size: 0.875rem;
 }
+
+/* Images, sound and video from other sites (RemoteMedia): shown, or a line
+   asking for a click first. */
+.remote-media-image {
+  display: block;
+  max-width: min(100%, 480px);
+  height: auto;
+  border-radius: var(--radius-card);
+}
+
+.remote-media-player {
+  display: block;
+  max-width: min(100%, 480px);
+  margin: 8px 0;
+  border-radius: var(--radius-card);
+}
+
+.remote-media {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-row);
+  color: var(--fg-muted);
+  font-size: 0.875rem;
+}
+
+.remote-media-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.remote-media .button {
+  min-height: 28px;
+  padding: 0 10px;
+}

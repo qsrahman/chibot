@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
-import { answered, appReady, send } from './helpers.ts'
+import { answered, appReady, savedChat, send } from './helpers.ts'
 
 // Rendered colours, not just tokens: axe measures the text and background
 // actually drawn (code tokens, maths, links, tables, the image viewer, menus,
@@ -180,6 +180,16 @@ for (const scheme of ['light', 'dark'] as const) {
       // Deny, so the chat is free for the next spec.
       await page.getByRole('button', { name: 'Deny' }).click()
       await answered(page)
+    })
+
+    test('an image that waits for a click', async ({ page }) => {
+      const id = await savedChat(page, {
+        question: 'Show it',
+        answerText: 'Here: ![a chart](https://charts.example/chart.png?d=1)',
+      })
+      await page.goto(`/c/${id}`)
+      await expect(page.locator('.remote-media')).toBeVisible()
+      expect(await violations(page)).toEqual([])
     })
 
     test('every Settings tab', async ({ page }) => {

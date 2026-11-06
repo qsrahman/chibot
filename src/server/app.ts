@@ -26,6 +26,8 @@ import { memoryRoutes } from './routes/memories.ts'
 import { projectRoutes } from './projects/index.ts'
 import { settingsRoutes } from './routes/settings.ts'
 import { notFound } from './routes/helpers.ts'
+import { mediaRoutes } from './routes/media.ts'
+import type { MediaProxy } from './media-proxy.ts'
 
 export interface AppDeps {
   config: Config
@@ -45,6 +47,8 @@ export interface AppDeps {
   mcp: McpServers
   /** Voice input, or `null` without a transcription endpoint. */
   transcription: Transcription | null
+  /** Fetches the images and media an answer links to (`/api/media`). */
+  media: MediaProxy
 }
 
 /** Builds the HTTP app. A factory so tests can inject fakes. */
@@ -65,13 +69,17 @@ export function createApp(deps: AppDeps) {
         host === config.host)
     )
   }
-  // The app's pages load images only from here (or inline): a planted page
-  // can make an answer hold an image whose address carries the user's data,
-  // and this stops that whatever the renderer does. (Not the API: uploads
-  // set their own policy, and a `sandbox` one would break the PDF viewer.)
+  // The app's pages load images and media only from here (or inline): a
+  // planted page can make an answer hold an image whose address carries the
+  // user's data, and this stops that whatever the renderer does (remote ones
+  // come through /api/media, which checks them). (Not the API: uploads set
+  // their own policy, and a `sandbox` one would break the PDF viewer.)
   app.use(async (c, next) => {
     if (!c.req.path.startsWith('/api/')) {
-      c.header('Content-Security-Policy', "img-src 'self' data: blob:")
+      c.header(
+        'Content-Security-Policy',
+        "img-src 'self' data: blob:; media-src 'self' blob:",
+      )
     }
     await next()
   })
@@ -116,6 +124,7 @@ export function createApp(deps: AppDeps) {
   app.route('/', projectRoutes(deps))
   app.route('/', memoryRoutes(deps))
   app.route('/', fileRoutes(deps))
+  app.route('/', mediaRoutes(deps))
 
   app.all('/api/*', (c) => notFound(c, 'Route'))
 

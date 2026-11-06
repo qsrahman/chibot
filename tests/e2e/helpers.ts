@@ -110,3 +110,43 @@ export async function longChat(page: Page, turns: number) {
   })
   return ((await res.json()) as { id: string }).id
 }
+
+/**
+ * A saved chat of one question and an answer that is exactly `answerText`
+ * (the fake model only repeats the question, so this is how a specific
+ * answer, such as one a planted page could have written, is put in a chat);
+ * its id.
+ */
+export async function savedChat(
+  page: Page,
+  { question, answerText }: { question: string; answerText: string },
+) {
+  const item = (id: number, parentId: number | null, data: unknown) => ({
+    id,
+    parentId,
+    data,
+    usage: null,
+    model: id === 1 ? null : 'e2e-model',
+    createdAt: id,
+  })
+  const res = await page.request.post('/api/conversations/import', {
+    data: {
+      version: 2,
+      exportedAt: 0,
+      conversation: { title: 'Saved chat', createdAt: 1, updatedAt: 2 },
+      currentLeafId: 2,
+      items: [
+        item(1, null, { role: 'user', content: question }),
+        item(2, 1, {
+          type: 'message',
+          role: 'assistant',
+          status: 'completed',
+          id: 'msg_2',
+          content: [{ type: 'output_text', text: answerText, annotations: [] }],
+        }),
+      ],
+      files: [],
+    },
+  })
+  return ((await res.json()) as { id: string }).id
+}

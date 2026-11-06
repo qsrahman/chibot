@@ -84,9 +84,9 @@ describe('who may reach chibot', () => {
     })
   })
 
-  it('has the app’s pages load images only from chibot, so a planted page cannot send data out in one', async () => {
+  it('has the app’s pages load images and media only from chibot, so a planted page cannot send data out in one', async () => {
     const chibot = app()
-    const policy = "img-src 'self' data: blob:"
+    const policy = "img-src 'self' data: blob:; media-src 'self' blob:"
     // A page (the web app is mounted by main.ts; any non-API path will do)…
     const page = await chibot.request('http://127.0.0.1:3000/c/some-chat')
     expect(page.headers.get('content-security-policy')).toBe(policy)

