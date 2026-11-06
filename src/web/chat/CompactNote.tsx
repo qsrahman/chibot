@@ -1,6 +1,8 @@
 // A summary in the chat: the line where earlier messages end, opening to the
 // summary, and the form that asks for another.
 import { useState } from 'react'
+import { ListCollapse } from 'lucide-react'
+import { IconAction } from './MessageActions.tsx'
 import { Markdown } from './Markdown.tsx'
 import { Summary } from '../ui/Summary.tsx'
 import type { Compaction } from '../../shared/types.ts'
@@ -54,14 +56,13 @@ export function CompactNow({
   const [open, setOpen] = useState(false)
   return (
     <div className="compact-now">
-      <button
-        type="button"
-        className="compact-now-toggle"
-        aria-expanded={open}
+      <IconAction
+        label="Compact now"
+        pressed={open}
         onClick={() => setOpen(!open)}
       >
-        Compact now
-      </button>
+        <ListCollapse />
+      </IconAction>
       {open && (
         <form
           onSubmit={(e) => {

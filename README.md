@@ -351,7 +351,7 @@ needs the server running: there is no offline mode, since the server is local.
 - **Context usage:** each answer shows the context it sent against the
   window (e.g. `12.4K / 32K context`), turning red once it reaches where
   earlier messages are summarized; hover for the input/output breakdown.
-  **Compact now** under the latest answer summarizes at once, optionally
+  The **Compact now** icon under the latest answer summarizes at once, optionally
   keeping something in mind. The top right shows the chat's token total across
   all versions.
 - **Keyboard shortcuts:** ⌘/Ctrl+/ (or **Keyboard shortcuts** in the sidebar)
