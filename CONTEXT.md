@@ -312,7 +312,7 @@ In Settings → Model (and the model picker's menu where it fits):
 | Compact at | share of the window | 75% (never above window − reserve) |
 | Reserve | tokens kept free for the answer and the summary | 16,000 |
 | Keep recent | tokens of the newest turns kept verbatim | 15,000 |
-| Summary model | a model on the same server | the chat model |
+| Summary model | *(later)* a model on the same server | the chat model; no setting in phase 1 |
 
 The existing `compactThreshold` becomes derived (`min(window × share, window −
 reserve)`); its stored value is read once as the window if it was changed.
@@ -397,7 +397,8 @@ up to the cut, serialized as labelled text (`[User]`, `[Assistant]`,
 markers). If it would not fit the summary model's window, drop the oldest
 messages first and say so in the summary's header (Codex, OpenClaw).
 
-**The request.** The summary model, no tools, `reasoning` off, a response cap
+**The request.** The chat's own model (a separate summary-model setting may
+follow, §6), no tools, `reasoning` off, a response cap
 (8,000 tokens), and this prompt (a synthesis of pi's headings, Qwen's
 scratchpad and "all user messages", Codex's framing, OpenClaw's identifiers):
 
@@ -493,28 +494,39 @@ the summarizer itself overflows, it drops its oldest input and retries
 
 ## 6. Phases
 
-1. **Core.** Remove the OpenAI option; settings; the `compactions` table; usage
-   trigger; the cut; summarizing with the chat model; request building;
-   checks and breaker; reactive retry; divider with summary, Undo, "Compact
-   now"; meter; tests.
-2. **Pruning** (5.5), the **summary model** setting, and iterative updates with
-   focus.
+1. **Core, with pruning.** Remove the OpenAI option; settings (window, compact
+   at, reserve, keep recent, auto-compact on/off); the `compactions` table;
+   the usage trigger; the cut; **pruning of old tool output and images**
+   (5.5); summarizing with the chat's own model; request building; checks and
+   breaker; reactive retry; the divider with the summary, Undo and "Compact
+   now"; the meter; tests, including the opt-in recall test with a real model.
+2. **Summary model** setting, iterative updates with a focus from the user
+   (the update-the-previous-summary step itself is in phase 1; the focus box and
+   the setting are not), and branch summaries when leaving a version.
 3. **Refinements.** Cache-sharing summary request (same prefix as the chat),
-   reading windows from servers that report them, split turns, branch
-   summaries when leaving a version, the recall evaluation as a regular check.
+   reading windows from servers that report them, split turns, the recall
+   evaluation run as a regular check.
 
-## 7. Decisions for the owner
+Separate change, afterwards: the other OpenAI-only request options
+(`include: reasoning.encrypted_content`, replayed reasoning items,
+`reasoning.summary`), audited the same way (§1).
 
-1. Is 75% / 16k reserve / 15k kept a good default, or earlier (the pi author
-   advises 85 to 90% of the limit but warns about mid-task compaction)?
-2. Summary model: the chat model only at first, or the setting in phase 1?
-3. Default window when a server does not say: 32,000?
-4. Pruning before summarizing in phase 1 or 2? (It is cheap, and tool-heavy
-   MCP chats benefit most.)
-5. Should the same audit cover the other OpenAI-only parts (reasoning items,
-   `include`), as one change or separately?
-6. Old chats with OpenAI compaction items: ignore the items (proposed) or
-   offer to re-summarize?
+## 7. Decisions
+
+Settled by the owner:
+
+1. **Trigger:** 75% of the window, a 16,000-token reserve, 15,000 tokens of
+   recent turns kept verbatim.
+2. **Summary model:** the chat's own model; no separate setting in phase 1.
+3. **Pruning:** part of phase 1.
+4. **Other OpenAI-only parts:** a separate change afterwards.
+
+Proposed, to be confirmed or changed when phase 1 starts:
+
+5. The default window when a server does not report one: 32,000 tokens.
+6. Old chats that contain OpenAI `compaction` items: ignore the items (the full
+   saved path is sent, and pruning and summarizing keep it in the window)
+   rather than offering to re-summarize.
 
 ## 8. Sources
 
