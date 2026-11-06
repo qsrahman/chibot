@@ -444,8 +444,8 @@ export function useChat(
     /** The project of the conversation on screen, if any. */
     projectId,
     busy: pending !== null || summarizing,
-    /** There are messages to summarize (a saved chat with an answered turn). */
-    canCompact: conversationId !== undefined && turns.length > 1,
+    /** A saved chat with messages (the server says when there is nothing to summarize). */
+    canCompact: conversationId !== undefined && turns.length > 0,
     /** The chat's title as loaded or generated (`null`: untitled). */
     title,
     /** The chat's history hasn't arrived yet. */

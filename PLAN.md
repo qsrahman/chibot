@@ -325,8 +325,8 @@ summarizing of long chats on for a 32k window; math formatting via a built-in in
   400/413 saying the request is too long compacts harder and asks once more.
   **Compact now** (with an optional focus) is on the latest answer. When the
   newest turn alone is more than twice the kept tail, the cut goes inside it,
-  between whole tool rounds. The automatic summary is asked for after the
-  chat's own messages with the chat's instructions and tools (`tool_choice:
+  between whole tool rounds. When it fits the window, the automatic summary
+  is asked for after the chat's own messages (the same, shortened, input) with the chat's instructions and tools (`tool_choice:
   'none'`) so the server's prompt cache applies, falling back to a transcript
   request. Settings → Model offers the window the server reports (**Use N**). Old
   OpenAI `compaction` items are ignored.

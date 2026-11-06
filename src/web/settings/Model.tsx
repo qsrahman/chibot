@@ -115,7 +115,7 @@ export function Model({
             <NumberRow
               id="setting-keep"
               label="Keep recent"
-              description="Tokens of the newest messages that stay word for word."
+              description="Tokens of the newest messages that stay word for word, at most half of where summarizing starts."
               setting="keepRecent"
               settings={settings}
               min={500}

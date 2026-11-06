@@ -25,6 +25,10 @@ export function keepTokens(limits: ContextLimits): number {
   return Math.min(limits.keepRecent, Math.floor(triggerAt(limits) / 2))
 }
 
+/** Estimated tokens of `items`. */
+export const sumTokens = (items: ResponseInputItem[]) =>
+  items.reduce((n, item) => n + estimateTokens(item), 0)
+
 /** Roughly 4 characters a token; CJK text costs more per character. */
 export function estimateText(text: string): number {
   let tokens = 0
@@ -41,30 +45,42 @@ export function estimateTokens(item: ResponseInputItem): number {
 /**
  * The context the next request will have: the last reported usage (input
  * plus output) of the items given, plus an estimate for what came after it.
- * Without any usage, everything is an estimate. `lead` is text that comes
- * before the items (a summary).
+ * Without any usage, everything is an estimate. `lead` is the tokens of text
+ * that comes before the items (a summary). A usage reported by a request
+ * before `since` (the summary was written) measured a longer context, so it
+ * is not trusted.
  */
-export function contextTokens(items: StoredItem[], lead = 0): number {
-  const last = items.findLastIndex((item) => item.usage)
+export function contextTokens(
+  items: StoredItem[],
+  lead = 0,
+  since = -Infinity,
+): number {
+  const last = items.findLastIndex(
+    (item) => item.usage && item.createdAt > since,
+  )
   const usage = items[last]?.usage
-  const rest = items.slice(last + 1)
-  const estimate = rest.reduce((n, item) => n + estimateTokens(item.data), 0)
+  const rest = items.slice(last + 1).map((item) => item.data)
   return usage
-    ? usage.input_tokens + usage.output_tokens + estimate
-    : lead + estimate
+    ? usage.input_tokens + usage.output_tokens + sumTokens(rest)
+    : lead + sumTokens(rest)
 }
 
-/** The compaction that applies to `path`: the newest one whose cut is on it. */
-export function compactionFor(
+/**
+ * The compactions that apply to `path` (their cut is on it), from the
+ * earliest cut to the latest. The last one is the one in use.
+ */
+export function compactionsOn(
   path: StoredItem[],
   compactions: Compaction[],
-): Compaction | null {
-  const ids = new Set(path.map((item) => item.id))
-  return (
-    compactions
-      .filter((c) => ids.has(c.upToItemId))
-      .sort((a, b) => b.id - a.id)[0] ?? null
-  )
+): Compaction[] {
+  const position = new Map(path.map((item, i) => [item.id, i]))
+  return compactions
+    .filter((c) => position.has(c.upToItemId))
+    .sort(
+      (a, b) =>
+        position.get(a.upToItemId)! - position.get(b.upToItemId)! ||
+        a.id - b.id,
+    )
 }
 
 /** The summary as the model reads it, ahead of the messages after the cut. */
@@ -96,6 +112,29 @@ export function fromCompaction(
   }
 }
 
+/**
+ * What the next request is made of: the items after the newest compaction's
+ * cut on `path` and the summary before them. `data` is both as the request
+ * carries them, `keepFrom` where the newest `keepRecent` tokens begin in it
+ * (pruning leaves them alone), and `used` the context size it will have.
+ */
+export function buildContext(
+  path: StoredItem[],
+  compactions: Compaction[],
+  limits: ContextLimits,
+) {
+  const previous = compactionsOn(path, compactions).at(-1) ?? null
+  const { items, lead } = fromCompaction(path, previous)
+  return {
+    previous,
+    items,
+    lead,
+    data: [...lead, ...items.map((item) => item.data)],
+    keepFrom: lead.length + tailStart(items, keepTokens(limits)),
+    used: contextTokens(items, sumTokens(lead), previous?.createdAt),
+  }
+}
+
 /** Index of the first item in the newest `tokens` worth of `items`. */
 export function tailStart(items: StoredItem[], tokens: number): number {
   let sum = 0
@@ -119,19 +158,22 @@ export function tailStart(items: StoredItem[], tokens: number): number {
 export function cutPoint(items: StoredItem[], tokens: number): number | null {
   const isUser = (item: StoredItem) => messageText(item.data)?.role === 'user'
   const start = tailStart(items, tokens)
-  let before: number | null = null
-  for (let i = start; i > 0 && before === null; i--) {
-    if (isUser(items[i]!)) before = i
+  // The turn start at or before the tail's start, else the next one after it
+  // (the newest turn started before the tail: summarize up to the next).
+  let turn: number | null = null
+  for (let i = start; i > 0 && turn === null; i--) {
+    if (isUser(items[i]!)) turn = i
   }
-  let after: number | null = null
-  for (let i = start + 1; i < items.length && after === null; i++) {
-    // The newest turn started before the tail: summarize up to the next one.
-    if (before === null && isUser(items[i]!)) after = i
+  const before = turn
+  for (let i = start + 1; i < items.length && turn === null; i++) {
+    if (isUser(items[i]!)) turn = i
   }
-  const turn = before ?? after
-  const kept = (from: number) =>
-    items.slice(from).reduce((n, item) => n + estimateTokens(item.data), 0)
-  if (turn !== null && kept(turn) <= 2 * tokens) return turn
+  // sizes[i]: estimated tokens of items[i..], so `sizes[0] - sizes[i]` is what a cut at i summarizes.
+  const sizes = new Array<number>(items.length + 1).fill(0)
+  for (let i = items.length - 1; i >= 0; i--) {
+    sizes[i] = sizes[i + 1]! + estimateTokens(items[i]!.data)
+  }
+  if (turn !== null && sizes[turn]! <= 2 * tokens) return turn
 
   const open = new Set<string>()
   const safe = items.map((item, i) => {
@@ -145,9 +187,8 @@ export function cutPoint(items: StoredItem[], tokens: number): number | null {
     return ok
   })
   // Worth a summary only if what goes into it is at least what stays.
-  const total = kept(0)
   for (let i = start; i > (before ?? 0); i--) {
-    if (safe[i] && total - kept(i) >= tokens) return i
+    if (safe[i] && sizes[0]! - sizes[i]! >= tokens) return i
   }
   return turn
 }
@@ -203,10 +244,7 @@ export function prune(
 
 /** Tokens `prune` takes off `items`. */
 export function pruneSavings(items: ResponseInputItem[], keepFrom: number) {
-  const pruned = prune(items, keepFrom)
-  const sum = (list: ResponseInputItem[]) =>
-    list.reduce((n, item) => n + estimateTokens(item), 0)
-  return sum(items) - sum(pruned)
+  return sumTokens(items) - sumTokens(prune(items, keepFrom))
 }
 
 /** Whether pruning alone brings `used` tokens to `trigger`, with room to spare. */
@@ -262,6 +300,8 @@ export function isContextOverflow(err: unknown): boolean {
   return (
     err instanceof OpenAI.APIError &&
     (err.status === 400 || err.status === 413) &&
-    /context|too long|too large|maximum|exceed|token/i.test(err.message)
+    /context (length|window|size)|too long|too many tokens|(exceeds?|over) the (model's |maximum |max )?(context|limit)|reduce the length|prompt is too/i.test(
+      err.message,
+    )
   )
 }

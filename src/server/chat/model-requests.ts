@@ -10,6 +10,7 @@ import type {
 import type { Stream } from 'openai/streaming'
 import type { Attachments } from '../attachments.ts'
 import { chatModels } from './chat-models.ts'
+import { isContextOverflow } from './context.ts'
 
 /** Request features some models or servers reject (see `ModelRequests`). */
 export type OptionalParams = Pick<ResponseCreateParams, 'reasoning' | 'include'>
@@ -137,7 +138,9 @@ export class ModelRequests {
     try {
       return await send(optional)
     } catch (err) {
-      if (!(err instanceof OpenAI.BadRequestError)) throw err
+      // Too long is no reason to drop options: the retry would be refused too.
+      if (!(err instanceof OpenAI.BadRequestError) || isContextOverflow(err))
+        throw err
       const result = await send({})
       this.#unsupported.add(key)
       return result

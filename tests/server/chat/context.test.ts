@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { ResponseInputItem } from 'openai/resources/responses/responses'
 import {
-  compactionFor,
+  buildContext,
+  compactionsOn,
   contextTokens,
   cutPoint,
   estimateText,
@@ -52,24 +53,28 @@ const compaction = (upToItemId: number, id = 1): Compaction => ({
   createdAt: 0,
 })
 const limits = {
-  window: 32_000,
+  contextWindow: 32_000,
   compactAt: 75,
-  reserve: 16_000,
+  compactReserve: 16_000,
   keepRecent: 15_000,
 }
 
 describe('context budget', () => {
   it('compacts at the lower of the percentage and the reserve', () => {
     expect(triggerAt(limits)).toBe(16_000)
-    expect(triggerAt({ ...limits, window: 200_000 })).toBe(150_000)
-    expect(triggerAt({ ...limits, window: 200_000, reserve: 80_000 })).toBe(
-      120_000,
-    )
+    expect(triggerAt({ ...limits, contextWindow: 200_000 })).toBe(150_000)
+    expect(
+      triggerAt({ ...limits, contextWindow: 200_000, compactReserve: 80_000 }),
+    ).toBe(120_000)
+  })
+
+  it('never goes under a quarter of the window, whatever the reserve', () => {
+    expect(triggerAt({ ...limits, compactReserve: 40_000 })).toBe(8000)
   })
 
   it('keeps at most half the trigger verbatim', () => {
     expect(keepTokens(limits)).toBe(8000)
-    expect(keepTokens({ ...limits, window: 200_000 })).toBe(15_000)
+    expect(keepTokens({ ...limits, contextWindow: 200_000 })).toBe(15_000)
   })
 
   it('estimates 4 characters a token, more for CJK', () => {
@@ -89,6 +94,26 @@ describe('context budget', () => {
     // No usage anywhere: all of it is an estimate, plus any summary before it.
     const bare = [user('x'.repeat(4000))]
     expect(contextTokens(bare, 50)).toBeGreaterThan(1000)
+  })
+
+  it('does not trust a usage reported before the summary was written', () => {
+    // createdAt is the item's id here; the summary was written at 10.
+    const tail = [
+      stored({ role: 'assistant', content: 'a' }, used(40_000, 10)),
+      user('next'),
+    ]
+    tail[0]!.createdAt = 5
+    tail[1]!.createdAt = 12
+    expect(contextTokens(tail, 300, 10)).toBeLessThan(400)
+    expect(contextTokens(tail, 300)).toBeGreaterThan(40_000)
+  })
+
+  it('counts the summary’s tokens when there is no usage to go by', () => {
+    const summary = { ...compaction(1), summary: 'x'.repeat(4000) }
+    const path = [stored({ role: 'user', content: 'q' }), user('next')]
+    summary.upToItemId = path[0]!.id
+    const { used } = buildContext(path, [summary], limits)
+    expect(used).toBeGreaterThan(1000)
   })
 })
 
@@ -155,14 +180,14 @@ describe('cutPoint', () => {
 })
 
 describe('compactions on a path', () => {
-  it('uses the newest compaction whose cut is on the path', () => {
+  it('uses the one with the latest cut on the path, in cut order', () => {
     const path = [user('1'), assistant('a'), user('2'), assistant('b')]
     const [first, , third] = path
-    const older = compaction(first!.id, 1)
-    const newer = compaction(third!.id, 2)
-    expect(compactionFor(path, [older, newer])).toBe(newer)
-    expect(compactionFor(path, [compaction(9999, 3)])).toBeNull()
-    expect(compactionFor(path, [])).toBeNull()
+    const later = compaction(third!.id, 1)
+    const earlier = compaction(first!.id, 2) // newer row, earlier cut
+    expect(compactionsOn(path, [later, earlier])).toEqual([earlier, later])
+    expect(compactionsOn(path, [compaction(9999, 3)])).toEqual([])
+    expect(compactionsOn(path, [])).toEqual([])
   })
 
   it('starts the input with the summary and ignores OpenAI’s compaction items', () => {

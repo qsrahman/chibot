@@ -105,6 +105,8 @@ export function toTurns(
     }
     const turn = turns.at(-1)
     if (!turn) continue
+    // A cut inside a turn (a long run of tool calls) shows at that turn's top.
+    turn.compaction ??= after.get(item.id) ?? null
     turn.answer ??= {
       itemId: item.id,
       text: '',

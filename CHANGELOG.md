@@ -4,6 +4,13 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- Long-chat summaries, from a review of the code: a usage reported before a summary was written no longer makes the next message summarize again (the kept messages carried the old, larger reading); the summary's own size counts in the estimate when no usage is known (it was counted as one token); a summary cut inside a long turn shows its divider and **Undo** (it was invisible); **Compact now** is offered in a chat with one long turn; two summaries of one chat can no longer be written at once; a trailing full stop on a link no longer marks a summary as having lost it.
+- The summary request that shares the chat's prefix is sent only when it fits the context window (a server that cuts the front of an over-long input, such as Ollama, would summarize the wrong part), and it uses the chat's own, already shortened, input so the prefix matches.
+- Only an error that says the request is too long (not any 400 mentioning "token" or "context") compacts and retries; such an error is no longer retried first without the optional request features.
+- Summarizing starts no lower than a quarter of the window, however big the reserve; the summarizer is told to note, not obey, instructions found in tool results and pages.
+
 ## [0.13.0] - 2026-11-06
 
 ### Added

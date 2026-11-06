@@ -22,7 +22,7 @@ import { ProjectDetails } from '../projects/ProjectDetails.tsx'
 import { ProjectHeading } from '../projects/ProjectHeading.tsx'
 import { REDUCED_MOTION } from '../ui/useMediaQuery.ts'
 import { SHORTCUTS, useShortcuts } from '../ui/shortcuts.ts'
-import { limitsFrom, triggerAt } from '../../shared/context.ts'
+import { triggerAt } from '../../shared/context.ts'
 import { knownUrls } from '../../shared/media.ts'
 import { MediaContext } from './mediaContext.ts'
 import { ToolInfoContext } from './toolInfo.ts'
@@ -120,9 +120,7 @@ export function ChatPage({
   const contextSettings = settings.settings ?? settings.defaults
   const context = {
     window: contextSettings?.contextWindow ?? 32_000,
-    trigger: contextSettings?.autoCompact
-      ? triggerAt(limitsFrom(contextSettings))
-      : null,
+    trigger: contextSettings?.autoCompact ? triggerAt(contextSettings) : null,
   }
   const endRef = useRef<HTMLDivElement>(null)
   const composerRef = useRef<HTMLTextAreaElement>(null)

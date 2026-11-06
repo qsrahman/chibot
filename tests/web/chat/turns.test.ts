@@ -153,6 +153,24 @@ describe('toTurns', () => {
     expect(turns.map((t) => t.compaction)).toEqual([null, summary])
   })
 
+  it('shows a summary cut inside a turn at the top of that turn', () => {
+    const summary = { id: 1, upToItemId: 1, summary: 'notes' } as Compaction
+    const turns = toTurns(
+      [
+        item(1, { role: 'user', content: 'q' }),
+        item(2, {
+          type: 'function_call',
+          call_id: 'c',
+          name: 'n',
+          arguments: '{}',
+        }),
+        item(3, { type: 'function_call_output', call_id: 'c', output: 'o' }),
+      ],
+      [summary],
+    )
+    expect(turns.map((t) => t.compaction)).toEqual([summary])
+  })
+
   it('ignores the items of OpenAI’s own compaction', () => {
     const [turn] = toTurns([
       item(1, { role: 'user', content: 'q' }),

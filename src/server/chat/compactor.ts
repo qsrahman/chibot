@@ -3,21 +3,19 @@ import type {
   ResponseInputItem,
 } from 'openai/resources/responses/responses'
 import { fileParts, messageText } from '../../shared/messages.ts'
-import { limitsFrom } from '../../shared/context.ts'
 import type { Compaction, StoredItem } from '../../shared/types.ts'
 import type { ConversationStore } from '../conversations/index.ts'
 import type { SettingsStore } from '../settings-store.ts'
 import {
-  compactionFor,
-  contextTokens,
+  buildContext,
+  compactionsOn,
   cutPoint,
   estimateText,
   estimateTokens,
-  fromCompaction,
   isContextOverflow,
   keepTokens,
-  prune,
   serialize,
+  sumTokens,
   summaryMessage,
 } from './context.ts'
 import type { ModelRequests } from './model-requests.ts'
@@ -33,6 +31,13 @@ const SUMMARIZER_OVERHEAD = 2000
 /** Failures in a row after which a chat stops compacting by itself. */
 const FAILURES_BEFORE_PAUSE = 3
 const FOCUS_MAX = 800
+
+/** What a summary request shares with the chat's own requests. */
+export interface SharedPrefix {
+  instructions: string
+  tools: FunctionTool[]
+  input: ResponseInputItem[]
+}
 
 /** What a compaction will summarize, found before any model is asked. */
 export interface CompactionJob {
@@ -58,6 +63,8 @@ export class Compactor {
   readonly #settings: SettingsStore
   // Summaries that failed in a row, per chat, until one works.
   readonly #failures = new Map<string, number>()
+  // Chats whose summary is being written.
+  readonly #writing = new Set<string>()
 
   constructor(
     model: ModelRequests,
@@ -69,17 +76,14 @@ export class Compactor {
     this.#settings = settings
   }
 
-  /** The compaction that applies to a path, or `null`. */
-  forPath(conversationId: string, path: StoredItem[]): Compaction | null {
-    return compactionFor(path, this.#store.compactions.list(conversationId))
+  /** Every compaction of the chat, on whatever branch. */
+  list(conversationId: string): Compaction[] {
+    return this.#store.compactions.list(conversationId)
   }
 
-  /** The compactions that apply to the path to `leafId`, oldest first. */
+  /** The compactions that apply to `path`, earliest cut first. */
   onPath(conversationId: string, path: StoredItem[]): Compaction[] {
-    const ids = new Set(path.map((item) => item.id))
-    return this.#store.compactions
-      .list(conversationId)
-      .filter((c) => ids.has(c.upToItemId))
+    return compactionsOn(path, this.list(conversationId))
   }
 
   delete(conversationId: string, id: number): boolean {
@@ -101,23 +105,21 @@ export class Compactor {
     leafId: number,
     { harder = false } = {},
   ): CompactionJob | null {
-    const path = this.#store.getPath(conversationId, leafId)
-    const previous = this.forPath(conversationId, path)
-    const { items, lead } = fromCompaction(path, previous)
-    const limits = limitsFrom(this.#settings.get())
-    const keep = keepTokens(limits) / (harder ? 2 : 1)
-    const cut = cutPoint(items, keep)
+    const limits = this.#settings.get()
+    const { previous, items, used } = buildContext(
+      this.#store.getPath(conversationId, leafId),
+      this.list(conversationId),
+      limits,
+    )
+    const cut = cutPoint(items, keepTokens(limits) / (harder ? 2 : 1))
     if (cut === null) return null
-    const leadTokens = lead.reduce((n, item) => n + estimateTokens(item), 0)
     return {
       conversationId,
       upToItemId: items[cut - 1]!.id,
       previous,
       items: items.slice(0, cut),
-      tokensBefore: contextTokens(items, leadTokens),
-      tokensKept: items
-        .slice(cut)
-        .reduce((n, item) => n + estimateTokens(item.data), 0),
+      tokensBefore: used,
+      tokensKept: sumTokens(items.slice(cut).map((item) => item.data)),
     }
   }
 
@@ -135,14 +137,22 @@ export class Compactor {
       focus?: string | null
       signal?: AbortSignal
       /**
-       * The chat's own instructions and tools. With them, the request follows
-       * the chat's messages as the chat's requests do, so a server that caches
-       * a prefix has most of it already; if that fails, the summary is asked
-       * for the usual way. Not used with a different summary model.
+       * The chat's own instructions, tools and request input (the summary, if
+       * any, then the items). With them the request follows the chat's
+       * messages as the chat's requests do, so a server that caches a prefix
+       * has most of it already. Used only when it all fits the window and no
+       * other summary model is set; if it fails, the summary is asked for the
+       * usual way.
        */
-      shared?: { instructions: string; tools: FunctionTool[] }
+      shared?: SharedPrefix
     } = {},
   ): Promise<Compaction> {
+    // Two summaries of one chat at once (a turn and the Compact now button)
+    // would be saved twice.
+    if (this.#writing.has(job.conversationId)) {
+      throw new Error('A summary of this chat is already being written.')
+    }
+    this.#writing.add(job.conversationId)
     try {
       const compaction = await this.#summarize(
         job,
@@ -160,13 +170,15 @@ export class Compactor {
         )
       }
       throw err
+    } finally {
+      this.#writing.delete(job.conversationId)
     }
   }
 
   async #summarize(
     job: CompactionJob,
     focus: string | null,
-    shared: { instructions: string; tools: FunctionTool[] } | null,
+    shared: SharedPrefix | null,
     signal: AbortSignal | undefined,
   ): Promise<Compaction> {
     const settings = this.#settings.get()
@@ -186,20 +198,24 @@ export class Compactor {
 
     let summary: string | undefined
     let writer = model
-    if (shared && !settings.summaryModel) {
+    // The chat's own request up to the cut, if it fits: a longer one would be
+    // cut at the front by servers that truncate (Ollama) and summarize the wrong part.
+    const sharedInput =
+      shared?.input.slice(0, job.items.length + (job.previous ? 1 : 0)) ?? []
+    if (
+      shared &&
+      !settings.summaryModel &&
+      sumTokens(sharedInput) +
+        estimateText(shared.instructions + JSON.stringify(shared.tools)) <=
+        budget
+    ) {
       try {
         const response = await this.#model.complete(
           {
             model,
             instructions: shared.instructions,
             input: [
-              ...(job.previous ? [summaryMessage(job.previous.summary)] : []),
-              ...withoutAttachments(
-                prune(
-                  job.items.map((i) => i.data),
-                  0,
-                ),
-              ),
+              ...withoutAttachments(sharedInput),
               { role: 'user', content: sharedSummaryRequest(focus) },
             ],
             ...(shared.tools.length > 0 && {
@@ -217,7 +233,7 @@ export class Compactor {
           writer = response.model || model
         }
       } catch (err) {
-        // Too long, or refused: the usual request has the shortened transcript.
+        // Refused: the usual request has the shortened transcript.
         if (signal?.aborted) throw err
       }
     }
@@ -286,7 +302,7 @@ function lostReferences(items: ResponseInputItem[], summary: string): boolean {
     if (message?.role !== 'user') return []
     return [
       ...message.text.matchAll(/`([^`\n]{3,120})`|(https?:\/\/[^\s)>\]]+)/g),
-    ].map((m) => m[1] ?? m[2]!)
+    ].map((m) => (m[1] ?? m[2]!).replace(/[.,;:!?]+$/, ''))
   })
   return quoted.some((reference) => !summary.includes(reference))
 }

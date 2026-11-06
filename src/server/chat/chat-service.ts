@@ -4,11 +4,7 @@ import type {
   ResponseInputItem,
   ResponseStreamEvent,
 } from 'openai/resources/responses/responses'
-import {
-  limitsFrom,
-  triggerAt,
-  type ContextLimits,
-} from '../../shared/context.ts'
+import { triggerAt, type ContextLimits } from '../../shared/context.ts'
 import type { Settings } from '../../shared/settings.ts'
 import type {
   Conversation,
@@ -24,14 +20,11 @@ import type { ProjectStore } from '../projects/index.ts'
 import type { SettingsStore } from '../settings-store.ts'
 import type { Compactor } from './compactor.ts'
 import {
-  contextTokens,
-  fromCompaction,
+  buildContext,
   isContextOverflow,
   prune,
   pruneSavings,
   pruningSuffices,
-  tailStart,
-  keepTokens,
 } from './context.ts'
 import type { ModelRequests } from './model-requests.ts'
 import { chatInstructions } from './prompts.ts'
@@ -288,7 +281,7 @@ export class ChatService {
       model: settings.model,
       reasoningEffort: settings.reasoningEffort,
       autoCompact: settings.autoCompact,
-      limits: limitsFrom(settings),
+      limits: settings,
       tools,
       disabled: this.#tools.tools
         .filter((t) => !offered.includes(t))
@@ -460,22 +453,21 @@ export class ChatService {
     overflow = false,
   ): AsyncGenerator<TurnCompactionEvent, ResponseInputItem[] | null> {
     const { limits, autoCompact } = plan
-    const build = () => {
-      const path = this.#store.getPath(conversationId, leafId)
-      const { items, lead } = fromCompaction(
-        path,
-        this.#compactor.forPath(conversationId, path),
+    const build = () =>
+      buildContext(
+        this.#store.getPath(conversationId, leafId),
+        this.#compactor.list(conversationId),
+        limits,
       )
-      const data = [...lead, ...items.map((item) => item.data)]
-      const keepFrom = lead.length + tailStart(items, keepTokens(limits))
-      return { data, keepFrom, used: contextTokens(items, lead.length) }
-    }
     let { data, keepFrom, used } = build()
     const trigger = triggerAt(limits)
     if (!overflow && used <= trigger) return data
 
     const saved = pruneSavings(data, keepFrom)
-    if (!overflow && pruningSuffices(saved, used, trigger, limits.window)) {
+    if (
+      !overflow &&
+      pruningSuffices(saved, used, trigger, limits.contextWindow)
+    ) {
       return prune(data, keepFrom)
     }
     const job =
@@ -487,10 +479,14 @@ export class ChatService {
       try {
         const compaction = await this.#compactor.run(job, {
           signal,
-          shared: { instructions: plan.instructions, tools: plan.tools },
+          shared: {
+            instructions: plan.instructions,
+            tools: plan.tools,
+            input: prune(data, keepFrom),
+          },
         })
         yield { type: 'chibot.compaction', status: 'done', compaction }
-        ;({ data, keepFrom, used } = build())
+        ;({ data, keepFrom } = build())
       } catch (err) {
         signal?.throwIfAborted()
         yield {
