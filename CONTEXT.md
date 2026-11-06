@@ -521,12 +521,12 @@ Settled by the owner:
 3. **Pruning:** part of phase 1.
 4. **Other OpenAI-only parts:** a separate change afterwards.
 
-Proposed, to be confirmed or changed when phase 1 starts:
+5. **Default window** when a server does not report one: 32,000 tokens.
+6. **Old OpenAI `compaction` items** in saved chats: ignored. The full saved
+   path is sent, and pruning and summarizing keep it in the window; no offer to
+   re-summarize.
 
-5. The default window when a server does not report one: 32,000 tokens.
-6. Old chats that contain OpenAI `compaction` items: ignore the items (the full
-   saved path is sent, and pruning and summarizing keep it in the window)
-   rather than offering to re-summarize.
+All decisions are settled; nothing is left open before phase 1.
 
 ## 8. Sources
 
