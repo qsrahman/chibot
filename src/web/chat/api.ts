@@ -1,7 +1,9 @@
 import { EventSourceParserStream } from 'eventsource-parser/stream'
 import type { ResponseStreamEvent } from 'openai/resources/responses/responses'
 import type {
+  Compaction,
   TurnApprovalEvent,
+  TurnCompactionEvent,
   TurnErrorEvent,
   TurnRequest,
   TurnTitleEvent,
@@ -11,6 +13,7 @@ import {
   apiFetch,
   asNetworkError,
   errorMessage,
+  remove,
   request,
   send,
 } from '../http.ts'
@@ -18,6 +21,7 @@ import {
 export type TurnEvent =
   | ResponseStreamEvent
   | TurnApprovalEvent
+  | TurnCompactionEvent
   | TurnErrorEvent
   | TurnTitleEvent
   | TurnToolOutputEvent
@@ -46,6 +50,21 @@ export const switchVersion = (conversationId: string, itemId: number) =>
     `/api/conversations/${conversationId}/leaf`,
     send('PUT', { itemId }),
   )
+
+/** Summarizes the start of the chat now, keeping `focus` in mind. */
+export const compactChat = (
+  conversationId: string,
+  focus: string,
+  signal: AbortSignal,
+) =>
+  request<Compaction>(`/api/conversations/${conversationId}/compact`, {
+    ...send('POST', focus ? { focus } : {}),
+    signal,
+  })
+
+/** Undo: brings back the messages a summary stood for. */
+export const undoCompaction = (conversationId: string, compactionId: number) =>
+  remove(`/api/conversations/${conversationId}/compactions/${compactionId}`)
 
 /** Runs a turn and yields the streamed events until it ends. */
 export async function* streamTurn(

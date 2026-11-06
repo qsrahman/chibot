@@ -12,10 +12,7 @@ import type { Attachments } from '../attachments.ts'
 import { chatModels } from './chat-models.ts'
 
 /** Request features some models or servers reject (see `ModelRequests`). */
-export type OptionalParams = Pick<
-  ResponseCreateParams,
-  'reasoning' | 'context_management'
->
+export type OptionalParams = Pick<ResponseCreateParams, 'reasoning'>
 
 /**
  * Requests to the model endpoint, made to work with what it supports:
@@ -87,8 +84,7 @@ export class ModelRequests {
 
   /**
    * Calls `send` with `optional` request features, or without them where
-   * they're rejected: models without reasoning (or without that effort), or
-   * compatible servers without compaction, answer 400. A 400 is retried once
+   * they're rejected: models without reasoning (or without that effort) answer 400. A 400 is retried once
    * without them; if that works, the combination is remembered so later
    * requests skip the failing attempt.
    */

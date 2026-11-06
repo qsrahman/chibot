@@ -5,7 +5,7 @@ import { getCookie, setCookie } from 'hono/cookie'
 import { csrf } from 'hono/csrf'
 import type { Health } from '../shared/types.ts'
 import type { Attachments } from './attachments.ts'
-import type { ChatService } from './chat/index.ts'
+import type { ChatService, Compactor } from './chat/index.ts'
 import type { Config } from './config.ts'
 import type { ConversationSearch } from './conversations/index.ts'
 import type { ConversationStore } from './conversations/index.ts'
@@ -35,6 +35,7 @@ export interface AppDeps {
   search: ConversationSearch
   settings: SettingsStore
   chat: ChatService
+  compactor: Compactor
   titles: TitleWriter
   model: ModelRequests
   registry: ToolRegistry

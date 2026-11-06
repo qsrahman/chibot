@@ -23,6 +23,12 @@ export const conversationPatchSchema = z.object({
   projectId: z.string().nullable().optional(),
 })
 
+/** `POST /api/conversations/:id/compact`; the body may be empty. */
+export const compactRequestSchema = z.object({
+  /** What the summary should keep most. */
+  focus: z.string().max(800).optional(),
+})
+
 /** `POST /api/projects`. */
 export const createProjectSchema = z.object({
   name: z.string().trim().min(1).max(100),

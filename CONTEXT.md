@@ -314,8 +314,8 @@ In Settings → Model (and the model picker's menu where it fits):
 | Keep recent | tokens of the newest turns kept verbatim | 15,000 |
 | Summary model | *(later)* a model on the same server | the chat model; no setting in phase 1 |
 
-The existing `compactThreshold` becomes derived (`min(window × share, window −
-reserve)`); its stored value is read once as the window if it was changed.
+The old `compactThreshold` setting is gone and its stored value is ignored;
+the trigger is derived (`min(window × share, window − reserve)`).
 Where a server reports a window (Ollama's `/api/show`, LM Studio, OpenRouter's
 model list), chibot may read it as a default; **no server is required to**.
 Ollama silently truncates input past its `num_ctx`, so the window setting must
@@ -370,9 +370,10 @@ Over the items *outside* the kept tail:
 - A tool output over 8,000 characters keeps its **head 4,000 and tail 1,000**
   with `[… 12,300 characters hidden; run the tool again if you need them]`.
   The full output stays in the database and in the chat view.
-- Images and other binary parts older than the newest 2 become
-  `[image: name]`.
-- Reasoning items older than the kept tail are not resent.
+- Images older than the newest 2 become `[image]` (attachments are stored
+  as ids, so no name is at hand).
+- Reasoning items are still sent as they are: OpenAI pairs them with their
+  function calls, which belongs to the audit of OpenAI-only options, not here.
 - It only runs when the context is over the trigger and the pruning frees at
   least 20% of the window (opencode's "minimum": a prefix rewrite must be worth
   its cache miss); otherwise summarize.

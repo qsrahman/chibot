@@ -10,6 +10,8 @@ import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
 import { SourcesContext } from './sourcesContext.ts'
 import { sourcesOf, type ToolActivity, type Turn } from './turns.ts'
 import { describeContext, describeUsage } from './usage.ts'
+import { CompactionNote, CompactNow } from './CompactNote.tsx'
+import type { Compaction } from '../../shared/types.ts'
 import { AnswerImages } from './AnswerImages.tsx'
 import { Sources } from './Sources.tsx'
 import { Summary } from '../ui/Summary.tsx'
@@ -36,12 +38,15 @@ interface TurnViewProps {
   onSwitch?: (itemId: number) => void
   /** An image loaded (and grew the page): keep following the answer. */
   onImageLoad?: () => void
-  /** Tokens before chibot compacts the context; `null` turns it off. */
-  compactThreshold: number | null
+  /** The context window and where chibot compacts (`null`: never). */
+  context: { window: number; trigger: number | null }
+  /** Summarizes the start of the chat now (offered on the latest answer). */
+  onCompact?: (focus: string) => void
+  onUndoCompaction?: (compaction: Compaction) => void
 }
 
 export function TurnView({
-  turn: { question, answer, compacted },
+  turn: { question, answer, compaction },
   pending,
   latest,
   busy,
@@ -53,7 +58,9 @@ export function TurnView({
   onContinue,
   onSwitch,
   onImageLoad,
-  compactThreshold,
+  context,
+  onCompact,
+  onUndoCompaction,
 }: TurnViewProps) {
   const setEditing = (on: boolean) => onEditingChange?.(on)
   const [viewing, setViewing] = useState<ViewedImage | null>(null)
@@ -62,10 +69,21 @@ export function TurnView({
   // The links in the answer to these are numbered, as in the list under it.
   const sources = answer ? sourcesOf(answer) : []
   const answerUsage = describeUsage(answer?.usage)
-  const contextUsage = describeContext(answer?.usage, compactThreshold)
+  const contextUsage = describeContext(
+    answer?.usage,
+    context.window,
+    context.trigger,
+  )
 
   return (
     <div className={latest ? 'turn latest' : 'turn'}>
+      {compaction && (
+        <CompactionNote
+          compaction={compaction}
+          busy={!!busy}
+          onUndo={() => onUndoCompaction?.(compaction)}
+        />
+      )}
       {editing ? (
         <EditBox
           initial={question.text}
@@ -134,11 +152,6 @@ export function TurnView({
         </div>
       )}
 
-      {compacted && (
-        <p className="compaction-note" role="note">
-          Earlier messages were summarized to save context.
-        </p>
-      )}
       {answer?.thinking && (
         <Thoughts
           text={answer.thinking}
@@ -243,6 +256,9 @@ export function TurnView({
             >
               {contextUsage.short}
             </span>
+          )}
+          {latest && onCompact && (
+            <CompactNow busy={!!busy} onCompact={onCompact} />
           )}
         </div>
       )}

@@ -160,7 +160,7 @@ export const turnSoFar = (
 ): Turn => ({
   key,
   question,
-  compacted: false,
+  compaction: null,
   answer:
     text || thinking || tools.length > 0
       ? {

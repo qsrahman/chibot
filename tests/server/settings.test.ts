@@ -3,7 +3,6 @@ import type { DatabaseSync } from 'node:sqlite'
 import { Config } from '../../src/server/config.ts'
 import { openDatabase } from '../../src/server/database.ts'
 import {
-  DEFAULT_COMPACT_THRESHOLD,
   settingsDefaults,
   SettingsStore,
 } from '../../src/server/settings-store.ts'
@@ -29,16 +28,19 @@ describe('SettingsStore', () => {
   it('starts from the defaults', () => {
     expect(settings.get()).toEqual(settingsDefaults('env-model'))
     // The ones that matter: the environment's model, the model's own
-    // reasoning effort, compaction on at 64k tokens, nothing switched off.
+    // reasoning effort, compaction on for a 32k window, nothing switched off.
     expect(settings.get()).toMatchObject({
       model: 'env-model',
       reasoningEffort: null,
-      compactThreshold: 64_000,
+      autoCompact: true,
+      contextWindow: 32_000,
+      compactAt: 75,
+      compactReserve: 16_000,
+      keepRecent: 15_000,
       disabledTools: [],
       disabledMcpServers: [],
       askMcpServers: [],
     })
-    expect(DEFAULT_COMPACT_THRESHOLD).toBe(64_000)
   })
 
   it('has the other services’ models from the environment, off without one', () => {
@@ -64,11 +66,11 @@ describe('SettingsStore', () => {
 
   it('saves partial updates over the defaults', () => {
     settings.update({ model: 'other', reasoningEffort: 'high' })
-    settings.update({ compactThreshold: null })
+    settings.update({ autoCompact: false })
     expect(settings.get()).toMatchObject({
       model: 'other',
       reasoningEffort: 'high',
-      compactThreshold: null,
+      autoCompact: false,
       aboutUser: '',
     })
     // Survives a new store on the same database (i.e. a restart).
@@ -175,7 +177,8 @@ describe('settings routes and use', () => {
   it('rejects invalid or unknown settings', async () => {
     for (const body of [
       { reasoningEffort: 'huge' },
-      { compactThreshold: 10 },
+      { contextWindow: 10 },
+      { compactAt: 100 },
       { model: '' },
       { apiKey: 'sk-nope' },
     ]) {

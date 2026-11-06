@@ -8,6 +8,7 @@ import { Attachments } from '../../src/server/attachments.ts'
 import { ChatService } from '../../src/server/chat/index.ts'
 import { ModelRequests } from '../../src/server/chat/index.ts'
 import { TitleWriter } from '../../src/server/chat/index.ts'
+import { Compactor } from '../../src/server/chat/index.ts'
 import { ToolRegistry } from '../../src/server/tool-registry.ts'
 import { Config } from '../../src/server/config.ts'
 import { ConversationSearch } from '../../src/server/conversations/index.ts'
@@ -200,7 +201,7 @@ export function testChat(
     client?: FakeOptions
     model?: string
     settings?: SettingsStore
-  } & NonNullable<ConstructorParameters<typeof ChatService>[4]> = {},
+  } & NonNullable<ConstructorParameters<typeof ChatService>[5]> = {},
 ) {
   return chatOn(fakeClient(events, calls, client), store, settings, options)
 }
@@ -219,7 +220,7 @@ export function testChatServices(
     calls?: FakeCall[]
     client?: FakeOptions
     settings?: SettingsStore
-  } & NonNullable<ConstructorParameters<typeof ChatService>[4]> = {},
+  } & NonNullable<ConstructorParameters<typeof ChatService>[5]> = {},
 ) {
   return chatServices(
     fakeClient(events, calls, client),
@@ -234,12 +235,20 @@ export function chatServices(
   client: OpenAI,
   store: ConversationStore,
   settings: SettingsStore,
-  options: NonNullable<ConstructorParameters<typeof ChatService>[4]> = {},
+  options: NonNullable<ConstructorParameters<typeof ChatService>[5]> = {},
 ) {
   const model = new ModelRequests(client, options.attachments)
   const titles = new TitleWriter(model, store, settings)
-  const chat = new ChatService(model, titles, store, settings, options)
-  return { chat, titles, model }
+  const compactor = new Compactor(model, store, settings)
+  const chat = new ChatService(
+    model,
+    titles,
+    compactor,
+    store,
+    settings,
+    options,
+  )
+  return { chat, titles, model, compactor }
 }
 
 /** A `ChatService` on `client`. */
@@ -320,12 +329,17 @@ export function testApp(deps: Partial<AppDeps> = {}) {
   const files = deps.files ?? testFiles(db)
   const projects = deps.projects ?? new ProjectStore(db, files)
   const index = new ProjectIndex(db, projects, files, null)
-  const model = new ModelRequests(fakeClient([]))
+  const { chat, compactor, titles, model } = chatServices(
+    fakeClient([]),
+    store,
+    settings,
+  )
   return createApp({
     config: new Config({ OPENAI_API_KEY: 'k' }),
     search: new ConversationSearch(db),
-    chat: chatOn(fakeClient([]), store, settings),
-    titles: new TitleWriter(model, store, settings),
+    chat,
+    compactor,
+    titles,
     model,
     registry: new ToolRegistry([]),
     memories: new MemoryStore(db),

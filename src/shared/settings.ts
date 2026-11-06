@@ -20,8 +20,16 @@ export const settingsSchema = z.object({
   aboutUser: z.string().max(1500),
   /** Custom instructions: how chibot should respond. */
   responseStyle: z.string().max(1500),
-  /** Compact the context past this many tokens; `null` turns it off. */
-  compactThreshold: z.number().int().min(1000).max(10_000_000).nullable(),
+  /** Summarize earlier messages when the context nears the window. */
+  autoCompact: z.boolean(),
+  /** Tokens the model reads at most (chibot can't ask the server). */
+  contextWindow: z.number().int().min(2000).max(10_000_000),
+  /** Percent of the window at which chibot compacts. */
+  compactAt: z.number().int().min(10).max(95),
+  /** Tokens kept free for the answer. */
+  compactReserve: z.number().int().min(0).max(1_000_000),
+  /** Tokens of the newest messages that stay word for word. */
+  keepRecent: z.number().int().min(500).max(1_000_000),
   /** Tools switched off in Settings: never offered to the model. */
   disabledTools: z.array(z.string().max(100)).max(500),
   /** MCP servers switched off in Settings: not connected (`mcpServers`). */

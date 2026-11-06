@@ -48,10 +48,32 @@ export interface StoredItem {
   createdAt: number
 }
 
+/**
+ * A summary that stands in for the path's items up to `upToItemId`. It applies
+ * to every path through that item; deleting it (Undo) restores the originals.
+ */
+export interface Compaction {
+  id: number
+  upToItemId: number
+  summary: string
+  /** The model that wrote it. */
+  summaryModel: string
+  /** Estimated tokens of the context before and after. */
+  tokensBefore: number
+  tokensAfter: number
+  /** The compaction this one summarized further, if any. */
+  previousId: number | null
+  /** The summary lost a name the user quoted (checked, but kept). */
+  degraded: boolean
+  createdAt: number
+}
+
 export interface ConversationWithItems {
   conversation: Conversation
   /** Path from the root to the current leaf. */
   items: StoredItem[]
+  /** The compactions that apply to that path, oldest first. */
+  compactions: Compaction[]
   /** Tokens used by every response in the conversation, all versions included. */
   usage: ResponseUsage
 }
@@ -141,6 +163,16 @@ export interface TurnToolOutputEvent {
   type: 'chibot.tool_output'
   call_id: string
   output: string
+}
+
+/** SSE event around the summarizing of earlier messages, before a request. */
+export interface TurnCompactionEvent {
+  type: 'chibot.compaction'
+  status: 'started' | 'done' | 'failed'
+  /** With `done`. */
+  compaction?: Compaction
+  /** With `failed`. */
+  message?: string
 }
 
 /**

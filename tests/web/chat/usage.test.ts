@@ -48,31 +48,30 @@ describe('describeContext', () => {
     total_tokens: 12_800,
   }
 
-  it('shows the input against the compaction threshold', () => {
-    expect(describeContext(usage, 64_000)).toEqual({
-      short: `${compact.format(12_400)} / ${compact.format(64_000)} context`,
-      detail: `${full.format(12_400)} of ${full.format(64_000)} tokens of context sent with this answer. chibot compacts older turns past that (Settings → Model).`,
+  it('shows the input against the window and says where chibot summarizes', () => {
+    expect(describeContext(usage, 32_000, 16_000)).toEqual({
+      short: `${compact.format(12_400)} / ${compact.format(32_000)} context`,
+      detail: `${full.format(12_400)} of ${full.format(32_000)} tokens of context sent with this answer. chibot summarizes earlier messages past ${full.format(16_000)}. (Settings → Model)`,
       nearLimit: false,
     })
   })
 
-  it('warns at 80 % of the threshold', () => {
-    expect(describeContext(usage, 16_000)?.nearLimit).toBe(false)
-    expect(describeContext(usage, 15_500)?.nearLimit).toBe(true)
+  it('warns once the context reaches the point where chibot summarizes', () => {
+    expect(describeContext(usage, 32_000, 12_500)?.nearLimit).toBe(false)
+    expect(describeContext(usage, 32_000, 12_400)?.nearLimit).toBe(true)
   })
 
-  it('just counts the context when compaction is off', () => {
-    expect(describeContext(usage, null)).toEqual({
-      short: `${compact.format(12_400)} context`,
-      detail: `${full.format(12_400)} tokens of context sent with this answer. Compaction is off (Settings → Model).`,
+  it('never warns when compaction is off', () => {
+    expect(describeContext(usage, 32_000, null)).toMatchObject({
+      detail: expect.stringContaining('Compaction is off.'),
       nearLimit: false,
     })
   })
 
   it('shows nothing without an input count', () => {
-    expect(describeContext(null, 64_000)).toBeNull()
+    expect(describeContext(null, 32_000, 16_000)).toBeNull()
     expect(
-      describeContext({ total_tokens: 10 } as ResponseUsage, 64_000),
+      describeContext({ total_tokens: 10 } as ResponseUsage, 32_000, 16_000),
     ).toBeNull()
   })
 })

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ResponseInputItem } from 'openai/resources/responses/responses'
-import type { StoredItem } from '../../../src/shared/types.ts'
+import type { Compaction, StoredItem } from '../../../src/shared/types.ts'
 import {
   imageInfo,
   imagesOf,
@@ -109,7 +109,7 @@ describe('toTurns', () => {
           versions: null,
           incomplete: false,
         },
-        compacted: false,
+        compaction: null,
       },
       {
         key: '5',
@@ -121,7 +121,7 @@ describe('toTurns', () => {
           versions: null,
         },
         answer: null,
-        compacted: false,
+        compaction: null,
       },
     ])
   })
@@ -135,13 +135,31 @@ describe('toTurns', () => {
     expect(turn!.answer!.versions).toEqual({ index: 2, ids: [8, 9, 10] })
   })
 
-  it('marks answers that compacted the context', () => {
+  it('shows a summary before the turn that starts after its cut', () => {
+    const summary = {
+      id: 1,
+      upToItemId: 2,
+      summary: 'notes',
+    } as Compaction
+    const turns = toTurns(
+      [
+        item(1, { role: 'user', content: 'q' }),
+        item(2, { role: 'assistant', content: 'a' }),
+        item(3, { role: 'user', content: 'q2' }),
+        item(4, { role: 'assistant', content: 'a2' }),
+      ],
+      [summary],
+    )
+    expect(turns.map((t) => t.compaction)).toEqual([null, summary])
+  })
+
+  it('ignores the items of OpenAI’s own compaction', () => {
     const [turn] = toTurns([
       item(1, { role: 'user', content: 'q' }),
       item(2, { type: 'compaction', id: 'c', encrypted_content: 'x' }),
       item(3, { role: 'assistant', content: 'a' }),
     ])
-    expect(turn!.compacted).toBe(true)
+    expect(turn!.compaction).toBeNull()
     expect(turn!.answer!.text).toBe('a')
   })
 

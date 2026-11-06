@@ -84,12 +84,11 @@ the patch version; see [CHANGELOG.md](CHANGELOG.md).
   and the partial answer is saved. Nothing generates in the background.
 - When a request **fails**, the user message is kept and the UI offers *Retry*
   (that's a regenerate from that message).
-- **Context growth:** long chats will eventually exceed the context window.
-  The SDK marks `truncation` as deprecated in favour of
-  `context_management: [{ type: 'compaction', compact_threshold }]`, which was
-  verified with `store: false`: the response carries compaction items, and a
-  follow-up sending only the compaction item and what came after it still
-  recalls the dropped history (Phase 4).
+- **Context growth:** long chats exceed the context window. chibot handles it
+  itself, whatever the server (see Long chats in §6 and
+  [CONTEXT.md](CONTEXT.md)): it shortens old tool results, then has the chat
+  model summarize the start of the chat. OpenAI's own `compaction` option is
+  not used; compatible servers ignore it.
 - **Compatible providers** may not support every request option above
   (`store`, `include`, `context_management`). Phase 1 verifies chat against a
   local Ollama with `gemma4:cloud`. An option a provider rejects gets a per-endpoint switch, added
@@ -271,7 +270,7 @@ bumps the minor version. Work stops after each phase for review.
 ### Phase 4 — Models & settings ✅
 Decisions: one global model chosen
 in the header, answers labelled with their model; one phase; zod adopted now;
-compaction on at 64k tokens; math formatting via a built-in instruction.
+summarizing of long chats on for a 32k window; math formatting via a built-in instruction.
 
 - **Settings foundation.** zod (schemas shared in `src/shared`, type-only on
   the web). `openDatabase()` runs migrations for one SQLite connection shared
@@ -308,15 +307,24 @@ compaction on at 64k tokens; math formatting via a built-in instruction.
   and the instructions precede the whole conversation; the exact minute would
   break the cache on every request. The user's sections override the
   defaults (language, length, format, tone), not the rule about others' text.
-- **Long chats.** *(Superseded: this relies on OpenAI's own compaction, which
-  compatible servers such as Ollama ignore. [CONTEXT.md](CONTEXT.md) has the
-  research on six agents and the replacement design.)*
-  `context_management: [{ type: 'compaction',
-  compact_threshold }]` with `compactThreshold` (default 64,000 tokens;
-  `null` turns it off). Compaction items are stored like other output; a
-  turn's input starts at the last compaction item on its path. Shown only as
-  a thin "Earlier messages were summarized" divider. Servers that reject the
-  option are retried without it.
+- **Long chats.** Provider-neutral, in chibot ([CONTEXT.md](CONTEXT.md) has the
+  research on six agents and the design). Servers don't report their window,
+  so the `contextWindow` setting (default 32,000) stands for it. Before each
+  request chibot takes the last reported usage plus an estimate of what came
+  after, and past `min(window × compactAt %, window − reserve)` (75 %, reserve
+  16,000) it first shortens old tool results (over 8,000 characters) and
+  pictures (all but the newest two) in that request, and if that is not enough
+  has the chat's own model, with no tools and reasoning off, write a summary of
+  everything but the newest `keepRecent` tokens (15,000, cut at the start of a
+  turn). The summary is a row in `compactions` (`up_to_item_id`), not an item:
+  the messages stay, a request starts with the summary in
+  `<conversation_summary>` tags and the items after the cut, and **Undo**
+  deletes the row. A summary that fails its checks (no `<summary>`, cut off,
+  not shorter) is dropped, the chat goes on with the full history and a note,
+  and three failures in a row pause automatic summarizing for that chat. A
+  400/413 saying the request is too long compacts harder and asks once more.
+  **Compact now** (with an optional focus) is on the latest answer. Old
+  OpenAI `compaction` items are ignored.
 - **Export / import.** From a chat's menu: Markdown (current path) or JSON
   (full tree, `{ version: 1, … }`, with versions, usage and models). Import a
   JSON file from Settings → Data: validated, new ids, current version kept,

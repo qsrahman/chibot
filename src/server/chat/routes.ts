@@ -10,6 +10,7 @@ import {
 } from '../../shared/export.ts'
 import { messageText } from '../../shared/messages.ts'
 import {
+  compactRequestSchema,
   conversationPatchSchema,
   createConversationSchema,
   switchVersionSchema,
@@ -23,6 +24,7 @@ import { toMarkdown } from '../conversations/index.ts'
 import { refuseTurn } from './turn-request.ts'
 import type { Attachments } from '../attachments.ts'
 import type { ChatService } from './chat-service.ts'
+import { cleanFocus, type Compactor } from './compactor.ts'
 import type { ConversationSearch } from '../conversations/index.ts'
 import type { ConversationStore } from '../conversations/index.ts'
 import type { FileStore } from '../file-store.ts'
@@ -35,6 +37,7 @@ export function conversationRoutes({
   store,
   search,
   chat,
+  compactor,
   titles,
   files,
   projects,
@@ -43,6 +46,7 @@ export function conversationRoutes({
   store: ConversationStore
   search: ConversationSearch
   chat: ChatService
+  compactor: Compactor
   titles: TitleWriter
   files: FileStore
   projects: ProjectStore
@@ -170,11 +174,52 @@ export function conversationRoutes({
     const id = c.req.param('id')
     const conversation = store.getConversation(id)
     if (!conversation) return notFound(c)
+    const items = store.getPath(id)
     return c.json({
       conversation,
-      items: store.getPath(id),
+      items,
+      compactions: compactor.onPath(id, items),
       usage: store.getUsageTotals(id),
     } satisfies ConversationWithItems)
+  })
+
+  // Summarizes the start of the chat now, with an optional focus.
+  app.post(
+    '/api/conversations/:id/compact',
+    json(compactRequestSchema),
+    async (c) => {
+      const id = c.req.param('id')
+      const conversation = store.getConversation(id)
+      if (!conversation) return notFound(c)
+      const job =
+        conversation.currentLeafId === null
+          ? null
+          : compactor.prepare(id, conversation.currentLeafId)
+      if (!job) {
+        return c.json({ error: 'There is nothing to summarize yet' }, 409)
+      }
+      try {
+        const focus = cleanFocus(c.req.valid('json').focus)
+        return c.json(
+          await compactor.run(job, { focus, signal: c.req.raw.signal }),
+          201,
+        )
+      } catch (err) {
+        return c.json(
+          { error: err instanceof Error ? err.message : String(err) },
+          502,
+        )
+      }
+    },
+  )
+
+  // Undo: the chat goes back to the messages the summary stood for.
+  app.delete('/api/conversations/:id/compactions/:compactionId', (c) => {
+    const removed = compactor.delete(
+      c.req.param('id'),
+      Number(c.req.param('compactionId')),
+    )
+    return removed ? c.body(null, 204) : notFound(c, 'Compaction')
   })
 
   app.post('/api/conversations/:id/turns', json(turnRequestSchema), (c) => {

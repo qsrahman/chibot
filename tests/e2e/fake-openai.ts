@@ -178,6 +178,7 @@ app.post('/v1/responses', async (c) => {
   const body = (await c.req.json()) as {
     model: string
     stream?: boolean
+    instructions?: string
     input:
       | string
       | { role?: string; type?: string; content?: unknown; output?: string }[]
@@ -192,6 +193,24 @@ app.post('/v1/responses', async (c) => {
   })
 
   if (!body.stream) {
+    // A summary request (chibot's own instructions): a question with
+    // "fail-summary" in it gets an answer without the <summary> tags.
+    if (body.instructions?.startsWith('You are writing notes')) {
+      return c.json({
+        id: `resp_${crypto.randomUUID()}`,
+        object: 'response',
+        status: 'completed',
+        model: body.model,
+        output: [
+          message(
+            JSON.stringify(body.input).includes('fail-summary')
+              ? 'no tags here'
+              : '<analysis>thinking</analysis><summary>## Goal\nE2E summary</summary>',
+          ),
+        ],
+        usage,
+      })
+    }
     return c.json({
       id: `resp_${crypto.randomUUID()}`,
       object: 'response',
@@ -246,11 +265,11 @@ app.post('/v1/responses', async (c) => {
     summary: [{ type: 'summary_text', text: THOUGHT }],
     encrypted_content: 'e2e',
   }
-  const compaction = {
-    id: `cmp_${crypto.randomUUID()}`,
-    type: 'compaction',
-    encrypted_content: 'e2e',
-  }
+  // A question with "huge" in it reports a context past the 32k window's
+  // trigger, so the next message summarizes the chat first.
+  const reported = question.includes('huge')
+    ? { ...usage, input_tokens: 40_000, total_tokens: 40_012 }
+    : usage
   const last = typeof body.input === 'string' ? null : body.input.at(-1)
   const tool =
     last?.type === 'function_call_output'
@@ -265,11 +284,7 @@ app.post('/v1/responses', async (c) => {
   }
   const reply =
     last?.type === 'function_call_output' ? `Tool said: ${last.output}` : text
-  const output = [
-    ...(question.includes('compact') ? [compaction] : []),
-    ...(thinking ? [reasoning] : []),
-    call ?? message(reply),
-  ]
+  const output = [...(thinking ? [reasoning] : []), call ?? message(reply)]
 
   return streamSSE(c, async (stream) => {
     const send = (event: Record<string, unknown> & { type: string }) =>
@@ -313,7 +328,13 @@ app.post('/v1/responses', async (c) => {
     }
     await send({
       type: 'response.completed',
-      response: { id, status: 'completed', model: body.model, output, usage },
+      response: {
+        id,
+        status: 'completed',
+        model: body.model,
+        output,
+        usage: reported,
+      },
     })
   })
 })

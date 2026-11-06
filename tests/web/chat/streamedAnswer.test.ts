@@ -216,7 +216,7 @@ describe('turnSoFar', () => {
     expect(turnSoFar(question, startAnswer(), 'pending')).toEqual({
       key: 'pending',
       question,
-      compacted: false,
+      compaction: null,
       answer: null,
     })
   })

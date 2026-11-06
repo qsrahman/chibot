@@ -30,7 +30,9 @@ src/server/<feature>/
               feature folders, each with an index.ts (what the rest of the
               server may import; see Design conventions): conversations/
               (history trees, search, export), chat/ (the turn loop, model
-              requests, titles, prompts.ts: what chibot tells the model, and
+              requests, titles, long-chat summaries (context.ts: the budget, pruning
+              and cut maths; compactor.ts: the summarizer), prompts.ts: what
+              chibot tells the model, and
               the /api/conversations routes), projects/ (store, search index,
               chunking, instruction writer, routes, tools, schema) and mcp/
               (config, connections, OAuth, routes, the tool)
@@ -269,7 +271,8 @@ invariants, API quirks. No line-by-line narration.
   `tests/e2e/fake-openai.ts` via `OPENAI_BASE_URL`. The fake answers
   `Answer #n to: <question>`; a question containing "slow" streams a long
   answer slowly, "drip" a normal one slowly (to queue a message while it
-  streams), "think" adds a reasoning summary, "compact" a compaction item,
+  streams), "think" adds a reasoning summary, "huge" a reported context past the trigger (so the next message is
+  summarized first, and "fail-summary" makes that summary fail),
   and a question's words call a tool ("approve", "draw", "mcp echo <text>", …:
   the `TRIGGERS` table in the file lists them, and a new tool needs one row
   there). It also fakes the images API, embeddings, transcription

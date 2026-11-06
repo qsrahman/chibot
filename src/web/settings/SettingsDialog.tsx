@@ -137,11 +137,7 @@ export function SettingsDialog({
             </>
           )}
           {tab === 'model' && current && settings.defaults && (
-            <Model
-              settings={current}
-              defaults={settings.defaults}
-              onChange={save}
-            />
+            <Model settings={current} onChange={save} />
           )}
           {tab === 'other-models' && current && settings.defaults && (
             <OtherModels

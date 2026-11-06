@@ -242,29 +242,78 @@ test('exports a chat and imports it back', async ({ page }) => {
   await expect(data.getByRole('alert')).toContainText('Import failed')
 })
 
-test('compacts long chats and continues from the compaction', async ({
+test('summarizes a long chat, shows the summary and undoes it', async ({
   page,
 }) => {
   await page.goto('/')
-  await send(page, 'Please compact now')
+  await send(page, 'huge first question')
   await answered(page)
-  await expect(
-    page.getByText('Earlier messages were summarized to save context.'),
-  ).toBeVisible()
-  expect((await lastRequest(page)).context_management).toEqual([
-    { type: 'compaction', compact_threshold: 64_000 },
-  ])
-
   await send(page, 'And then?')
   await answered(page)
-  // The question before the compaction is dropped: the input starts at the
-  // compaction item and ends with the new question.
+
+  // The summary replaced the first turn in the request…
   const input = (await lastRequest(page)).input
-  expect(input.map((i) => i.type ?? i.role)).toEqual([
-    'compaction',
-    'message',
-    'user',
-  ])
+  expect(JSON.stringify(input)).toContain('E2E summary')
+  expect(JSON.stringify(input)).not.toContain('huge first question')
+  expect(input.at(-1)).toMatchObject({ role: 'user', content: 'And then?' })
+
+  // …and the chat shows where, opening to the summary.
+  const note = page.locator('.compaction-note')
+  await expect(note).toContainText('Earlier messages were summarized')
+  await note.locator('summary').click()
+  await expect(note).toContainText('E2E summary')
+  await expect(note).toContainText('Written by e2e-model')
+
+  // Undo brings the original messages back to the next request.
+  await note.getByRole('button', { name: 'Undo' }).click()
+  await expect(note).toHaveCount(0)
+  await send(page, 'After undo')
+  await answered(page)
+  const again = JSON.stringify((await lastRequest(page)).input)
+  expect(again).toContain('huge first question')
+  expect(again).not.toContain('E2E summary')
+})
+
+test('keeps chatting when the summary fails', async ({ page }) => {
+  await page.goto('/')
+  await send(page, 'huge fail-summary')
+  await answered(page)
+  await send(page, 'Still there?')
+  await answered(page)
+
+  await expect(page.locator('.status-note')).toContainText(
+    'Couldn’t summarize earlier messages',
+  )
+  await expect(page.locator('.compaction-note')).toHaveCount(0)
+  expect(JSON.stringify((await lastRequest(page)).input)).toContain(
+    'huge fail-summary',
+  )
+})
+
+test('summarizes on request, keeping a focus in mind', async ({ page }) => {
+  await page.goto('/')
+  await send(page, 'First')
+  await answered(page)
+  await send(page, 'Second')
+  await answered(page)
+
+  await page.getByRole('button', { name: 'Compact now' }).click()
+  await page.getByLabel('What the summary should keep in mind').fill('the plan')
+  await page.getByRole('button', { name: 'Summarize' }).click()
+  await expect(page.locator('.compaction-note')).toContainText(
+    'Earlier messages were summarized',
+  )
+})
+
+test('sets the context window and when to summarize', async ({ page }) => {
+  await page.goto('/')
+  const model = await openSettings(page, 'Model')
+  await model.getByLabel('Context window').fill('64000')
+  await model.getByLabel('Context window').press('Enter')
+  await expect(page.getByLabel('Context window')).toHaveValue('64000')
+  await model.getByLabel('Summarize long chats').click()
+  await expect(model.getByLabel('Summarize long chats')).not.toBeChecked()
+  await expect(model.getByLabel('Keep recent')).toHaveCount(0)
 })
 
 test('chooses the models of images, search and voice input', async ({

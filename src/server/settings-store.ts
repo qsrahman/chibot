@@ -7,9 +7,6 @@ import {
 import type { ServiceModel } from '../shared/service-models.ts'
 import { transaction } from './database.ts'
 
-/** Compact the context past this many tokens unless the user changes it. */
-export const DEFAULT_COMPACT_THRESHOLD = 64_000
-
 /**
  * Settings before the user changes anything; the models come from the
  * environment (`''` for a service without one).
@@ -26,7 +23,12 @@ export function settingsDefaults(
     reasoningEffort: null,
     aboutUser: '',
     responseStyle: '',
-    compactThreshold: DEFAULT_COMPACT_THRESHOLD,
+    autoCompact: true,
+    // Small enough for local models; the user raises it for larger ones.
+    contextWindow: 32_000,
+    compactAt: 75,
+    compactReserve: 16_000,
+    keepRecent: 15_000,
     disabledTools: [],
     disabledMcpServers: [],
     askMcpServers: [],

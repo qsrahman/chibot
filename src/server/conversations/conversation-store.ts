@@ -6,6 +6,7 @@ import type {
 import { messageText } from '../../shared/messages.ts'
 import type { ConversationExport } from '../../shared/export.ts'
 import { transaction } from '../database.ts'
+import { CompactionStore } from './compaction-store.ts'
 import type {
   Conversation,
   ConversationListItem,
@@ -51,10 +52,13 @@ const LIST_LIMIT = 200
 /** Conversations and their history trees, persisted in SQLite. */
 export class ConversationStore {
   readonly #db: DatabaseSync
+  /** The summaries of long chats. */
+  readonly compactions: CompactionStore
 
   /** @param db from `openDatabase()` */
   constructor(db: DatabaseSync) {
     this.#db = db
+    this.compactions = new CompactionStore(db)
   }
 
   createConversation({

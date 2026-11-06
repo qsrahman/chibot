@@ -22,6 +22,7 @@ import { ProjectDetails } from '../projects/ProjectDetails.tsx'
 import { ProjectHeading } from '../projects/ProjectHeading.tsx'
 import { REDUCED_MOTION } from '../ui/useMediaQuery.ts'
 import { SHORTCUTS, useShortcuts } from '../ui/shortcuts.ts'
+import { limitsFrom, triggerAt } from '../../shared/context.ts'
 import { knownUrls } from '../../shared/media.ts'
 import { MediaContext } from './mediaContext.ts'
 import { ToolInfoContext } from './toolInfo.ts'
@@ -115,11 +116,14 @@ export function ChatPage({
       : [],
   )
   const chatUsage = describeUsage(chat.usage)
-  // Each answer shows the context it sent against this limit.
-  const compactThreshold =
-    settings.settings?.compactThreshold ??
-    settings.defaults?.compactThreshold ??
-    null
+  // Each answer shows the context it sent against the window.
+  const contextSettings = settings.settings ?? settings.defaults
+  const context = {
+    window: contextSettings?.contextWindow ?? 32_000,
+    trigger: contextSettings?.autoCompact
+      ? triggerAt(limitsFrom(contextSettings))
+      : null,
+  }
   const endRef = useRef<HTMLDivElement>(null)
   const composerRef = useRef<HTMLTextAreaElement>(null)
   // Follow the answer only while the user is at the bottom, so scrolling up
@@ -432,7 +436,11 @@ export function ChatPage({
                     onContinue={following(() => chat.send(CONTINUE))}
                     onSwitch={(itemId) => void chat.switchVersion(itemId)}
                     onImageLoad={follow}
-                    compactThreshold={compactThreshold}
+                    context={context}
+                    onCompact={
+                      chat.canCompact ? following(chat.compact) : undefined
+                    }
+                    onUndoCompaction={(c) => void chat.undo(c)}
                   />
                 ))}
                 {pending && (
@@ -440,8 +448,18 @@ export function ChatPage({
                     turn={pending.turn}
                     pending
                     onImageLoad={follow}
-                    compactThreshold={compactThreshold}
+                    context={context}
                   />
+                )}
+                {chat.summarizing && (
+                  <p className="status-note" role="status">
+                    Summarizing earlier messages…
+                  </p>
+                )}
+                {chat.notice && (
+                  <p className="status-note" role="status">
+                    {chat.notice}
+                  </p>
                 )}
                 {error && (
                   <p className="error" role="alert">

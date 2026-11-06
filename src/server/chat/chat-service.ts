@@ -4,10 +4,16 @@ import type {
   ResponseInputItem,
   ResponseStreamEvent,
 } from 'openai/resources/responses/responses'
+import {
+  limitsFrom,
+  triggerAt,
+  type ContextLimits,
+} from '../../shared/context.ts'
 import type { Settings } from '../../shared/settings.ts'
 import type {
   Conversation,
   TurnApprovalEvent,
+  TurnCompactionEvent,
   TurnRequest,
   TurnTitleEvent,
   TurnToolOutputEvent,
@@ -16,6 +22,17 @@ import type { Attachments } from '../attachments.ts'
 import type { ConversationStore } from '../conversations/index.ts'
 import type { ProjectStore } from '../projects/index.ts'
 import type { SettingsStore } from '../settings-store.ts'
+import type { Compactor } from './compactor.ts'
+import {
+  contextTokens,
+  fromCompaction,
+  isContextOverflow,
+  prune,
+  pruneSavings,
+  pruningSuffices,
+  tailStart,
+  keepTokens,
+} from './context.ts'
 import type { ModelRequests } from './model-requests.ts'
 import { chatInstructions } from './prompts.ts'
 import type { TitleWriter } from './title-writer.ts'
@@ -23,14 +40,19 @@ import { TOOL_DENIED, ToolRegistry } from '../tool-registry.ts'
 
 /** What `runTurn` yields. */
 type TurnEvent =
-  ResponseStreamEvent | TurnTitleEvent | TurnToolOutputEvent | TurnApprovalEvent
+  | ResponseStreamEvent
+  | TurnTitleEvent
+  | TurnToolOutputEvent
+  | TurnApprovalEvent
+  | TurnCompactionEvent
 
 /** What a turn sends the model, fixed when it starts. */
 interface TurnPlan {
   conversation: Conversation
   model: string
   reasoningEffort: Settings['reasoningEffort']
-  compactThreshold: number | null
+  autoCompact: boolean
+  limits: ContextLimits
   /** The tools offered, as request entries. */
   tools: FunctionTool[]
   /** Tools a call is refused for: unavailable, switched off or not offered here. */
@@ -51,6 +73,7 @@ const STEP_LIMIT_OUTPUT = 'Error: too many tool calls in one answer.'
 export class ChatService {
   readonly #model: ModelRequests
   readonly #titles: TitleWriter
+  readonly #compactor: Compactor
   readonly #store: ConversationStore
   readonly #settings: SettingsStore
   readonly #tools: ToolRegistry
@@ -68,6 +91,7 @@ export class ChatService {
   constructor(
     model: ModelRequests,
     titles: TitleWriter,
+    compactor: Compactor,
     store: ConversationStore,
     settings: SettingsStore,
     {
@@ -82,6 +106,7 @@ export class ChatService {
   ) {
     this.#model = model
     this.#titles = titles
+    this.#compactor = compactor
     this.#store = store
     this.#settings = settings
     this.#tools = tools
@@ -262,7 +287,8 @@ export class ChatService {
       conversation,
       model: settings.model,
       reasoningEffort: settings.reasoningEffort,
-      compactThreshold: settings.compactThreshold,
+      autoCompact: settings.autoCompact,
+      limits: limitsFrom(settings),
       tools,
       disabled: this.#tools.tools
         .filter((t) => !offered.includes(t))
@@ -322,16 +348,16 @@ export class ChatService {
     step: number,
     signal: AbortSignal | undefined,
   ): AsyncGenerator<
-    ResponseStreamEvent,
+    ResponseStreamEvent | TurnCompactionEvent,
     { leafId: number; output: ResponseInputItem[] | null; answered: boolean }
   > {
     const { model, instructions, tools, forced } = plan
-    const input = fromLastCompaction(this.#history(conversationId, leafId))
+    let input = (yield* this.#fitContext(plan, conversationId, leafId, signal))!
     let partial = ''
     let output: ResponseInputItem[] | null = null
     let answered = false
-    try {
-      const stream = await this.#model.stream(
+    const send = (input: ResponseInputItem[]) =>
+      this.#model.stream(
         {
           model,
           instructions,
@@ -356,17 +382,28 @@ export class ChatService {
             summary: 'auto',
             ...(plan.reasoningEffort && { effort: plan.reasoningEffort }),
           },
-          ...(plan.compactThreshold !== null && {
-            context_management: [
-              {
-                type: 'compaction',
-                compact_threshold: plan.compactThreshold,
-              },
-            ],
-          }),
         },
         signal,
       )
+    try {
+      let stream
+      try {
+        stream = await send(input)
+      } catch (err) {
+        // The estimate was too low: the server says the request is too long.
+        // Summarize harder and ask once more.
+        if (!plan.autoCompact || !isContextOverflow(err)) throw err
+        const retry = yield* this.#fitContext(
+          plan,
+          conversationId,
+          leafId,
+          signal,
+          true,
+        )
+        if (!retry) throw err
+        input = retry
+        stream = await send(input)
+      }
       for await (const event of stream) {
         if (event.type === 'response.output_text.delta') {
           partial += event.delta
@@ -403,6 +440,66 @@ export class ChatService {
       }
     }
     return { leafId, output, answered }
+  }
+
+  /**
+   * The input for the next request. Under the trigger it is the path as it
+   * is (after the newest compaction). Past it, old tool results and pictures
+   * are shortened; if that is not enough, the start of the chat is summarized
+   * (yielding `chibot.compaction` while the model writes it). `overflow` is
+   * the recovery after the server refused a request as too long: it compacts
+   * whatever the estimate says, and returns `null` if it cannot (otherwise
+   * the result is never `null`).
+   */
+  async *#fitContext(
+    plan: TurnPlan,
+    conversationId: string,
+    leafId: number,
+    signal: AbortSignal | undefined,
+    overflow = false,
+  ): AsyncGenerator<TurnCompactionEvent, ResponseInputItem[] | null> {
+    const { limits, autoCompact } = plan
+    const build = () => {
+      const path = this.#store.getPath(conversationId, leafId)
+      const { items, lead } = fromCompaction(
+        path,
+        this.#compactor.forPath(conversationId, path),
+      )
+      const data = [...lead, ...items.map((item) => item.data)]
+      const keepFrom = lead.length + tailStart(items, keepTokens(limits))
+      return { data, keepFrom, used: contextTokens(items, lead.length) }
+    }
+    let { data, keepFrom, used } = build()
+    const trigger = triggerAt(limits)
+    if (!overflow && used <= trigger) return data
+
+    const saved = pruneSavings(data, keepFrom)
+    if (!overflow && pruningSuffices(saved, used, trigger, limits.window)) {
+      return prune(data, keepFrom)
+    }
+    const job =
+      autoCompact && (overflow || !this.#compactor.paused(conversationId))
+        ? this.#compactor.prepare(conversationId, leafId, { harder: overflow })
+        : null
+    if (job) {
+      yield { type: 'chibot.compaction', status: 'started' }
+      try {
+        const compaction = await this.#compactor.run(job, { signal })
+        yield { type: 'chibot.compaction', status: 'done', compaction }
+        ;({ data, keepFrom, used } = build())
+      } catch (err) {
+        signal?.throwIfAborted()
+        yield {
+          type: 'chibot.compaction',
+          status: 'failed',
+          message: err instanceof Error ? err.message : String(err),
+        }
+        if (overflow) return null
+      }
+    } else if (overflow) {
+      return null
+    }
+    return prune(data, keepFrom)
   }
 
   /** The items on the path to `leafId`. */
@@ -456,17 +553,6 @@ export class ChatService {
     for (const o of outputs) yield { type: 'chibot.tool_output', ...o }
     return items.at(-1)!.id
   }
-}
-
-/**
- * The model input for a path: from the last compaction item on (it stands
- * for everything before it), or the whole path if there's none.
- */
-export function fromLastCompaction(
-  items: ResponseInputItem[],
-): ResponseInputItem[] {
-  const last = items.findLastIndex((item) => item.type === 'compaction')
-  return last === -1 ? items : items.slice(last)
 }
 
 /** Resolves when `promise` does, or after `ms`, whichever comes first. */

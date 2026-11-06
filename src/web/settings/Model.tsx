@@ -4,29 +4,16 @@ import type { Settings } from '../../shared/settings.ts'
 import type { SettingsApi } from './useSettings.ts'
 import { Row, Section } from './parts.tsx'
 
+type NumberSetting =
+  'contextWindow' | 'compactAt' | 'compactReserve' | 'keepRecent'
+
 export function Model({
   settings,
-  defaults,
   onChange,
 }: {
   settings: Settings
-  defaults: Settings
   onChange: SettingsApi['update']
 }) {
-  const threshold = settings.compactThreshold
-  const [draft, setDraft] = useState(
-    String(threshold ?? defaults.compactThreshold ?? 64_000),
-  )
-
-  function saveThreshold() {
-    const value = Number(draft)
-    if (Number.isInteger(value) && value >= 1000 && value !== threshold) {
-      void onChange({ compactThreshold: value })
-    } else {
-      setDraft(String(threshold))
-    }
-  }
-
   return (
     <>
       <Section title="Reasoning">
@@ -58,8 +45,8 @@ export function Model({
       </Section>
       <Section title="Long chats">
         <Row
-          label="Compact long chats"
-          description="Summarizes earlier messages when a chat gets long, so it keeps working."
+          label="Summarize long chats"
+          description="When a chat nears the context window, the chat model writes a summary of the earlier messages, so it keeps working. The messages stay; Undo brings them back."
           htmlFor="setting-compact"
         >
           <input
@@ -67,36 +54,112 @@ export function Model({
             type="checkbox"
             role="switch"
             className="switch"
-            checked={threshold !== null}
-            onChange={(e) =>
-              void onChange({
-                compactThreshold: e.target.checked
-                  ? Number(draft) || defaults.compactThreshold
-                  : null,
-              })
-            }
+            checked={settings.autoCompact}
+            onChange={(e) => void onChange({ autoCompact: e.target.checked })}
           />
         </Row>
-        {threshold !== null && (
-          <Row
-            label="Compact after"
-            description="Tokens of context before compacting."
-            htmlFor="setting-threshold"
-          >
-            <input
-              id="setting-threshold"
-              className="settings-number"
-              type="number"
-              min={1000}
-              step={1000}
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onBlur={saveThreshold}
-              onKeyDown={(e) => e.key === 'Enter' && saveThreshold()}
+        <NumberRow
+          id="setting-window"
+          label="Context window"
+          description="Tokens the model reads at most. Servers don't say, so set it to the model's: for Ollama, no more than its num_ctx, or it silently cuts the start of the chat."
+          setting="contextWindow"
+          settings={settings}
+          min={2000}
+          step={1000}
+          onChange={onChange}
+        />
+        {settings.autoCompact && (
+          <>
+            <NumberRow
+              id="setting-compact-at"
+              label="Summarize at (%)"
+              description="Share of the window at which earlier messages are summarized."
+              setting="compactAt"
+              settings={settings}
+              min={10}
+              max={95}
+              step={5}
+              onChange={onChange}
             />
-          </Row>
+            <NumberRow
+              id="setting-reserve"
+              label="Reserve"
+              description="Tokens kept free for the answer. Summarizing starts when less than this is left."
+              setting="compactReserve"
+              settings={settings}
+              min={0}
+              step={1000}
+              onChange={onChange}
+            />
+            <NumberRow
+              id="setting-keep"
+              label="Keep recent"
+              description="Tokens of the newest messages that stay word for word."
+              setting="keepRecent"
+              settings={settings}
+              min={500}
+              step={1000}
+              onChange={onChange}
+            />
+          </>
         )}
       </Section>
     </>
+  )
+}
+
+/** A whole-number setting, saved when the box loses focus or on Enter. */
+function NumberRow({
+  id,
+  label,
+  description,
+  setting,
+  settings,
+  min,
+  max,
+  step,
+  onChange,
+}: {
+  id: string
+  label: string
+  description: string
+  setting: NumberSetting
+  settings: Settings
+  min: number
+  max?: number
+  step: number
+  onChange: SettingsApi['update']
+}) {
+  const current = settings[setting]
+  const [draft, setDraft] = useState(String(current))
+
+  function save() {
+    const value = Number(draft)
+    if (
+      Number.isInteger(value) &&
+      value >= min &&
+      (max === undefined || value <= max)
+    ) {
+      if (value !== current) void onChange({ [setting]: value })
+    } else {
+      setDraft(String(current))
+    }
+  }
+
+  return (
+    <Row label={label} description={description} htmlFor={id}>
+      <input
+        id={id}
+        className="settings-number"
+        type="number"
+        min={min}
+        max={max}
+        step={step}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => e.key === 'Enter' && save()}
+      />
+    </Row>
   )
 }

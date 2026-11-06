@@ -9,7 +9,7 @@ import OpenAI from 'openai'
 import { createApp } from './app.ts'
 import { OAUTH_CALLBACK } from './mcp/index.ts'
 import { Attachments } from './attachments.ts'
-import { ChatService } from './chat/index.ts'
+import { ChatService, Compactor } from './chat/index.ts'
 import { ModelRequests } from './chat/index.ts'
 import { TitleWriter } from './chat/index.ts'
 import { Config, layered, readEnvFiles } from './config.ts'
@@ -196,7 +196,8 @@ export function start({
   attachments.deleteOrphans()
   const model = new ModelRequests(client, attachments)
   const titles = new TitleWriter(model, store, settings)
-  const chat = new ChatService(model, titles, store, settings, {
+  const compactor = new Compactor(model, store, settings)
+  const chat = new ChatService(model, titles, compactor, store, settings, {
     tools: registry,
     projects,
     attachments,
@@ -207,6 +208,7 @@ export function start({
     search,
     settings,
     chat,
+    compactor,
     titles,
     model,
     registry,

@@ -108,6 +108,7 @@ describe('API', () => {
     expect(await res.json()).toEqual({
       conversation: created,
       items: [],
+      compactions: [],
       usage: {
         input_tokens: 0,
         input_tokens_details: { cached_tokens: 0, cache_write_tokens: 0 },

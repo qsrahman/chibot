@@ -3,7 +3,7 @@ import type {
   ResponseUsage,
 } from 'openai/resources/responses/responses'
 import { fileParts, messageText } from '../../shared/messages.ts'
-import type { StoredItem } from '../../shared/types.ts'
+import type { Compaction, StoredItem } from '../../shared/types.ts'
 import { mcpToolName } from '../settings/mcp.ts'
 import { addUsage } from './usage.ts'
 
@@ -63,8 +63,8 @@ export interface Turn {
   question: Question
   /** `null` when the request failed or was stopped before any text. */
   answer: Answer | null
-  /** The context was compacted for this answer (earlier turns summarized). */
-  compacted: boolean
+  /** The summary that stands in for the messages before this turn, if any. */
+  compaction: Compaction | null
 }
 
 /**
@@ -73,8 +73,19 @@ export interface Turn {
  * text, thoughts and tool activity are shown. The answer's usage is the sum
  * of its responses', and its model the last one named.
  */
-export function toTurns(items: StoredItem[]): Turn[] {
+export function toTurns(
+  items: StoredItem[],
+  compactions: Compaction[] = [],
+): Turn[] {
   const turns: Turn[] = []
+  // A summary is shown where the messages it replaced end: before the turn
+  // that starts right after the item it was cut at.
+  const after = new Map(
+    compactions.flatMap((c) => {
+      const next = items[items.findIndex((i) => i.id === c.upToItemId) + 1]
+      return next ? [[next.id, c] as const] : []
+    }),
+  )
   for (const item of items) {
     const message = messageText(item.data)
     if (message?.role === 'user') {
@@ -88,7 +99,7 @@ export function toTurns(items: StoredItem[]): Turn[] {
           versions: versionsOf(item),
         },
         answer: null,
-        compacted: false,
+        compaction: after.get(item.id) ?? null,
       })
       continue
     }
@@ -111,7 +122,6 @@ export function toTurns(items: StoredItem[]): Turn[] {
         turn.answer.incomplete = isCutOff(item.data)
       }
     }
-    if (item.data.type === 'compaction') turn.compacted = true
     if (item.data.type === 'function_call') {
       const { call_id, name, arguments: args } = item.data
       turn.answer.tools.push({

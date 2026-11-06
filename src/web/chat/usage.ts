@@ -10,13 +10,13 @@ export interface UsageLabel {
   detail: string
 }
 
-/** How much of the compaction threshold an answer's context used. */
+/** How much of the context window an answer's context used. */
 export interface ContextLabel {
-  /** e.g. "12.4K / 64K context" */
+  /** e.g. "12.4K / 32K context" */
   short: string
   /** What was sent, and when chibot compacts. */
   detail: string
-  /** At least 80 % of the threshold: compaction is close. */
+  /** The context reached the point where chibot compacts. */
   nearLimit: boolean
 }
 
@@ -43,27 +43,25 @@ export function describeUsage(
 }
 
 /**
- * Describes the context an answer sent against the compaction threshold, or
- * `null` when the server gave no input count. The input is the context the
- * model read; the output isn't part of it.
+ * Describes the context an answer sent against the window, or `null` when the
+ * server gave no input count. The input is the context the model read; the
+ * output isn't part of it. `trigger` is where chibot compacts (`null`: never).
  */
 export function describeContext(
   usage: ResponseUsage | null | undefined,
-  threshold: number | null,
+  window: number,
+  trigger: number | null,
 ): ContextLabel | null {
   const input = usage?.input_tokens
   if (!input) return null
-  if (threshold === null) {
-    return {
-      short: `${compact.format(input)} context`,
-      detail: `${full.format(input)} tokens of context sent with this answer. Compaction is off (Settings → Model).`,
-      nearLimit: false,
-    }
-  }
+  const when =
+    trigger === null
+      ? 'Compaction is off.'
+      : `chibot summarizes earlier messages past ${full.format(trigger)}.`
   return {
-    short: `${compact.format(input)} / ${compact.format(threshold)} context`,
-    detail: `${full.format(input)} of ${full.format(threshold)} tokens of context sent with this answer. chibot compacts older turns past that (Settings → Model).`,
-    nearLimit: input >= threshold * 0.8,
+    short: `${compact.format(input)} / ${compact.format(window)} context`,
+    detail: `${full.format(input)} of ${full.format(window)} tokens of context sent with this answer. ${when} (Settings → Model)`,
+    nearLimit: trigger !== null && input >= trigger,
   }
 }
 

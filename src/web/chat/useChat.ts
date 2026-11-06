@@ -1,12 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ResponseUsage } from 'openai/resources/responses/responses'
-import type { ConversationWithItems, TurnRequest } from '../../shared/types.ts'
+import type {
+  Compaction,
+  ConversationWithItems,
+  TurnRequest,
+} from '../../shared/types.ts'
 import {
   createConversation,
   deleteConversation,
   getConversation,
 } from '../conversations/api.ts'
-import { streamTurn, switchVersion as putVersion } from './api.ts'
+import {
+  compactChat,
+  streamTurn,
+  switchVersion as putVersion,
+  undoCompaction,
+} from './api.ts'
 import { applyEvent, startAnswer, turnSoFar } from './streamedAnswer.ts'
 import { useQueue } from './useQueue.ts'
 import {
@@ -50,6 +59,11 @@ export function useChat(
   const [turns, setTurns] = useState<Turn[]>([])
   const [usage, setUsage] = useState<ResponseUsage | null>(null)
   const [pending, setPending] = useState<Pending | null>(null)
+  // Earlier messages are being summarized (before an answer, or on request).
+  const [summarizing, setSummarizing] = useState(false)
+  // A one-line note that is not an error (a summary that failed).
+  const [notice, setNotice] = useState<string | null>(null)
+  const compacting = useRef<AbortController | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [temporaryId, setTemporaryId] = useState<string | null>(null)
   const [projectId, setProjectId] = useState<string | null>(null)
@@ -71,8 +85,8 @@ export function useChat(
   const conversationIdRef = useRef(conversationId)
   conversationIdRef.current = conversationId
 
-  const showItems = ({ items, usage }: ConversationWithItems) => {
-    setTurns(toTurns(items))
+  const showItems = ({ items, compactions, usage }: ConversationWithItems) => {
+    setTurns(toTurns(items, compactions))
     setUsage(usage)
   }
 
@@ -90,6 +104,9 @@ export function useChat(
     setTurns([])
     setUsage(null)
     setPending(null)
+    setSummarizing(false)
+    setNotice(null)
+    compacting.current?.abort()
     setError(null)
     setTemporaryId(null)
     setProjectId(null)
@@ -156,7 +173,7 @@ export function useChat(
       const loaded = await getConversation(id)
       if (!live()) return null
       showItems(loaded)
-      return toTurns(loaded.items).length
+      return toTurns(loaded.items, loaded.compactions).length
     }
 
     let streamed = startAnswer(before)
@@ -223,6 +240,15 @@ export function useChat(
           if (live()) setTitle(event.title)
         }
         if (!live()) continue
+        if (event.type === 'chibot.compaction') {
+          setSummarizing(event.status === 'started')
+          setNotice(
+            event.status === 'failed'
+              ? `Couldn’t summarize earlier messages (${event.message}). Continuing with the full history.`
+              : null,
+          )
+          continue
+        }
         const applied = applyEvent(streamed, event)
         streamed = applied.streamed
         if (applied.changed) show()
@@ -255,6 +281,7 @@ export function useChat(
       if (live()) {
         runRef.current = null
         setPending(null)
+        setSummarizing(false)
       }
     }
     return accepted
@@ -348,6 +375,45 @@ export function useChat(
   function stop() {
     const run = runRef.current
     if (run && !run.answered) run.controller.abort()
+    compacting.current?.abort()
+  }
+
+  /** Summarizes the start of the chat now, with an optional `focus`. */
+  async function compact(focus: string) {
+    if (!conversationId) return
+    const id = conversationId
+    const controller = new AbortController()
+    compacting.current = controller
+    setError(null)
+    setNotice(null)
+    setSummarizing(true)
+    try {
+      await compactChat(id, focus, controller.signal)
+      const loaded = await getConversation(id)
+      if (conversationIdRef.current === id) showItems(loaded)
+    } catch (err) {
+      if (!controller.signal.aborted && conversationIdRef.current === id) {
+        setError((err as Error).message)
+      }
+    } finally {
+      if (compacting.current === controller) {
+        compacting.current = null
+        setSummarizing(false)
+      }
+    }
+  }
+
+  /** Undo: brings back the messages a summary stood for. */
+  async function undo(compaction: Compaction) {
+    if (!conversationId) return
+    const id = conversationId
+    try {
+      await undoCompaction(id, compaction.id)
+      const loaded = await getConversation(id)
+      if (conversationIdRef.current === id) showItems(loaded)
+    } catch (err) {
+      setError((err as Error).message)
+    }
   }
 
   /** Holds `text` until the current answer is saved, then sends it. */
@@ -372,10 +438,14 @@ export function useChat(
     pending,
     usage,
     error,
+    summarizing,
+    notice,
     isTemporary: temporaryId !== null && temporaryId === conversationId,
     /** The project of the conversation on screen, if any. */
     projectId,
-    busy: pending !== null,
+    busy: pending !== null || summarizing,
+    /** There are messages to summarize (a saved chat with an answered turn). */
+    canCompact: conversationId !== undefined && turns.length > 1,
     /** The chat's title as loaded or generated (`null`: untitled). */
     title,
     /** The chat's history hasn't arrived yet. */
@@ -387,6 +457,8 @@ export function useChat(
     regenerate,
     approve,
     switchVersion,
+    compact,
+    undo,
     stop,
     enqueue,
     takeQueued,

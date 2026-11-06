@@ -324,9 +324,12 @@ needs the server running: there is no offline mode, since the server is local.
   - *Personalization:* what chibot should know about you, and how it should
     respond. Sent with every message. **Memory**: turn it off, or edit and
     delete what chibot remembers.
-  - *Model:* reasoning effort, and compaction for long chats (on by default at
-    64,000 tokens; earlier messages are summarized and a divider marks the
-    spot).
+  - *Model:* reasoning effort, and long chats: the context window of your
+    model (32,000 tokens unless you set it; for Ollama no more than its
+    `num_ctx`), when to summarize (75 % of it), the reserve kept free and how
+    much of the newest messages stays word for word. The chat's own model
+    writes the summary, on any server; a divider marks the spot and opens to
+    it, with **Undo**.
   - *Tools:* switch each tool on or off, grouped (the web, images, your chats
     and files), each saying what it does and what leaves this machine. Tools that aren't set up are listed greyed out, with what to set. Below, **Reload** re-reads `mcp.json`, then each MCP server: a
     switch (off stops it), its status or error, **Reconnect**, **Sign in** /
@@ -344,10 +347,11 @@ needs the server running: there is no offline mode, since the server is local.
   between them, and each version keeps its own follow-up messages.
 - **Copy** buttons sit under messages and answers, and on code blocks.
 - **Context usage:** each answer shows the context it sent against the
-  compaction threshold (e.g. `12.4K / 64K context`), turning red at 80 % of
-  it so long chats warn before older messages are summarized; hover for the
-  input/output breakdown. With compaction off it just counts the context. The
-  top right shows the chat's token total across all versions.
+  window (e.g. `12.4K / 32K context`), turning red once it reaches where
+  earlier messages are summarized; hover for the input/output breakdown.
+  **Compact now** under the latest answer summarizes at once, optionally
+  keeping something in mind. The top right shows the chat's token total across
+  all versions.
 - **Keyboard shortcuts:** ⌘/Ctrl+/ (or **Keyboard shortcuts** in the sidebar)
   lists them: new chat, search, toggle sidebar, focus the message box, copy
   the last answer, Esc to stop, and ↑ in an empty message box to edit your

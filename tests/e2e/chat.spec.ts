@@ -26,7 +26,7 @@ test('chats, titles the conversation, shows usage and copies', async ({
   ).toHaveText('E2E Title')
   await expect(
     turns(page).first().locator('.usage', { hasText: 'context' }),
-  ).toHaveText('40 / 64K context')
+  ).toHaveText('40 / 32K context')
 
   await answered(page)
   await turns(page).first().hover()

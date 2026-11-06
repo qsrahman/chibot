@@ -73,6 +73,20 @@ const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
   PROJECT_MIGRATIONS.chunker,
   PROJECT_MIGRATIONS.description,
   PROJECT_MIGRATIONS.page,
+  // Summaries that stand in for the items up to one on the path (CONTEXT.md §5).
+  `CREATE TABLE compactions (
+     id INTEGER PRIMARY KEY AUTOINCREMENT,
+     conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+     up_to_item_id INTEGER NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+     summary TEXT NOT NULL,
+     summary_model TEXT NOT NULL,
+     tokens_before INTEGER NOT NULL,
+     tokens_after INTEGER NOT NULL,
+     previous_id INTEGER,
+     degraded INTEGER NOT NULL DEFAULT 0,
+     created_at INTEGER NOT NULL
+   );
+   CREATE INDEX compactions_conversation ON compactions(conversation_id);`,
 ]
 
 /**
