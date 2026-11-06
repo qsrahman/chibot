@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.13.1] - 2026-11-07
+
 ### Added
 
 - **Settings → Tools → Add server** adds, edits and removes MCP servers without editing the config file, with presets (web pages, Brave search, files in a folder). Keys in the environment and header rows are kept in the file and never shown again; it works only while chibot listens on this machine or `CHIBOT_TOKEN` is set.
