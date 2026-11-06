@@ -93,7 +93,7 @@ turn is about to save. Then `#runTurn`:
 - **The request itself** goes through `ModelRequests.stream` (`chat/model-requests.ts`),
   which makes it work with what the endpoint supports. Attachments are resolved
   just before sending: files as the provider's file ids, or as text for models
-  that refuse them. Optional features (reasoning effort) are
+  that refuse them. Optional features (reasoning effort and summary, `include` of encrypted reasoning) are
   retried without where a server answers 400, and remembered.
 - **Saved before relayed.** The response is appended to the tree *before*
   its `response.completed` is yielded, so a client that sees it can re-read the

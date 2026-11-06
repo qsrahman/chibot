@@ -12,7 +12,7 @@ import type { Attachments } from '../attachments.ts'
 import { chatModels } from './chat-models.ts'
 
 /** Request features some models or servers reject (see `ModelRequests`). */
-export type OptionalParams = Pick<ResponseCreateParams, 'reasoning'>
+export type OptionalParams = Pick<ResponseCreateParams, 'reasoning' | 'include'>
 
 /**
  * Requests to the model endpoint, made to work with what it supports:

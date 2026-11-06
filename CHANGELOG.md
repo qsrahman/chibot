@@ -10,7 +10,15 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 - Images, sound and video from other sites can be shown in answers. They are fetched by chibot's server (`GET /api/media`), never by the browser, whose page policy still only allows its own address (`media-src 'self' blob:` added beside `img-src`). One whose address the user wrote or a tool returned, exactly, shows by itself (`![](https://…)` as an image, a link to a sound or video as a player that can seek); any other, such as one a model wrote, shows "image from example.com" with **Load** and **Open**, because a model under a planted page's influence could add the user's data to an address (`…?d=<chat>`) and have it sent without a click. The server checks the same rule, so the page cannot skip it, and fetches only public addresses (every connection checked, redirects too, so `localhost` and the local network are refused), only PNG, JPEG, GIF, WebP, common audio and MP4/WebM/Ogg video (never SVG or HTML) up to 20 MB, 100 MB and 500 MB, with no cookies or referrer, and answers only requests the browser marks same-origin. Until a new chat is saved, an image stays a link.
 
+- **Reading the window from the server.** Settings → Model offers **Use N** when the server reports the chat model's context window: from the model list (`context_length` on OpenRouter, `max_context_length` on LM Studio) or Ollama's `num_ctx` when the model sets one (`GET /api/models/window`). Nothing is guessed when it doesn't say.
+- **Long agent turns can be summarized.** When the newest turn alone is more than twice the kept tail (many tool calls), the cut goes inside it, between whole tool rounds, never between a call and its output or a reasoning item and its call.
+- **Summaries share the chat's prefix.** The automatic summary is asked for after the chat's own messages, with the chat's own instructions and tools (none can be called), so a server that caches prefixes has most of the request already; if that fails or gives no usable summary, the transcript request is used. Not used with a different summary model.
+- An opt-in recall test with a real model (`tests/server/chat/recall.test.ts`, `RECALL_URL`, `RECALL_MODELS`): plants facts, summarizes, asks for them.
 - **Summary model** (Settings → Model): a model on the same server to write the summaries of long chats, for example a smaller, faster one. Empty (the default) uses the chat's model.
+
+### Changed
+
+- `include: ['reasoning.encrypted_content']` is now an optional request feature like the reasoning effort: a server that rejects it (400) gets the request without, and later requests skip the failing attempt, instead of the chat failing.
 
 ### Removed
 

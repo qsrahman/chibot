@@ -325,7 +325,8 @@ needs the server running: there is no offline mode, since the server is local.
     respond. Sent with every message. **Memory**: turn it off, or edit and
     delete what chibot remembers.
   - *Model:* reasoning effort, and long chats: the context window of your
-    model (32,000 tokens unless you set it; for Ollama no more than its
+    model (32,000 tokens unless you set it; **Use N** appears when the server
+    reports one; for Ollama no more than its
     `num_ctx`), when to summarize (75 % of it), the reserve kept free and how
     much of the newest messages stays word for word, and optionally a smaller
     model on the same server to write the summaries. The chat's own model

@@ -1,5 +1,8 @@
-import type { ResponseInputItem } from 'openai/resources/responses/responses'
-import { messageText } from '../../shared/messages.ts'
+import type {
+  FunctionTool,
+  ResponseInputItem,
+} from 'openai/resources/responses/responses'
+import { fileParts, messageText } from '../../shared/messages.ts'
 import { limitsFrom } from '../../shared/context.ts'
 import type { Compaction, StoredItem } from '../../shared/types.ts'
 import type { ConversationStore } from '../conversations/index.ts'
@@ -13,11 +16,16 @@ import {
   fromCompaction,
   isContextOverflow,
   keepTokens,
+  prune,
   serialize,
   summaryMessage,
 } from './context.ts'
 import type { ModelRequests } from './model-requests.ts'
-import { SUMMARY_INSTRUCTIONS, summaryRequest } from './prompts.ts'
+import {
+  SUMMARY_INSTRUCTIONS,
+  sharedSummaryRequest,
+  summaryRequest,
+} from './prompts.ts'
 
 const SUMMARY_MAX_TOKENS = 8000
 /** Room in the summarizer's window for its instructions. */
@@ -119,10 +127,29 @@ export class Compactor {
    */
   async run(
     job: CompactionJob,
-    { focus, signal }: { focus?: string | null; signal?: AbortSignal } = {},
+    {
+      focus,
+      signal,
+      shared,
+    }: {
+      focus?: string | null
+      signal?: AbortSignal
+      /**
+       * The chat's own instructions and tools. With them, the request follows
+       * the chat's messages as the chat's requests do, so a server that caches
+       * a prefix has most of it already; if that fails, the summary is asked
+       * for the usual way. Not used with a different summary model.
+       */
+      shared?: { instructions: string; tools: FunctionTool[] }
+    } = {},
   ): Promise<Compaction> {
     try {
-      const compaction = await this.#summarize(job, focus ?? null, signal)
+      const compaction = await this.#summarize(
+        job,
+        focus ?? null,
+        shared ?? null,
+        signal,
+      )
       this.#failures.delete(job.conversationId)
       return compaction
     } catch (err) {
@@ -139,6 +166,7 @@ export class Compactor {
   async #summarize(
     job: CompactionJob,
     focus: string | null,
+    shared: { instructions: string; tools: FunctionTool[] } | null,
     signal: AbortSignal | undefined,
   ): Promise<Compaction> {
     const settings = this.#settings.get()
@@ -156,6 +184,44 @@ export class Compactor {
       transcript = serialize(data)
     }
 
+    let summary: string | undefined
+    let writer = model
+    if (shared && !settings.summaryModel) {
+      try {
+        const response = await this.#model.complete(
+          {
+            model,
+            instructions: shared.instructions,
+            input: [
+              ...(job.previous ? [summaryMessage(job.previous.summary)] : []),
+              ...withoutAttachments(
+                prune(
+                  job.items.map((i) => i.data),
+                  0,
+                ),
+              ),
+              { role: 'user', content: sharedSummaryRequest(focus) },
+            ],
+            ...(shared.tools.length > 0 && {
+              tools: shared.tools,
+              tool_choice: 'none' as const,
+            }),
+            max_output_tokens: SUMMARY_MAX_TOKENS,
+            store: false,
+          },
+          { reasoning: { effort: 'none' } },
+          signal,
+        )
+        if (response.status !== 'incomplete') {
+          summary = extractSummary(response.output_text)
+          writer = response.model || model
+        }
+      } catch (err) {
+        // Too long, or refused: the usual request has the shortened transcript.
+        if (signal?.aborted) throw err
+      }
+    }
+
     const request = (text: string) =>
       this.#model.complete(
         {
@@ -169,22 +235,22 @@ export class Compactor {
         { reasoning: { effort: 'none' } },
         signal,
       )
-    let response
-    try {
-      response = await request(transcript)
-    } catch (err) {
-      if (!isContextOverflow(err) || data.length < 2) throw err
-      data = data.slice(Math.ceil(data.length / 2))
-      transcript = serialize(data)
-      response = await request(transcript)
+    if (!summary) {
+      let response
+      try {
+        response = await request(transcript)
+      } catch (err) {
+        if (!isContextOverflow(err) || data.length < 2) throw err
+        data = data.slice(Math.ceil(data.length / 2))
+        transcript = serialize(data)
+        response = await request(transcript)
+      }
+      if (response.status === 'incomplete') {
+        throw new Error('The summary was cut off by the output limit.')
+      }
+      summary = extractSummary(response.output_text)
+      writer = response.model || model
     }
-
-    if (response.status === 'incomplete') {
-      throw new Error('The summary was cut off by the output limit.')
-    }
-    const summary = /<summary>([\s\S]*?)<\/summary>/
-      .exec(response.output_text)?.[1]
-      ?.trim()
     if (!summary) throw new Error('The model wrote no usable summary.')
     if (estimateText(summary) >= estimateText(transcript)) {
       throw new Error(
@@ -195,7 +261,7 @@ export class Compactor {
     return this.#store.compactions.add(job.conversationId, {
       upToItemId: job.upToItemId,
       summary,
-      summaryModel: response.model || model,
+      summaryModel: writer,
       tokensBefore: job.tokensBefore,
       tokensAfter: estimateTokens(summaryMessage(summary)) + job.tokensKept,
       previousId: job.previous?.id ?? null,
@@ -223,4 +289,26 @@ function lostReferences(items: ResponseInputItem[], summary: string): boolean {
     ].map((m) => m[1] ?? m[2]!)
   })
   return quoted.some((reference) => !summary.includes(reference))
+}
+
+const extractSummary = (text: string) =>
+  /<summary>([\s\S]*?)<\/summary>/.exec(text)?.[1]?.trim() || undefined
+
+/** The messages with pictures and files replaced by markers (a summary request sends no uploads). */
+function withoutAttachments(items: ResponseInputItem[]): ResponseInputItem[] {
+  return items.map((item) =>
+    'content' in item && Array.isArray(item.content) && fileParts(item).length
+      ? ({
+          ...item,
+          content: item.content.map((part) =>
+            part.type === 'input_image' || part.type === 'input_file'
+              ? {
+                  type: 'input_text' as const,
+                  text: part.type === 'input_image' ? '[image]' : '[file]',
+                }
+              : part,
+          ),
+        } as ResponseInputItem)
+      : item,
+  )
 }

@@ -323,7 +323,12 @@ summarizing of long chats on for a 32k window; math formatting via a built-in in
   not shorter) is dropped, the chat goes on with the full history and a note,
   and three failures in a row pause automatic summarizing for that chat. A
   400/413 saying the request is too long compacts harder and asks once more.
-  **Compact now** (with an optional focus) is on the latest answer. Old
+  **Compact now** (with an optional focus) is on the latest answer. When the
+  newest turn alone is more than twice the kept tail, the cut goes inside it,
+  between whole tool rounds. The automatic summary is asked for after the
+  chat's own messages with the chat's instructions and tools (`tool_choice:
+  'none'`) so the server's prompt cache applies, falling back to a transcript
+  request. Settings → Model offers the window the server reports (**Use N**). Old
   OpenAI `compaction` items are ignored.
 - **Export / import.** From a chat's menu: Markdown (current path) or JSON
   (full tree, `{ version: 1, … }`, with versions, usage and models). Import a

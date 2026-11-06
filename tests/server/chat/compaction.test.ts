@@ -19,6 +19,9 @@ const small = {
   compactReserve: 0,
   keepRecent: 500,
 }
+// Both ways of asking for a summary end with this line.
+const isSummary = (params: ResponseCreateParams) =>
+  JSON.stringify(params.input).includes('Write the notes now.')
 const SUMMARY = '<analysis>x</analysis><summary>## Goal\nBuild it.</summary>'
 
 describe('compaction', () => {
@@ -52,7 +55,7 @@ describe('compaction', () => {
   const summarizer =
     (outcome: string | Error = SUMMARY) =>
     (params: ResponseCreateParams) =>
-      params.instructions === SUMMARY_INSTRUCTIONS ? outcome : 'A Title'
+      isSummary(params) ? outcome : 'A Title'
   // An answer that reports a context as big as the chat is.
   const bigAnswer = () => {
     const events = answerEvents('ok')
@@ -82,7 +85,7 @@ describe('compaction', () => {
     return { ...services, calls, titleCalls }
   }
   const summaryCalls = (calls: ResponseCreateParams[]) =>
-    calls.filter((p) => p.instructions === SUMMARY_INSTRUCTIONS)
+    calls.filter(isSummary)
 
   it('summarizes the start of a long chat before the request and sends the summary', async () => {
     const { chat, calls, titleCalls } = setup(summarizer())
@@ -98,12 +101,15 @@ describe('compaction', () => {
     })
     expect(compaction.tokensAfter).toBeLessThan(compaction.tokensBefore)
 
-    // The summarizer got the old messages and no tools.
+    // The summary was asked for after the chat's own messages, with the
+    // chat's own instructions (the same prefix), and gave no tool to call.
     const [request] = summaryCalls(titleCalls)
     expect(request).toMatchObject({ store: false, max_output_tokens: 8000 })
+    expect(request!.instructions).toBe(calls[0]!.params.instructions)
     expect(request).not.toHaveProperty('tools')
-    // (This tiny window only fits the newest of them.)
-    expect(String(request!.input)).toContain('[User] Question 3')
+    const sent = JSON.stringify(request!.input)
+    expect(sent).toContain('Question 1')
+    expect(sent.indexOf('Question 1')).toBeLessThan(sent.indexOf('Pause the'))
 
     // The chat request starts with the summary, then the messages after the cut.
     const input = calls[0]!.params.input as { role: string; content: string }[]
@@ -124,6 +130,23 @@ describe('compaction', () => {
     await drain(chat.runTurn(id, { text: 'Next' }))
     expect(summaryCalls(titleCalls)[0]).toMatchObject({ model: 'small-one' })
     expect(store.compactions.list(id)[0]!.summaryModel).toBe('small-one')
+  })
+
+  it('asks the usual way, with a transcript, when the chat-prefix request fails', async () => {
+    let asked = 0
+    const { chat, titleCalls } = setup((params) =>
+      isSummary(params)
+        ? ++asked === 1
+          ? new Error('too long')
+          : SUMMARY
+        : 'A Title',
+    )
+    await drain(chat.runTurn(id, { text: 'Next' }))
+    const [shared, usual] = summaryCalls(titleCalls)
+    expect(shared!.instructions).not.toBe(SUMMARY_INSTRUCTIONS)
+    expect(usual!.instructions).toBe(SUMMARY_INSTRUCTIONS)
+    expect(String(usual!.input)).toContain('[User] Question 3')
+    expect(store.compactions.list(id)).toHaveLength(1)
   })
 
   it('does nothing below the trigger, or with auto-compact off', async () => {
@@ -148,7 +171,8 @@ describe('compaction', () => {
       )
       expect(failed).toHaveLength(turn <= 3 ? 1 : 0)
     }
-    expect(summaryCalls(titleCalls)).toHaveLength(3)
+    // Each attempt asks twice: after the chat's messages, then the usual way.
+    expect(summaryCalls(titleCalls)).toHaveLength(6)
     // Every request still went out, with the whole history.
     expect(calls).toHaveLength(4)
     expect(JSON.stringify(calls[3]!.params.input)).toContain('Question 1')
@@ -215,8 +239,9 @@ describe('compaction', () => {
     const [first, second] = store.compactions.list(id)
     expect(second!.previousId).toBe(first!.id)
     const requests = summaryCalls(titleCalls)
-    expect(String(requests[1]!.input)).toContain('Build it.')
-    expect(String(requests[1]!.input)).not.toContain('Question 1 ')
+    const sent = JSON.stringify(requests[1]!.input)
+    expect(sent).toContain('Build it.')
+    expect(sent).not.toContain('Question 1 ')
   })
 
   it('undoes a compaction by deleting it', async () => {

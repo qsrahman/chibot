@@ -122,11 +122,31 @@ describe('cutPoint', () => {
     ]
     for (const tokens of [100, 1100, 2100]) {
       const cut = cutPoint(items, tokens)
-      expect(
-        cut === null || items[cut]!.data.type !== 'function_call_output',
-      ).toBe(true)
-      if (cut !== null) expect('role' in items[cut]!.data).toBe(true)
+      if (cut === null) continue
+      expect(items[cut]!.data.type).not.toBe('function_call_output')
+      const before = items.slice(0, cut).map((i) => i.data)
+      const calls = before.filter((d) => d.type === 'function_call')
+      const outputs = before.filter((d) => d.type === 'function_call_output')
+      expect(outputs).toHaveLength(calls.length)
     }
+  })
+
+  it('cuts inside a turn that is longer than the tail, between whole tool rounds', () => {
+    // One user message, then rounds of 2 parallel calls with 1000-token outputs.
+    const items = [user('Do it')]
+    for (const round of ['a', 'b', 'c', 'd']) {
+      items.push(
+        call(`${round}1`),
+        call(`${round}2`),
+        output(`${round}1`, 'x'.repeat(4000)),
+        output(`${round}2`, 'y'.repeat(4000)),
+      )
+    }
+    const cut = cutPoint(items, 1000)!
+    expect(cut).toBeGreaterThan(1)
+    expect(items[cut]!.data.type).toBe('function_call')
+    // Everything before it is whole rounds (a call's pair is not split).
+    expect((cut - 1) % 4).toBe(0)
   })
 
   it('has nothing to summarize when the first turn is the newest', () => {

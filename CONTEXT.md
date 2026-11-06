@@ -506,13 +506,17 @@ the summarizer itself overflows, it drops its oldest input and retries
    dropped by the owner: an edit or regenerate means "replace this", so
    summarizing the abandoned version into the new one would bring back what
    was discarded, at the cost of a model call per switch.
-3. **Refinements.** Cache-sharing summary request (same prefix as the chat),
+3. **Refinements (done).** Cache-sharing summary request (same prefix as the chat),
    reading windows from servers that report them, split turns, the recall
    evaluation run as a regular check.
 
-Separate change, afterwards: the other OpenAI-only request options
-(`include: reasoning.encrypted_content`, replayed reasoning items,
-`reasoning.summary`), audited the same way (§1).
+Separate change (done): the other OpenAI-only request options audited the
+same way (§1). `include: reasoning.encrypted_content` was a plain request
+field that a rejecting server turned into a failed chat: it is now optional
+beside `reasoning` (including `reasoning.summary`), retried without on a 400.
+Replayed reasoning items stay: OpenAI needs them with their function calls,
+and Ollama's Responses API takes them; a server that cannot read them is the
+case to fix when one appears.
 
 ## 7. Decisions
 

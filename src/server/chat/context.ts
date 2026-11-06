@@ -109,18 +109,47 @@ export function tailStart(items: StoredItem[], tokens: number): number {
 /**
  * Where to cut `items` so that about `tokens` of the newest stay: at a user
  * message (a turn's start), so a tool call never loses its output. Returns the
- * index of the first item kept, or `null` when there is nothing before a turn
- * start to summarize.
+ * index of the first item kept, or `null` when there is nothing to summarize.
+ *
+ * When the newest turn alone is more than twice what should stay (an agent
+ * run of many tool calls), the cut goes inside it instead, at the nearest
+ * point that separates no call from its output and no reasoning item from
+ * what it led to.
  */
 export function cutPoint(items: StoredItem[], tokens: number): number | null {
   const isUser = (item: StoredItem) => messageText(item.data)?.role === 'user'
   const start = tailStart(items, tokens)
-  for (let i = start; i > 0; i--) if (isUser(items[i]!)) return i
-  // The newest turn started before the tail: summarize up to the next one.
-  for (let i = start + 1; i < items.length; i++) {
-    if (isUser(items[i]!)) return i
+  let before: number | null = null
+  for (let i = start; i > 0 && before === null; i--) {
+    if (isUser(items[i]!)) before = i
   }
-  return null
+  let after: number | null = null
+  for (let i = start + 1; i < items.length && after === null; i++) {
+    // The newest turn started before the tail: summarize up to the next one.
+    if (before === null && isUser(items[i]!)) after = i
+  }
+  const turn = before ?? after
+  const kept = (from: number) =>
+    items.slice(from).reduce((n, item) => n + estimateTokens(item.data), 0)
+  if (turn !== null && kept(turn) <= 2 * tokens) return turn
+
+  const open = new Set<string>()
+  const safe = items.map((item, i) => {
+    const ok =
+      open.size === 0 &&
+      item.data.type !== 'function_call_output' &&
+      items[i - 1]?.data.type !== 'reasoning'
+    if (item.data.type === 'function_call') open.add(String(item.data.call_id))
+    if (item.data.type === 'function_call_output')
+      open.delete(String(item.data.call_id))
+    return ok
+  })
+  // Worth a summary only if what goes into it is at least what stays.
+  const total = kept(0)
+  for (let i = start; i > (before ?? 0); i--) {
+    if (safe[i] && total - kept(i) >= tokens) return i
+  }
+  return turn
 }
 
 /**

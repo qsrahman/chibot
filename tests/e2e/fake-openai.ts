@@ -178,7 +178,6 @@ app.post('/v1/responses', async (c) => {
   const body = (await c.req.json()) as {
     model: string
     stream?: boolean
-    instructions?: string
     input:
       | string
       | { role?: string; type?: string; content?: unknown; output?: string }[]
@@ -195,7 +194,7 @@ app.post('/v1/responses', async (c) => {
   if (!body.stream) {
     // A summary request (chibot's own instructions): a question with
     // "fail-summary" in it gets an answer without the <summary> tags.
-    if (body.instructions?.startsWith('You are writing notes')) {
+    if (JSON.stringify(body.input).includes('Write the notes now.')) {
       return c.json({
         id: `resp_${crypto.randomUUID()}`,
         object: 'response',

@@ -373,11 +373,12 @@ export class ChatService {
           }),
           stream: true,
           store: false,
-          // Reasoning items can only be replayed without server-side
-          // storage when they carry their encrypted content.
-          include: ['reasoning.encrypted_content'],
         },
         {
+          // Reasoning items can only be replayed without server-side
+          // storage when they carry their encrypted content. A server that
+          // doesn't know the option or `reasoning` gets the request without.
+          include: ['reasoning.encrypted_content'],
           reasoning: {
             summary: 'auto',
             ...(plan.reasoningEffort && { effort: plan.reasoningEffort }),
@@ -484,7 +485,10 @@ export class ChatService {
     if (job) {
       yield { type: 'chibot.compaction', status: 'started' }
       try {
-        const compaction = await this.#compactor.run(job, { signal })
+        const compaction = await this.#compactor.run(job, {
+          signal,
+          shared: { instructions: plan.instructions, tools: plan.tools },
+        })
         yield { type: 'chibot.compaction', status: 'done', compaction }
         ;({ data, keepFrom, used } = build())
       } catch (err) {
