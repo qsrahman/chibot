@@ -308,7 +308,10 @@ compaction on at 64k tokens; math formatting via a built-in instruction.
   and the instructions precede the whole conversation; the exact minute would
   break the cache on every request. The user's sections override the
   defaults (language, length, format, tone), not the rule about others' text.
-- **Long chats.** `context_management: [{ type: 'compaction',
+- **Long chats.** *(Superseded: this relies on OpenAI's own compaction, which
+  compatible servers such as Ollama ignore. [CONTEXT.md](CONTEXT.md) has the
+  research on six agents and the replacement design.)*
+  `context_management: [{ type: 'compaction',
   compact_threshold }]` with `compactThreshold` (default 64,000 tokens;
   `null` turns it off). Compaction items are stored like other output; a
   turn's input starts at the last compaction item on its path. Shown only as
