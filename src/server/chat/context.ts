@@ -117,11 +117,13 @@ export function fromCompaction(
  * cut on `path` and the summary before them. `data` is both as the request
  * carries them, `keepFrom` where the newest `keepRecent` tokens begin in it
  * (pruning leaves them alone), and `used` the context size it will have.
+ * Usage reported before `usageSince` is not believed (see `Compactor.delete`).
  */
 export function buildContext(
   path: StoredItem[],
   compactions: Compaction[],
   limits: ContextLimits,
+  usageSince = -Infinity,
 ) {
   const previous = compactionsOn(path, compactions).at(-1) ?? null
   const { items, lead } = fromCompaction(path, previous)
@@ -131,7 +133,11 @@ export function buildContext(
     lead,
     data: [...lead, ...items.map((item) => item.data)],
     keepFrom: lead.length + tailStart(items, keepTokens(limits)),
-    used: contextTokens(items, sumTokens(lead), previous?.createdAt),
+    used: contextTokens(
+      items,
+      sumTokens(lead),
+      Math.max(previous?.createdAt ?? -Infinity, usageSince),
+    ),
   }
 }
 
@@ -292,16 +298,43 @@ export function serialize(items: ResponseInputItem[]): string {
     .join('\n\n')
 }
 
+const TOO_LONG =
+  /context (length|window|size)|too long|too many tokens|(exceeds?|over) the (model's |maximum |max )?(context|limit)|reduce the length|prompt is too/i
+
 /**
  * Whether a request failed because it was too long for the model: a 400 or
- * 413 whose message says so (servers word it differently).
+ * 413 whose message says so (servers word it differently), or an error the
+ * server sent inside the stream, which the SDK throws without a status.
  */
 export function isContextOverflow(err: unknown): boolean {
   return (
     err instanceof OpenAI.APIError &&
-    (err.status === 400 || err.status === 413) &&
-    /context (length|window|size)|too long|too many tokens|(exceeds?|over) the (model's |maximum |max )?(context|limit)|reduce the length|prompt is too/i.test(
-      err.message,
-    )
+    (err.status === 400 || err.status === 413 || err.status === undefined) &&
+    TOO_LONG.test(err.message)
   )
 }
+
+/** Events that come before any answer: seeing them does not mean it began. */
+export const PRELUDE = new Set<string>([
+  'response.created',
+  'response.queued',
+  'response.in_progress',
+])
+
+/** The message of a stream event that says the request was too long, or `null`. */
+export function tooLongInStream(event: {
+  type: string
+  message?: string
+  response?: { error?: { message?: string } | null }
+}): string | null {
+  const message =
+    event.type === 'error'
+      ? event.message
+      : event.type === 'response.failed'
+        ? event.response?.error?.message
+        : undefined
+  return message && TOO_LONG.test(message) ? message : null
+}
+
+/** A stream event said the request was too long (see `tooLongInStream`). */
+export class StreamTooLong extends Error {}

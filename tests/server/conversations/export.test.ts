@@ -199,6 +199,24 @@ describe('export and import', () => {
           ...good.items.slice(1),
         ],
       },
+      {
+        ...good,
+        items: [
+          ...good.items,
+          {
+            id: 9000,
+            parentId: good.items.at(-1)!.id,
+            data: {
+              type: 'function_call_output',
+              call_id: 'c',
+              output: [{ type: 'input_text', text: 'parts' }],
+            },
+            usage: null,
+            model: null,
+            createdAt: 1,
+          },
+        ],
+      },
     ]
     for (const body of broken) {
       const res = await importJson(body)

@@ -538,11 +538,13 @@ Settled by the owner:
 
 All decisions are settled; nothing is left open before phase 1.
 
-Left out deliberately after the review of v0.13: pruning of images that an MCP
-tool returns inside an array; summaries in the JSON export; a strict chat
-template that refuses the summary's separate user-role message; recovering an
-overflow reported inside a stream that has begun; and a low size reading after
-Undo until the next answer.
+Left out deliberately after the review of v0.13: summaries in the JSON export,
+and a strict chat template that refuses the summary's separate user-role
+message. Closed afterwards: an overflow reported at the start of the stream is
+recovered like a refused request (once text has streamed it is shown, since a
+retry would repeat it); after Undo the size is estimated until the next answer
+reports one; and tool results are text only (MCP images are files the model
+sees a note about), which import enforces, so no image array needs pruning.
 
 ## 8. Sources
 

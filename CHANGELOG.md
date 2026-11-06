@@ -17,6 +17,9 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Fixed
 
+- A server that reports "the request is too long" inside the answer stream (a `response.failed` or `error` event before any text arrived) now gets the same recovery as one that refuses the request: the start of the chat is summarized harder and the request is sent once more. Once text has streamed, the error is shown as before.
+- After **Undo** of a summary, the context size is estimated until the next answer reports one, instead of trusting a reading taken with the summary in place (it read low and could skip a needed summary).
+- Importing a chat whose tool result is a list of parts instead of text is refused: chibot's tools answer in text, and context pruning relies on it.
 - Closing a dialog opened inside Settings (a confirmation, the MCP server form) no longer also closes Settings.
 - Long-chat summaries, from a review of the code: a usage reported before a summary was written no longer makes the next message summarize again (the kept messages carried the old, larger reading); the summary's own size counts in the estimate when no usage is known (it was counted as one token); a summary cut inside a long turn shows its divider and **Undo** (it was invisible); **Compact now** is offered in a chat with one long turn; two summaries of one chat can no longer be written at once; a trailing full stop on a link no longer marks a summary as having lost it.
 - The summary request that shares the chat's prefix is sent only when it fits the context window (a server that cuts the front of an over-long input, such as Ollama, would summarize the wrong part), and it uses the chat's own, already shortened, input so the prefix matches.

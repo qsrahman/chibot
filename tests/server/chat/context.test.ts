@@ -108,6 +108,19 @@ describe('context budget', () => {
     expect(contextTokens(tail, 300)).toBeGreaterThan(40_000)
   })
 
+  it('does not believe usage reported before the time it is told to ignore it until', () => {
+    // 10,000 tokens of text that an answer reported as 1,000 (with a summary
+    // that has since been undone, at time 10).
+    const path = [
+      user('question'),
+      stored({ role: 'assistant', content: 'a'.repeat(40_000) }, used(1000, 5)),
+    ]
+    path[0]!.createdAt = 4
+    path[1]!.createdAt = 5
+    expect(buildContext(path, [], limits).used).toBeLessThan(2000)
+    expect(buildContext(path, [], limits, 10).used).toBeGreaterThan(9000)
+  })
+
   it('counts the summary’s tokens when there is no usage to go by', () => {
     const summary = { ...compaction(1), summary: 'x'.repeat(4000) }
     const path = [stored({ role: 'user', content: 'q' }), user('next')]

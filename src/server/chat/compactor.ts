@@ -63,6 +63,8 @@ export class Compactor {
   readonly #settings: SettingsStore
   // Summaries that failed in a row, per chat, until one works.
   readonly #failures = new Map<string, number>()
+  // When each chat's summary was last undone, in memory like the failures.
+  readonly #undone = new Map<string, number>()
   // Chats whose summary is being written.
   readonly #writing = new Set<string>()
 
@@ -86,8 +88,20 @@ export class Compactor {
     return compactionsOn(path, this.list(conversationId))
   }
 
+  /**
+   * Undoes a summary. The usage the answers since then reported was measured
+   * with the summary in place, so it reads low for the whole history that
+   * is back: until the next answer reports a new one, the size is estimated.
+   */
   delete(conversationId: string, id: number): boolean {
-    return this.#store.compactions.delete(conversationId, id)
+    const deleted = this.#store.compactions.delete(conversationId, id)
+    if (deleted) this.#undone.set(conversationId, Date.now())
+    return deleted
+  }
+
+  /** Usage reported before this time is not believed (an undo at that time), or `-Infinity`. */
+  usageSince(conversationId: string): number {
+    return this.#undone.get(conversationId) ?? -Infinity
   }
 
   /** Whether automatic compaction gave up on this chat (a manual one resets it). */
@@ -110,6 +124,7 @@ export class Compactor {
       this.#store.getPath(conversationId, leafId),
       this.list(conversationId),
       limits,
+      this.usageSince(conversationId),
     )
     const cut = cutPoint(items, keepTokens(limits) / (harder ? 2 : 1))
     if (cut === null) return null

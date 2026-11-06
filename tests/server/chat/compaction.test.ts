@@ -1,6 +1,9 @@
 import OpenAI from 'openai'
 import { beforeEach, describe, expect, it } from 'vitest'
-import type { ResponseCreateParams } from 'openai/resources/responses/responses'
+import type {
+  ResponseCreateParams,
+  ResponseStreamEvent,
+} from 'openai/resources/responses/responses'
 import { SUMMARY_INSTRUCTIONS } from '../../../src/server/chat/prompts.ts'
 import type { ConversationStore } from '../../../src/server/conversations/index.ts'
 import {
@@ -327,6 +330,20 @@ describe('compaction', () => {
     expect(calls).toHaveLength(1)
   })
 
+  it('estimates the size after an undo, until an answer reports a new one', async () => {
+    const { chat, compactor } = setup(summarizer())
+    expect(compactor.usageSince(id)).toBe(-Infinity)
+    await drain(chat.runTurn(id, { text: 'Next' }))
+    const [compaction] = store.compactions.list(id)
+    const before = Date.now()
+    expect(compactor.delete(id, compaction!.id)).toBe(true)
+    expect(compactor.usageSince(id)).toBeGreaterThanOrEqual(before)
+    // Nothing to undo twice: the time stays.
+    const at = compactor.usageSince(id)
+    expect(compactor.delete(id, compaction!.id)).toBe(false)
+    expect(compactor.usageSince(id)).toBe(at)
+  })
+
   it('compacts and asks again once when the server says the request is too long', async () => {
     const tooLong = new OpenAI.BadRequestError(
       400,
@@ -354,6 +371,65 @@ describe('compaction', () => {
     expect(JSON.stringify(calls[1]!.params.input)).toContain(
       '<conversation_summary>',
     )
+  })
+
+  describe('when the stream itself says the request is too long', () => {
+    const failed = (message: string) =>
+      ({
+        type: 'response.failed',
+        sequence_number: 1,
+        response: { error: { code: 'context_length', message } },
+      }) as unknown as ResponseStreamEvent
+    const run = (first: ResponseStreamEvent[]) => {
+      const calls: FakeCall[] = []
+      const { chat } = testChatServices(
+        (call) => (call === 0 ? first : bigAnswer()),
+        {
+          store,
+          calls,
+          settings: testSettings('m', { ...small, contextWindow: 100_000 }),
+          client: { title: summarizer() },
+        },
+      )
+      return { events: drain(chat.runTurn(id, { text: 'Next' })), calls }
+    }
+
+    it('compacts and asks again, before anything was answered', async () => {
+      const { events, calls } = run([
+        { type: 'response.created' } as unknown as ResponseStreamEvent,
+        failed('maximum context length exceeded'),
+      ])
+      const seen = await events
+      expect(
+        seen.filter((e) => e.type === 'chibot.compaction').map((e) => e.status),
+      ).toEqual(['started', 'done'])
+      // The failure is not shown: the second request answered.
+      expect(seen.some((e) => e.type === 'response.failed')).toBe(false)
+      expect(calls).toHaveLength(2)
+      expect(JSON.stringify(calls[1]!.params.input)).toContain(
+        '<conversation_summary>',
+      )
+    })
+
+    it('shows the failure once the answer has begun, and asks no more', async () => {
+      const { events, calls } = run([
+        {
+          type: 'response.output_text.delta',
+          delta: 'Par',
+        } as unknown as ResponseStreamEvent,
+        failed('maximum context length exceeded'),
+      ])
+      const seen = await events
+      expect(seen.at(-1)?.type).toBe('response.failed')
+      expect(calls).toHaveLength(1)
+      expect(store.compactions.list(id)).toHaveLength(0)
+    })
+
+    it('leaves other failures alone', async () => {
+      const { events, calls } = run([failed('the server is busy')])
+      expect((await events).at(-1)?.type).toBe('response.failed')
+      expect(calls).toHaveLength(1)
+    })
   })
 
   it('shows the error when summarizing cannot help', async () => {

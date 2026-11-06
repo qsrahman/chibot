@@ -1054,12 +1054,14 @@ Environment variables:
   own tools and chats made with the removed `web_search` and `fetch_url`: an MCP
   search server's results show as that tool's text, without a Sources list.
 - **Known gaps in long-chat summaries** (left out on purpose, see
-  [CONTEXT.md](CONTEXT.md)): images that an MCP tool returns inside an array
-  are not pruned; a JSON export leaves out summaries; the summary is a separate
-  user-role message, which a strict chat template might refuse; an overflow
-  reported inside an already-started stream is not recovered (only one that
-  fails the request is); and Undo can leave the usage-based size reading low
-  until the next answer (the reactive retry covers it).
+  [CONTEXT.md](CONTEXT.md)): a JSON export leaves out summaries (one is written
+  again when the chat next grows), and the summary is a separate user-role
+  message, which a strict chat template might refuse. Closed since v0.13: an
+  overflow reported inside the stream before any text is recovered like a
+  refused request; Undo makes the size estimated until the next answer; and
+  tool results are always text (MCP images are saved as files and the model
+  sees a note), which an import now enforces, so there is no image array to
+  prune.
 - **Not planned yet** (from comparing Chatbox and nanobot): saved prompts
   inserted with `/`, a conversation minimap, and chats side by side. Not
   wanted: shell and file tools, scheduled automations, team sharing and

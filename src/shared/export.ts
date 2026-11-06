@@ -84,6 +84,21 @@ export const conversationExportSchema = z
       }
       fileIds.add(file.id)
     }
+    // chibot's tools answer in text, and context pruning relies on it: a
+    // list of parts (pictures in a tool result) would reach the model whole.
+    for (const [i, { data }] of items.entries()) {
+      if (
+        'type' in data &&
+        data.type === 'function_call_output' &&
+        typeof data.output !== 'string'
+      ) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'a tool result must be text',
+          path: ['items', i, 'data', 'output'],
+        })
+      }
+    }
     // Attachments travel with the export (version 2). Other ids in tool
     // output (generated images in version 1, project files) may not.
     for (const [i, item] of items.entries()) {

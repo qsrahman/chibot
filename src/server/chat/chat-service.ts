@@ -22,6 +22,9 @@ import type { Compactor } from './compactor.ts'
 import {
   buildContext,
   isContextOverflow,
+  PRELUDE,
+  StreamTooLong,
+  tooLongInStream,
   prune,
   pruneSavings,
   pruningSuffices,
@@ -379,47 +382,61 @@ export class ChatService {
         },
         signal,
       )
+    // Whether the model has begun answering: after that a retry would repeat
+    // what the user has already seen.
+    let started = false
     try {
-      let stream
-      try {
-        stream = await send(input)
-      } catch (err) {
-        // The estimate was too low: the server says the request is too long.
-        // Summarize harder and ask once more.
-        if (!plan.autoCompact || !isContextOverflow(err)) throw err
-        const retry = yield* this.#fitContext(
-          plan,
-          conversationId,
-          leafId,
-          signal,
-          true,
-        )
-        if (!retry) throw err
-        input = retry
-        stream = await send(input)
-      }
-      for await (const event of stream) {
-        if (event.type === 'response.output_text.delta') {
-          partial += event.delta
-        } else if (
-          event.type === 'response.completed' ||
-          event.type === 'response.incomplete'
-        ) {
-          // Output items are valid input for the next turn. The SDK's types
-          // only disagree for item kinds chibot never requests.
-          output = event.response.output as ResponseInputItem[]
-          const items = this.#store.appendItems(
+      for (let attempt = 0; ; attempt++) {
+        try {
+          for await (const event of await send(input)) {
+            const refusal = tooLongInStream(event)
+            if (refusal && !started) throw new StreamTooLong(refusal)
+            if (!PRELUDE.has(event.type)) started = true
+            if (event.type === 'response.output_text.delta') {
+              partial += event.delta
+            } else if (
+              event.type === 'response.completed' ||
+              event.type === 'response.incomplete'
+            ) {
+              // Output items are valid input for the next turn. The SDK's types
+              // only disagree for item kinds chibot never requests.
+              output = event.response.output as ResponseInputItem[]
+              const items = this.#store.appendItems(
+                conversationId,
+                leafId,
+                output,
+                event.response.usage ?? null,
+                // The server may name a dated snapshot of the model requested.
+                event.response.model || model,
+              )
+              leafId = items.at(-1)?.id ?? leafId
+              answered = true
+            }
+            yield event
+          }
+          break
+        } catch (err) {
+          // The estimate was too low: the server says the request is too long,
+          // in its reply or at the start of the stream. Summarize harder and
+          // ask once more.
+          if (
+            attempt > 0 ||
+            started ||
+            !plan.autoCompact ||
+            !(isContextOverflow(err) || err instanceof StreamTooLong)
+          ) {
+            throw err
+          }
+          const retry = yield* this.#fitContext(
+            plan,
             conversationId,
             leafId,
-            output,
-            event.response.usage ?? null,
-            // The server may name a dated snapshot of the model requested.
-            event.response.model || model,
+            signal,
+            true,
           )
-          leafId = items.at(-1)?.id ?? leafId
-          answered = true
+          if (!retry) throw err
+          input = retry
         }
-        yield event
       }
     } finally {
       // `finally` also runs when the consumer stops iterating (client gone).
@@ -458,6 +475,7 @@ export class ChatService {
         this.#store.getPath(conversationId, leafId),
         this.#compactor.list(conversationId),
         limits,
+        this.#compactor.usageSince(conversationId),
       )
     let { data, keepFrom, used } = build()
     const trigger = triggerAt(limits)

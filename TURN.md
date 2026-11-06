@@ -95,6 +95,9 @@ turn is about to save. Then `#runTurn`:
   just before sending: files as the provider's file ids, or as text for models
   that refuse them. Optional features (reasoning effort and summary, `include` of encrypted reasoning) are
   retried without where a server answers 400, and remembered.
+  A server that says the request is too long (a 400 or 413, or a `response.failed` / `error`
+  event before any text has streamed) gets one retry after `#fitContext` has summarized
+  harder; once text has streamed the error is shown instead, as a retry would repeat it.
 - **Saved before relayed.** The response is appended to the tree *before*
   its `response.completed` is yielded, so a client that sees it can re-read the
   chat. If the stream ends any other way (Stop, disconnect, error), the text
