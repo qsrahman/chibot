@@ -9,6 +9,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { run } from '../../src/server/cli.ts'
+import { ConversationStore } from '../../src/server/conversations/index.ts'
+import { openDatabase } from '../../src/server/database.ts'
 
 describe('the chibot command', () => {
   let dir: string
@@ -86,5 +88,27 @@ describe('the chibot command', () => {
     expect(await run(['config'])).toBe(1)
     expect(await run(['frobnicate'])).toBe(1)
     expect(errors.join('\n')).toContain('Unknown command "frobnicate"')
+  })
+
+  it('backs up the data to a folder and restores it', async () => {
+    mkdirSync(join(dir, 'data'), { recursive: true })
+    const db = openDatabase(join(dir, 'data', 'chibot.db'))
+    new ConversationStore(db).createConversation()
+    db.close()
+
+    expect(await run(['backup', join(dir, 'copy')])).toBeUndefined()
+    expect(out.join('\n')).toContain('Backed up 1 chats and 0 files')
+    expect(out.join('\n')).toContain('not included')
+
+    expect(await run(['restore'])).toBe(1)
+    rmSync(join(dir, 'data'), { recursive: true })
+    out.length = 0
+    await run(['restore', join(dir, 'copy')])
+    expect(out.join('\n')).toContain('Restored 1 chats')
+    await expect(run(['restore', join(dir, 'copy')])).rejects.toThrow(
+      '--replace',
+    )
+    await run(['restore', join(dir, 'copy'), '--replace'])
+    expect(out.join('\n')).toContain('The chats that were there are in')
   })
 })

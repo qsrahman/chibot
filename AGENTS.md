@@ -18,7 +18,8 @@ How a message becomes an answer lives in [TURN.md](TURN.md).
 ## Layout
 
 ```
-src/server/   cli.ts (the `chibot` command: start, init, config), main.ts
+src/server/   cli.ts (the `chibot` command: start, init, config, backup, restore;
+              backup.ts does the copying), main.ts
               (start(): wiring + listen, defaultTools()), config.ts (env →
               typed settings), config-file.ts (config.json), locations.ts
               (where files live), init.ts (the setup prompts), app.ts (Hono

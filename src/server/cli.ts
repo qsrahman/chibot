@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import {
   CONFIG_FILE,
@@ -10,6 +10,7 @@ import {
   withSetting,
   writeConfigFile,
 } from './config-file.ts'
+import { backup, restore } from './backup.ts'
 import { readEnvFiles } from './config.ts'
 import { offerMcpImport, runInit, terminalPrompts } from './init.ts'
 import { locations, ROOT } from './locations.ts'
@@ -23,11 +24,14 @@ Usage:
   chibot config path                       where its settings and data live
   chibot config show                       the settings (keys shown as "set")
   chibot config set <setting> <value>      change one (an empty value removes it)
+  chibot backup [folder]                   copy all chats, files and memories into a folder
+  chibot restore <folder> [--replace]      put a backup back (chibot stopped; --replace sets the
+                                           current chats aside first)
   chibot --version | --help
 
 Settings: chat.baseURL, chat.apiKey, chat.model, image.*, embedding.*,
 transcription.* (each baseURL, apiKey, model), server.host,
-server.port, token, mcpServers (MCP servers: edit config.json), and env.<NAME>:\na variable for \${NAME} in them.
+server.port, token, mcpServers (MCP servers: edit config.json or use Settings → Tools), and env.<NAME>:\na variable for \${NAME} in them.
 Environment variables such as OPENAI_API_KEY override the settings.`
 
 /** Runs the command line; resolves to the exit code (not returned while the server runs). */
@@ -40,6 +44,7 @@ export async function run(args: string[]): Promise<number | void> {
       version: { type: 'boolean', short: 'v' },
       port: { type: 'string', short: 'p' },
       host: { type: 'string' },
+      replace: { type: 'boolean' },
     },
   })
   const [command = 'start', ...rest] = positionals
@@ -120,6 +125,38 @@ export async function run(args: string[]): Promise<number | void> {
       }
       console.error('Usage: chibot config path | show | set <setting> <value>')
       return 1
+    }
+    case 'backup': {
+      const { version } = JSON.parse(
+        readFileSync(join(ROOT, 'package.json'), 'utf8'),
+      ) as { version: string }
+      const target = resolve(
+        rest[0] ?? `chibot-backup-${new Date().toISOString().slice(0, 10)}`,
+      )
+      const { chats, files } = backup(where.dataDir, target, version)
+      console.log(`Backed up ${chats} chats and ${files} files to ${target}.`)
+      console.log(
+        'Settings (config.json, with your keys) and MCP sign-ins are not included.',
+      )
+      return
+    }
+    case 'restore': {
+      if (!rest[0]) {
+        console.error('Usage: chibot restore <folder> [--replace]')
+        return 1
+      }
+      const { chats, files, movedTo } = restore(
+        where.dataDir,
+        resolve(rest[0]),
+        {
+          replace: values.replace,
+        },
+      )
+      console.log(
+        `Restored ${chats} chats and ${files} files into ${where.dataDir}.`,
+      )
+      if (movedTo) console.log(`The chats that were there are in ${movedTo}.`)
+      return
     }
     default:
       console.error(`Unknown command "${command}".\n\n${HELP}`)

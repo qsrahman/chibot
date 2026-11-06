@@ -355,6 +355,15 @@ needs the server running: there is no offline mode, since the server is local.
 - **Export** a chat from its **…** menu as Markdown (what's shown, with
   attachment names) or JSON (every version, with its attachments and images,
   for importing later; up to 200 MB).
+- **Backup and restore:** `chibot backup [folder]` copies every chat, file,
+  memory and project (the database, as a consistent snapshot, so chibot may
+  be running, plus the stored files) into a new folder, and `chibot restore
+  <folder>` puts it back while chibot is stopped. Data already there is an
+  error unless you add `--replace`, which moves it into a `before-restore-…`
+  folder instead of deleting it. `config.json` (keys, MCP servers) and MCP
+  sign-ins are not copied, so a backup carries no secrets; back up
+  `chibot config path`'s settings file yourself if you want it. A backup from
+  a newer chibot is refused. Settings → Data shows the command.
 - **Temporary chat:** on a new chat, turn on the dashed-bubble toggle (top
   right). That chat isn't listed, titled or searchable, doesn't use memory or
   past chats, and it's deleted as soon as you leave it.

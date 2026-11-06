@@ -89,6 +89,9 @@ const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
    CREATE INDEX compactions_conversation ON compactions(conversation_id);`,
 ]
 
+/** How many migrations this version of chibot knows: the newest schema it can open. */
+export const SCHEMA_VERSION = MIGRATIONS.length
+
 /**
  * Opens (or creates) the SQLite database, with sqlite-vec loaded, and brings
  * its schema up to date. One connection is shared by the stores.

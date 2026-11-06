@@ -399,3 +399,19 @@ test('a setting that saves at once says so for a moment', async ({ page }) => {
   await expect(flash).toHaveText('')
   await page.unroute('**/api/settings')
 })
+
+test('Data shows how to back up, and copies the command', async ({ page }) => {
+  await page.goto('/')
+  await appReady(page)
+  await page.keyboard.press('ControlOrMeta+,')
+  const dialog = page.getByRole('dialog', { name: 'Settings' })
+  await dialog.getByRole('button', { name: 'Data' }).click()
+  await expect(dialog).toContainText('Back up everything')
+  await dialog.getByRole('button', { name: 'Copy command' }).click()
+  await expect(
+    page.locator('.toast-message', { hasText: 'Copied “chibot backup”' }),
+  ).toBeVisible()
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+    'chibot backup',
+  )
+})

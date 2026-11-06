@@ -60,6 +60,25 @@ export function Data({
           </button>
         </Row>
       </Section>
+      <Section title="Backup">
+        <Row
+          label="Back up everything"
+          description="Run this in a terminal to copy all chats, files, memories and projects into a folder. “chibot restore <folder>” puts them back (with chibot stopped). Settings and keys are not included."
+        >
+          <button
+            type="button"
+            className="button"
+            onClick={() =>
+              navigator.clipboard.writeText('chibot backup').then(
+                () => toast('Copied “chibot backup”'),
+                () => toast('Could not copy'),
+              )
+            }
+          >
+            Copy command
+          </button>
+        </Row>
+      </Section>
       {error && (
         <p className="error" role="alert">
           Import failed: {error}

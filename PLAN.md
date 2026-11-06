@@ -330,6 +330,17 @@ summarizing of long chats on for a 32k window; math formatting via a built-in in
   'none'`) so the server's prompt cache applies, falling back to a transcript
   request. Settings → Model offers the window the server reports (**Use N**). Old
   OpenAI `compaction` items are ignored.
+- **Backup / restore (after v0.13).** `chibot backup [folder]` snapshots the
+  database with `VACUUM INTO` (consistent while chibot runs; read-only on the
+  source, with sqlite-vec loaded for the vec0 tables) and copies `files/`,
+  plus `backup.json` (chibot version, schema version, time). Left out on
+  purpose: `config.json` and `mcp-auth.json` (secrets). `chibot restore`
+  needs chibot stopped (a non-empty `-wal` means it is running), refuses a
+  backup from a newer schema, and moves existing data into
+  `before-restore-<time>/` only with `--replace`. A folder, not an archive:
+  Node has no zip and the data is already compact. It is a CLI command, not a
+  web button: replacing the open database from inside the server it feeds is
+  not safe.
 - **Export / import.** From a chat's menu: Markdown (current path) or JSON
   (full tree, `{ version: 1, … }`, with versions, usage and models). Import a
   JSON file from Settings → Data: validated, new ids, current version kept,
