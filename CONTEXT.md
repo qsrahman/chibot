@@ -312,7 +312,7 @@ In Settings → Model (and the model picker's menu where it fits):
 | Compact at | share of the window | 75% (never above window − reserve) |
 | Reserve | tokens kept free for the answer and the summary | 16,000 |
 | Keep recent | tokens of the newest turns kept verbatim | 15,000 |
-| Summary model | *(later)* a model on the same server | the chat model; no setting in phase 1 |
+| Summary model | a model on the same server (`summaryModel`, phase 2) | `''`: the chat model |
 
 The old `compactThreshold` setting is gone and its stored value is ignored;
 the trigger is derived (`min(window × share, window − reserve)`).
@@ -501,9 +501,11 @@ the summarizer itself overflows, it drops its oldest input and retries
    (5.5); summarizing with the chat's own model; request building; checks and
    breaker; reactive retry; the divider with the summary, Undo and "Compact
    now"; the meter; tests, including the opt-in recall test with a real model.
-2. **Summary model** setting, iterative updates with a focus from the user
-   (the update-the-previous-summary step itself is in phase 1; the focus box and
-   the setting are not), and branch summaries when leaving a version.
+2. **Summary model** setting (done); the focus box and iterative updates
+   shipped with phase 1. Branch summaries when leaving a version were
+   dropped by the owner: an edit or regenerate means "replace this", so
+   summarizing the abandoned version into the new one would bring back what
+   was discarded, at the cost of a model call per switch.
 3. **Refinements.** Cache-sharing summary request (same prefix as the chat),
    reading windows from servers that report them, split turns, the recall
    evaluation run as a regular check.

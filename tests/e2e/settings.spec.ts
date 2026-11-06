@@ -311,6 +311,15 @@ test('sets the context window and when to summarize', async ({ page }) => {
   await model.getByLabel('Context window').fill('64000')
   await model.getByLabel('Context window').press('Enter')
   await expect(page.getByLabel('Context window')).toHaveValue('64000')
+  await model.getByLabel('Summary model').fill('e2e-other')
+  await model.getByLabel('Summary model').press('Enter')
+  await expect
+    .poll(
+      async () =>
+        (await (await page.request.get('/api/settings')).json()).settings
+          .summaryModel,
+    )
+    .toBe('e2e-other')
   await model.getByLabel('Summarize long chats').click()
   await expect(model.getByLabel('Summarize long chats')).not.toBeChecked()
   await expect(model.getByLabel('Keep recent')).toHaveCount(0)

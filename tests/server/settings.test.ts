@@ -32,6 +32,7 @@ describe('SettingsStore', () => {
     expect(settings.get()).toMatchObject({
       model: 'env-model',
       reasoningEffort: null,
+      summaryModel: '',
       autoCompact: true,
       contextWindow: 32_000,
       compactAt: 75,

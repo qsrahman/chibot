@@ -141,7 +141,9 @@ export class Compactor {
     focus: string | null,
     signal: AbortSignal | undefined,
   ): Promise<Compaction> {
-    const { model, contextWindow } = this.#settings.get()
+    const settings = this.#settings.get()
+    const { contextWindow } = settings
+    const model = settings.summaryModel || settings.model
     const budget = Math.max(
       1000,
       contextWindow - SUMMARY_MAX_TOKENS - SUMMARIZER_OVERHEAD,

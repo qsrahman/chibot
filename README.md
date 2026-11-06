@@ -327,7 +327,8 @@ needs the server running: there is no offline mode, since the server is local.
   - *Model:* reasoning effort, and long chats: the context window of your
     model (32,000 tokens unless you set it; for Ollama no more than its
     `num_ctx`), when to summarize (75 % of it), the reserve kept free and how
-    much of the newest messages stays word for word. The chat's own model
+    much of the newest messages stays word for word, and optionally a smaller
+    model on the same server to write the summaries. The chat's own model
     writes the summary, on any server; a divider marks the spot and opens to
     it, with **Undo**.
   - *Tools:* switch each tool on or off, grouped (the web, images, your chats

@@ -70,6 +70,7 @@ export function Model({
         />
         {settings.autoCompact && (
           <>
+            <SummaryModelRow settings={settings} onChange={onChange} />
             <NumberRow
               id="setting-compact-at"
               label="Summarize at (%)"
@@ -156,6 +157,40 @@ function NumberRow({
         max={max}
         step={step}
         value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => e.key === 'Enter' && save()}
+      />
+    </Row>
+  )
+}
+
+/** The model that writes summaries; empty uses the chat's own. */
+function SummaryModelRow({
+  settings,
+  onChange,
+}: {
+  settings: Settings
+  onChange: SettingsApi['update']
+}) {
+  const [draft, setDraft] = useState(settings.summaryModel)
+
+  function save() {
+    const next = draft.trim()
+    if (next !== settings.summaryModel) void onChange({ summaryModel: next })
+  }
+
+  return (
+    <Row
+      label="Summary model"
+      description="A model on the same server to write summaries, for example a smaller, faster one. Empty uses the chat's model."
+      htmlFor="setting-summary-model"
+    >
+      <input
+        id="setting-summary-model"
+        type="text"
+        value={draft}
+        placeholder={settings.model}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={save}
         onKeyDown={(e) => e.key === 'Enter' && save()}

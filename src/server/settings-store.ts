@@ -23,6 +23,7 @@ export function settingsDefaults(
     reasoningEffort: null,
     aboutUser: '',
     responseStyle: '',
+    summaryModel: '',
     autoCompact: true,
     // Small enough for local models; the user raises it for larger ones.
     contextWindow: 32_000,

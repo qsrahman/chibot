@@ -116,6 +116,16 @@ describe('compaction', () => {
     expect(store.getPath(id)).toHaveLength(8 + 2)
   })
 
+  it('writes the summary with the summary model when one is set', async () => {
+    const { chat, titleCalls } = setup(summarizer(), {
+      ...small,
+      summaryModel: 'small-one',
+    })
+    await drain(chat.runTurn(id, { text: 'Next' }))
+    expect(summaryCalls(titleCalls)[0]).toMatchObject({ model: 'small-one' })
+    expect(store.compactions.list(id)[0]!.summaryModel).toBe('small-one')
+  })
+
   it('does nothing below the trigger, or with auto-compact off', async () => {
     for (const overrides of [
       { ...small, contextWindow: 100_000 },

@@ -20,6 +20,8 @@ export const settingsSchema = z.object({
   aboutUser: z.string().max(1500),
   /** Custom instructions: how chibot should respond. */
   responseStyle: z.string().max(1500),
+  /** Model that writes summaries of long chats; `''` uses the chat model. */
+  summaryModel: z.string().trim().max(200),
   /** Summarize earlier messages when the context nears the window. */
   autoCompact: z.boolean(),
   /** Tokens the model reads at most (chibot can't ask the server). */
