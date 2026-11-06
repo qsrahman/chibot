@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Added
 
+- **Settings → Tools → Add server** adds, edits and removes MCP servers without editing the config file, with presets (web pages, Brave search, files in a folder). Keys in the environment and header rows are kept in the file and never shown again; it works only while chibot listens on this machine or `CHIBOT_TOKEN` is set.
 - **+** → **Take a photo** attaches a picture from the device's camera: a preview opens, and nothing is captured until you click the shutter.
 
 ### Changed
@@ -14,6 +15,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Fixed
 
+- Closing a dialog opened inside Settings (a confirmation, the MCP server form) no longer also closes Settings.
 - Long-chat summaries, from a review of the code: a usage reported before a summary was written no longer makes the next message summarize again (the kept messages carried the old, larger reading); the summary's own size counts in the estimate when no usage is known (it was counted as one token); a summary cut inside a long turn shows its divider and **Undo** (it was invisible); **Compact now** is offered in a chat with one long turn; two summaries of one chat can no longer be written at once; a trailing full stop on a link no longer marks a summary as having lost it.
 - The summary request that shares the chat's prefix is sent only when it fits the context window (a server that cuts the front of an over-long input, such as Ollama, would summarize the wrong part), and it uses the chat's own, already shortened, input so the prefix matches.
 - Only an error that says the request is too long (not any 400 mentioning "token" or "context") compacts and retries; such an error is no longer retried first without the optional request features.

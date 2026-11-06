@@ -148,3 +148,50 @@ test('calls an MCP tool in a chat and shows its images', async ({ page }) => {
     output: expect.stringContaining('[An image, shown to the user]'),
   })
 })
+
+test('adds, edits and removes a server in Settings, keeping its key hidden', async ({
+  page,
+}) => {
+  await page.goto('/')
+  const dialog = await openTools(page)
+  await dialog.getByRole('button', { name: 'Add server' }).click()
+  const form = page.getByRole('dialog', { name: 'Add an MCP server' })
+  await form.getByLabel('Start from').selectOption('Custom')
+  await form.getByLabel('Name').fill('extra')
+  await form.getByLabel('Kind').selectOption({ label: 'Remote: a URL' })
+  await form
+    .getByRole('textbox', { name: 'URL' })
+    .fill('http://127.0.0.1:1/mcp')
+  await form.getByRole('button', { name: 'Add', exact: true }).click()
+  await form.getByLabel('Headers name 1').fill('X-Key')
+  await form.getByLabel('Headers value 1').fill('super-secret-value')
+  await form.getByRole('button', { name: 'Add server' }).click()
+  await expect(form).toBeHidden()
+  await expect(server(page, 'extra')).toContainText('Remote server')
+
+  // The saved value never comes back: the edit form shows only its name.
+  await server(page, 'extra').getByRole('button', { name: 'Edit' }).click()
+  const edit = page.getByRole('dialog', { name: 'Edit extra' })
+  await expect(edit.getByLabel('Headers name 1')).toHaveValue('X-Key')
+  await expect(edit.getByLabel('Headers value 1')).toHaveValue('')
+  await expect(edit.getByLabel('Headers value 1')).toHaveAttribute(
+    'placeholder',
+    'Saved (hidden)',
+  )
+  const definitions = await page.request.get('/api/mcp/definitions')
+  expect(await definitions.text()).not.toContain('super-secret-value')
+  await edit
+    .getByRole('textbox', { name: 'URL' })
+    .fill('http://127.0.0.1:2/mcp')
+  await edit.getByRole('button', { name: 'Save' }).click()
+  await expect(edit).toBeHidden()
+
+  await server(page, 'extra').getByRole('button', { name: 'Remove' }).click()
+  await page
+    .getByRole('dialog', { name: 'Remove extra?' })
+    .getByRole('button', { name: 'Remove' })
+    .click()
+  await expect(server(page, 'extra')).toHaveCount(0)
+  // The ones from the file are still there.
+  await expect(server(page, 'fixture')).toBeVisible()
+})

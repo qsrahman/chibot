@@ -19,7 +19,7 @@ import { FileStore } from '../../src/server/file-store.ts'
 import { InstructionWriter } from '../../src/server/projects/index.ts'
 import { MemoryStore } from '../../src/server/memory-store.ts'
 import { ProjectIndex } from '../../src/server/projects/index.ts'
-import { McpServers } from '../../src/server/mcp/index.ts'
+import { McpServerFile, McpServers } from '../../src/server/mcp/index.ts'
 import { ProjectStore } from '../../src/server/projects/index.ts'
 import {
   settingsDefaults,
@@ -354,6 +354,13 @@ export function testApp(deps: Partial<AppDeps> = {}) {
     transcription: null,
     media: new MediaProxy(),
     mcp: new McpServers({}, { disabled: () => [] }),
+    mcpFile: new McpServerFile({
+      source: 'config.json',
+      locked: null,
+      read: () => ({}),
+      write: () => {},
+      check: () => {},
+    }),
     ...deps,
     projects,
     store,

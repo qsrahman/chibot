@@ -291,3 +291,53 @@ label.button {
   white-space: nowrap;
   cursor: pointer;
 }
+
+/* Adding or changing an MCP server. */
+.dialog.mcp-dialog {
+  width: min(100% - 32px, 560px);
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+}
+
+.mcp-form {
+  display: grid;
+  gap: 12px;
+  font-size: 0.875rem;
+}
+
+.mcp-form label {
+  display: grid;
+  gap: 4px;
+  color: var(--fg-muted);
+}
+
+.mcp-form .dialog-input {
+  margin-bottom: 0;
+  color: var(--fg);
+}
+
+.mcp-pairs {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--fg-muted);
+}
+
+.mcp-pairs .button {
+  justify-self: start;
+}
+
+.mcp-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.mcp-hint {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 0.8125rem;
+}

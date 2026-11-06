@@ -182,7 +182,18 @@ offers to move its servers in.
   exported in your shell needs a restart. Variable names use letters, digits and
   `_`.
 
-Servers are only set up here, never from the web app. Their tools are offered
+**Settings → Tools → Add server** does the same without editing the file: start
+from a preset (web pages, Brave web search, files in a folder) or fill in a
+command or URL, and **Edit** or **Remove** a server later. Keys go in the
+*Environment variables* (local) or *Headers* (remote) rows: they are written to the
+file and never shown again, and a blank value keeps the saved one (so keep keys
+out of the arguments and URL, which are shown). A server's definition is saved
+to the file it came from (`config.json`, or the standalone file). This is on
+only while chibot listens on this machine or `CHIBOT_TOKEN` is set, since a
+`local` server runs a command; otherwise Settings says why and the file is
+the only way.
+
+Their tools are offered
 as `<server>__<tool>` and run without asking first, so add only servers you
 trust, or switch on **Ask before using its tools** for a server in Settings →
 Tools (worth it for one that can run commands or change files). Like web

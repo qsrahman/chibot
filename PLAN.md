@@ -658,8 +658,8 @@ models (`gemma4:cloud`, `gemma4:e4b`, `qwen3.5:9b`; `gpt-oss` answers 400
 
 ### Phase 10 — MCP client ✅
 Decisions: tools
-from MCP servers become chibot function tools; servers are set up only in
-`mcp.json`, never from the web; their calls don't ask first unless a server
+from MCP servers become chibot function tools; servers are set up in
+`config.json` (or `mcp.json`) or from Settings → Tools (add, edit, remove; only on loopback or with `CHIBOT_TOKEN`, because a `local` server is a command; secrets in `env`/`headers` are write-only); their calls don't ask first unless a server
 is set to; `local` and `remote` servers, the latter with OAuth sign-in; a
 switch per server and per tool in Settings; tools only. Built before the code
 runner (now Phase 11).

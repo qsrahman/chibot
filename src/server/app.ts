@@ -14,7 +14,12 @@ import type { InstructionWriter } from './projects/index.ts'
 import type { ModelRequests } from './chat/index.ts'
 import type { TitleWriter } from './chat/index.ts'
 import type { ToolRegistry } from './tool-registry.ts'
-import { OAUTH_CALLBACK, mcpRoutes, type McpServers } from './mcp/index.ts'
+import {
+  OAUTH_CALLBACK,
+  mcpRoutes,
+  type McpServerFile,
+  type McpServers,
+} from './mcp/index.ts'
 import { type MemoryStore } from './memory-store.ts'
 import type { ProjectIndex } from './projects/index.ts'
 import type { ProjectStore } from './projects/index.ts'
@@ -46,6 +51,7 @@ export interface AppDeps {
   instructionWriter: InstructionWriter
   attachments: Attachments
   mcp: McpServers
+  mcpFile: McpServerFile
   /** Voice input, or `null` without a transcription endpoint. */
   transcription: Transcription | null
   /** Fetches the images and media an answer links to (`/api/media`). */

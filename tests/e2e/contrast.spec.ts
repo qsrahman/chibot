@@ -209,6 +209,12 @@ for (const scheme of ['light', 'dark'] as const) {
         const found = await violations(page)
         expect(found, tab).toEqual([])
       }
+      await dialog.getByRole('button', { name: 'Tools', exact: true }).click()
+      await dialog.getByRole('button', { name: 'Add server' }).click()
+      await expect(
+        page.getByRole('dialog', { name: 'Add an MCP server' }),
+      ).toBeVisible()
+      expect(await violations(page), 'Add an MCP server').toEqual([])
     })
   })
 }

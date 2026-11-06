@@ -1,15 +1,21 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import type { McpServerConfig } from '../../shared/mcp.ts'
 import type { Settings } from '../../shared/settings.ts'
 import {
+  listMcpDefinitions,
   listMcpServers,
+  removeMcpServer,
+  saveMcpServer,
   reconnectMcpServer,
   reloadMcpServers,
   signInToMcpServer,
   signOutOfMcpServer,
 } from './api.ts'
 import { describeMcpServer, isConnecting, withMember } from './mcp.ts'
+import { ConfirmDialog } from '../ui/Dialog.tsx'
 import { useLoad } from '../ui/useLoad.ts'
 import type { SettingsApi } from './useSettings.ts'
+import { McpServerDialog } from './McpServerDialog.tsx'
 import { Row, Section } from './parts.tsx'
 
 /** The MCP servers from the config: a switch, status and actions each, and tools. */
@@ -22,6 +28,13 @@ export function McpServers({
 }) {
   const { data, error, reload, act } = useLoad(listMcpServers)
   const servers = data?.servers
+  const definitions = useLoad(listMcpDefinitions)
+  const editable = definitions.data?.editable ?? false
+  // The dialog is open for a new server (`existing: null`) or one being changed.
+  const [editing, setEditing] = useState<{
+    existing: { name: string; server: McpServerConfig } | null
+  } | null>(null)
+  const [removing, setRemoving] = useState<string | null>(null)
   // Connecting settles within the server's 10 s timeout: check back.
   const connecting = isConnecting(servers)
   useEffect(() => {
@@ -60,11 +73,20 @@ export function McpServers({
         <Row
           label="Servers"
           description={
-            servers.length === 0
-              ? 'No servers yet. Add them under "mcpServers" in chibot’s config.json (`chibot config path` shows where; mcp.example.json shows how), then reload.'
-              : 'Servers are set up in chibot’s config file, not here. After editing it, reload to apply the changes.'
+            editable
+              ? `Add a server here, or edit ${definitions.data?.source ?? 'the config file'} yourself and reload.`
+              : `${definitions.data?.reason ?? 'Servers are set up in chibot’s config file.'} Edit "mcpServers" in the config file (\`chibot config path\` shows where; mcp.example.json shows how), then reload.`
           }
         >
+          {editable && (
+            <button
+              type="button"
+              className="button primary"
+              onClick={() => setEditing({ existing: null })}
+            >
+              Add server
+            </button>
+          )}
           <button
             type="button"
             className="button"
@@ -120,6 +142,31 @@ export function McpServers({
                   >
                     Reconnect
                   </button>
+                )}
+                {editable && definitions.data?.servers[server.name] && (
+                  <>
+                    <button
+                      type="button"
+                      className="button"
+                      onClick={() =>
+                        setEditing({
+                          existing: {
+                            name: server.name,
+                            server: definitions.data!.servers[server.name]!,
+                          },
+                        })
+                      }
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="button danger"
+                      onClick={() => setRemoving(server.name)}
+                    >
+                      Remove
+                    </button>
+                  </>
                 )}
                 <input
                   id={`setting-mcp-${server.name}`}
@@ -186,6 +233,35 @@ export function McpServers({
           </Section>
         )
       })}
+      {editing && (
+        <McpServerDialog
+          open
+          existing={editing.existing}
+          onClose={() => setEditing(null)}
+          onSave={async (name, server) => {
+            try {
+              await saveMcpServer(name, server)
+            } catch (err) {
+              return (err as Error).message
+            }
+            await Promise.all([reload(), definitions.reload()])
+            setEditing(null)
+            return null
+          }}
+        />
+      )}
+      <ConfirmDialog
+        open={removing !== null}
+        title={`Remove ${removing}?`}
+        message="chibot stops using this server and deletes it from the config file, including its saved keys."
+        confirmLabel="Remove"
+        onClose={() => setRemoving(null)}
+        onConfirm={() =>
+          void act(() => removeMcpServer(removing!)).then(() =>
+            definitions.reload(),
+          )
+        }
+      />
     </>
   )
 }

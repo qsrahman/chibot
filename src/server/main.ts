@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { isIP } from 'node:net'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { serve } from '@hono/node-server'
 import type { Hono } from 'hono'
 import { serveStatic } from '@hono/node-server/serve-static'
@@ -13,7 +13,12 @@ import { ChatService, Compactor } from './chat/index.ts'
 import { ModelRequests } from './chat/index.ts'
 import { TitleWriter } from './chat/index.ts'
 import { Config, layered, readEnvFiles } from './config.ts'
-import { mcpVariables, readConfigFile } from './config-file.ts'
+import {
+  mcpVariables,
+  readConfigFile,
+  readMcpServers,
+  writeConfigFile,
+} from './config-file.ts'
 import { MediaProxy, type AddressGuard } from './media-proxy.ts'
 import { locations, openFolders, ROOT } from './locations.ts'
 import { InstructionWriter } from './projects/index.ts'
@@ -27,7 +32,7 @@ import {
   parseMcpConfig,
   type McpServerConfig,
 } from './mcp/index.ts'
-import { McpServers } from './mcp/index.ts'
+import { McpServerFile, McpServers } from './mcp/index.ts'
 import { MemoryStore } from './memory-store.ts'
 import { ProjectIndex } from './projects/index.ts'
 import { ProjectStore } from './projects/index.ts'
@@ -219,6 +224,7 @@ export function start({
     instructionWriter: new InstructionWriter(client, settings, projects, index),
     attachments,
     mcp,
+    mcpFile: mcpServerFile(config),
     media: new MediaProxy(mediaGuard && { allowed: mediaGuard }),
     transcription:
       config.transcription &&
@@ -278,6 +284,50 @@ export function loadMcpServers(
     )
   }
   return loadMcpConfig(config.mcpConfigPath, variables)
+}
+
+/**
+ * Where Settings keeps MCP servers: the file `loadMcpServers` reads. Only
+ * where chibot is not open to the network without a token, since a `local`
+ * server is a command chibot runs.
+ */
+function mcpServerFile(config: Config): McpServerFile {
+  const inConfig =
+    !config.mcpConfigExplicit &&
+    (!!readConfigFile(config.configDir).file.mcpServers ||
+      !existsSync(config.mcpConfigPath))
+  const source = inConfig ? 'config.json' : basename(config.mcpConfigPath)
+  return new McpServerFile({
+    source,
+    locked:
+      config.isLoopback || config.token
+        ? null
+        : 'chibot is open to your network without a token, so anyone who can reach it could add a server that runs commands. Set CHIBOT_TOKEN, or edit the servers in the config file.',
+    read: () =>
+      (inConfig
+        ? readConfigFile(config.configDir).file.mcpServers
+        : readMcpServers(config.mcpConfigPath)) ?? {},
+    write: (servers) => {
+      if (inConfig) {
+        const { file } = readConfigFile(config.configDir)
+        writeConfigFile(config.configDir, { ...file, mcpServers: servers })
+      } else {
+        // Owner only, as config.json is: headers and env can hold keys.
+        const json = JSON.parse(readFileSync(config.mcpConfigPath, 'utf8'))
+        writeFileSync(
+          config.mcpConfigPath,
+          `${JSON.stringify({ ...json, mcpServers: servers }, null, 2)}\n`,
+          { mode: 0o600 },
+        )
+      }
+    },
+    check: (servers) =>
+      void parseMcpConfig(
+        { mcpServers: servers },
+        mcpVariables(config.configDir),
+        source,
+      ),
+  })
 }
 
 /** The MCP servers at startup; none, with the error, if they are invalid. */

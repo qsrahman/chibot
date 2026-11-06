@@ -1,37 +1,21 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { basename } from 'node:path'
 import { z } from 'zod'
+import {
+  mcpServerName,
+  mcpServerSchema,
+  type McpServerConfig,
+} from '../../shared/mcp.ts'
 
-// Servers are only ever set up here, by the owner: a `local` server is a
-// command chibot runs with the owner's rights, and chibot has no login.
-
-/** Names prefix the servers' tool names (`<server>__<tool>`, ≤ 64). */
-const serverName = z
-  .string()
-  .regex(/^[A-Za-z0-9_-]{1,32}$/, 'use letters, digits, - and _ (at most 32)')
-
-const localServer = z.strictObject({
-  type: z.literal('local'),
-  command: z.string().min(1),
-  args: z.array(z.string()).optional(),
-  env: z.record(z.string(), z.string()).optional(),
-  cwd: z.string().optional(),
-})
-
-const remoteServer = z.strictObject({
-  type: z.literal('remote'),
-  url: z.url({ protocol: /^https?$/ }),
-  headers: z.record(z.string(), z.string()).optional(),
-})
+// Servers are only ever set up by the owner: a `local` server is a command
+// chibot runs with the owner's rights, and chibot has no login. (Settings may
+// edit them only where `McpServerFile` allows.)
 
 const mcpConfigSchema = z.strictObject({
-  mcpServers: z.record(
-    serverName,
-    z.discriminatedUnion('type', [localServer, remoteServer]),
-  ),
+  mcpServers: z.record(mcpServerName, mcpServerSchema),
 })
 
-export type McpServerConfig = z.output<typeof localServer | typeof remoteServer>
+export type { McpServerConfig }
 
 /**
  * The MCP servers in `path` (none when there's no file), with `${VAR}`

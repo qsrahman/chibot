@@ -46,7 +46,12 @@ export function Dialog({ open, onClose, title, className, children }: Props) {
       closedby="any"
       aria-labelledby={titleId}
       className={className ? `dialog ${className}` : 'dialog'}
-      onClose={onClose}
+      // React passes `close` up to the dialog this one is rendered inside (a
+      // confirmation within Settings), which would close that one too.
+      onClose={(event) => {
+        event.stopPropagation()
+        onClose()
+      }}
     >
       <h2 id={titleId} className="dialog-title">
         {title}

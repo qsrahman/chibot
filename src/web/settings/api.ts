@@ -1,3 +1,4 @@
+import type { McpDefinitions, McpServerConfig } from '../../shared/mcp.ts'
 import type { ToolInfo } from '../../shared/tools.ts'
 import type {
   Settings,
@@ -48,6 +49,16 @@ export const signInToMcpServer = (name: string) =>
 
 export const signOutOfMcpServer = (name: string) =>
   request(`/api/mcp/${name}/sign-out`, { method: 'POST' })
+
+export const listMcpDefinitions = () =>
+  request<McpDefinitions>('/api/mcp/definitions')
+
+/** Adds or changes a server; a blank `env` / `headers` value keeps the saved one. */
+export const saveMcpServer = (name: string, server: McpServerConfig) =>
+  request(`/api/mcp/servers/${name}`, send('PUT', server))
+
+export const removeMcpServer = (name: string) =>
+  remove(`/api/mcp/servers/${name}`)
 
 export const listMemories = () => request<Memory[]>('/api/memories')
 
