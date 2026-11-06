@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-11-06
+
 ### Added
 
 - **Long chats work on any server.** Past a share of the context window (the new setting `contextWindow`, 32,000 tokens by default, since compatible servers don't report theirs) chibot shortens old tool results (over 8,000 characters) and pictures (all but the newest two) in the request, and if that is not enough has the chat's own model write a summary of everything but the newest `keepRecent` tokens, cut at the start of a turn. The summary is saved as a `compactions` row beside the messages, which stay; requests start with it in `<conversation_summary>` tags. A divider in the chat opens to the summary, its model and size, with **Undo**; **Compact now** under the latest answer summarizes at once, with an optional focus. A summary that fails its checks (no `<summary>`, cut off, not shorter) is dropped and the chat goes on with the full history and a note; three failures in a row pause automatic summarizing for that chat; a server answer that the request is too long compacts harder and tries once more. New settings in Settings → Model: summarize on or off, context window, summarize at (75 %), reserve (16,000), keep recent (15,000). The meter shows the context against the window.
