@@ -359,3 +359,14 @@ test('a draft stays with its chat', async ({ page }) => {
   await expect(box).toHaveValue('Unsent in two')
   await expect(chips.getByText('notes.md')).toBeVisible()
 })
+
+test('takes a photo with the camera and attaches it', async ({ page }) => {
+  await page.goto('/')
+  await appReady(page)
+  await page.getByRole('button', { name: 'Add files and more' }).click()
+  await page.getByRole('menuitem', { name: /Take a photo/ }).click()
+  const dialog = page.getByRole('dialog', { name: 'Take a photo' })
+  await dialog.getByRole('button', { name: 'Take photo' }).click()
+  await expect(dialog).toBeHidden()
+  await expect(page.locator('.attachment.image.ready')).toHaveCount(1)
+})

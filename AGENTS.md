@@ -279,7 +279,7 @@ invariants, API quirks. No line-by-line narration.
   (`/debug/last-transcription`) and a Files API (`/debug/files`,
   `/debug/forget-files`; unknown file ids get a 404), and serves a test page;
   the model `e2e-other` refuses `input_file` parts, as Ollama does. Chromium
-  runs with a fake microphone. `/debug/last-request` and `/debug/requests`
+  runs with a fake microphone and camera. `/debug/last-request` and `/debug/requests`
   show what chibot sent. Shared steps live in `tests/e2e/helpers.ts` (`send`,
   `answered`, `appReady`, `lastRequest`, `resetSettings`, …). Wait for the app
   (e.g. a focused composer, or the empty new-chat page) before typing or

@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- **+** → **Take a photo** attaches a picture from the device's camera: a preview opens, and nothing is captured until you click the shutter.
+
 ### Changed
 
 - **Compact now** under the latest answer is an icon with a tooltip, like Copy and Regenerate, instead of a text link.

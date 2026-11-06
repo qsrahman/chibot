@@ -33,6 +33,17 @@
   object-fit: contain;
 }
 
+.camera-preview {
+  display: block;
+  width: 100%;
+  max-height: calc(100dvh - 220px);
+  margin-bottom: 16px;
+  border-radius: var(--radius-card);
+  background: var(--surface-muted);
+  /* A selfie view, as in a mirror. */
+  transform: scaleX(-1);
+}
+
 .dialog::backdrop {
   background: var(--scrim);
 }

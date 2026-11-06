@@ -1,7 +1,8 @@
-import { useRef, type ReactNode } from 'react'
-import { Paperclip, Plus } from 'lucide-react'
+import { useRef, useState, type ReactNode } from 'react'
+import { Camera, Paperclip, Plus } from 'lucide-react'
 import { ATTACHMENT_ACCEPT } from '../../shared/documents.ts'
 import { useAnchoredPopover } from '../ui/popover.ts'
+import { CameraDialog } from './CameraDialog.tsx'
 
 /** A tool the user can pick for the next message ("+" menu). */
 export interface ToolOption {
@@ -29,6 +30,9 @@ export function AddMenu({
 }) {
   const menu = useAnchoredPopover()
   const pickerRef = useRef<HTMLInputElement>(null)
+  const [camera, setCamera] = useState(false)
+  // Browsers expose the camera only on localhost and HTTPS.
+  const canUseCamera = !!navigator.mediaDevices?.getUserMedia
   return (
     <>
       <button
@@ -78,6 +82,25 @@ export function AddMenu({
             <span className="menu-hint">Images, PDF, Word, text and code</span>
           </span>
         </button>
+        {canUseCamera && (
+          <button
+            type="button"
+            role="menuitem"
+            className="menu-item has-hint"
+            onClick={() => {
+              menu.hide()
+              setCamera(true)
+            }}
+          >
+            <Camera size={18} strokeWidth={1.5} aria-hidden />
+            <span className="menu-item-text">
+              Take a photo
+              <span className="menu-hint">
+                With this device’s camera; it is attached to your message
+              </span>
+            </span>
+          </button>
+        )}
         {tools.map((option) => (
           <button
             key={option.name}
@@ -100,6 +123,11 @@ export function AddMenu({
           </button>
         ))}
       </div>
+      <CameraDialog
+        open={camera}
+        onClose={() => setCamera(false)}
+        onCapture={(photo) => onFiles([photo])}
+      />
     </>
   )
 }

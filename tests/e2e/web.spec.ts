@@ -137,6 +137,8 @@ test('menus move with the arrow keys', async ({ page }) => {
   // Opens on its first item.
   await expect(item(/Add photos & files/)).toBeFocused()
   await page.keyboard.press('ArrowDown')
+  await expect(item(/Take a photo/)).toBeFocused()
+  await page.keyboard.press('ArrowDown')
   await expect(item(/Create an image/)).toBeFocused()
   await page.keyboard.press('End')
   await expect(item(/Create an image/)).toBeFocused()

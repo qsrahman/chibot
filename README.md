@@ -312,7 +312,10 @@ needs the server running: there is no offline mode, since the server is local.
   `OPENAI_TRANSCRIBE_*`); without one the mic is greyed out and says so.
 - **Attachments:** **+** → **Add photos & files**, or paste or drop them onto
   the chat: images (PNG, JPEG, WebP, GIF) and the document types projects
-  take. A message can be just files, with no text. Sending while they upload
+  take. **+** → **Take a photo** opens the device's camera in a preview;
+  nothing is captured until you click **Take photo**, and the picture is
+  attached like any other image (the browser allows cameras on localhost and
+  HTTPS only). A message can be just files, with no text. Sending while they upload
   sends it once they're up; editing a message keeps them.
 - **Thinking:** reasoning models show "Thinking…" while they think; afterwards
   the answer keeps a collapsed **Thoughts** section with their summary. The
