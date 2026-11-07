@@ -4,6 +4,18 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- Code only: `ChatPage.tsx` is split into a top bar, a greeting, hooks for following the answer and for dropped files, and a tool-options helper; the fitting of a request to the context window moved out of `ChatService` into `chat/context-fit.ts`. Nothing they do has changed.
+- Projects: the file card's Add note, Add files and Add folder, and the instructions card's Edit and Suggest from files, are icon buttons with tooltips like Settings'.
+- Tooltips: every control with a `title` shows a styled tooltip after about a third of a second (the browser's waits a second, and shows nothing on keyboard focus), also on keyboard focus, above dialogs and never cut off by a scrolling panel.
+- Settings: a row's actions (import, manage archived chats and memories, copy the backup command, add, reload, sign in and out, reconnect, edit and remove an MCP server, reset a model) are round icon buttons with tooltips, and every button in dialogs now has hover and pressed states.
+
+### Fixed
+
+- The Add and Edit MCP server dialog fitted badly in a short window (its buttons were out of sight below the fields). The fields now scroll and the buttons stay in view; name and kind, and command and folder, sit side by side.
+- Toasts raised inside a dialog (copying the backup command or importing a chat in Settings, restoring in Archived chats) were hidden behind the dialog's backdrop. They are now in the top layer, above it, and look like an inverted pill with an icon (confirmation, failure or note) instead of a bordered card.
+
 ## [0.13.1] - 2026-11-07
 
 ### Added
@@ -15,16 +27,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
-- Code only: `ChatPage.tsx` is split into a top bar, a greeting, hooks for following the answer and for dropped files, and a tool-options helper; the fitting of a request to the context window moved out of `ChatService` into `chat/context-fit.ts`. Nothing they do has changed.
-- Projects: the file card's Add note, Add files and Add folder, and the instructions card's Edit and Suggest from files, are icon buttons with tooltips like Settings'.
-- Tooltips: every control with a `title` shows a styled tooltip after about a third of a second (the browser's waits a second, and shows nothing on keyboard focus), also on keyboard focus, above dialogs and never cut off by a scrolling panel.
-- Settings: a row's actions (import, manage archived chats and memories, copy the backup command, add, reload, sign in and out, reconnect, edit and remove an MCP server, reset a model) are round icon buttons with tooltips, and every button in dialogs now has hover and pressed states.
 - **Compact now** under the latest answer is an icon with a tooltip, like Copy and Regenerate, instead of a text link.
 
 ### Fixed
 
-- The Add and Edit MCP server dialog fitted badly in a short window (its buttons were out of sight below the fields). The fields now scroll and the buttons stay in view; name and kind, and command and folder, sit side by side.
-- Toasts raised inside a dialog (copying the backup command or importing a chat in Settings, restoring in Archived chats) were hidden behind the dialog's backdrop. They are now in the top layer, above it, and look like an inverted pill with an icon (confirmation, failure or note) instead of a bordered card.
 - A server that reports "the request is too long" inside the answer stream (a `response.failed` or `error` event before any text arrived) now gets the same recovery as one that refuses the request: the start of the chat is summarized harder and the request is sent once more. Once text has streamed, the error is shown as before.
 - After **Undo** of a summary, the context size is estimated until the next answer reports one, instead of trusting a reading taken with the summary in place (it read low and could skip a needed summary).
 - Importing a chat whose tool result is a list of parts instead of text is refused: chibot's tools answer in text, and context pruning relies on it.
