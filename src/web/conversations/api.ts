@@ -32,6 +32,13 @@ export const updateConversation = (id: string, patch: ConversationPatch) =>
 export const deleteConversation = (id: string, { keepalive = false } = {}) =>
   remove(`/api/conversations/${id}`, { keepalive })
 
+/** A new chat with this one up to the end of the turn holding `itemId`. */
+export const branchConversation = (id: string, itemId: number) =>
+  request<Conversation>(
+    `/api/conversations/${id}/branch`,
+    send('POST', { itemId }),
+  )
+
 /** Has the model name the chat again; resolves to the new title. */
 export const regenerateTitle = (id: string) =>
   request<{ title: string }>(`/api/conversations/${id}/title`, {

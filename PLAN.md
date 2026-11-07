@@ -218,6 +218,7 @@ tool payloads), written in the same transaction as the item.
 | `GET /api/mcp` · `POST /api/mcp/reload` · `POST /api/mcp/:name/{reconnect,sign-in,sign-out}` · `GET /api/mcp/oauth/callback` | 10 | MCP servers' status and tools; reconnect; OAuth sign-in and sign-out |
 | `GET /api/mcp/definitions` · `PUT/DELETE /api/mcp/servers/:name` | after 0.13 | Add, change and remove servers in the config file from Settings (only on loopback or with `CHIBOT_TOKEN`); `env` and `headers` values are write-only |
 | `POST /api/conversations/:id/compact` · `DELETE /api/conversations/:id/compactions/:compactionId` | 0.13 | Summarize the start of a chat now (optional focus); undo a summary. `GET /api/conversations/:id` also returns its `compactions`. |
+| `POST /api/conversations/:id/branch` | after 0.13 | `{ itemId }`: a new chat with this one up to the end of that turn (summaries kept, files copied), titled "Branch · …" |
 | `GET /api/models/window?model=` | 0.13 | The context window the server reports for a model, or `null` |
 | `GET /api/media` | 0.13 | Fetch a linked image, sound or video for an answer (never private addresses) |
 

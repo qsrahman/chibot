@@ -1,7 +1,10 @@
 import type { DatabaseSync } from 'node:sqlite'
 import type { Compaction } from '../../shared/types.ts'
 
-type NewCompaction = Omit<Compaction, 'id' | 'createdAt'>
+/** `createdAt` is for a copy, which keeps the time of the original. */
+type NewCompaction = Omit<Compaction, 'id' | 'createdAt'> & {
+  createdAt?: number
+}
 
 interface CompactionRow {
   id: number
@@ -47,7 +50,7 @@ export class CompactionStore {
         c.tokensAfter,
         c.previousId,
         c.degraded ? 1 : 0,
-        Date.now(),
+        c.createdAt ?? Date.now(),
       ) as unknown as CompactionRow
     return toCompaction(row)
   }

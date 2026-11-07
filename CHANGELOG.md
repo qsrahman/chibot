@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- **Branch in new chat** under an answer copies the chat up to the end of that turn into a new chat (titled "Branch · …", in the same project), to try another direction without touching the original. The summaries that apply and the pictures and files the copied messages use come along, so deleting either chat leaves the other whole. Not offered in a temporary chat.
+
 ### Changed
 
 - chibot refuses to start when `server.host` is beyond this machine and no token is set (it only warned before): anyone who could reach it would spend your API key and, in Settings, add MCP servers that run commands. `chibot --allow-open` (or `CHIBOT_ALLOW_OPEN=1`) starts it anyway, for a firewall or proxy that already restricts who can reach it.

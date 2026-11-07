@@ -7,6 +7,8 @@ import { Composer } from './Composer.tsx'
 import { Greeting } from './Greeting.tsx'
 import { quoteText } from './quote.ts'
 import { QuoteSelection } from './QuoteSelection.tsx'
+import { branchConversation } from '../conversations/api.ts'
+import { useToast } from '../ui/toast.tsx'
 import { ProjectDetails } from '../projects/ProjectDetails.tsx'
 import { ProjectHeading } from '../projects/ProjectHeading.tsx'
 import { SHORTCUTS, useShortcuts } from '../ui/shortcuts.ts'
@@ -14,7 +16,7 @@ import { triggerAt } from '../../shared/context.ts'
 import { knownUrls } from '../../shared/media.ts'
 import { MediaContext } from './mediaContext.ts'
 import { ToolInfoContext } from './toolInfo.ts'
-import { waitingCalls } from './turns.ts'
+import { waitingCalls, type Turn } from './turns.ts'
 import { ApprovalCard, TurnView } from './TurnView.tsx'
 import { describeUsage } from './usage.ts'
 import { useAttachments } from './useAttachments.ts'
@@ -63,6 +65,20 @@ export function ChatPage({
     projectId: projectHome,
   })
   const { turns, pending, error, isTemporary, busy } = chat
+  const { toast } = useToast()
+
+  /** A new chat with this one up to the end of `turn`, opened at once. */
+  async function branch(chatId: string, turn: Turn) {
+    const itemId = turn.answer?.itemId ?? turn.question.itemId
+    if (itemId === null) return
+    try {
+      const created = await branchConversation(chatId, itemId)
+      onListChanged()
+      navigate(`/c/${created.id}`)
+    } catch (err) {
+      toast((err as Error).message, { kind: 'error' })
+    }
+  }
   // Unsent text and files are kept per chat (a new chat per project).
   const draftKey = id ?? `new:${projectHome ?? ''}`
   const attachments = useAttachments(draftKey)
@@ -246,6 +262,11 @@ export function ChatPage({
                     }
                     onEdit={following((text: string) => chat.edit(i, text))}
                     onRegenerate={following(() => chat.regenerate(i))}
+                    onBranch={
+                      id && !temporary && turn.question.itemId !== null
+                        ? () => void branch(id, turn)
+                        : undefined
+                    }
                     onContinue={following(() => chat.send(CONTINUE))}
                     onSwitch={(itemId) => void chat.switchVersion(itemId)}
                     onImageLoad={follow}

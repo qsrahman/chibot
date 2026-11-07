@@ -8,6 +8,11 @@ export const createConversationSchema = z.object({
   projectId: z.string().optional(),
 })
 
+/** `POST /api/conversations/:id/branch`: any message of the turn to branch after. */
+export const branchRequestSchema = z.object({
+  itemId: z.number().int(),
+})
+
 /** `PATCH /api/conversations/:id`: rename, pin or archive. */
 export const conversationPatchSchema = z.object({
   // Long titles are cut rather than rejected: they come from a rename box.

@@ -10,6 +10,7 @@ import {
 } from '../../shared/export.ts'
 import { messageText } from '../../shared/messages.ts'
 import {
+  branchRequestSchema,
   compactRequestSchema,
   conversationPatchSchema,
   createConversationSchema,
@@ -21,6 +22,7 @@ import type {
   TurnErrorEvent,
 } from '../../shared/types.ts'
 import { toMarkdown } from '../conversations/index.ts'
+import { branchChat } from './branch.ts'
 import { refuseTurn } from './turn-request.ts'
 import type { Attachments } from '../attachments.ts'
 import type { ChatService } from './chat-service.ts'
@@ -181,6 +183,19 @@ export function conversationRoutes({
       compactions: compactor.onPath(id, items),
       usage: store.getUsageTotals(id),
     } satisfies ConversationWithItems)
+  })
+
+  // A new chat with this one up to the end of a turn, to carry on from there.
+  app.post('/api/conversations/:id/branch', json(branchRequestSchema), (c) => {
+    const result = branchChat(
+      { store, files, compactor, chat },
+      c.req.param('id'),
+      c.req.valid('json').itemId,
+    )
+    if ('error' in result) {
+      return c.json({ error: result.error }, result.status)
+    }
+    return c.json(result.conversation, 201)
   })
 
   // Summarizes the start of the chat now, with an optional focus.

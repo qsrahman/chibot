@@ -180,7 +180,7 @@ sticks 12 px above the list's bottom, centred over the composer.
   (`--fg-muted`), 2 px apart, 8 px radius hover fill, directly under the
   answer (ChatGPT uses a 44 px hit area and 20 px icons; chibot is a little
   denser):
-  - Assistant: **Copy**, then **Regenerate**, version switcher `< 2/3 >` and
+  - Assistant: **Copy**, then **Regenerate**, **Branch in new chat** (`GitBranch`), version switcher `< 2/3 >` and
     context usage. These show on hover and always on the latest answer.
     Context usage is 12 px tabular muted text (`12.4K / 64K context`, or
     `12.4K context` with compaction off), with the full input/output count in
@@ -382,7 +382,7 @@ equivalents use a 1.5 px stroke:
 | New chat | `SquarePen` |
 | Copy / copied | `Copy` / `Check` |
 | Edit message | `Pencil` |
-| Regenerate | `RefreshCw` |
+| Regenerate / branch in new chat | `RefreshCw` / `GitBranch` |
 | Versions | `ChevronLeft` / `ChevronRight` |
 | Attach / voice | `Plus` / `Mic` |
 | Take a photo / quote / compact now | `Camera` / `Quote` / `ListCollapse` |

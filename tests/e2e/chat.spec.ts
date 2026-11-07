@@ -816,3 +816,32 @@ test('quotes selected text from an answer into the message box', async ({
   await page.waitForTimeout(300)
   await expect(page.getByRole('button', { name: 'Quote' })).toHaveCount(0)
 })
+
+test('branches a chat into a new one, leaving the original alone', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await send(page, 'Branch me')
+  await answered(page)
+  await send(page, 'And then')
+  await answered(page)
+  const original = page.url()
+
+  // The first turn: the copy ends at its answer.
+  await turns(page)
+    .nth(0)
+    .getByRole('button', { name: 'Branch in new chat' })
+    .click()
+  await expect(page).not.toHaveURL(original)
+  await expect(page).toHaveURL(/\/c\/[0-9a-f-]+$/)
+  await expect(turns(page)).toHaveCount(1)
+  await expect(answer(page, 0)).toContainText(/Answer #\d+ to: Branch me/)
+
+  // Carrying on there does not touch the first chat.
+  await send(page, 'Different way')
+  await answered(page)
+  await expect(turns(page)).toHaveCount(2)
+  await openChat(page, original)
+  await expect(turns(page)).toHaveCount(2)
+  await expect(answer(page, 1)).toContainText('to: And then')
+})

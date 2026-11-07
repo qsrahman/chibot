@@ -1,7 +1,7 @@
 // One turn of a chat: the question, then the answer with its thoughts, tool
 // activity, images, sources and actions.
 import { useContext, useState, type KeyboardEvent, type ReactNode } from 'react'
-import { Pencil, RefreshCw, Wrench } from 'lucide-react'
+import { GitBranch, Pencil, RefreshCw, Wrench } from 'lucide-react'
 import { FileCard } from '../ui/FileCard.tsx'
 import { ImageViewer, opensViewer, type ViewedImage } from './ImageViewer.tsx'
 import { Markdown } from './Markdown.tsx'
@@ -33,6 +33,8 @@ interface TurnViewProps {
   onEditingChange?: (editing: boolean) => void
   onEdit?: (text: string) => void
   onRegenerate?: () => void
+  /** Copies the chat up to the end of this turn into a new chat. */
+  onBranch?: () => void
   /** Asks the model to carry on from where a stopped answer ended. */
   onContinue?: () => void
   onSwitch?: (itemId: number) => void
@@ -55,6 +57,7 @@ export function TurnView({
   onEditingChange,
   onEdit,
   onRegenerate,
+  onBranch,
   onContinue,
   onSwitch,
   onImageLoad,
@@ -233,6 +236,15 @@ export function TurnView({
               onClick={() => onRegenerate?.()}
             >
               <RefreshCw />
+            </IconAction>
+          )}
+          {answer && onBranch && (
+            <IconAction
+              label="Branch in new chat"
+              disabled={busy}
+              onClick={onBranch}
+            >
+              <GitBranch />
             </IconAction>
           )}
           {answer?.versions && onSwitch && (

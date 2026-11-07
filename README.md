@@ -378,6 +378,11 @@ needs the server running: there is no offline mode, since the server is local.
 - **Edit** a message (hover it, then the pencil) or **regenerate** an answer
   (the circular arrow). Either makes a new version; `< 2/3 >` switches
   between them, and each version keeps its own follow-up messages.
+- **Branch in new chat** (the branching arrows under an answer) copies the chat
+  up to the end of that turn into a new chat, titled "Branch · …", to try
+  another direction without touching the original. Summaries and the files its
+  messages use are copied too, so deleting either chat leaves the other whole.
+  Not offered in a temporary chat.
 - **Quote:** select text in an answer or message and click **Quote** beside it:
   it is added to the message box as a block quote, under what you have
   written, to ask about that part.
