@@ -68,7 +68,7 @@ data/         a checkout's older local data (git-ignored); chibot now keeps the
 ## Commands
 
 ```bash
-pnpm dev          # API server (watch) + Vite dev server, in parallel
+pnpm dev          # API server (watch, port 3000) + Vite dev server (5173), in parallel
 pnpm test         # vitest run
 pnpm test:e2e     # Playwright: builds, starts a fake OpenAI server + chibot
 pnpm typecheck    # server/tests, web and e2e tsconfigs

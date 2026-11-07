@@ -9,7 +9,7 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm run --parallel \"/^dev:/\"",
-    "dev:server": "node --watch src/server/cli.ts",
+    "dev:server": "node --watch src/server/cli.ts --port 3000",
     "dev:web": "vite",
     "build": "vite build",
     "start": "node src/server/cli.ts",

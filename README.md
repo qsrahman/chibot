@@ -211,7 +211,8 @@ server (hot reload) together:
 pnpm dev
 ```
 
-Then open http://127.0.0.1:5173.
+Then open http://127.0.0.1:5173. The API runs on port 3000 in development,
+whatever `PORT` is set to.
 
 **Production** builds the web app once and serves everything from one port:
 
