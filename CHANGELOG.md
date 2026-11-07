@@ -10,6 +10,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- Docs only: AGENTS.md (read into every session) is 70 lines shorter: "Adding a tool" and "Testing" moved to [TOOLS.md](TOOLS.md) and [TESTING.md](TESTING.md), which it points to.
 - chibot refuses to start when `server.host` is beyond this machine and no token is set (it only warned before): anyone who could reach it would spend your API key and, in Settings, add MCP servers that run commands. `chibot --allow-open` (or `CHIBOT_ALLOW_OPEN=1`) starts it anyway, for a firewall or proxy that already restricts who can reach it.
 
 ### Fixed

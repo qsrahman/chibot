@@ -2,7 +2,8 @@
 
 Guide for humans and coding agents working on this repo. Product scope and the
 phase roadmap live in [PLAN.md](PLAN.md). Usage lives in [README.md](README.md).
-How a message becomes an answer lives in [TURN.md](TURN.md).
+How a message becomes an answer lives in [TURN.md](TURN.md); adding a tool in
+[TOOLS.md](TOOLS.md); how to test in [TESTING.md](TESTING.md).
 
 ## Stack
 
@@ -201,41 +202,10 @@ transpiles it.
 
 ## Adding a tool
 
-1. Subclass `Tool` in `src/server/tools/<name>.ts`: a `name`, a `label` for
-   Settings, a `description` that tells the model when to use it, zod
-   `parameters` (sent as a strict JSON Schema, so every field is required;
-   use `.nullable()` for optional ones), and `run(args, context)` returning
-   the text the model sees. `context` has the `conversationId` (e.g. to keep
-   files with the chat in `FileStore`) and the stop `signal`. Return JSON when
-   the web app reads the output too (as for sources and images).
-2. Say how the interface should present it; the web app keeps no per-tool
-   text, it reads `Tool.info` from `GET /api/tools`: a `group` (Settings
-   section, see `TOOL_GROUPS` in `src/shared/tools.ts`), a `summary` (what it
-   does and what leaves the machine, in the user's words), `running` and
-   `done` (what an answer says: "Searching the web…" / "Searched the web"),
-   and, to offer it in the composer's "+" menu, a `chip`. A shipped tool that
-   leaves these out fails `tests/server/tool-info.test.ts`.
-3. Set `override readonly requiresApproval = true` if it has side effects
-   (sends, writes, deletes, spends): the turn then waits for Approve / Deny.
-   Use `'after-untrusted'` to ask only in chats that hold untrusted content
-   (like `memory`), and mark tools whose output carries others' text
-   (pages, search results, your old chats) `untrustedOutput = true`; an
-   `'after-untrusted'` tool asks on every call once the chat holds such text. Tools that read or keep
-   the user's history override `offeredIn(conversation)` to leave out
-   temporary chats, and a tool can add to the chat's instructions while
-   offered by overriding `instructions()`.
-4. Throw for errors: `ToolRegistry` returns `Error: …` to the model, as it
-   does for invalid arguments. Honour `signal` for anything slow.
-5. Add it to `defaultTools()` (`main.ts`). A tool that needs setup (keys,
-   endpoints, from `Config`) is always added, given `null` for what's
-   missing, and overrides `unavailable()` to say what to set: Settings lists
-   it with that hint and it's never offered to the model (see `generate_image`).
-   Take collaborators (clients, `FileStore`) in the constructor, and test
-   `run` directly, like `tests/server/memory.test.ts`.
-6. Anything that reaches the network on the model's behalf must refuse private
-   addresses (`MediaProxy` does, for linked images and media; web search and
-   reading pages are MCP servers' job, not chibot's, and run outside this
-   guard).
+Tools are `Tool` subclasses in `src/server/tools/` (or a feature folder), added
+to `defaultTools()` in `main.ts`, with `Tool.info` saying how the interface
+presents them. Read [TOOLS.md](TOOLS.md) before adding one: the steps, the
+approval and untrusted-output flags, and the network rule.
 
 ## Comments
 
@@ -244,53 +214,14 @@ invariants, API quirks. No line-by-line narration.
 
 ## Testing
 
-- Every phase adds tests for what it adds. Run `pnpm test` before committing.
-- Routes: test through `testApp(deps).request(...)` (`tests/server/fakes.ts`),
-  which builds `createApp` with fakes for every dependency you don't pass.
-- OpenAI: pass a fake client whose `responses.create` returns an async
-  generator of `ResponseStreamEvent`s. Tests never hit the network.
-  `testChat(events, { store, calls, tools, … })` builds a `ChatService` on
-  such a fake with default stores and settings.
-- Retrieval: `tests/server/retrieval.test.ts` scores project search on a
-  small corpus (`tests/fixtures/retrieval`); run it before and after changing
-  chunking or ranking, and add a question when search misses one. With an
-  embedding endpoint (`RETRIEVAL_EMBEDDING_URL`, `RETRIEVAL_EMBEDDING_MODEL`,
-  e.g. Ollama's `nomic-embed-text-v2-moe`) it also scores keyword against
-  hybrid search, on questions that repeat the passage's words, on paraphrases
-  and on a held-out set of paraphrases, and compares ways of merging the two
-  searches (`RETRIEVAL_QUERY_PREFIX` and `RETRIEVAL_DOCUMENT_PREFIX` add a
-  model's task prefixes); that part is skipped otherwise. Choose on the first
-  two sets and confirm on the held-out one: they have 41 questions between
-  them, so a difference of one or two is noise.
-- Prompt injection: `tests/server/chat/injection.test.ts` asks a real model to
-  summarize a poisoned page with chibot's own instructions and tools, and
-  counts how often it obeys; run it when changing the untrusted-content
-  wording (`INJECTION_URL`, `INJECTION_MODELS`; skipped otherwise).
-- SQLite: use `':memory:'` databases.
-- Web: no component unit tests; pure helpers (e.g. `chat/turns.ts`, `chat/usage.ts`)
-  get vitest tests. UI behaviour is covered by Playwright specs in
-  `tests/e2e/`, which drive a production build with the real SDK pointed at
-  `tests/e2e/fake-openai.ts` via `OPENAI_BASE_URL`. The fake answers
-  `Answer #n to: <question>`; a question containing "slow" streams a long
-  answer slowly, "drip" a normal one slowly (to queue a message while it
-  streams), "think" adds a reasoning summary, "huge" a reported context past the trigger (so the next message is
-  summarized first, and "fail-summary" makes that summary fail),
-  and a question's words call a tool ("approve", "draw", "mcp echo <text>", …:
-  the `TRIGGERS` table in the file lists them, and a new tool needs one row
-  there). It also fakes the images API, embeddings, transcription
-  (`/debug/last-transcription`) and a Files API (`/debug/files`,
-  `/debug/forget-files`; unknown file ids get a 404), and serves a test page;
-  the model `e2e-other` refuses `input_file` parts, as Ollama does. Chromium
-  runs with a fake microphone and camera. `/debug/last-request` and `/debug/requests`
-  show what chibot sent. Shared steps live in `tests/e2e/helpers.ts` (`send`,
-  `answered`, `appReady`, `lastRequest`, `resetSettings`, …). Wait for the app
-  (e.g. a focused composer, or the empty new-chat page) before typing or
-  pressing shortcuts, and for `answered` before copying. Specs that change
-  settings reset them afterwards (`resetSettings` restores the server's
-  defaults, so a new setting needs no change there). `contrast.spec.ts` runs
-  axe over the main screens in both colour schemes; a new screen, dialog or
-  colour belongs in it. First run:
-  `pnpm exec playwright install chromium`.
+- Every change adds tests for what it adds; run `pnpm test` before committing.
+- vitest for the server and pure web helpers (`tests/server`, `tests/web`,
+  fakes in `tests/server/fakes.ts`, `:memory:` SQLite); Playwright for UI
+  behaviour (`tests/e2e`, against a production build and a fake OpenAI server).
+  Tests never hit the network.
+- [TESTING.md](TESTING.md) has the details: routes, the fake OpenAI client and
+  the fake server's magic words, retrieval and prompt-injection evaluations,
+  and the e2e conventions. Read it before writing or changing tests.
 
 ## Workflow
 

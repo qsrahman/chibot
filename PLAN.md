@@ -423,7 +423,7 @@ and a model without tool support ignores tools rather than failing.
   stop and approval. Playwright starts chibot through `tests/e2e/server.ts`,
   which adds a test-only tool needing approval (`main.ts` exports
   `start({ tools })`); the fake server returns a `function_call` when the
-  question contains "approve". AGENTS.md documents adding a tool.
+  question contains "approve". TOOLS.md documents adding a tool.
 
 ### Phase 6 — Web search & image generation ✅
 Decisions: the model uses

@@ -110,7 +110,7 @@ arguments, or an error in the tool become an `Error: …` output the model can
 react to, and a stop becomes `TOOL_STOPPED`. Approval is a property of the
 tool (`requiresApproval`: `true`, or `'after-untrusted'`, which asks only once
 the chat holds output of a tool marked `untrustedOutput`). MCP servers' tools
-join the registry per turn as `McpTool`s. See "Adding a tool" in AGENTS.md.
+join the registry per turn as `McpTool`s. See [TOOLS.md](TOOLS.md) for adding a tool.
 
 ## 6. Events
 

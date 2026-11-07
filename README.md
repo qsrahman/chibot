@@ -413,7 +413,8 @@ needs the server running: there is no offline mode, since the server is local.
 | `pnpm format` | Format with prettier |
 | `pnpm release patch` | Bump the version, move the CHANGELOG's Unreleased entries, run the checks and commit (`minor`, `major` or `X.Y.Z` too; `--e2e` adds the browser tests) |
 
-Developer conventions are in [AGENTS.md](AGENTS.md).
+Developer conventions are in [AGENTS.md](AGENTS.md), with [TOOLS.md](TOOLS.md)
+for adding a tool and [TESTING.md](TESTING.md) for tests.
 
 ## License
 
