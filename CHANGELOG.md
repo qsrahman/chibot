@@ -4,6 +4,11 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- Settings → Model reads the context window of an Ollama model that is loaded (`/api/ps`), which is what it actually runs with and differs by machine, not only a `num_ctx` set in the model; **Use N** then offers it. When that is below your Context window setting, the row says the server would cut the start of long chats without a word.
+- `pnpm dev` no longer fails with "address already in use" when `PORT` is set in the environment (a tool that starts the dev server for Vite's port sets it): the API always runs on port 3000 in development.
+
 ## [0.13.2] - 2026-11-07
 
 ### Changed

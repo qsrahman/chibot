@@ -87,9 +87,10 @@ export class ModelRequests {
    * The context window the server reports for `model`, in tokens, or `null`
    * when it doesn't say. Servers differ: OpenRouter's model list has
    * `context_length` and LM Studio's `max_context_length`; Ollama's
-   * `/api/show` lists `num_ctx` only when the model sets one (otherwise the
-   * window in use is the server's default, which isn't reported, so none is
-   * guessed). Never throws.
+   * `/api/ps` gives the window a loaded model runs with (its default differs
+   * by machine), and `/api/show` lists `num_ctx` when the model sets one; a
+   * model that is neither loaded nor sets one has no known window, so none is
+   * guessed. Never throws.
    */
   async contextWindow(model: string): Promise<number | null> {
     try {
@@ -103,16 +104,34 @@ export class ModelRequests {
       // Not listed: try Ollama's own API next.
     }
     try {
-      const base = new URL(this.#client.baseURL)
-      const res = await fetch(new URL('/api/show', base.origin), {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          authorization: `Bearer ${this.#client.apiKey}`,
-        },
-        body: JSON.stringify({ model }),
-        signal: AbortSignal.timeout(3000),
-      })
+      const origin = new URL(this.#client.baseURL).origin
+      const ollama = (path: string, body?: object) =>
+        fetch(new URL(path, origin), {
+          ...(body && { method: 'POST', body: JSON.stringify(body) }),
+          headers: {
+            'content-type': 'application/json',
+            authorization: `Bearer ${this.#client.apiKey}`,
+          },
+          signal: AbortSignal.timeout(3000),
+        })
+      // What a loaded model runs with, whatever sets it (the model's own
+      // num_ctx, or the server's default, which differs by machine).
+      const running = await ollama('/api/ps')
+      if (running.ok) {
+        const { models } = (await running.json()) as {
+          models?: { name?: string; model?: string; context_length?: number }[]
+        }
+        const mine = models?.find((m) =>
+          [m.name, m.model].some(
+            (id) => id === model || id === `${model}:latest`,
+          ),
+        )
+        if (mine?.context_length && mine.context_length > 0) {
+          return mine.context_length
+        }
+      }
+      // Not loaded: only an explicit num_ctx in the model's own settings.
+      const res = await ollama('/api/show', { model })
       if (!res.ok) return null
       const { parameters } = (await res.json()) as { parameters?: unknown }
       const match = /^num_ctx\s+(\d+)/m.exec(String(parameters ?? ''))

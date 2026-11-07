@@ -77,7 +77,11 @@ export function Model({
         <NumberRow
           id="setting-window"
           label="Context window"
-          description="Tokens the model reads at most. Servers don't say, so set it to the model's: for Ollama, no more than its num_ctx, or it silently cuts the start of the chat."
+          description={`Tokens the model reads at most. Servers don't say, so set it to the model's: for Ollama, no more than its num_ctx, or it silently cuts the start of the chat.${
+            reported !== null && reported < settings.contextWindow
+              ? ` The server runs ${settings.model} with ${reported.toLocaleString()}, below this setting: the start of long chats would be cut without a word.`
+              : ''
+          }`}
           setting="contextWindow"
           settings={settings}
           min={2000}

@@ -415,3 +415,26 @@ test('Data shows how to back up, and copies the command', async ({ page }) => {
     'chibot backup',
   )
 })
+
+test('warns when the server runs the model with less than the window set', async ({
+  page,
+}) => {
+  await page.route('**/api/models/window*', (route) =>
+    route.fulfill({ json: { window: 8000 } }),
+  )
+  await page.goto('/')
+  await appReady(page)
+  await page.keyboard.press('ControlOrMeta+,')
+  const dialog = page.getByRole('dialog', { name: 'Settings' })
+  await dialog.getByRole('button', { name: 'Model', exact: true }).click()
+  const row = dialog.locator('.settings-row').filter({
+    has: page.locator('#setting-window'),
+  })
+  await expect(row).toContainText(
+    'runs e2e-model with 8,000, below this setting',
+  )
+  await row.getByRole('button', { name: 'Use 8,000' }).click()
+  await expect(page.locator('#setting-window')).toHaveValue('8000')
+  await expect(row).not.toContainText('below this setting')
+  await resetSettings(page)
+})
