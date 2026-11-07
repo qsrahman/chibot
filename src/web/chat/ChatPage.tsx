@@ -22,6 +22,7 @@ import { ApprovalCard, TurnView } from './TurnView.tsx'
 import { describeUsage } from './usage.ts'
 import { useAttachments } from './useAttachments.ts'
 import { toolOptions as toolOptionsOf } from './toolOptions.tsx'
+import { useAnswerAlert } from './useAnswerAlert.ts'
 import { useChat } from './useChat.ts'
 import { useFileDrop } from './useFileDrop.ts'
 import { useScrollFollow } from './useScrollFollow.ts'
@@ -194,9 +195,15 @@ export function ChatPage({
       : null
 
   // Tabs, history and bookmarks name the chat (or project) on screen.
+  const alerted = useAnswerAlert(
+    id,
+    { busy, waiting: waiting.length > 0, failed: error !== null },
+    pageTitle ?? 'chibot',
+  )
   useEffect(() => {
-    document.title = pageTitle ? `${pageTitle} – chibot` : 'chibot'
-  }, [pageTitle])
+    const name = pageTitle ? `${pageTitle} – chibot` : 'chibot'
+    document.title = alerted ? `• ${name}` : name
+  }, [pageTitle, alerted])
 
   return (
     <ToolInfoContext value={settings.tools}>

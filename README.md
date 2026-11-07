@@ -342,7 +342,10 @@ needs the server running: there is no offline mode, since the server is local.
   reasoning effort) or **Thinking** (high); every level is in the header's
   model menu and in Settings.
 - **Settings** (sidebar gear, or ⌘/Ctrl+,):
-  - *General:* theme (System, Light or Dark).
+  - *General:* theme (System, Light or Dark), and **Notify me about
+    finished answers**: a browser notification when an answer finishes or a tool needs your
+    approval while chibot is in the background. Either way the page title gets a
+    "•" until you are back.
   - *Personalization:* what chibot should know about you, and how it should
     respond. Sent with every message. **Memory**: turn it off, or edit and
     delete what chibot remembers.

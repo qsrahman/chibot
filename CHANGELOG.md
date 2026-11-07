@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Added
 
+- When an answer finishes, fails or waits for a tool's approval while chibot is in a background tab, the page title gets a "•" until you are back; Settings → General → **Notify me about finished answers** also raises a browser notification (off until you turn it on and the browser agrees).
 - A page left open while chibot was updated says so: "chibot was updated. Reload to use the new version." with a Reload button, checked whenever the page comes back to the front (the health check now reports which build of the web app is served).
 - **Branch in new chat** under an answer copies the chat up to the end of that turn into a new chat (titled "Branch · …", in the same project), to try another direction without touching the original. The summaries that apply and the pictures and files the copied messages use come along, so deleting either chat leaves the other whole. Not offered in a temporary chat.
 
