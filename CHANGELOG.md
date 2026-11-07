@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.13.3] - 2026-11-07
+
 ### Added
 
 - When an answer finishes, fails or waits for a tool's approval while chibot is in a background tab, the page title gets a "•" until you are back; Settings → General → **Notify me about finished answers** also raises a browser notification (off until you turn it on and the browser agrees).
