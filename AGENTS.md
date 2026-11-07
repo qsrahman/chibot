@@ -32,7 +32,8 @@ src/server/<feature>/
               server may import; see Design conventions): conversations/
               (history trees, search, export), chat/ (the turn loop, model
               requests, titles, long-chat summaries (context.ts: the budget, pruning
-              and cut maths; compactor.ts: the summarizer), prompts.ts: what
+              and cut maths; context-fit.ts: what a request carries, pruned or
+              summarized to fit; compactor.ts: the summarizer), prompts.ts: what
               chibot tells the model, and
               the /api/conversations routes), projects/ (store, search index,
               chunking, instruction writer, routes, tools, schema) and mcp/

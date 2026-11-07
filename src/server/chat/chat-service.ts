@@ -4,7 +4,6 @@ import type {
   ResponseInputItem,
   ResponseStreamEvent,
 } from 'openai/resources/responses/responses'
-import { triggerAt, type ContextLimits } from '../../shared/context.ts'
 import type { Settings } from '../../shared/settings.ts'
 import type {
   Conversation,
@@ -19,15 +18,12 @@ import type { ConversationStore } from '../conversations/index.ts'
 import type { ProjectStore } from '../projects/index.ts'
 import type { SettingsStore } from '../settings-store.ts'
 import type { Compactor } from './compactor.ts'
+import { fitContext, type FitPlan } from './context-fit.ts'
 import {
-  buildContext,
   isContextOverflow,
   PRELUDE,
   StreamTooLong,
   tooLongInStream,
-  prune,
-  pruneSavings,
-  pruningSuffices,
 } from './context.ts'
 import type { ModelRequests } from './model-requests.ts'
 import { chatInstructions } from './prompts.ts'
@@ -43,17 +39,12 @@ type TurnEvent =
   | TurnCompactionEvent
 
 /** What a turn sends the model, fixed when it starts. */
-interface TurnPlan {
+interface TurnPlan extends FitPlan {
   conversation: Conversation
   model: string
   reasoningEffort: Settings['reasoningEffort']
-  autoCompact: boolean
-  limits: ContextLimits
-  /** The tools offered, as request entries. */
-  tools: FunctionTool[]
   /** Tools a call is refused for: unavailable, switched off or not offered here. */
   disabled: string[]
-  instructions: string
   /** The tool the user picked for this message, if any. */
   forced: FunctionTool | undefined
 }
@@ -69,8 +60,8 @@ const STEP_LIMIT_OUTPUT = 'Error: too many tool calls in one answer.'
 export class ChatService {
   readonly #model: ModelRequests
   readonly #titles: TitleWriter
-  readonly #compactor: Compactor
   readonly #store: ConversationStore
+  readonly #context: { store: ConversationStore; compactor: Compactor }
   readonly #settings: SettingsStore
   readonly #tools: ToolRegistry
   readonly #projects: ProjectStore | null
@@ -102,8 +93,8 @@ export class ChatService {
   ) {
     this.#model = model
     this.#titles = titles
-    this.#compactor = compactor
     this.#store = store
+    this.#context = { store, compactor }
     this.#settings = settings
     this.#tools = tools
     this.#projects = projects
@@ -348,7 +339,13 @@ export class ChatService {
     { leafId: number; output: ResponseInputItem[] | null; answered: boolean }
   > {
     const { model, instructions, tools, forced } = plan
-    let input = (yield* this.#fitContext(plan, conversationId, leafId, signal))!
+    let input = (yield* fitContext(
+      this.#context,
+      plan,
+      conversationId,
+      leafId,
+      signal,
+    ))!
     let partial = ''
     let output: ResponseInputItem[] | null = null
     let answered = false
@@ -427,7 +424,8 @@ export class ChatService {
           ) {
             throw err
           }
-          const retry = yield* this.#fitContext(
+          const retry = yield* fitContext(
+            this.#context,
             plan,
             conversationId,
             leafId,
@@ -451,73 +449,6 @@ export class ChatService {
       }
     }
     return { leafId, output, answered }
-  }
-
-  /**
-   * The input for the next request. Under the trigger it is the path as it
-   * is (after the newest compaction). Past it, old tool results and pictures
-   * are shortened; if that is not enough, the start of the chat is summarized
-   * (yielding `chibot.compaction` while the model writes it). `overflow` is
-   * the recovery after the server refused a request as too long: it compacts
-   * whatever the estimate says, and returns `null` if it cannot (otherwise
-   * the result is never `null`).
-   */
-  async *#fitContext(
-    plan: TurnPlan,
-    conversationId: string,
-    leafId: number,
-    signal: AbortSignal | undefined,
-    overflow = false,
-  ): AsyncGenerator<TurnCompactionEvent, ResponseInputItem[] | null> {
-    const { limits, autoCompact } = plan
-    const build = () =>
-      buildContext(
-        this.#store.getPath(conversationId, leafId),
-        this.#compactor.list(conversationId),
-        limits,
-        this.#compactor.usageSince(conversationId),
-      )
-    let { data, keepFrom, used } = build()
-    const trigger = triggerAt(limits)
-    if (!overflow && used <= trigger) return data
-
-    const saved = pruneSavings(data, keepFrom)
-    if (
-      !overflow &&
-      pruningSuffices(saved, used, trigger, limits.contextWindow)
-    ) {
-      return prune(data, keepFrom)
-    }
-    const job =
-      autoCompact && (overflow || !this.#compactor.paused(conversationId))
-        ? this.#compactor.prepare(conversationId, leafId, { harder: overflow })
-        : null
-    if (job) {
-      yield { type: 'chibot.compaction', status: 'started' }
-      try {
-        const compaction = await this.#compactor.run(job, {
-          signal,
-          shared: {
-            instructions: plan.instructions,
-            tools: plan.tools,
-            input: prune(data, keepFrom),
-          },
-        })
-        yield { type: 'chibot.compaction', status: 'done', compaction }
-        ;({ data, keepFrom } = build())
-      } catch (err) {
-        signal?.throwIfAborted()
-        yield {
-          type: 'chibot.compaction',
-          status: 'failed',
-          message: err instanceof Error ? err.message : String(err),
-        }
-        if (overflow) return null
-      }
-    } else if (overflow) {
-      return null
-    }
-    return prune(data, keepFrom)
   }
 
   /** The items on the path to `leafId`. */
