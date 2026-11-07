@@ -285,6 +285,16 @@ behind the dialog's backdrop); it can't be clicked while a modal is open, so
 such a toast has no action. Up to three stack; they stay six seconds, longer
 under the pointer.
 
+**Tooltips.** Any element with a `title` gets one (`ui/Tooltips.tsx`): a small
+inverted bubble (`--button` / `--button-fg`, 8 px radius, 12 px text, up to 280 px
+wide) in the top layer, 8 px below the control or above when there is no room,
+kept inside the window. It shows after 350 ms of hovering (at once when another
+was just up) and at once on keyboard focus, and goes on pressing, typing,
+scrolling or leaving. Not on touch, and not for fields (their `title` is the
+validation hint). While it shows, the element's `title` is set aside so the
+browser's own doesn't appear too; an icon-only control keeps its name in
+`aria-label`. So a control needs only `title` and an `aria-label`.
+
 **Settings actions.** A row's actions are round 32 px icon buttons
 (`ui/IconButton.tsx`, 18 px icons, 1.5 stroke) whose label is both the
 tooltip (`title`) and the accessible name: outlined in `--border`, filling
