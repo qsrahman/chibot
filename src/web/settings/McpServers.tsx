@@ -1,4 +1,13 @@
 import { useEffect, useState } from 'react'
+import {
+  LogIn,
+  LogOut,
+  Pencil,
+  Plug,
+  Plus,
+  RefreshCw,
+  Trash2,
+} from 'lucide-react'
 import type { McpServerConfig } from '../../shared/mcp.ts'
 import type { Settings } from '../../shared/settings.ts'
 import {
@@ -13,6 +22,7 @@ import {
 } from './api.ts'
 import { describeMcpServer, isConnecting, withMember } from './mcp.ts'
 import { ConfirmDialog } from '../ui/Dialog.tsx'
+import { IconButton } from '../ui/IconButton.tsx'
 import { useLoad } from '../ui/useLoad.ts'
 import type { SettingsApi } from './useSettings.ts'
 import { McpServerDialog } from './McpServerDialog.tsx'
@@ -79,21 +89,20 @@ export function McpServers({
           }
         >
           {editable && (
-            <button
-              type="button"
-              className="button primary"
+            <IconButton
+              label="Add server"
+              variant="primary"
               onClick={() => setEditing({ existing: null })}
             >
-              Add server
-            </button>
+              <Plus size={18} strokeWidth={1.5} />
+            </IconButton>
           )}
-          <button
-            type="button"
-            className="button"
+          <IconButton
+            label="Reload servers from the config file"
             onClick={() => void act(reloadMcpServers)}
           >
-            Reload
-          </button>
+            <RefreshCw size={18} strokeWidth={1.5} />
+          </IconButton>
         </Row>
       </Section>
       {error && (
@@ -112,42 +121,39 @@ export function McpServers({
             >
               <div className="settings-controls">
                 {server.state === 'needs-sign-in' && (
-                  <button
-                    type="button"
-                    className="button primary"
+                  <IconButton
+                    label="Sign in"
+                    variant="primary"
                     onClick={() => void signIn(server.name)}
                   >
-                    Sign in
-                  </button>
+                    <LogIn size={18} strokeWidth={1.5} />
+                  </IconButton>
                 )}
                 {server.signedIn && (
-                  <button
-                    type="button"
-                    className="button"
+                  <IconButton
+                    label="Sign out"
                     onClick={() =>
                       void act(() => signOutOfMcpServer(server.name))
                     }
                   >
-                    Sign out
-                  </button>
+                    <LogOut size={18} strokeWidth={1.5} />
+                  </IconButton>
                 )}
                 {(server.state === 'failed' ||
                   server.state === 'connected') && (
-                  <button
-                    type="button"
-                    className="button"
+                  <IconButton
+                    label="Reconnect"
                     onClick={() =>
                       void act(() => reconnectMcpServer(server.name))
                     }
                   >
-                    Reconnect
-                  </button>
+                    <Plug size={18} strokeWidth={1.5} />
+                  </IconButton>
                 )}
                 {editable && definitions.data?.servers[server.name] && (
                   <>
-                    <button
-                      type="button"
-                      className="button"
+                    <IconButton
+                      label="Edit"
                       onClick={() =>
                         setEditing({
                           existing: {
@@ -157,15 +163,15 @@ export function McpServers({
                         })
                       }
                     >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="button danger"
+                      <Pencil size={18} strokeWidth={1.5} />
+                    </IconButton>
+                    <IconButton
+                      label="Remove"
+                      variant="danger"
                       onClick={() => setRemoving(server.name)}
                     >
-                      Remove
-                    </button>
+                      <Trash2 size={18} strokeWidth={1.5} />
+                    </IconButton>
                   </>
                 )}
                 <input

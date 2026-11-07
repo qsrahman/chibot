@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Check } from 'lucide-react'
 import { effortLabel, REASONING_EFFORTS } from '../../shared/reasoning.ts'
 import type { Settings } from '../../shared/settings.ts'
 import type { SettingsApi } from './useSettings.ts'
@@ -194,7 +195,8 @@ function NumberRow({
             void onChange({ [setting]: suggestion.value })
           }}
         >
-          Use {suggestion.value.toLocaleString()}
+          <Check size={16} strokeWidth={1.5} aria-hidden /> Use{' '}
+          {suggestion.value.toLocaleString()}
         </button>
       )}
     </Row>

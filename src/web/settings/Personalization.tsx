@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
+import { List, Save } from 'lucide-react'
 import type { Settings } from '../../shared/settings.ts'
 import type { SettingsApi } from './useSettings.ts'
+import { IconButton } from '../ui/IconButton.tsx'
 import { Row, Section } from './parts.tsx'
 
 export function Personalization({
@@ -52,7 +54,7 @@ export function Personalization({
             setSaved(await onSave({ aboutUser, responseStyle }))
           }
         >
-          Save
+          <Save size={16} strokeWidth={1.5} aria-hidden /> Save
         </button>
       </div>
     </Section>
@@ -86,9 +88,9 @@ export function Memory({
         />
       </Row>
       <Row label="Saved memories">
-        <button type="button" className="button" onClick={onManage}>
-          Manage
-        </button>
+        <IconButton label="Manage memories" onClick={onManage}>
+          <List size={18} strokeWidth={1.5} />
+        </IconButton>
       </Row>
     </Section>
   )

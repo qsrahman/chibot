@@ -275,6 +275,16 @@ code"); a tool that isn't set up or is switched off stays listed, disabled in
 chip (`--bubble-bg` / `--bubble-fg`, 36 px tall, icon + "Search"/"Image" +
 `X`) before the text; it applies to one message.
 
+**Settings actions.** A row's actions are round 32 px icon buttons
+(`ui/IconButton.tsx`, 18 px icons, 1.5 stroke) whose label is both the
+tooltip (`title`) and the accessible name: outlined in `--border`, filling
+with `--chip` and `--border-control` on hover and a little darker when
+pressed; the primary one (add, sign in, save an edit) is filled `--button`; the
+destructive one (remove) turns `--danger` on hover. Actions that finish a form
+(Save, Delete all, a dialog's Cancel and Add) stay labelled `.button` pills
+(with a 16 px icon where it helps), and every `.button` has the same hover and
+pressed fills (primary and danger mix their colour with the page).
+
 **Take a photo.** A menu item under Add photos & files, shown only where the
 browser offers a camera. It opens a dialog with a mirrored live preview
 (`--surface-muted` while it loads), Cancel and a primary "Take photo" button
@@ -356,6 +366,7 @@ equivalents use a 1.5 px stroke:
 | Versions | `ChevronLeft` / `ChevronRight` |
 | Attach / voice | `Plus` / `Mic` |
 | Take a photo / quote / compact now | `Camera` / `Quote` / `ListCollapse` |
+| Settings row actions | `Upload` / `Archive` / `List` / `Copy` / `Plus` / `RefreshCw` / `LogIn` / `LogOut` / `Plug` / `Pencil` / `Trash2` / `RotateCcw` |
 | Sidebar toggle | `PanelLeft` |
 | Settings | `Settings` |
 | Model picker | `ChevronDown`, `Check` |

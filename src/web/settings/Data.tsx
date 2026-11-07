@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react'
+import { Archive, Copy, Upload } from 'lucide-react'
 import { useNavigate } from 'react-router'
 import { importConversation } from '../conversations/api.ts'
+import { IconButton } from '../ui/IconButton.tsx'
 import { useToast } from '../ui/toast.tsx'
 import { Row, Section } from './parts.tsx'
 
@@ -22,17 +24,14 @@ export function Data({
         <Row
           label="Import a chat"
           description="A JSON file exported from a chat's menu."
-          htmlFor="setting-import"
         >
           {/* A button, not a label around a hidden input: keyboards can't focus those. */}
-          <button
-            id="setting-import"
-            type="button"
-            className="button"
+          <IconButton
+            label="Import a chat"
             onClick={() => picker.current?.click()}
           >
-            Choose file…
-          </button>
+            <Upload size={18} strokeWidth={1.5} />
+          </IconButton>
           <input
             ref={picker}
             aria-label="Chat file"
@@ -55,9 +54,9 @@ export function Data({
           />
         </Row>
         <Row label="Archived chats">
-          <button type="button" className="button" onClick={onShowArchived}>
-            Manage
-          </button>
+          <IconButton label="Manage archived chats" onClick={onShowArchived}>
+            <Archive size={18} strokeWidth={1.5} />
+          </IconButton>
         </Row>
       </Section>
       <Section title="Backup">
@@ -65,9 +64,8 @@ export function Data({
           label="Back up everything"
           description="Run this in a terminal to copy all chats, files, memories and projects into a folder. “chibot restore <folder>” puts them back (with chibot stopped). Settings and keys are not included."
         >
-          <button
-            type="button"
-            className="button"
+          <IconButton
+            label="Copy command"
             onClick={() =>
               navigator.clipboard.writeText('chibot backup').then(
                 () => toast('Copied “chibot backup”'),
@@ -75,8 +73,8 @@ export function Data({
               )
             }
           >
-            Copy command
-          </button>
+            <Copy size={18} strokeWidth={1.5} />
+          </IconButton>
         </Row>
       </Section>
       {error && (

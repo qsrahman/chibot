@@ -70,6 +70,10 @@
 }
 
 .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   height: 36px;
   padding: 0 16px;
   border: 1px solid var(--border);
@@ -80,12 +84,33 @@
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+
+.button:hover:not(:disabled) {
+  border-color: var(--border-control);
+  background: var(--chip);
+}
+
+.button:active:not(:disabled) {
+  background: color-mix(in srgb, var(--chip) 85%, var(--fg));
 }
 
 .button.primary {
   border-color: transparent;
   background: var(--button);
   color: var(--button-fg);
+}
+
+.button.primary:hover:not(:disabled) {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--button) 82%, var(--bg));
+}
+
+.button.primary:active:not(:disabled) {
+  background: color-mix(in srgb, var(--button) 70%, var(--bg));
 }
 
 .button:disabled {
@@ -97,6 +122,55 @@
   border-color: transparent;
   background: var(--danger);
   color: var(--danger-fg);
+}
+
+.button.danger:hover:not(:disabled) {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--danger) 85%, var(--bg));
+}
+
+.button.danger:active:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 72%, var(--bg));
+}
+
+/* The round icon button for a row's actions (ui/IconButton.tsx). */
+.icon-button.outlined {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.icon-button.outlined:hover:not(:disabled) {
+  border-color: var(--border-control);
+  background: var(--chip);
+}
+
+.icon-button.outlined:active:not(:disabled) {
+  background: color-mix(in srgb, var(--chip) 85%, var(--fg));
+}
+
+.icon-button.outlined.primary {
+  border-color: transparent;
+  background: var(--button);
+  color: var(--button-fg);
+}
+
+.icon-button.outlined.primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--button) 82%, var(--bg));
+}
+
+.icon-button.outlined.danger:hover:not(:disabled) {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.icon-button.outlined:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .dialog.search {

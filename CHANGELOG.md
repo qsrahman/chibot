@@ -15,6 +15,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- Settings: a row's actions (import, manage archived chats and memories, copy the backup command, add, reload, sign in and out, reconnect, edit and remove an MCP server, reset a model) are round icon buttons with tooltips, and every button in dialogs now has hover and pressed states.
 - **Compact now** under the latest answer is an icon with a tooltip, like Copy and Regenerate, instead of a text link.
 
 ### Fixed

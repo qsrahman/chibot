@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { RotateCcw } from 'lucide-react'
 import type { ServiceModel } from '../../shared/service-models.ts'
 import type { Settings } from '../../shared/settings.ts'
 import type { SettingsApi } from './useSettings.ts'
+import { IconButton } from '../ui/IconButton.tsx'
 import { Row, Section } from './parts.tsx'
 
 // The chat model is picked above the chat; these are the models behind
@@ -116,13 +118,12 @@ function ModelRow({
     >
       <div className="settings-controls">
         {connected && value !== fallback && (
-          <button
-            type="button"
-            className="button"
+          <IconButton
+            label="Reset to the default"
             onClick={() => void onSave(fallback)}
           >
-            Reset
-          </button>
+            <RotateCcw size={18} strokeWidth={1.5} />
+          </IconButton>
         )}
         <input
           id={id}

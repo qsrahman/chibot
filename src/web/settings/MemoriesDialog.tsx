@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Check, Pencil, Trash2, X } from 'lucide-react'
 import { MAX_MEMORIES, MAX_MEMORY_LENGTH } from '../../shared/memory.ts'
 import { deleteMemories, listMemories, updateMemory } from './api.ts'
 import { ConfirmDialog, Dialog } from '../ui/Dialog.tsx'
+import { IconButton } from '../ui/IconButton.tsx'
 import { useLoad } from '../ui/useLoad.ts'
 
 interface Props {
@@ -58,20 +59,17 @@ export function MemoriesDialog({ open, onClose }: Props) {
                     if (e.key === 'Escape') setEditing(null)
                   }}
                 />
-                <button
+                <IconButton
                   type="submit"
-                  className="button primary"
+                  label="Save"
+                  variant="primary"
                   disabled={!text.trim()}
                 >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  className="button"
-                  onClick={() => setEditing(null)}
-                >
-                  Cancel
-                </button>
+                  <Check size={18} strokeWidth={1.5} />
+                </IconButton>
+                <IconButton label="Cancel" onClick={() => setEditing(null)}>
+                  <X size={18} strokeWidth={1.5} />
+                </IconButton>
               </form>
             ) : (
               <>
@@ -109,7 +107,7 @@ export function MemoriesDialog({ open, onClose }: Props) {
             className="button danger"
             onClick={() => setConfirmAll(true)}
           >
-            Delete all
+            <Trash2 size={16} strokeWidth={1.5} aria-hidden /> Delete all
           </button>
         </div>
       )}
