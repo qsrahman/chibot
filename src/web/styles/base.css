@@ -112,3 +112,25 @@ body {
   display: flex;
   height: 100dvh;
 }
+
+/* What shows if the whole page fails to render (ui/ErrorBoundary.tsx). */
+.crashed {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  min-height: 100dvh;
+  padding: 24px;
+  text-align: center;
+}
+
+.crashed h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.crashed p {
+  margin: 0;
+  color: var(--fg-muted);
+}

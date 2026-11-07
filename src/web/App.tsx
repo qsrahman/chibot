@@ -7,6 +7,7 @@ import { Sidebar } from './Sidebar.tsx'
 import { useConversations } from './conversations/useConversations.ts'
 import { NARROW, useMediaQuery } from './ui/useMediaQuery.ts'
 import { useProjects } from './projects/useProjects.ts'
+import { useUpdateNotice } from './ui/updates.ts'
 import { useSettings } from './settings/useSettings.ts'
 
 const COLLAPSED_KEY = 'chibot.sidebarCollapsed'
@@ -41,7 +42,18 @@ export function App() {
 
   useEffect(() => {
     getHealth().then(setHealth, () => setHealth(undefined))
+    // A page left open while chibot was updated or restarted: look again when
+    // it comes back to the front (a failed look leaves what it knew).
+    const look = () => void getHealth().then(setHealth, () => {})
+    const onShow = () => document.visibilityState === 'visible' && look()
+    document.addEventListener('visibilitychange', onShow)
+    window.addEventListener('focus', look)
+    return () => {
+      document.removeEventListener('visibilitychange', onShow)
+      window.removeEventListener('focus', look)
+    }
   }, [])
+  useUpdateNotice(health)
 
   function toggleSidebar() {
     setCollapsed((c) => {

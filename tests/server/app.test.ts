@@ -79,6 +79,8 @@ describe('API', () => {
       baseURL: 'http://localhost:1234/v1',
       // A compatible server without a transcription model: no mic.
       features: { transcription: false },
+      // Whichever build is beside the server (none in a fresh checkout).
+      build: expect.toBeOneOf([null, expect.any(String)]),
     })
   })
 

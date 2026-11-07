@@ -193,6 +193,8 @@ export interface Health {
   baseURL: string | null
   /** What the setup allows (e.g. no mic without a transcription endpoint). */
   features: { transcription: boolean }
+  /** The build of the web app served, or `null` in development. */
+  build: string | null
 }
 
 /** `GET /api/models`: the chat endpoint's models, or `null` if it can't list them. */

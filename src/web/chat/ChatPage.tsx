@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { ArrowDown } from 'lucide-react'
 import type { ConversationListItem, Health } from '../../shared/types.ts'
+import { ErrorBoundary } from '../ui/ErrorBoundary.tsx'
 import { ChatTopBar } from './ChatTopBar.tsx'
 import { Composer } from './Composer.tsx'
 import { Greeting } from './Greeting.tsx'
@@ -43,6 +44,16 @@ interface Props {
 
 /** What "Continue" sends after a stopped answer. */
 const CONTINUE = 'Please continue from where you stopped.'
+
+/** In place of a message that could not be drawn; the others are unaffected. */
+const turnFailed = (retry: () => void) => (
+  <p className="error" role="alert">
+    This message could not be displayed.{' '}
+    <button type="button" className="button" onClick={retry}>
+      Try again
+    </button>
+  </p>
+)
 
 export function ChatPage({
   health,
@@ -242,48 +253,51 @@ export function ChatPage({
             <div className="messages" onScroll={onScroll}>
               <div className="thread" ref={threadRef}>
                 {turns.map((turn, i) => (
-                  <TurnView
-                    key={turn.key}
-                    turn={turn}
-                    latest={!pending && i === turns.length - 1}
-                    busy={busy}
-                    approval={
-                      i === turns.length - 1 && waiting.length > 0 ? (
-                        <ApprovalCard
-                          calls={waiting}
-                          busy={busy}
-                          onAnswer={following(chat.approve)}
-                        />
-                      ) : undefined
-                    }
-                    editing={editingTurn === turn.key}
-                    onEditingChange={(on) =>
-                      setEditingTurn(on ? turn.key : null)
-                    }
-                    onEdit={following((text: string) => chat.edit(i, text))}
-                    onRegenerate={following(() => chat.regenerate(i))}
-                    onBranch={
-                      id && !temporary && turn.question.itemId !== null
-                        ? () => void branch(id, turn)
-                        : undefined
-                    }
-                    onContinue={following(() => chat.send(CONTINUE))}
-                    onSwitch={(itemId) => void chat.switchVersion(itemId)}
-                    onImageLoad={follow}
-                    context={context}
-                    onCompact={
-                      chat.canCompact ? following(chat.compact) : undefined
-                    }
-                    onUndoCompaction={(c) => void chat.undo(c)}
-                  />
+                  <ErrorBoundary key={turn.key} fallback={turnFailed}>
+                    <TurnView
+                      turn={turn}
+                      latest={!pending && i === turns.length - 1}
+                      busy={busy}
+                      approval={
+                        i === turns.length - 1 && waiting.length > 0 ? (
+                          <ApprovalCard
+                            calls={waiting}
+                            busy={busy}
+                            onAnswer={following(chat.approve)}
+                          />
+                        ) : undefined
+                      }
+                      editing={editingTurn === turn.key}
+                      onEditingChange={(on) =>
+                        setEditingTurn(on ? turn.key : null)
+                      }
+                      onEdit={following((text: string) => chat.edit(i, text))}
+                      onRegenerate={following(() => chat.regenerate(i))}
+                      onBranch={
+                        id && !temporary && turn.question.itemId !== null
+                          ? () => void branch(id, turn)
+                          : undefined
+                      }
+                      onContinue={following(() => chat.send(CONTINUE))}
+                      onSwitch={(itemId) => void chat.switchVersion(itemId)}
+                      onImageLoad={follow}
+                      context={context}
+                      onCompact={
+                        chat.canCompact ? following(chat.compact) : undefined
+                      }
+                      onUndoCompaction={(c) => void chat.undo(c)}
+                    />
+                  </ErrorBoundary>
                 ))}
                 {pending && (
-                  <TurnView
-                    turn={pending.turn}
-                    pending
-                    onImageLoad={follow}
-                    context={context}
-                  />
+                  <ErrorBoundary fallback={turnFailed}>
+                    <TurnView
+                      turn={pending.turn}
+                      pending
+                      onImageLoad={follow}
+                      context={context}
+                    />
+                  </ErrorBoundary>
                 )}
                 {chat.summarizing && (
                   <p className="status-note" role="status">

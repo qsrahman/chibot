@@ -7,6 +7,7 @@ import type { Hono } from 'hono'
 import { serveStatic } from '@hono/node-server/serve-static'
 import OpenAI from 'openai'
 import { createApp } from './app.ts'
+import { WEB_ROOT } from './build-id.ts'
 import { OAUTH_CALLBACK } from './mcp/index.ts'
 import { Attachments } from './attachments.ts'
 import { ChatService, Compactor } from './chat/index.ts'
@@ -236,7 +237,7 @@ export function start({
   })
 
   // In dev, Vite serves the web app. The production build only exists after `pnpm build`.
-  const webRoot = join(import.meta.dirname, '../../dist/web')
+  const webRoot = WEB_ROOT
   if (existsSync(webRoot)) {
     serveWebApp(app, webRoot)
   } else {

@@ -118,7 +118,17 @@ export function useChat(
     getConversation(conversationId).then(
       (loaded) => {
         if (!current) return
-        showItems(loaded)
+        try {
+          showItems(loaded)
+        } catch (err) {
+          // An item the page can't read (an import from elsewhere): say so,
+          // rather than leaving the chat blank.
+          setError(
+            `This chat could not be displayed: ${(err as Error).message}`,
+          )
+          setLoadedId(conversationId)
+          return
+        }
         setLoadedId(conversationId)
         const { conversation } = loaded
         setTitle(conversation.title)

@@ -4,6 +4,7 @@ import { Hono, type MiddlewareHandler } from 'hono'
 import { getCookie, setCookie } from 'hono/cookie'
 import { csrf } from 'hono/csrf'
 import type { Health } from '../shared/types.ts'
+import { readBuildId } from './build-id.ts'
 import type { Attachments } from './attachments.ts'
 import type { ChatService, Compactor } from './chat/index.ts'
 import type { Config } from './config.ts'
@@ -122,6 +123,7 @@ export function createApp(deps: AppDeps) {
       baseURL: config.chat.baseURL ?? null,
       // The endpoint; the web app also needs the transcription model setting.
       features: { transcription: transcription !== null },
+      build: readBuildId(),
     } satisfies Health),
   )
 

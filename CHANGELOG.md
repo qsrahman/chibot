@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Added
 
+- A page left open while chibot was updated says so: "chibot was updated. Reload to use the new version." with a Reload button, checked whenever the page comes back to the front (the health check now reports which build of the web app is served).
 - **Branch in new chat** under an answer copies the chat up to the end of that turn into a new chat (titled "Branch · …", in the same project), to try another direction without touching the original. The summaries that apply and the pictures and files the copied messages use come along, so deleting either chat leaves the other whole. Not offered in a temporary chat.
 
 ### Changed
@@ -15,6 +16,9 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Fixed
 
+- A page left open across a rebuild no longer breaks when a part of the app that loads on demand (the Markdown renderer) is gone: it reloads once for the new build (drafts are kept), and a message still shows as plain text if the renderer can't load at all.
+- One message that fails to draw no longer takes the page with it: it shows "This message could not be displayed" with Try again, and a failure of the whole page shows a Reload button instead of a blank window.
+- A chat containing an item the page can't read (for example an import from elsewhere) now says "This chat could not be displayed: …" instead of staying blank.
 - The start-up line that tells you to open chibot with `?token=` no longer says the token is "from .env" (it is in `config.json` or `CHIBOT_TOKEN`).
 - Settings → Model reads the context window of an Ollama model that is loaded (`/api/ps`), which is what it actually runs with and differs by machine, not only a `num_ctx` set in the model; **Use N** then offers it. When that is below your Context window setting, the row says the server would cut the start of long chats without a word.
 - `pnpm dev` no longer fails with "address already in use" when `PORT` is set in the environment (a tool that starts the dev server for Vite's port sets it): the API always runs on port 3000 in development.
