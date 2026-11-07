@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.13.2] - 2026-11-07
+
 ### Changed
 
 - Code only: `ChatPage.tsx` is split into a top bar, a greeting, hooks for following the answer and for dropped files, and a tool-options helper; the fitting of a request to the context window moved out of `ChatService` into `chat/context-fit.ts`. Nothing they do has changed.
