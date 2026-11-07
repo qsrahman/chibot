@@ -86,6 +86,7 @@ whatever folder it is in.
 | `embedding.baseURL` / `.apiKey` / `.model` | `OPENAI_EMBEDDING_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Project file search by meaning; the model defaults to `text-embedding-3-small` on OpenAI, and must be named on other servers (without one, project files are searched by keywords) |
 | `transcription.baseURL` / `.apiKey` / `.model` | `OPENAI_TRANSCRIBE_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Voice input; the model defaults to `gpt-transcribe` on OpenAI, and must be named on other servers (without one, the mic is off). With chat on Ollama, point this at OpenAI |
 | `token` | `CHIBOT_TOKEN` | — | Requires a token (16+ characters) to use chibot; set it when `server.host` exposes chibot |
+| — | `CHIBOT_ALLOW_OPEN` | — | `1` (or `chibot --allow-open`) lets chibot listen beyond this machine without a token, e.g. behind a firewall or proxy that restricts who can reach it |
 | — | `CHIBOT_CONFIG_DIR` | see above | Where `config.json` is |
 | — | `CHIBOT_DATA_DIR` | see above | Where the database, generated images and MCP sign-ins are kept |
 | — | `CHIBOT_MCP_CONFIG` | — | A standalone MCP servers file to use instead of `mcpServers` in `config.json` (see below) |
@@ -133,7 +134,11 @@ chibot config set token "$(openssl rand -hex 16)"
 
 Then open `http://<this machine's IP>:3000/?token=<token>` once in each
 browser; a cookie remembers it, and without it chibot answers 401. The server
-prints a warning when it's exposed without a token.
+refuses to start when `server.host` is beyond this machine and there is no
+token, since anyone who could reach it would spend your API key and, in
+Settings, add MCP servers that run commands. If a firewall or proxy in front
+already restricts who can reach it, `chibot --allow-open` (or
+`CHIBOT_ALLOW_OPEN=1`) starts it anyway, with a warning.
 
 Web pages you visit can't use chibot behind your back: it answers only to
 this machine's names (`localhost`, IP addresses, and `server.host` if it's a name),

@@ -19,7 +19,8 @@ import { start } from './main.ts'
 const HELP = `chibot: a local chat app for the OpenAI Responses API and compatible servers
 
 Usage:
-  chibot [--port <n>] [--host <address>]   start it (default)
+  chibot [--port <n>] [--host <address>]   start it (default; a host beyond this machine
+                                           needs a token, or --allow-open)
   chibot init                              set up the models and keys
   chibot config path                       where its settings and data live
   chibot config show                       the settings (keys shown as "set")
@@ -44,6 +45,7 @@ export async function run(args: string[]): Promise<number | void> {
       version: { type: 'boolean', short: 'v' },
       port: { type: 'string', short: 'p' },
       host: { type: 'string' },
+      'allow-open': { type: 'boolean' },
       replace: { type: 'boolean' },
     },
   })
@@ -64,6 +66,7 @@ export async function run(args: string[]): Promise<number | void> {
         env: {
           ...(values.port && { PORT: values.port }),
           ...(values.host && { HOST: values.host }),
+          ...(values['allow-open'] && { CHIBOT_ALLOW_OPEN: '1' }),
         },
       })
       return

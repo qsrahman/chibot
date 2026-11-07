@@ -54,6 +54,32 @@ describe('Config', () => {
     expect(config.isLoopback).toBe(false)
   })
 
+  it('says when listening beyond this machine has no token to protect it', () => {
+    const base = { OPENAI_API_KEY: 'k' }
+    expect(new Config(base).exposure).toBeNull()
+    expect(new Config({ ...base, HOST: 'localhost' }).exposure).toBeNull()
+    const open = new Config({ ...base, HOST: '0.0.0.0' })
+    expect(open.exposure).toContain('HOST=0.0.0.0 would expose chibot')
+    expect(open.exposure).toContain('CHIBOT_ALLOW_OPEN=1')
+    const token = 'a'.repeat(16)
+    expect(
+      new Config({ ...base, HOST: '0.0.0.0', CHIBOT_TOKEN: token }).exposure,
+    ).toBeNull()
+    for (const yes of ['1', 'true', 'YES']) {
+      const config = new Config({
+        ...base,
+        HOST: '10.0.0.1',
+        CHIBOT_ALLOW_OPEN: yes,
+      })
+      expect(config.allowOpen).toBe(true)
+      expect(config.exposure).toBeNull()
+    }
+    expect(
+      new Config({ ...base, HOST: '10.0.0.1', CHIBOT_ALLOW_OPEN: '0' })
+        .exposure,
+    ).not.toBeNull()
+  })
+
   it('resolves the folders (see locations.test.ts for the defaults)', () => {
     const custom = new Config({
       OPENAI_API_KEY: 'k',

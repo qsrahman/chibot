@@ -111,6 +111,8 @@ const envSchema = z
     CHIBOT_DATA_DIR: optional,
     // Required to use chibot (once per browser), e.g. when HOST exposes it.
     CHIBOT_MCP_CONFIG: optional,
+    // Lets chibot listen beyond this machine without a token (see `exposure`).
+    CHIBOT_ALLOW_OPEN: optional,
     CHIBOT_TOKEN: optional.refine(
       (token) => token === undefined || token.length >= 16,
       'must be at least 16 characters (e.g. `openssl rand -hex 16`)',
@@ -150,6 +152,8 @@ export class Config {
   readonly dataDir: string
   /** Required to use chibot, or `null`: no login. */
   readonly token: string | null
+  /** The owner accepted listening beyond this machine without a token. */
+  readonly allowOpen: boolean
   /** A standalone MCP servers file (`mcp.json`, older than `config.json`'s `mcpServers`); it may not exist. */
   readonly mcpConfigPath: string
   /** `CHIBOT_MCP_CONFIG` was given. */
@@ -201,6 +205,9 @@ export class Config {
     this.mcpConfigExplicit = where.mcpConfigExplicit
     this.legacyNotes = where.legacy
     this.token = e.CHIBOT_TOKEN ?? null
+    this.allowOpen = ['1', 'true', 'yes'].includes(
+      (e.CHIBOT_ALLOW_OPEN ?? '').toLowerCase(),
+    )
   }
 
   get databasePath(): string {
@@ -209,6 +216,21 @@ export class Config {
 
   get isLoopback(): boolean {
     return ['127.0.0.1', '::1', 'localhost'].includes(this.host)
+  }
+
+  /**
+   * What is wrong with listening where chibot is set to, or `null`: beyond
+   * this machine, with no token, anyone who can reach it spends the owner's
+   * API key and (from Settings) can add servers that run commands.
+   */
+  get exposure(): string | null {
+    if (this.isLoopback || this.token || this.allowOpen) return null
+    return (
+      `HOST=${this.host} would expose chibot beyond this machine with no authentication: ` +
+      'anyone who can reach it could spend your API key and, in Settings, add MCP servers that run commands. ' +
+      'Set a token (chibot config set token "$(openssl rand -hex 16)"), or set CHIBOT_ALLOW_OPEN=1 ' +
+      '(chibot --allow-open) if a firewall or proxy in front already restricts who can reach it.'
+    )
   }
 }
 

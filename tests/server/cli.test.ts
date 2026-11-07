@@ -111,4 +111,11 @@ describe('the chibot command', () => {
     await run(['restore', join(dir, 'copy'), '--replace'])
     expect(out.join('\n')).toContain('The chats that were there are in')
   })
+
+  it('refuses to listen beyond this machine without a token', async () => {
+    vi.stubEnv('OPENAI_API_KEY', 'k')
+    await expect(run(['--host', '0.0.0.0'])).rejects.toThrow(
+      /would expose chibot beyond this machine/,
+    )
+  })
 })
