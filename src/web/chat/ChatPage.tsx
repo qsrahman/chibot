@@ -1,28 +1,14 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type DragEvent,
-  type ReactNode,
-} from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
-import {
-  ArrowDown,
-  ImagePlus,
-  MessageCircleDashed,
-  PanelLeft,
-} from 'lucide-react'
-import type { ToolIcon } from '../../shared/tools.ts'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate, useParams } from 'react-router'
+import { ArrowDown } from 'lucide-react'
 import type { ConversationListItem, Health } from '../../shared/types.ts'
-import type { ToolOption } from './AddMenu.tsx'
+import { ChatTopBar } from './ChatTopBar.tsx'
 import { Composer } from './Composer.tsx'
+import { Greeting } from './Greeting.tsx'
 import { quoteText } from './quote.ts'
 import { QuoteSelection } from './QuoteSelection.tsx'
-import { ModelPicker } from './ModelPicker.tsx'
 import { ProjectDetails } from '../projects/ProjectDetails.tsx'
 import { ProjectHeading } from '../projects/ProjectHeading.tsx'
-import { REDUCED_MOTION } from '../ui/useMediaQuery.ts'
 import { SHORTCUTS, useShortcuts } from '../ui/shortcuts.ts'
 import { triggerAt } from '../../shared/context.ts'
 import { knownUrls } from '../../shared/media.ts'
@@ -32,15 +18,13 @@ import { waitingCalls } from './turns.ts'
 import { ApprovalCard, TurnView } from './TurnView.tsx'
 import { describeUsage } from './usage.ts'
 import { useAttachments } from './useAttachments.ts'
+import { toolOptions as toolOptionsOf } from './toolOptions.tsx'
 import { useChat } from './useChat.ts'
+import { useFileDrop } from './useFileDrop.ts'
+import { useScrollFollow } from './useScrollFollow.ts'
 import { UNTITLED } from '../conversations/useConversations.ts'
 import type { ProjectsApi } from '../projects/useProjects.ts'
 import type { SettingsApi } from '../settings/useSettings.ts'
-
-/** The composer's icons for a tool, by the name the server gives. */
-const TOOL_ICONS: Record<ToolIcon, ReactNode> = {
-  image: <ImagePlus size={18} strokeWidth={1.5} aria-hidden />,
-}
 
 interface Props {
   health: Health | undefined
@@ -57,17 +41,6 @@ interface Props {
 
 /** What "Continue" sends after a stopped answer. */
 const CONTINUE = 'Please continue from where you stopped.'
-
-/** Ways to start, for an empty chat: each puts the start of a message in the box. */
-const STARTERS = [
-  { label: 'Summarize a page', text: 'Summarize this page for me: ' },
-  { label: 'Explain a topic', text: 'Explain step by step how ' },
-  { label: 'Draft an email', text: 'Help me write an email to ' },
-  {
-    label: 'Review code',
-    text: 'Review this code for bugs and ways to simplify it:\n\n',
-  },
-] as const
 
 export function ChatPage({
   health,
@@ -93,32 +66,13 @@ export function ChatPage({
   // Unsent text and files are kept per chat (a new chat per project).
   const draftKey = id ?? `new:${projectHome ?? ''}`
   const attachments = useAttachments(draftKey)
-  const [dragging, setDragging] = useState(false)
   const [prefill, setPrefill] = useState<{
     text: string
     n: number
     append?: boolean
   } | null>(null)
   const waiting = pending ? [] : waitingCalls(turns)
-  // Shown even when unavailable, saying why, so they can be found.
-  const toolOptions: ToolOption[] = settings.tools.flatMap((tool) =>
-    tool.chip
-      ? [
-          {
-            name: tool.name,
-            label: tool.chip.action,
-            chip: tool.chip.text,
-            summary: tool.summary,
-            icon: TOOL_ICONS[tool.chip.icon],
-            unavailable:
-              tool.unavailable ??
-              (settings.settings?.disabledTools.includes(tool.name)
-                ? 'Off in Settings → Tools'
-                : null),
-          },
-        ]
-      : [],
-  )
+  const toolOptions = toolOptionsOf(settings.tools, settings.settings)
   const chatUsage = describeUsage(chat.usage)
   // Each answer shows the context it sent against the window.
   const contextSettings = settings.settings ?? settings.defaults
@@ -126,13 +80,7 @@ export function ChatPage({
     window: contextSettings?.contextWindow ?? 32_000,
     trigger: contextSettings?.autoCompact ? triggerAt(contextSettings) : null,
   }
-  const endRef = useRef<HTMLDivElement>(null)
   const composerRef = useRef<HTMLTextAreaElement>(null)
-  // Follow the answer only while the user is at the bottom, so scrolling up
-  // to read isn't undone by every new token.
-  const followRef = useRef(true)
-  const scrollTopRef = useRef(0)
-  const threadRef = useRef<HTMLDivElement>(null)
   // Read out by screen readers (a live region): an answer starting, then
   // ready or waiting for approval. Errors announce themselves (alert).
   const [announcement, setAnnouncement] = useState('')
@@ -158,20 +106,16 @@ export function ChatPage({
     lastTurn && lastTurn.question.itemId !== null && !busy
       ? () => setEditingTurn(lastTurn.key)
       : undefined
-  // Scrolled up: a button jumps back to the latest message.
-  const [away, setAway] = useState(false)
-
+  // An empty chat centres the composer under a greeting, as ChatGPT does.
+  // The composer stays the third child either way, so it keeps its focus
+  // and text when the first message moves it to the bottom.
+  const empty = turns.length === 0 && !pending && !error && !chat.loading
+  const { endRef, threadRef, away, follow, following, onScroll, jumpToLatest } =
+    useScrollFollow(id, [turns, pending], empty)
+  // A new chat starts as a normal one again.
   useEffect(() => {
-    followRef.current = true
-    setAway(false)
-    // A new chat starts as a normal one again.
     if (!id) setTemporaryMode(false)
   }, [id])
-
-  const follow = () => {
-    if (followRef.current) endRef.current?.scrollIntoView({ block: 'end' })
-  }
-  useEffect(follow, [turns, pending])
 
   useShortcuts({
     [SHORTCUTS.focusComposer.keys]: (e) => {
@@ -190,41 +134,10 @@ export function ChatPage({
     },
   })
 
-  /** Wraps an action that starts a turn: the view follows its answer. */
-  function following<A extends unknown[], R>(action: (...args: A) => R) {
-    return (...args: A): R => {
-      followRef.current = true
-      return action(...args)
-    }
-  }
-
-  const dropping = (e: DragEvent) => e.dataTransfer.types.includes('Files')
-  const dragHandlers = {
-    onDragOver: (e: DragEvent) => {
-      if (!dropping(e) || e.defaultPrevented) return
-      e.preventDefault()
-      setDragging(true)
-    },
-    onDragLeave: (e: DragEvent) => {
-      // Leaving for a child element isn't leaving the page.
-      if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
-        setDragging(false)
-      }
-    },
-    onDrop: (e: DragEvent) => {
-      setDragging(false)
-      // A project's file list handles its own drops.
-      if (e.defaultPrevented) return
-      e.preventDefault()
-      attachments.add([...e.dataTransfer.files])
-      composerRef.current?.focus()
-    },
-  }
-
-  // An empty chat centres the composer under a greeting, as ChatGPT does.
-  // The composer stays the third child either way, so it keeps its focus
-  // and text when the first message moves it to the bottom.
-  const empty = turns.length === 0 && !pending && !error && !chat.loading
+  const { dragging, handlers: dragHandlers } = useFileDrop(
+    attachments.add,
+    composerRef,
+  )
 
   // The addresses in answers that may load by themselves: those the user wrote
   // and tools returned (the server checks the same, and which it knows).
@@ -238,17 +151,6 @@ export function ChatPage({
     return { conversationId: id, known: knownUrls(texts) }
   }, [id, turns, pending])
 
-  // Content that grows after the scroll (the saved answer's actions, images)
-  // must not leave the view short of the end.
-  useEffect(() => {
-    const thread = threadRef.current
-    if (!thread) return
-    const observer = new ResizeObserver(follow)
-    observer.observe(thread)
-    return () => observer.disconnect()
-    // `follow` only reads a ref, so it needn't be a dependency; the thread
-    // element exists once there are messages.
-  }, [empty])
   const temporary = id ? isTemporary : temporaryMode
   const projectId = id ? chat.projectId : (projectHome ?? null)
   const project = projects.projects.find((p) => p.id === projectId)
@@ -284,78 +186,19 @@ export function ChatPage({
           inert={inert}
           {...dragHandlers}
         >
-          <header className="topbar">
-            <span className="topbar-start">
-              {onOpenSidebar && (
-                <button
-                  type="button"
-                  className="icon-button"
-                  aria-label="Open sidebar"
-                  title="Open sidebar"
-                  onClick={onOpenSidebar}
-                >
-                  <PanelLeft size={20} strokeWidth={1.5} />
-                </button>
-              )}
-              {id && project && (
-                <Link className="breadcrumb" to={`/projects/${project.id}`}>
-                  {project.name} /
-                </Link>
-              )}
-              {/* Phones only: with the sidebar hidden, say which chat this is. */}
-              {id && pageTitle && (
-                <span className="topbar-title" title={pageTitle}>
-                  {pageTitle}
-                </span>
-              )}
-              {!health ? (
-                <span className="model">Server unreachable</span>
-              ) : settings.settings && settings.defaults ? (
-                <span title={health.baseURL ?? 'OpenAI'}>
-                  <ModelPicker
-                    model={settings.settings.model}
-                    defaultModel={settings.defaults.model}
-                    onSelect={(model) => void settings.update({ model })}
-                    effort={settings.settings.reasoningEffort}
-                    onEffort={(reasoningEffort) =>
-                      void settings.update({ reasoningEffort })
-                    }
-                  />
-                </span>
-              ) : null}
-            </span>
-            {projectHome ? null : id ? (
-              <span className="topbar-info">
-                {chatUsage && (
-                  <span
-                    className="usage"
-                    title={`This chat, all versions: ${chatUsage.detail}`}
-                  >
-                    {chatUsage.short}
-                  </span>
-                )}
-                {temporary && (
-                  <span
-                    className="badge"
-                    title="Not saved: this chat is deleted when you leave it"
-                  >
-                    Temporary chat
-                  </span>
-                )}
-              </span>
-            ) : (
-              <button
-                type="button"
-                className={temporaryMode ? 'icon-button active' : 'icon-button'}
-                aria-label="Temporary chat"
-                aria-pressed={temporaryMode}
-                title="Temporary chat"
-                onClick={() => setTemporaryMode((on) => !on)}
-              >
-                <MessageCircleDashed size={20} strokeWidth={1.5} />
-              </button>
-            )}
-          </header>
+          <ChatTopBar
+            id={id}
+            projectHome={projectHome}
+            project={project}
+            pageTitle={pageTitle}
+            health={health}
+            settings={settings}
+            usage={chatUsage}
+            temporary={temporary}
+            temporaryMode={temporaryMode}
+            onToggleTemporary={() => setTemporaryMode((on) => !on)}
+            onOpenSidebar={onOpenSidebar}
+          />
           {empty && projectHome ? (
             project ? (
               <ProjectHeading
@@ -373,46 +216,14 @@ export function ChatPage({
               </div>
             )
           ) : empty ? (
-            <div className="greeting">
-              <h1>{temporary ? 'Temporary chat' : 'What’s on your mind?'}</h1>
-              {temporary ? (
-                <p>
-                  This chat won’t appear in your history or search, and it’s
-                  deleted when you leave it.
-                </p>
-              ) : (
-                <div className="suggestions">
-                  {STARTERS.map(({ label, text }) => (
-                    <button
-                      key={label}
-                      type="button"
-                      className="suggestion"
-                      onClick={() =>
-                        setPrefill((was) => ({ text, n: (was?.n ?? 0) + 1 }))
-                      }
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <Greeting
+              temporary={temporary}
+              onStart={(text) =>
+                setPrefill((was) => ({ text, n: (was?.n ?? 0) + 1 }))
+              }
+            />
           ) : (
-            <div
-              className="messages"
-              onScroll={(e) => {
-                const el = e.currentTarget
-                const atEnd =
-                  el.scrollHeight - el.scrollTop - el.clientHeight < 40
-                // Only scrolling up leaves the end: a scroll event measured after
-                // the content grew (while following) isn't the user's.
-                const up = el.scrollTop < scrollTopRef.current
-                scrollTopRef.current = el.scrollTop
-                if (atEnd) followRef.current = true
-                else if (up) followRef.current = false
-                setAway(!atEnd)
-              }}
-            >
+            <div className="messages" onScroll={onScroll}>
               <div className="thread" ref={threadRef}>
                 {turns.map((turn, i) => (
                   <TurnView
@@ -476,16 +287,7 @@ export function ChatPage({
                   className="jump-latest"
                   aria-label="Jump to latest"
                   title="Jump to latest"
-                  onClick={() => {
-                    followRef.current = true
-                    endRef.current?.scrollIntoView({
-                      block: 'end',
-                      // Gliding is movement: not for those who ask for less.
-                      behavior: matchMedia(REDUCED_MOTION).matches
-                        ? 'auto'
-                        : 'smooth',
-                    })
-                  }}
+                  onClick={jumpToLatest}
                 >
                   <ArrowDown size={18} strokeWidth={2} />
                 </button>
