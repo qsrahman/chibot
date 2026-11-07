@@ -8,19 +8,40 @@ export const mcpServerName = z
   .string()
   .regex(/^[A-Za-z0-9_-]{1,32}$/, 'use letters, digits, - and _ (at most 32)')
 
+// What Settings → Tools switches, kept with the server: not connected, each
+// call asking first, and tools (by the names the server gives them) off.
+const switches = {
+  disabled: z.boolean().optional(),
+  ask: z.boolean().optional(),
+  disabledTools: z.array(z.string()).optional(),
+}
+
 const localServer = z.strictObject({
   type: z.literal('local'),
   command: z.string().min(1),
   args: z.array(z.string()).optional(),
   env: z.record(z.string(), z.string()).optional(),
   cwd: z.string().optional(),
+  ...switches,
 })
 
 const remoteServer = z.strictObject({
   type: z.literal('remote'),
   url: z.url({ protocol: /^https?$/ }),
   headers: z.record(z.string(), z.string()).optional(),
+  ...switches,
 })
+
+/** `PATCH /api/mcp/servers/:name`: a switch of Settings → Tools, written to the config file. */
+export const mcpSwitchSchema = z.object({
+  /** On (`false`) or off (`true`) altogether. */
+  disabled: z.boolean().optional(),
+  /** Whether each call waits for Approve / Deny. */
+  ask: z.boolean().optional(),
+  /** One tool, by the name the server gives it (not `<server>__<tool>`). */
+  tool: z.object({ name: z.string().min(1), enabled: z.boolean() }).optional(),
+})
+export type McpSwitch = z.infer<typeof mcpSwitchSchema>
 
 export const mcpServerSchema = z.discriminatedUnion('type', [
   localServer,

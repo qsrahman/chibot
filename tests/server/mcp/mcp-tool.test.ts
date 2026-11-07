@@ -39,20 +39,45 @@ describe('MCP tools', () => {
           env: { CHIBOT_SLOW_MARKER: started },
         },
       },
-      { disabled: () => [] },
+      // The settings' older list; an entry's own `ask` wins over it.
+      { disabled: () => [], ask: () => asking },
     )
     await servers.start()
     files = testFiles(openDatabase(':memory:'))
-    registry = new ToolRegistry(
-      [new EchoTool()],
-      mcpTools(servers, files, () => asking),
-    )
+    registry = new ToolRegistry([new EchoTool()], mcpTools(servers, files))
   })
   afterAll(async () => {
     await servers.close()
     rmSync(dir, { recursive: true, force: true })
   })
   const context = { conversationId: 'chat-1' }
+
+  it('are not offered while switched off in the server’s entry', async () => {
+    const off = new McpServers(
+      {
+        fixture: {
+          type: 'local',
+          command: process.execPath,
+          args: [join(import.meta.dirname, '../../fixtures/mcp-server.ts')],
+          disabledTools: ['echo'],
+          ask: true,
+        },
+      },
+      { disabled: () => [] },
+    )
+    await off.start()
+    try {
+      const tools = new ToolRegistry([], mcpTools(off, files))
+      expect(tools.get('fixture__echo')!.unavailable()).toBe(
+        'Switched off in Settings → Tools',
+      )
+      expect(tools.get('fixture__slow')!.unavailable()).toBeNull()
+      // The entry's `ask` asks for every tool of the server.
+      expect(tools.get('fixture__slow')!.requiresApproval).toBe(true)
+    } finally {
+      await off.close()
+    }
+  })
 
   it('are offered beside chibot’s own, with the server’s schema', () => {
     expect(registry.tools.map((t) => t.name)).toContain('fixture__echo')

@@ -9,34 +9,38 @@ import {
   Trash2,
 } from 'lucide-react'
 import type { McpServerConfig } from '../../shared/mcp.ts'
-import type { Settings } from '../../shared/settings.ts'
 import {
   listMcpDefinitions,
   listMcpServers,
   removeMcpServer,
   saveMcpServer,
+  setMcpSwitch,
   reconnectMcpServer,
   reloadMcpServers,
   signInToMcpServer,
   signOutOfMcpServer,
 } from './api.ts'
-import { describeMcpServer, isConnecting, withMember } from './mcp.ts'
+import { describeMcpServer, isConnecting } from './mcp.ts'
 import { ConfirmDialog } from '../ui/Dialog.tsx'
 import { IconButton } from '../ui/IconButton.tsx'
 import { useLoad } from '../ui/useLoad.ts'
-import type { SettingsApi } from './useSettings.ts'
 import { McpServerDialog } from './McpServerDialog.tsx'
 import { Row, Section } from './parts.tsx'
 
 /** The MCP servers from the config: a switch, status and actions each, and tools. */
 export function McpServers({
-  settings,
-  onChange,
+  onToolsChanged,
 }: {
-  settings: Settings
-  onChange: SettingsApi['update']
+  /** The servers' tools, or what they say about themselves, changed. */
+  onToolsChanged: () => void
 }) {
-  const { data, error, reload, act } = useLoad(listMcpServers)
+  const { data, error, reload, act: run } = useLoad(listMcpServers)
+  /** Runs an action, then reloads; what the tools say follows a change that worked. */
+  const act = async (action: () => Promise<unknown>) => {
+    const worked = await run(action)
+    if (worked) onToolsChanged()
+    return worked
+  }
   const servers = data?.servers
   const definitions = useLoad(listMcpDefinitions)
   const editable = definitions.data?.editable ?? false
@@ -50,20 +54,16 @@ export function McpServers({
   useEffect(() => {
     if (!connecting) return
     const timer = setInterval(() => void reload(), 1000)
-    return () => clearInterval(timer)
+    // Its tools exist once it has connected.
+    return () => {
+      clearInterval(timer)
+      onToolsChanged()
+    }
   }, [connecting, reload])
 
-  const {
-    disabledMcpServers: off,
-    askMcpServers: asking,
-    disabledTools,
-  } = settings
+  // These switches are kept in each server's entry in the config file.
   const switchServer = (name: string, on: boolean) =>
-    act(() =>
-      onChange({
-        disabledMcpServers: withMember(off, name, !on),
-      }),
-    )
+    act(() => setMcpSwitch(name, { disabled: !on }))
   const signIn = (name: string) =>
     act(async () => {
       const { url } = await signInToMcpServer(name)
@@ -198,15 +198,11 @@ export function McpServers({
                   type="checkbox"
                   role="switch"
                   className="switch"
-                  checked={asking.includes(server.name)}
+                  checked={server.ask}
                   onChange={(e) =>
-                    void onChange({
-                      askMcpServers: withMember(
-                        asking,
-                        server.name,
-                        e.target.checked,
-                      ),
-                    })
+                    void act(() =>
+                      setMcpSwitch(server.name, { ask: e.target.checked }),
+                    )
                   }
                 />
               </Row>
@@ -223,15 +219,17 @@ export function McpServers({
                   type="checkbox"
                   role="switch"
                   className="switch"
-                  checked={!disabledTools.includes(tool.name)}
+                  checked={tool.enabled}
                   onChange={(e) =>
-                    void onChange({
-                      disabledTools: withMember(
-                        disabledTools,
-                        tool.name,
-                        !e.target.checked,
-                      ),
-                    })
+                    void act(() =>
+                      setMcpSwitch(server.name, {
+                        // The server's own name for it, not `<server>__<tool>`.
+                        tool: {
+                          name: tool.name.slice(server.name.length + 2),
+                          enabled: e.target.checked,
+                        },
+                      }),
+                    )
                   }
                 />
               </Row>
@@ -251,6 +249,7 @@ export function McpServers({
               return (err as Error).message
             }
             await Promise.all([reload(), definitions.reload()])
+            onToolsChanged()
             setEditing(null)
             return null
           }}

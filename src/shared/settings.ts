@@ -32,11 +32,15 @@ export const settingsSchema = z.object({
   compactReserve: z.number().int().min(0).max(1_000_000),
   /** Tokens of the newest messages that stay word for word. */
   keepRecent: z.number().int().min(500).max(1_000_000),
-  /** Tools switched off in Settings: never offered to the model. */
+  /**
+   * Tools switched off in Settings: never offered to the model. (An MCP
+   * server's tools are switched in its entry in the config file now; names
+   * here, as `<server>__<tool>`, still apply to those without a switch there.)
+   */
   disabledTools: z.array(z.string().max(100)).max(500),
-  /** MCP servers switched off in Settings: not connected (`mcpServers`). */
+  /** Older: MCP servers switched off. Now `disabled` in the server's config entry, which wins. */
   disabledMcpServers: z.array(z.string().max(100)).max(100),
-  /** MCP servers whose tool calls wait for Approve / Deny. */
+  /** Older: MCP servers whose tool calls wait for Approve / Deny. Now `ask` in the entry, which wins. */
   askMcpServers: z.array(z.string().max(100)).max(100),
 })
 

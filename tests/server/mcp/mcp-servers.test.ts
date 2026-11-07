@@ -158,6 +158,91 @@ describe('MCP servers', () => {
     await vi.waitFor(() => expect(() => process.kill(pid, 0)).toThrow())
   })
 
+  describe('switches in the server’s own entry', () => {
+    const only = (patch: Partial<McpServerConfig>) =>
+      ({ ...fixture, ...patch }) as McpServerConfig
+
+    it('switch a server off, and win over the settings’ older list', async () => {
+      await start({ fixture: only({ disabled: true }) })
+      expect(status('fixture').state).toBe('disabled')
+      await servers.close()
+      // Explicitly on beats an old "off" in the settings.
+      servers = new McpServers(
+        { fixture: only({ disabled: false }) },
+        { disabled: () => ['fixture'] },
+      )
+      await servers.start()
+      expect(status('fixture').state).toBe('connected')
+    })
+
+    it('say whether calls ask first, and win over the older list', async () => {
+      servers = new McpServers(
+        {
+          fixture: only({ ask: true }),
+          other: only({ ask: false }),
+          third: fixture,
+        },
+        {
+          disabled: () => ['fixture', 'other', 'third'],
+          ask: () => ['other', 'third'],
+        },
+      )
+      expect(servers.asks('fixture')).toBe(true)
+      expect(servers.asks('other')).toBe(false)
+      // No `ask` of its own: the settings' list.
+      expect(servers.asks('third')).toBe(true)
+      expect(servers.asks('nobody')).toBe(false)
+      expect(servers.statuses().find((s) => s.name === 'fixture')!.ask).toBe(
+        true,
+      )
+    })
+
+    it('switch tools off, by the server’s name for them or the older list’s', async () => {
+      servers = new McpServers(
+        { fixture: only({ disabledTools: ['echo'] }) },
+        { disabled: () => [], toolsOff: () => ['fixture__slow'] },
+      )
+      await servers.start()
+      const enabled = Object.fromEntries(
+        status('fixture').tools.map((t) => [t.name, t.enabled]),
+      )
+      expect(enabled).toMatchObject({
+        fixture__echo: false,
+        fixture__slow: false,
+        fixture__picture: true,
+      })
+      expect(servers.toolOff('fixture__echo')).toBe(true)
+      expect(servers.toolOff('fixture__fail')).toBe(false)
+      expect(servers.toolOff('not-a-tool')).toBe(false)
+    })
+
+    it('apply on reload without reconnecting what stays on', async () => {
+      let current: Record<string, McpServerConfig> = { fixture }
+      servers = new McpServers(
+        { fixture },
+        { disabled: () => [], load: () => current },
+      )
+      await servers.start()
+      const pid = servers.pid('fixture')!
+
+      current = { fixture: only({ ask: true, disabledTools: ['echo'] }) }
+      await servers.reload()
+      expect(servers.pid('fixture')).toBe(pid)
+      expect(servers.asks('fixture')).toBe(true)
+      expect(servers.toolOff('fixture__echo')).toBe(true)
+
+      current = { fixture: only({ disabled: true }) }
+      await servers.reload()
+      expect(status('fixture').state).toBe('disabled')
+      await vi.waitFor(() => expect(() => process.kill(pid, 0)).toThrow())
+
+      // A change that is not a switch restarts it, as before.
+      current = { fixture: only({ args: [...(fixture.args ?? []), '--x'] }) }
+      await servers.reload()
+      expect(status('fixture').state).toBe('connected')
+    })
+  })
+
   it('cancels a call when the answer is stopped', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'chibot-slow-'))
     const started = join(dir, 'started')

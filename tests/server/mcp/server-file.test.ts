@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { McpServerFile, McpServers } from '../../../src/server/mcp/index.ts'
-import { testApp } from '../fakes.ts'
+import {
+  McpServerFile,
+  McpServers,
+  parseMcpConfig,
+} from '../../../src/server/mcp/index.ts'
+import { testApp, testSettings } from '../fakes.ts'
 
 function setup(
   initial: Record<string, unknown> = {},
@@ -97,6 +101,71 @@ describe('McpServerFile', () => {
   })
 })
 
+describe('McpServerFile switches', () => {
+  const entry = { type: 'local', command: 'npx' } as const
+
+  it('write off, asking and tools off into the entry, and leave out the defaults', () => {
+    const { file, saved } = setup({ files: entry, other: entry })
+    file.setSwitch('files', { disabled: true })
+    file.setSwitch('files', { ask: true })
+    file.setSwitch('files', { tool: { name: 'write_file', enabled: false } })
+    file.setSwitch('files', { tool: { name: 'edit_file', enabled: false } })
+    expect(saved()).toEqual({
+      files: {
+        ...entry,
+        disabled: true,
+        ask: true,
+        disabledTools: ['write_file', 'edit_file'],
+      },
+      other: entry,
+    })
+    // Back to the defaults: the keys go, so the file holds only what differs.
+    file.setSwitch('files', { disabled: false, ask: false })
+    file.setSwitch('files', { tool: { name: 'write_file', enabled: true } })
+    file.setSwitch('files', { tool: { name: 'edit_file', enabled: true } })
+    expect(saved()).toEqual({ files: entry, other: entry })
+  })
+
+  it('refuse a server that is not there, without touching another’s trouble', () => {
+    const { file, saved } = setup({ files: entry, odd: { nonsense: true } })
+    expect(() => file.setSwitch('nope', { disabled: true })).toThrow(
+      'No MCP server named nope',
+    )
+    // The entry that is wrong stays as it was; this one can still be switched.
+    file.setSwitch('files', { ask: true })
+    expect(saved()).toEqual({
+      files: { ...entry, ask: true },
+      odd: { nonsense: true },
+    })
+    expect(() => file.setSwitch('odd', { disabled: true })).toThrow()
+  })
+
+  it('work while adding servers is locked, and survive editing the server', () => {
+    const { file, saved } = setup({ files: entry }, 'Set CHIBOT_TOKEN.')
+    file.setSwitch('files', { disabled: true })
+    expect(saved()).toEqual({ files: { ...entry, disabled: true } })
+
+    const open = setup({
+      files: { ...entry, disabled: true, ask: true, disabledTools: ['x'] },
+    })
+    open.file.put('files', { type: 'local', command: 'node' })
+    // The form can't show the switches, so an edit keeps them.
+    expect(open.saved()).toEqual({
+      files: {
+        type: 'local',
+        command: 'node',
+        disabled: true,
+        ask: true,
+        disabledTools: ['x'],
+      },
+    })
+    expect(open.file.describe().servers.files).toMatchObject({
+      disabled: true,
+      ask: true,
+    })
+  })
+})
+
 describe('MCP routes for editing', () => {
   it('serves the definitions, saves a server and removes it', async () => {
     const { file, saved } = setup()
@@ -129,5 +198,51 @@ describe('MCP routes for editing', () => {
     expect(gone.status).toBe(200)
     expect(saved()).toEqual({})
     expect((await send('DELETE', '/api/mcp/servers/files')).status).toBe(400)
+  })
+
+  it('PATCH writes a switch to the file, applies it, and forgets the older setting', async () => {
+    const { file, saved } = setup({
+      files: { type: 'local', command: process.execPath, args: ['-e', ''] },
+    })
+    const settings = testSettings('m', {
+      disabledMcpServers: ['files'],
+      askMcpServers: ['files', 'keep'],
+      disabledTools: ['files__echo', 'memory'],
+    })
+    const mcp = new McpServers(
+      {},
+      {
+        disabled: () => [],
+        load: () => parseMcpConfig({ mcpServers: saved() }, {}, 'test'),
+      },
+    )
+    const app = testApp({ mcp, mcpFile: file, settings })
+    const patch = (body: unknown) =>
+      app.request('/api/mcp/servers/files', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+
+    expect((await patch({ ask: true })).status).toBe(200)
+    expect((await patch({ disabled: false })).status).toBe(200)
+    expect(
+      (await patch({ tool: { name: 'echo', enabled: false } })).status,
+    ).toBe(200)
+    expect(saved().files).toMatchObject({ ask: true, disabledTools: ['echo'] })
+    expect(saved().files).not.toHaveProperty('disabled')
+    // What the file now says is no longer in the settings; the rest stays.
+    expect(settings.get()).toMatchObject({
+      disabledMcpServers: [],
+      askMcpServers: ['keep'],
+      disabledTools: ['memory'],
+    })
+
+    expect((await patch({ tool: { name: '', enabled: true } })).status).toBe(
+      400,
+    )
+    const missing = await app.request('/api/mcp/nope', { method: 'PATCH' })
+    expect(missing.status).toBeGreaterThanOrEqual(400)
+    await mcp.close()
   })
 })

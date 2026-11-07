@@ -200,6 +200,17 @@ only while chibot listens on this machine or `CHIBOT_TOKEN` is set, since a
 `local` server runs a command; otherwise Settings says why and the file is
 the only way.
 
+**The switches in Settings → Tools are written to the server's entry in the
+file:** switching a server off adds `"disabled": true`, **Ask before using its
+tools** adds `"ask": true`, and switching off a tool adds its name (as the
+server gives it, without the `<server>__` prefix) to `"disabledTools"`. An
+entry holds only what differs from the default, so switching back removes the
+key, and you can set the same keys by hand, then **Reload**. Switches work
+whether or not Settings may add servers, since nothing there runs a command.
+(Older versions kept these in chibot's settings; one that is still there
+applies to a server whose entry has no value of its own, and goes away the
+first time you use that switch.)
+
 Their tools are offered
 as `<server>__<tool>` and run without asking first, so add only servers you
 trust, or switch on **Ask before using its tools** for a server in Settings →

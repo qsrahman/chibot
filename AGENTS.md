@@ -166,7 +166,8 @@ transpiles it.
   `config.json` (`config-file.ts`, mode 0600) under the environment (via
   `Config`; flags beat the environment, which beats the file), MCP servers in
   that file's `mcpServers` (`loadMcpServers`, checked when loaded so a mistake
-  never stops chibot starting; `${VAR}` from the environment, then its `env`;
+  never stops chibot starting; a server's own switches (`disabled`, `ask`,
+  `disabledTools`) are in its entry, written by Settings; `${VAR}` from the environment, then its `env`;
   a standalone `mcp.json` still works) and their OAuth tokens in
   `mcp-auth.json` in the data folder (`McpAuthStore`); where
   these folders are comes from `locations()`, never from `ROOT` directly. User

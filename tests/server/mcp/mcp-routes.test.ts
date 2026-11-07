@@ -78,6 +78,7 @@ describe('MCP routes', () => {
       name: 'fixture__echo',
       title: 'Echo',
       description: 'Repeats the text',
+      enabled: true,
     })
     expect(servers.tracker).toMatchObject({
       state: 'needs-sign-in',

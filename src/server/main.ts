@@ -186,7 +186,10 @@ export function start({
     apiKey: config.chat.apiKey,
   })
   const mcp = new McpServers(mcpConfig(config), {
+    // The settings' old lists: an entry's own switches win (see McpServers).
     disabled: () => settings.get().disabledMcpServers,
+    ask: () => settings.get().askMcpServers,
+    toolsOff: () => settings.get().disabledTools,
     // Read again on each Reload, so a changed config.json is picked up.
     load: () => loadMcpServers(config),
     auth: {
@@ -197,7 +200,7 @@ export function start({
   void mcp.start()
   const registry = new ToolRegistry(
     tools({ config, search, files, memories, projects, index, settings }),
-    mcpTools(mcp, files, () => settings.get().askMcpServers),
+    mcpTools(mcp, files),
   )
   const attachments = new Attachments(client, files)
   attachments.deleteOrphans()

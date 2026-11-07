@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- The switches of an MCP server in Settings → Tools (on or off, **Ask before using its tools**, and each tool) are written to the server's entry in the config file (`"disabled": true`, `"ask": true`, `"disabledTools": ["…"]`), not to chibot's database, so `config.json` shows them and editing them there works. Only what differs from the default is written. A switch an older version kept in the settings still applies to a server whose entry has no value of its own, and is cleared the first time you use that switch. Editing a server leaves its switches alone, and changing only a switch no longer reconnects the server on Reload.
+
 ## [0.13.3] - 2026-11-07
 
 ### Added

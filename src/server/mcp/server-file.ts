@@ -3,6 +3,7 @@ import {
   mcpServerSchema,
   type McpDefinitions,
   type McpServerConfig,
+  type McpSwitch,
 } from '../../shared/mcp.ts'
 
 /** What `McpServerFile` needs from the place the servers are kept. */
@@ -55,8 +56,45 @@ export class McpServerFile {
     mcpServerName.parse(name)
     const servers = this.#storage.read()
     const current = mcpServerSchema.safeParse(servers[name])
-    servers[name] = withKept(server, current.success ? current.data : null)
+    // The form doesn't show the switches: an edit leaves them as they were.
+    servers[name] = {
+      ...switchesOf(current.success ? current.data : null),
+      ...withKept(server, current.success ? current.data : null),
+    }
     this.#storage.check(servers)
+    this.#storage.write(servers)
+  }
+
+  /**
+   * Writes a switch of Settings → Tools into the server's entry: off, asking
+   * first, or one tool off (an entry holds only what is not the default). Not
+   * behind the lock that adding a server has: nothing here runs a command.
+   *
+   * @throws Error if there is no such server
+   */
+  setSwitch(name: string, change: McpSwitch): void {
+    const servers = this.#storage.read()
+    const current = servers[name]
+    if (!current || typeof current !== 'object') {
+      throw new Error(`No MCP server named ${name}`)
+    }
+    const entry: Record<string, unknown> = { ...current }
+    const set = (key: 'disabled' | 'ask', on: boolean) => {
+      if (on) entry[key] = true
+      else delete entry[key]
+    }
+    if (change.disabled !== undefined) set('disabled', change.disabled)
+    if (change.ask !== undefined) set('ask', change.ask)
+    if (change.tool) {
+      const off = new Set((entry.disabledTools as string[] | undefined) ?? [])
+      if (change.tool.enabled) off.delete(change.tool.name)
+      else off.add(change.tool.name)
+      if (off.size > 0) entry.disabledTools = [...off]
+      else delete entry.disabledTools
+    }
+    // Only this entry's shape: another server's trouble shouldn't stop a switch.
+    mcpServerSchema.parse(entry)
+    servers[name] = entry
     this.#storage.write(servers)
   }
 
@@ -71,6 +109,17 @@ export class McpServerFile {
 
   #unlocked() {
     if (this.#storage.locked) throw new Error(this.#storage.locked)
+  }
+}
+
+/** The switches of an entry (see `mcpServerSchema`), to carry over an edit. */
+function switchesOf(server: McpServerConfig | null) {
+  if (!server) return {}
+  const { disabled, ask, disabledTools } = server
+  return {
+    ...(disabled !== undefined && { disabled }),
+    ...(ask !== undefined && { ask }),
+    ...(disabledTools !== undefined && { disabledTools }),
   }
 }
 

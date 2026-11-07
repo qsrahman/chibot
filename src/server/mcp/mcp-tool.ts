@@ -17,8 +17,8 @@ const SHOWN_IMAGES: Record<string, string> = {
 
 /**
  * A tool of a connected MCP server, offered as `<server>__<tool>`. Calls
- * don't ask first unless its server is set to (`askMcpServers`); the output
- * is someone else's text.
+ * don't ask first unless its server is set to (`ask` in its config entry);
+ * the output is someone else's text.
  */
 export class McpTool extends Tool {
   readonly name: string
@@ -52,6 +52,13 @@ export class McpTool extends Tool {
     this.#files = files
   }
 
+  /** Not offered while switched off in Settings → Tools. */
+  override unavailable(): string | null {
+    return this.#servers.toolOff(this.name)
+      ? 'Switched off in Settings → Tools'
+      : null
+  }
+
   async run(args: Record<string, unknown>, context: ToolContext) {
     const result = await this.#servers.callTool(this.name, args, context.signal)
     return toOutput(result, this.#files, context.conversationId)
@@ -75,25 +82,20 @@ export class McpTool extends Tool {
 const instances = new WeakMap<McpServerTool, McpTool>()
 
 /**
- * The connected servers' tools, for `ToolRegistry`. `asking` lists the
- * servers whose calls wait for the user's approval, read on every call.
+ * The connected servers' tools, for `ToolRegistry`. Whether a server's calls
+ * wait for the user's approval is read on every call.
  */
-export function mcpTools(
-  servers: McpServers,
-  files: FileStore,
-  asking: () => readonly string[],
-) {
-  return (): Tool[] => {
-    const asks = new Set(asking())
-    return servers.tools().map((tool) => {
+export function mcpTools(servers: McpServers, files: FileStore) {
+  return (): Tool[] =>
+    servers.tools().map((tool) => {
+      const asks = servers.asks(tool.server)
       let instance = instances.get(tool)
-      if (instance?.requiresApproval !== asks.has(tool.server)) {
-        instance = new McpTool(tool, servers, files, asks.has(tool.server))
+      if (instance?.requiresApproval !== asks) {
+        instance = new McpTool(tool, servers, files, asks)
         instances.set(tool, instance)
       }
       return instance
     })
-  }
 }
 
 /**

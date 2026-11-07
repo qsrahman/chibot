@@ -154,7 +154,7 @@ export function SettingsDialog({
                 disabled={current.disabledTools}
                 onChange={save}
               />
-              <McpServers settings={current} onChange={save} />
+              <McpServers onToolsChanged={() => void settings.reloadTools()} />
             </>
           )}
           {tab === 'data' && (

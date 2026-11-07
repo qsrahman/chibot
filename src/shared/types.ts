@@ -216,6 +216,14 @@ export interface McpServerStatus {
   error: string | null
   /** Whether a remote server's OAuth sign-in has tokens; `null` without one. */
   signedIn: boolean | null
+  /** Whether each of its tools' calls waits for the user's approval. */
+  ask: boolean
   /** Its tools while connected, by the names the model calls them. */
-  tools: { name: string; title: string; description: string }[]
+  tools: {
+    name: string
+    title: string
+    description: string
+    /** Switched on in Settings → Tools. */
+    enabled: boolean
+  }[]
 }

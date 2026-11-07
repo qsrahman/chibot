@@ -13,10 +13,16 @@ const server = (patch: Partial<McpServerStatus> = {}): McpServerStatus => ({
   state: 'connected',
   error: null,
   signedIn: null,
+  ask: false,
   tools: [],
   ...patch,
 })
-const tool = (name: string) => ({ name, title: name, description: '' })
+const tool = (name: string) => ({
+  name,
+  title: name,
+  description: '',
+  enabled: true,
+})
 
 describe('describeMcpServer', () => {
   it('says what kind of server it is', () => {

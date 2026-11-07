@@ -16,8 +16,30 @@ import {
 // What tests/e2e/server.ts wrote; the Reload test edits and restores it.
 const MCP_JSON = '.e2e-data/mcp.json'
 
+// Switches live in each server's entry in the file (not the settings): put
+// every server back on, asking nothing, with all its tools on.
+async function resetSwitches(page: Page) {
+  const patch = (name: string, data: unknown) =>
+    page.request.patch(`/api/mcp/servers/${name}`, { data })
+  const { servers } = (await (await page.request.get('/api/mcp')).json()) as {
+    servers: {
+      name: string
+      tools: { name: string; enabled: boolean }[]
+    }[]
+  }
+  for (const { name, tools } of servers) {
+    await patch(name, { disabled: false, ask: false })
+    for (const tool of tools.filter((t) => !t.enabled)) {
+      await patch(name, {
+        tool: { name: tool.name.slice(name.length + 2), enabled: true },
+      })
+    }
+  }
+}
+
 test.afterEach(async ({ page }) => {
   await resetSettings(page)
+  await resetSwitches(page)
 })
 
 async function openTools(page: Page) {
@@ -46,6 +68,8 @@ test('lists the servers and their tools, with switches', async ({ page }) => {
 
   // A tool switched off isn't offered.
   await dialog.getByRole('switch', { name: 'Echo' }).click()
+  // The switch follows what the server saved.
+  await expect(dialog.getByRole('switch', { name: 'Echo' })).not.toBeChecked()
   await page.keyboard.press('Escape')
   await send(page, 'Hello there')
   await answered(page)
@@ -101,6 +125,9 @@ test('asks before a server’s tools when set to', async ({ page }) => {
     .getByRole('switch', { name: 'Ask before using its tools' })
     .first()
     .click()
+  await expect(
+    dialog.getByRole('switch', { name: 'Ask before using its tools' }).first(),
+  ).toBeChecked()
   await page.keyboard.press('Escape')
   await send(page, 'Please mcp echo hi')
   const card = page.getByRole('region', { name: 'Tool approval' })
@@ -194,4 +221,39 @@ test('adds, edits and removes a server in Settings, keeping its key hidden', asy
   await expect(server(page, 'extra')).toHaveCount(0)
   // The ones from the file are still there.
   await expect(server(page, 'fixture')).toBeVisible()
+})
+
+test('keeps the switches in the server’s entry in the file', async ({
+  page,
+}) => {
+  await page.goto('/')
+  const dialog = await openTools(page)
+  const entry = () =>
+    (
+      JSON.parse(readFileSync(MCP_JSON, 'utf8')) as {
+        mcpServers: Record<string, Record<string, unknown>>
+      }
+    ).mcpServers.fixture!
+
+  await dialog.getByRole('switch', { name: 'Echo' }).click()
+  await expect.poll(() => entry().disabledTools).toEqual(['echo'])
+  await dialog
+    .getByRole('switch', { name: 'Ask before using its tools' })
+    .first()
+    .click()
+  await expect.poll(() => entry().ask).toBe(true)
+  await page.getByRole('switch', { name: 'Use fixture' }).click()
+  await expect.poll(() => entry().disabled).toBe(true)
+  // The server's definition is as it was.
+  expect(entry()).toMatchObject({ type: 'local' })
+
+  // Reloading the page shows the same: it comes from the file.
+  await page.reload()
+  const again = await openTools(page)
+  await expect(server(page, 'fixture')).toContainText('Off')
+  await page.getByRole('switch', { name: 'Use fixture' }).click()
+  await expect.poll(() => entry().disabled).toBeUndefined()
+  await expect(again.getByRole('switch', { name: 'Echo' })).not.toBeChecked()
+  await again.getByRole('switch', { name: 'Echo' }).click()
+  await expect.poll(() => entry().disabledTools).toBeUndefined()
 })

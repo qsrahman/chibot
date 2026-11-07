@@ -217,6 +217,7 @@ tool payloads), written in the same transaction as the item.
 | `POST /api/transcriptions` | 9 | Transcribe a recording (≤ 25 MB). Phase 9 adds `fileIds` to turns and `features` to health. |
 | `GET /api/mcp` · `POST /api/mcp/reload` · `POST /api/mcp/:name/{reconnect,sign-in,sign-out}` · `GET /api/mcp/oauth/callback` | 10 | MCP servers' status and tools; reconnect; OAuth sign-in and sign-out |
 | `GET /api/mcp/definitions` · `PUT/DELETE /api/mcp/servers/:name` | after 0.13 | Add, change and remove servers in the config file from Settings (only on loopback or with `CHIBOT_TOKEN`); `env` and `headers` values are write-only |
+| `PATCH /api/mcp/servers/:name` | after 0.13 | A switch of Settings → Tools (`disabled`, `ask`, or one `tool` on or off), written into the server's entry in the config file; not behind that gate |
 | `POST /api/conversations/:id/compact` · `DELETE /api/conversations/:id/compactions/:compactionId` | 0.13 | Summarize the start of a chat now (optional focus); undo a summary. `GET /api/conversations/:id` also returns its `compactions`. |
 | `POST /api/conversations/:id/branch` | after 0.13 | `{ itemId }`: a new chat with this one up to the end of that turn (summaries kept, files copied), titled "Branch · …" |
 | `GET /api/models/window?model=` | 0.13 | The context window the server reports for a model, or `null` |
@@ -713,8 +714,8 @@ runner (now Phase 11).
 - **Tools.** Each MCP tool is an `McpTool` named `<server>__<tool>` (cut to
   the 64-character limit), labelled with the tool's title, declared with the
   server's own JSON Schema and `strict: false` (the server validates the
-  arguments). Calls don't ask first, except for servers in the
-  `askMcpServers` setting (Settings → Tools); their output is
+  arguments). Calls don't ask first, except for servers whose entry has
+  `ask` (Settings → Tools); their output is
   `untrustedOutput`, so memory changes in that chat still ask. Stop cancels
   a call (`AbortSignal`), and calls time out after 60 s. `ToolRegistry` offers
   them beside chibot's own tools; switches and `disabledTools` work the same.
@@ -736,10 +737,15 @@ runner (now Phase 11).
   0600), refreshed by the SDK, and removed by Sign out. Sign-in is done on
   the machine running chibot (loopback redirect).
 - **Settings → Tools.** An "MCP servers" section: per server a switch
-  (`disabledMcpServers` setting; a disabled server is disconnected and a
-  local one's process stopped), its status, Reconnect, Sign in / Sign out,
-  "Ask before using its tools" (`askMcpServers`) and its tools with their own
-  switches; Reload re-reads `mcp.json` (new servers connect, removed ones
+  (`disabled` in the server's config entry, written by `PATCH
+  /api/mcp/servers/:name`; a disabled server is disconnected and a local
+  one's process stopped), its status, Reconnect, Sign in / Sign out,
+  "Ask before using its tools" (`ask` in the entry) and its tools with their
+  own switches (`disabledTools`, by the server's own names). The three used to
+  be the settings `disabledMcpServers`, `askMcpServers` and `disabledTools`;
+  those still apply to a server whose entry has no value of its own, and a
+  switch used in Settings clears them. A change that is only a switch is
+  applied on Reload without reconnecting; Reload re-reads `mcp.json` (new servers connect, removed ones
   stop, changed ones restart, an invalid file changes nothing). Routes:
   `GET /api/mcp`, `POST /api/mcp/reload`, `POST /api/mcp/:name/reconnect`,
   `POST /api/mcp/:name/sign-in`, `POST /api/mcp/:name/sign-out`,

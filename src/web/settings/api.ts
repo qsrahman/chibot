@@ -1,4 +1,8 @@
-import type { McpDefinitions, McpServerConfig } from '../../shared/mcp.ts'
+import type {
+  McpDefinitions,
+  McpServerConfig,
+  McpSwitch,
+} from '../../shared/mcp.ts'
 import type { ToolInfo } from '../../shared/tools.ts'
 import type {
   Settings,
@@ -56,6 +60,10 @@ export const listMcpDefinitions = () =>
 /** Adds or changes a server; a blank `env` / `headers` value keeps the saved one. */
 export const saveMcpServer = (name: string, server: McpServerConfig) =>
   request(`/api/mcp/servers/${name}`, send('PUT', server))
+
+/** Turns a server, its approval or one of its tools on or off, in the config file. */
+export const setMcpSwitch = (name: string, change: McpSwitch) =>
+  request(`/api/mcp/servers/${name}`, send('PATCH', change))
 
 export const removeMcpServer = (name: string) =>
   remove(`/api/mcp/servers/${name}`)

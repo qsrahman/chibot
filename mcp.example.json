@@ -12,7 +12,9 @@
     "tracker": {
       "type": "remote",
       "url": "http://localhost:8808/mcp",
-      "headers": { "Authorization": "Bearer ${TRACKER_TOKEN}" }
+      "headers": { "Authorization": "Bearer ${TRACKER_TOKEN}" },
+      "ask": true,
+      "disabledTools": ["delete_issue"]
     }
   }
 }
