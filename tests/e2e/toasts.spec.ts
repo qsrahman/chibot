@@ -95,3 +95,21 @@ test('importing a chat says so, from the keyboard', async ({ page }) => {
     page.locator('.toast', { hasText: 'Chat imported' }),
   ).toBeVisible()
 })
+
+test('a toast raised inside Settings is above the dialog, not behind it', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  await page.keyboard.press('ControlOrMeta+,')
+  const dialog = page.getByRole('dialog', { name: 'Settings' })
+  await dialog.getByRole('button', { name: 'Data' }).click()
+  await dialog.getByRole('button', { name: 'Copy command' }).click()
+  const toast = page.locator('.toast', { hasText: 'Copied' })
+  await expect(toast).toBeVisible()
+  // In the top layer (a popover), so a modal dialog's backdrop doesn't cover it.
+  await expect(page.locator('.toasts')).toHaveJSProperty('popover', 'manual')
+  expect(
+    await page.locator('.toasts').evaluate((el) => el.matches(':popover-open')),
+  ).toBe(true)
+})

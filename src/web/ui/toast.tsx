@@ -8,13 +8,15 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { X } from 'lucide-react'
+import { CircleAlert, CircleCheck, Info, X } from 'lucide-react'
 
 export interface ToastOptions {
   /** One button, e.g. Undo. */
   action?: { label: string; onClick: () => void }
   /** How long it stays, in ms; hovering or focusing it keeps it. */
   duration?: number
+  /** The icon: a confirmation (the default), a failure or a plain note. */
+  kind?: 'success' | 'error' | 'info'
 }
 
 interface Toasts {
@@ -45,6 +47,22 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<Item[]>([])
   const [spoken, setSpoken] = useState('')
   const nextId = useRef(0)
+  const layer = useRef<HTMLDivElement>(null)
+
+  // Open while there is a toast. A new one re-opens it, so it lands above a
+  // dialog that opened since (the top layer stacks by when each was shown).
+  const newest = items.at(-1)?.id
+  useEffect(() => {
+    const el = layer.current
+    if (!el) return
+    const open = el.matches(':popover-open')
+    if (newest === undefined) {
+      if (open) el.hidePopover()
+      return
+    }
+    if (open) el.hidePopover()
+    el.showPopover()
+  }, [newest])
 
   const dismiss = useCallback(
     (id: number) => setItems((all) => all.filter((item) => item.id !== id)),
@@ -69,7 +87,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext value={api}>
       {children}
-      <div className="toasts">
+      {/* A popover, so it is in the top layer: a toast raised inside a modal
+          dialog (Settings) would otherwise sit behind the dialog's backdrop. */}
+      <div className="toasts" popover="manual" ref={layer}>
         {items.map((item) => (
           <ToastView key={item.id} item={item} onDismiss={dismiss} />
         ))}
@@ -89,7 +109,7 @@ function ToastView({
   onDismiss: (id: number) => void
 }) {
   const [held, setHeld] = useState(false)
-  const { id, duration = 6000 } = item
+  const { id, duration = 6000, kind = 'success' } = item
   useEffect(() => {
     if (held) return
     const timer = setTimeout(() => onDismiss(id), duration)
@@ -104,6 +124,13 @@ function ToastView({
       onFocus={() => setHeld(true)}
       onBlur={() => setHeld(false)}
     >
+      {kind === 'error' ? (
+        <CircleAlert size={18} strokeWidth={1.5} aria-hidden />
+      ) : kind === 'info' ? (
+        <Info size={18} strokeWidth={1.5} aria-hidden />
+      ) : (
+        <CircleCheck size={18} strokeWidth={1.5} aria-hidden />
+      )}
       <span className="toast-message">{item.message}</span>
       {item.action && (
         <button

@@ -69,7 +69,7 @@ export function Data({
             onClick={() =>
               navigator.clipboard.writeText('chibot backup').then(
                 () => toast('Copied “chibot backup”'),
-                () => toast('Could not copy'),
+                () => toast('Could not copy', { kind: 'error' }),
               )
             }
           >

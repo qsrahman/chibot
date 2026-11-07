@@ -20,6 +20,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Fixed
 
+- Toasts raised inside a dialog (copying the backup command or importing a chat in Settings, restoring in Archived chats) were hidden behind the dialog's backdrop. They are now in the top layer, above it, and look like an inverted pill with an icon (confirmation, failure or note) instead of a bordered card.
 - A server that reports "the request is too long" inside the answer stream (a `response.failed` or `error` event before any text arrived) now gets the same recovery as one that refuses the request: the start of the chat is summarized harder and the request is sent once more. Once text has streamed, the error is shown as before.
 - After **Undo** of a summary, the context size is estimated until the next answer reports one, instead of trusting a reading taken with the summary in place (it read low and could skip a needed summary).
 - Importing a chat whose tool result is a list of parts instead of text is refused: chibot's tools answer in text, and context pruning relies on it.

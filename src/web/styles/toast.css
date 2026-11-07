@@ -1,31 +1,49 @@
-/* Toasts (ui/toast.tsx): bottom centre, above the composer's note. */
+/* Toasts (ui/toast.tsx): bottom centre, above the composer's note. The layer
+   is a popover (the top layer), so it shows above modal dialogs too. */
 
 .toasts {
   position: fixed;
   inset: auto 0 72px;
-  z-index: 40;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  width: auto;
+  height: auto;
+  margin: 0;
   padding: 0 16px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  overflow: visible;
   pointer-events: none;
 }
 
+.toasts:not(:popover-open) {
+  display: none;
+}
+
+/* An inverted pill, like a tooltip with more to say: it stands out from the
+   page in either theme without a border. */
 .toast {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   max-width: min(100%, 440px);
-  padding: 6px 6px 6px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-card);
-  background: var(--surface-raised);
-  color: var(--fg);
+  min-height: 44px;
+  padding: 8px 8px 8px 14px;
+  border-radius: 22px;
+  background: var(--button);
+  color: var(--button-fg);
   font-size: 0.875rem;
+  line-height: 1.25rem;
   box-shadow: var(--dialog-shadow);
   pointer-events: auto;
-  animation: toast-in 150ms ease-out;
+  animation: toast-in 180ms ease-out;
+}
+
+.toast > svg {
+  flex: none;
 }
 
 .toast-message {
@@ -36,23 +54,37 @@
 .toast-action {
   padding: 6px 10px;
   border: none;
-  border-radius: var(--radius-row);
+  border-radius: 999px;
   background: transparent;
-  color: var(--fg);
+  color: inherit;
   font: inherit;
   font-weight: 600;
   text-decoration: underline;
+  text-underline-offset: 2px;
   cursor: pointer;
+  transition: background-color 150ms ease;
 }
 
-.toast-action:hover {
-  background: var(--chip);
+.toast-action:hover,
+.icon-button.toast-close:hover {
+  background: color-mix(in srgb, var(--button-fg) 20%, transparent);
+}
+
+.icon-button.toast-close {
+  width: 28px;
+  height: 28px;
+  color: inherit;
+  opacity: 0.8;
+}
+
+.icon-button.toast-close:hover {
+  opacity: 1;
 }
 
 @keyframes toast-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(8px) scale(0.98);
   }
 }
 

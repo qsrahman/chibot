@@ -275,6 +275,16 @@ code"); a tool that isn't set up or is switched off stays listed, disabled in
 chip (`--bubble-bg` / `--bubble-fg`, 36 px tall, icon + "Search"/"Image" +
 `X`) before the text; it applies to one message.
 
+**Toasts.** An inverted pill (`--button` background, `--button-fg` text, 22 px
+radius, 44 px tall, dialog shadow, no border) at the bottom centre, 72 px up: an
+18 px icon (`CircleCheck` for a confirmation, `CircleAlert` for a failure,
+`Info` for a note), the message, an underlined semibold action such as Undo, and
+a 28 px dismiss `X`. The layer is a `popover="manual"` element, so it is in the
+top layer and shows above a modal dialog (a toast raised in Settings used to sit
+behind the dialog's backdrop); it can't be clicked while a modal is open, so
+such a toast has no action. Up to three stack; they stay six seconds, longer
+under the pointer.
+
 **Settings actions.** A row's actions are round 32 px icon buttons
 (`ui/IconButton.tsx`, 18 px icons, 1.5 stroke) whose label is both the
 tooltip (`title`) and the accessible name: outlined in `--border`, filling
