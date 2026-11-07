@@ -6,6 +6,7 @@ import type { ReactNode } from 'react'
  */
 export function IconButton({
   label,
+  hint,
   variant,
   disabled,
   type = 'button',
@@ -14,6 +15,8 @@ export function IconButton({
 }: {
   /** The accessible name and the tooltip: say what it does. */
   label: string
+  /** A longer tooltip, when the name alone doesn't say enough. */
+  hint?: string
   variant?: 'primary' | 'danger'
   disabled?: boolean
   type?: 'button' | 'submit'
@@ -26,7 +29,7 @@ export function IconButton({
       type={type}
       className={`icon-button outlined${variant ? ` ${variant}` : ''}`}
       aria-label={label}
-      title={label}
+      title={hint ?? label}
       disabled={disabled}
       onClick={onClick}
     >

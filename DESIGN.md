@@ -295,7 +295,7 @@ validation hint). While it shows, the element's `title` is set aside so the
 browser's own doesn't appear too; an icon-only control keeps its name in
 `aria-label`. So a control needs only `title` and an `aria-label`.
 
-**Settings actions.** A row's actions are round 32 px icon buttons
+**Settings actions.** A row's actions (and the Projects cards' Add note, Add files, Add folder, Edit and Suggest) are round 32 px icon buttons
 (`ui/IconButton.tsx`, 18 px icons, 1.5 stroke) whose label is both the
 tooltip (`title`) and the accessible name: outlined in `--border`, filling
 with `--chip` and `--border-control` on hover and a little darker when

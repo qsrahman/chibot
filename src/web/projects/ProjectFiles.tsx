@@ -8,6 +8,7 @@ import {
   X,
 } from 'lucide-react'
 import type { ProjectFile } from '../../shared/types.ts'
+import { IconButton } from '../ui/IconButton.tsx'
 import { FilePickerButton } from './FilePickerButton.tsx'
 import { droppedFiles } from './folders.ts'
 import { NoteDialog } from './ProjectDialogs.tsx'
@@ -50,21 +51,16 @@ export function ProjectFiles({
       <header>
         <h2>Files</h2>
         <div className="project-card-actions">
-          <button
-            type="button"
-            className="button"
-            onClick={() => setNoting(true)}
-          >
-            <NotebookPen size={16} strokeWidth={1.5} aria-hidden />
-            Add note
-          </button>
+          <IconButton label="Add note" onClick={() => setNoting(true)}>
+            <NotebookPen size={18} strokeWidth={1.5} />
+          </IconButton>
           <FilePickerButton
-            icon={<Upload size={16} strokeWidth={1.5} aria-hidden />}
+            icon={<Upload size={18} strokeWidth={1.5} />}
             label="Add files"
             onPick={onAdd}
           />
           <FilePickerButton
-            icon={<FolderUp size={16} strokeWidth={1.5} aria-hidden />}
+            icon={<FolderUp size={18} strokeWidth={1.5} />}
             label="Add folder"
             folder
             onPick={onAdd}

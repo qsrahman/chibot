@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { LoaderCircle, Pencil, Sparkles } from 'lucide-react'
+import { IconButton } from '../ui/IconButton.tsx'
 
 /**
  * What chats in the project are told. Shown as a preview with Edit (or a
@@ -49,14 +50,12 @@ export function ProjectInstructions({
       <header>
         <h2>Instructions</h2>
         {!editing && (
-          <button
-            type="button"
-            className="button"
+          <IconButton
+            label={instructions ? 'Edit' : 'Add instructions'}
             onClick={() => setEditing(true)}
           >
-            <Pencil size={16} strokeWidth={1.5} aria-hidden />
-            {instructions ? 'Edit' : 'Add instructions'}
-          </button>
+            <Pencil size={18} strokeWidth={1.5} />
+          </IconButton>
         )}
       </header>
       {editing ? (
@@ -83,24 +82,22 @@ export function ProjectInstructions({
             </p>
           )}
           <div className="instructions-actions">
-            <button
-              type="button"
-              className="button"
-              disabled={!canSuggest || suggesting}
-              title={
+            <IconButton
+              label="Suggest from files"
+              hint={
                 canSuggest
-                  ? 'Writes a draft with your chat model, from the start of each file (sent to it)'
+                  ? 'Suggest from files: writes a draft with your chat model, from the start of each file (sent to it)'
                   : 'Add a file first: the draft is based on what is in the files'
               }
+              disabled={!canSuggest || suggesting}
               onClick={suggest}
             >
               {suggesting ? (
-                <LoaderCircle className="spin" size={16} aria-hidden />
+                <LoaderCircle className="spin" size={18} aria-hidden />
               ) : (
-                <Sparkles size={16} strokeWidth={1.5} aria-hidden />
+                <Sparkles size={18} strokeWidth={1.5} />
               )}
-              Suggest from files
-            </button>
+            </IconButton>
             <span className="spacer" />
             <button
               type="button"

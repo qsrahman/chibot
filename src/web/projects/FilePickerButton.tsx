@@ -1,5 +1,6 @@
 import { useRef, type ReactNode } from 'react'
 import { DOCUMENT_ACCEPT } from '../../shared/documents.ts'
+import { IconButton } from '../ui/IconButton.tsx'
 import { pickedFiles } from './folders.ts'
 
 /**
@@ -22,19 +23,14 @@ export function FilePickerButton({
   const input = useRef<HTMLInputElement>(null)
   return (
     <>
-      <button
-        type="button"
-        className="button"
-        onClick={() => input.current?.click()}
-      >
+      <IconButton label={label} onClick={() => input.current?.click()}>
         {icon}
-        {label}
-      </button>
+      </IconButton>
       <input
         ref={input}
         type="file"
         hidden
-        aria-label={label}
+        aria-label={`${label} (file input)`}
         {...(folder
           ? // Not in React's types; Chrome, Edge, Firefox and Safari read it.
             { webkitdirectory: '' }

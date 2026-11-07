@@ -35,7 +35,7 @@ const sidebarChats = (page: Page) => page.locator('nav .conversation-row')
 test('answers from project files, with its instructions', async ({ page }) => {
   await newProject(page, 'Japan trip')
   const files = page.getByRole('region', { name: 'Project files' })
-  await files.getByLabel('Add files').setInputFiles([
+  await files.getByLabel('Add files (file input)').setInputFiles([
     {
       name: 'itinerary.md',
       mimeType: 'text/markdown',
@@ -100,7 +100,7 @@ test('adds a note, reads a whole file, and indexes a failed file again', async (
   await expect(files.getByText('Ready')).toHaveCount(1)
 
   // A file with no text fails, and can be tried again.
-  await files.getByLabel('Add files').setInputFiles({
+  await files.getByLabel('Add files (file input)').setInputFiles({
     name: 'empty.md',
     mimeType: 'text/markdown',
     buffer: Buffer.from('   '),
@@ -147,10 +147,10 @@ test('refuses a file that is already in the project', async ({ page }) => {
     mimeType: 'text/markdown',
     buffer: Buffer.from('The same text.'),
   })
-  await files.getByLabel('Add files').setInputFiles(note('a.md'))
+  await files.getByLabel('Add files (file input)').setInputFiles(note('a.md'))
   await expect(files.getByText('Ready')).toHaveCount(1)
   await files
-    .getByLabel('Add files')
+    .getByLabel('Add files (file input)')
     .setInputFiles([note('b.md'), note('c.md')])
   await expect(page.getByRole('alert')).toContainText(
     'b.md is already in this project as a.md',
@@ -187,7 +187,7 @@ test('describes a project, and drafts its instructions from the files', async ({
   await expect(suggest).toBeDisabled()
   await page
     .getByRole('region', { name: 'Project files' })
-    .getByLabel('Add files')
+    .getByLabel('Add files (file input)')
     .setInputFiles({
       name: 'plan.md',
       mimeType: 'text/markdown',
@@ -218,7 +218,9 @@ test('adds a folder, keeping paths and skipping what projects cannot use', async
     }
     await newProject(page, 'Code')
     const files = page.getByRole('region', { name: 'Project files' })
-    await files.getByLabel('Add folder').setInputFiles(join(dir, 'app'))
+    await files
+      .getByLabel('Add folder (file input)')
+      .setInputFiles(join(dir, 'app'))
     await expect(files.getByText('app/docs/readme.md')).toBeVisible()
     await expect(files.getByText('app/src/main.ts')).toBeVisible()
     await expect(files.getByText('Ready')).toHaveCount(2)
