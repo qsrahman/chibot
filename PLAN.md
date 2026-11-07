@@ -779,7 +779,9 @@ Shipped as patch releases (details in the CHANGELOG):
 - **Since v0.13.0 (unreleased).** Review fixes to the summaries; **Compact
   now** as an icon; **Take a photo** (camera); MCP servers added, edited and
   removed in Settings, with presets; **Quote** selected text; `chibot backup`
-  and `chibot restore`.
+  and `chibot restore` (released as v0.13.1). Then: Settings and Projects
+  actions as icon buttons, styled tooltips, toasts that show above dialogs,
+  and `ChatPage` and `ChatService` split into smaller files.
 
 ### Phase 11a — Multiple providers (design agreed, not built)
 Decisions (agreed; the design was drawn up against Chatbox's provider code,

@@ -15,6 +15,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- Code only: `ChatPage.tsx` is split into a top bar, a greeting, hooks for following the answer and for dropped files, and a tool-options helper; the fitting of a request to the context window moved out of `ChatService` into `chat/context-fit.ts`. Nothing they do has changed.
 - Projects: the file card's Add note, Add files and Add folder, and the instructions card's Edit and Suggest from files, are icon buttons with tooltips like Settings'.
 - Tooltips: every control with a `title` shows a styled tooltip after about a third of a second (the browser's waits a second, and shows nothing on keyboard focus), also on keyboard focus, above dialogs and never cut off by a scrolling panel.
 - Settings: a row's actions (import, manage archived chats and memories, copy the backup command, add, reload, sign in and out, reconnect, edit and remove an MCP server, reset a model) are round icon buttons with tooltips, and every button in dialogs now has hover and pressed states.
