@@ -131,158 +131,164 @@ export function McpServerDialog({
       className="mcp-dialog"
     >
       <form className="mcp-form" onSubmit={(e) => void submit(e)}>
-        {!editing && (
-          <label>
-            Start from
-            <select
-              className="dialog-input"
-              defaultValue=""
-              onChange={(e) =>
-                applyPreset(MCP_PRESETS.find((p) => p.id === e.target.value))
-              }
-            >
-              <option value="">Custom</option>
-              {MCP_PRESETS.map((preset) => (
-                <option key={preset.id} value={preset.id}>
-                  {preset.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        <label>
-          Name
-          <input
-            className="dialog-input"
-            value={form.name}
-            disabled={editing}
-            required
-            maxLength={32}
-            pattern="[A-Za-z0-9_\-]+"
-            title="Letters, digits, - and _"
-            onChange={(e) => set({ name: e.target.value })}
-          />
-        </label>
-        {!editing && (
-          <label>
-            Kind
-            <select
-              className="dialog-input"
-              value={form.type}
-              onChange={(e) =>
-                set({ type: e.target.value as Form['type'], pairs: [] })
-              }
-            >
-              <option value="local">Local: a command chibot runs</option>
-              <option value="remote">Remote: a URL</option>
-            </select>
-          </label>
-        )}
-        {remote ? (
-          <label>
-            URL
-            <input
-              className="dialog-input"
-              type="url"
-              required
-              value={form.url}
-              placeholder="https://example.com/mcp"
-              onChange={(e) => set({ url: e.target.value })}
-            />
-          </label>
-        ) : (
-          <>
+        <div className="mcp-fields">
+          {!editing && (
             <label>
-              Command
-              <input
+              Start from
+              <select
                 className="dialog-input"
-                required
-                value={form.command}
-                placeholder="npx"
-                onChange={(e) => set({ command: e.target.value })}
-              />
-            </label>
-            <label>
-              Arguments, one per line
-              <textarea
-                className="dialog-input"
-                rows={3}
-                value={form.args}
-                onChange={(e) => set({ args: e.target.value })}
-              />
-            </label>
-            <label>
-              Working folder (optional)
-              <input
-                className="dialog-input"
-                value={form.cwd}
-                onChange={(e) => set({ cwd: e.target.value })}
-              />
-            </label>
-          </>
-        )}
-        <fieldset className="mcp-pairs">
-          <legend>{secrets}</legend>
-          {form.pairs.map((pair, index) => (
-            <div className="mcp-pair" key={index}>
-              <input
-                className="dialog-input"
-                aria-label={`${secrets} name ${index + 1}`}
-                value={pair.key}
-                placeholder={remote ? 'Authorization' : 'API_KEY'}
-                onChange={(e) => setPair(index, { key: e.target.value })}
-              />
-              <input
-                className="dialog-input"
-                type="password"
-                autoComplete="off"
-                aria-label={`${secrets} value ${index + 1}`}
-                value={pair.value}
-                placeholder={
-                  editing && pair.value === '' ? 'Saved (hidden)' : 'Value'
-                }
-                onChange={(e) => setPair(index, { value: e.target.value })}
-              />
-              <button
-                type="button"
-                className="icon-button"
-                aria-label={`Remove ${pair.key || 'row'}`}
-                title="Remove"
-                onClick={() =>
-                  set({ pairs: form.pairs.filter((_, i) => i !== index) })
+                defaultValue=""
+                onChange={(e) =>
+                  applyPreset(MCP_PRESETS.find((p) => p.id === e.target.value))
                 }
               >
-                <X size={18} strokeWidth={1.5} />
-              </button>
-            </div>
-          ))}
-          <button
-            type="button"
-            className="button"
-            onClick={() =>
-              set({ pairs: [...form.pairs, { key: '', value: '' }] })
-            }
-          >
-            <Plus size={16} strokeWidth={1.5} aria-hidden /> Add
-          </button>
-          <p className="mcp-hint">
-            Keys go here, not in the arguments or URL: values are kept in
-            config.json and never shown again. Leave a saved value blank to keep
-            it.
-          </p>
-        </fieldset>
-        {!remote && (
-          <p className="mcp-hint">
-            A local server is a program that runs on this machine with your
-            rights. Add only ones you trust.
-          </p>
-        )}
-        {note && <p className="mcp-hint">{note}</p>}
-        {error && (
-          <p className="error" role="alert">
-            {error}
-          </p>
-        )}
+                <option value="">Custom</option>
+                {MCP_PRESETS.map((preset) => (
+                  <option key={preset.id} value={preset.id}>
+                    {preset.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <div className="mcp-row2">
+            <label>
+              Name
+              <input
+                className="dialog-input"
+                value={form.name}
+                disabled={editing}
+                required
+                maxLength={32}
+                pattern="[A-Za-z0-9_\-]+"
+                title="Letters, digits, - and _"
+                onChange={(e) => set({ name: e.target.value })}
+              />
+            </label>
+            {!editing && (
+              <label>
+                Kind
+                <select
+                  className="dialog-input"
+                  value={form.type}
+                  onChange={(e) =>
+                    set({ type: e.target.value as Form['type'], pairs: [] })
+                  }
+                >
+                  <option value="local">Local: a command chibot runs</option>
+                  <option value="remote">Remote: a URL</option>
+                </select>
+              </label>
+            )}
+          </div>
+          {remote ? (
+            <label>
+              URL
+              <input
+                className="dialog-input"
+                type="url"
+                required
+                value={form.url}
+                placeholder="https://example.com/mcp"
+                onChange={(e) => set({ url: e.target.value })}
+              />
+            </label>
+          ) : (
+            <>
+              <div className="mcp-row2">
+                <label>
+                  Command
+                  <input
+                    className="dialog-input"
+                    required
+                    value={form.command}
+                    placeholder="npx"
+                    onChange={(e) => set({ command: e.target.value })}
+                  />
+                </label>
+                <label>
+                  Working folder (optional)
+                  <input
+                    className="dialog-input"
+                    value={form.cwd}
+                    onChange={(e) => set({ cwd: e.target.value })}
+                  />
+                </label>
+              </div>
+              <label>
+                Arguments, one per line
+                <textarea
+                  className="dialog-input"
+                  rows={3}
+                  value={form.args}
+                  onChange={(e) => set({ args: e.target.value })}
+                />
+              </label>
+            </>
+          )}
+          <fieldset className="mcp-pairs">
+            <legend>{secrets}</legend>
+            {form.pairs.map((pair, index) => (
+              <div className="mcp-pair" key={index}>
+                <input
+                  className="dialog-input"
+                  aria-label={`${secrets} name ${index + 1}`}
+                  value={pair.key}
+                  placeholder={remote ? 'Authorization' : 'API_KEY'}
+                  onChange={(e) => setPair(index, { key: e.target.value })}
+                />
+                <input
+                  className="dialog-input"
+                  type="password"
+                  autoComplete="off"
+                  aria-label={`${secrets} value ${index + 1}`}
+                  value={pair.value}
+                  placeholder={
+                    editing && pair.value === '' ? 'Saved (hidden)' : 'Value'
+                  }
+                  onChange={(e) => setPair(index, { value: e.target.value })}
+                />
+                <button
+                  type="button"
+                  className="icon-button"
+                  aria-label={`Remove ${pair.key || 'row'}`}
+                  title="Remove"
+                  onClick={() =>
+                    set({ pairs: form.pairs.filter((_, i) => i !== index) })
+                  }
+                >
+                  <X size={18} strokeWidth={1.5} />
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              className="button"
+              onClick={() =>
+                set({ pairs: [...form.pairs, { key: '', value: '' }] })
+              }
+            >
+              <Plus size={16} strokeWidth={1.5} aria-hidden /> Add
+            </button>
+            <p className="mcp-hint">
+              Keys go here, not in the arguments or URL: values are kept in
+              config.json and never shown again. Leave a saved value blank to
+              keep it.
+            </p>
+          </fieldset>
+          {!remote && (
+            <p className="mcp-hint">
+              A local server is a program that runs on this machine with your
+              rights. Add only ones you trust.
+            </p>
+          )}
+          {note && <p className="mcp-hint">{note}</p>}
+          {error && (
+            <p className="error" role="alert">
+              {error}
+            </p>
+          )}
+        </div>
         <div className="dialog-actions">
           <button type="button" className="button" onClick={onClose}>
             Cancel

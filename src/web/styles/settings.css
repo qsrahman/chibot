@@ -292,17 +292,45 @@ label.button {
   cursor: pointer;
 }
 
-/* Adding or changing an MCP server. */
+/* Adding or changing an MCP server: the fields scroll, the buttons stay. */
 .dialog.mcp-dialog {
   width: min(100% - 32px, 560px);
   max-height: calc(100dvh - 48px);
-  overflow-y: auto;
+}
+
+.dialog.mcp-dialog[open] {
+  display: flex;
+  flex-direction: column;
 }
 
 .mcp-form {
-  display: grid;
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
   font-size: 0.875rem;
+}
+
+/* The negative margin gives focus rings room inside the scrolling area. */
+.mcp-fields {
+  display: grid;
+  gap: 14px;
+  min-height: 0;
+  margin: -4px;
+  padding: 4px;
+  overflow-y: auto;
+}
+
+.mcp-row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 520px) {
+  .mcp-row2 {
+    grid-template-columns: 1fr;
+  }
 }
 
 .mcp-form label {
@@ -312,17 +340,29 @@ label.button {
 }
 
 .mcp-form .dialog-input {
+  height: auto;
   margin-bottom: 0;
+  padding: 7px 10px;
   color: var(--fg);
+}
+
+.mcp-form textarea.dialog-input {
+  resize: vertical;
 }
 
 .mcp-pairs {
   display: grid;
   gap: 8px;
+  min-width: 0;
   margin: 0;
   padding: 0;
   border: 0;
   color: var(--fg-muted);
+}
+
+.mcp-pairs legend {
+  margin-bottom: 4px;
+  padding: 0;
 }
 
 .mcp-pairs .button {
