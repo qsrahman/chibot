@@ -20,6 +20,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:e2e": "playwright test",
+    "seed:perf": "node scripts/seed-perf.ts",
+    "measure:chat": "node scripts/measure-chat.ts",
     "release": "node scripts/release.ts"
   },
   "author": "Qazi Sami ur Rahman <qsrahmans@gmail.com>",

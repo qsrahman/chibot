@@ -49,3 +49,29 @@ How chibot is tested and how to add tests. Part of the developer guide ([AGENTS.
   axe over the main screens in both colour schemes; a new screen, dialog or
   colour belongs in it. First run:
   `pnpm exec playwright install chromium`.
+
+## Performance
+
+Measure before optimizing. `pnpm seed:perf --data <folder>` fills a scratch data
+folder with 300 small chats and one long chat (500 turns, each with a tool
+result of 20,000 characters, by default; it refuses your real data folder).
+Start chibot on it (`CHIBOT_DATA_DIR=<folder> OPENAI_API_KEY=x chibot --port
+4177`), then `pnpm measure:chat --port 4177 --turns 500 [--throttle 6]` opens the
+chat in Chromium and prints the time to open it, DOM size, heap, how smooth
+scrolling is and what a keystroke costs. `--throttle 6` makes the CPU six times
+slower, about a low-end phone.
+
+Baseline (2026-11, an Apple Silicon laptop, Chromium):
+
+| | 300 turns, 800-character results | 500 turns, 20,000-character results (10.5 MB) |
+|---|---|---|
+| Open, last turn on screen | 252 ms (891 ms at 6× slower) | 326 ms (1,163 ms at 6× slower) |
+| DOM nodes · JS heap | 64k · 38 MB | 97k · 137 MB |
+| Scrolling, worst frame | 36 ms (146 ms at 6×) | 58 ms (223 ms at 6×) |
+| A keystroke to the next frame | 33 ms (nothing slower than the display) | 33 ms |
+
+So windowing, paging older turns or `content-visibility` are not needed at these
+sizes; revisit them if a chat past a couple of thousand turns, or a slower
+device, shows long frames here. The sidebar lists the 200 newest chats; older
+ones are reached by search.
+

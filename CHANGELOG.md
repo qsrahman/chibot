@@ -12,6 +12,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- Dev tools: `pnpm seed:perf` fills a scratch data folder with many chats and one very long chat, and `pnpm measure:chat` times opening it, scrolling and typing; the numbers (a 500-turn chat with 10 MB of tool results opens in about a third of a second) are in TESTING.md.
 - Docs only: AGENTS.md (read into every session) is 70 lines shorter: "Adding a tool" and "Testing" moved to [TOOLS.md](TOOLS.md) and [TESTING.md](TESTING.md), which it points to.
 - chibot refuses to start when `server.host` is beyond this machine and no token is set (it only warned before): anyone who could reach it would spend your API key and, in Settings, add MCP servers that run commands. `chibot --allow-open` (or `CHIBOT_ALLOW_OPEN=1`) starts it anyway, for a firewall or proxy that already restricts who can reach it.
 

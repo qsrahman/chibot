@@ -1045,6 +1045,11 @@ Environment variables:
 - **Sidebar size:** the list shows the 200 most recent chats (pinned first)
   and search returns 50 hits. Older chats are reachable through search. Add
   paging or "show more" if that limit is ever hit.
+- **Long chats:** measured with `pnpm seed:perf` / `pnpm measure:chat`: a
+  500-turn chat with 10 MB of tool results opens in ~0.3 s and scrolls and
+  types smoothly (about 1.2 s at 6× slower CPU), so there is no windowing or
+  paging of old turns (numbers in TESTING.md). Revisit past a couple of
+  thousand turns.
 - **Bundle size:** the web bundle is ~960 kB (highlight.js grammars, KaTeX).
   That's acceptable for a local app; code-split if it starts to matter.
 - **Future tools:** a code runner comes with Phase 11. Deliberately out:

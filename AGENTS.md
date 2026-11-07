@@ -78,6 +78,8 @@ pnpm format       # prettier --write
 pnpm build        # build the web app into dist/web
 pnpm start        # production: serves the API and dist/web (= `chibot`)
 pnpm add -g .     # puts `chibot` on your PATH, linked to the checkout (run `pnpm build` first)
+pnpm seed:perf    # fill a scratch data folder with many chats (see TESTING.md)
+pnpm measure:chat # time opening a long chat, scrolling, typing (see TESTING.md)
 pnpm release      # patch|minor|major|X.Y.Z: bump, CHANGELOG, checks, commit
 ```
 
