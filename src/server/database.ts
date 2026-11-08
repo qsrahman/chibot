@@ -73,6 +73,7 @@ const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
   PROJECT_MIGRATIONS.chunker,
   PROJECT_MIGRATIONS.description,
   PROJECT_MIGRATIONS.page,
+  PROJECT_MIGRATIONS.documentPrefix,
   // Summaries that stand in for the items up to one on the path (CONTEXT.md §5).
   `CREATE TABLE compactions (
      id INTEGER PRIMARY KEY AUTOINCREMENT,

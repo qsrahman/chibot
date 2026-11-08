@@ -134,6 +134,7 @@ describe('ProjectIndex', () => {
     expect(db.prepare('SELECT * FROM embedding_model').get()).toEqual({
       model: 'emb',
       dimensions: 3,
+      document_prefix: '',
     })
     expect(calls).toEqual([['Alpha beta.\n\nGamma delta.']])
   })
@@ -254,6 +255,76 @@ describe('ProjectIndex', () => {
     expect(count('SELECT count(*) n FROM chunk_vectors')).toBe(2)
   })
 
+  describe('with the text some models expect before each text', () => {
+    const embedded = (calls: string[][]) => calls.flat()
+
+    it('puts the document prefix before each chunk and the query prefix before a question', async () => {
+      const calls: string[][] = []
+      const index = new ProjectIndex(db, projects, files, {
+        client: fakeEmbeddings(calls),
+        model: () => 'emb',
+        prefixes: () => ({ query: 'Q: ', document: 'D: ' }),
+      })
+      await index.index(add('a.txt', 'Alpha beta.'))
+      expect(embedded(calls)).toEqual(['D: Alpha beta.'])
+      // What is stored and shown is the file's own text.
+      expect((await index.search(projectId, 'alpha'))[0]!.text).toBe(
+        'Alpha beta.',
+      )
+      expect(embedded(calls).at(-1)).toBe('Q: alpha')
+      expect(db.prepare('SELECT * FROM embedding_model').get()).toEqual({
+        model: 'emb',
+        dimensions: 3,
+        document_prefix: 'D: ',
+      })
+    })
+
+    it('embeds plain text when there are none, as before', async () => {
+      const calls: string[][] = []
+      const index = new ProjectIndex(db, projects, files, {
+        client: fakeEmbeddings(calls),
+        model: () => 'emb',
+      })
+      await index.index(add('a.txt', 'Alpha.'))
+      await index.search(projectId, 'alpha')
+      expect(embedded(calls)).toEqual(['Alpha.', 'alpha'])
+    })
+
+    it('embeds the files again when the document prefix changes, not when the query prefix does', async () => {
+      let prefixes = { query: 'Q: ', document: 'D: ' }
+      const calls: string[][] = []
+      const index = new ProjectIndex(db, projects, files, {
+        client: fakeEmbeddings(calls),
+        model: () => 'emb',
+        prefixes: () => prefixes,
+      })
+      await index.index(add('a.txt', 'Alpha.'))
+      calls.length = 0
+
+      prefixes = { query: 'Other question: ', document: 'D: ' }
+      await index.resume()
+      expect(calls).toEqual([])
+      await index.search(projectId, 'alpha')
+      expect(embedded(calls)).toEqual(['Other question: alpha'])
+      calls.length = 0
+
+      prefixes = { query: 'Other question: ', document: 'New: ' }
+      // Until the files are embedded again, vectors made the old way aren't
+      // compared with a question made the new way: keywords only.
+      expect(await index.candidates(projectId, 'alpha')).toMatchObject({
+        meaning: null,
+      })
+      await index.resume()
+      expect(embedded(calls)).toEqual(['New: Alpha.'])
+      expect(
+        db.prepare('SELECT document_prefix FROM embedding_model').get(),
+      ).toEqual({ document_prefix: 'New: ' })
+      expect(await index.candidates(projectId, 'alpha')).toMatchObject({
+        meaning: expect.any(Array),
+      })
+    })
+  })
+
   it('indexes files again that an older chunker split', async () => {
     const index = new ProjectIndex(db, projects, files, null)
     const id = add('notes.md', '# Title\n\nAlpha.')
@@ -304,6 +375,7 @@ describe('ProjectIndex', () => {
     expect(db.prepare('SELECT * FROM embedding_model').get()).toEqual({
       model: 'emb',
       dimensions: 3,
+      document_prefix: '',
     })
   })
 

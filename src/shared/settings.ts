@@ -13,6 +13,9 @@ export const settingsSchema = z.object({
    */
   imageModel: z.string().trim().max(200),
   embeddingModel: z.string().trim().max(200),
+  /** Text before each question and each file chunk when embedding, for models that expect one. */
+  embeddingQueryPrefix: z.string().max(200),
+  embeddingDocumentPrefix: z.string().max(200),
   transcribeModel: z.string().trim().max(200),
   /** `null` sends no effort, so the model uses its own default. */
   reasoningEffort: z.enum(REASONING_EFFORTS).nullable(),

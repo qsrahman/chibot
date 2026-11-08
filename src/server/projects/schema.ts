@@ -41,4 +41,7 @@ export const PROJECT_MIGRATIONS = {
   description: `ALTER TABLE projects ADD COLUMN description TEXT NOT NULL DEFAULT '';`,
   // The PDF page a chunk starts on, when it has pages.
   page: `ALTER TABLE chunks ADD COLUMN page INTEGER;`,
+  // The text put before each chunk when it was embedded: vectors made with a
+  // different one don't mix, as with a different model.
+  documentPrefix: `ALTER TABLE embedding_model ADD COLUMN document_prefix TEXT NOT NULL DEFAULT '';`,
 }

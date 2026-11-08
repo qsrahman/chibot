@@ -10,6 +10,7 @@ import {
   chunkStyle,
   chunkText,
 } from './chunking.ts'
+import type { Prefixes } from '../../shared/embedding-prefixes.ts'
 import { documentText } from '../text.ts'
 import { fuse, type Hit } from './fusion.ts'
 
@@ -41,6 +42,11 @@ export interface EmbeddingDeps {
   client: OpenAI
   /** Read at each use, since Settings can change it; `''` is off. */
   model: () => string
+  /**
+   * The text some models expect before a question and before each chunk (see
+   * `shared/embedding-prefixes.ts`), read at each use; none by default.
+   */
+  prefixes?: () => Prefixes
 }
 
 /**
@@ -72,6 +78,19 @@ export class ProjectIndex {
     return this.#embedding?.model() || null
   }
 
+  #prefixes(): Prefixes {
+    return this.#embedding?.prefixes?.() ?? { query: '', document: '' }
+  }
+
+  /** Whether the vectors in the table were made the way embeddings are made now. */
+  #current(model: string): boolean {
+    const info = this.#vectorInfo()
+    return (
+      info?.model === model &&
+      info.document_prefix === this.#prefixes().document
+    )
+  }
+
   /** Queues a file for indexing; resolves once it's done (or failed). */
   index(fileId: string): Promise<void> {
     const done = this.#queue
@@ -87,8 +106,8 @@ export class ProjectIndex {
 
   /**
    * At startup: re-indexes files whose indexing didn't finish or was chunked
-   * by an older chunker, and all files when the embedding model changed
-   * (vectors of different models don't mix).
+   * by an older chunker, and all files when the embedding model or the text put
+   * before each chunk changed (vectors made differently don't mix).
    */
   resume(): Promise<void> {
     const info = this.#vectorInfo()
@@ -101,7 +120,7 @@ export class ProjectIndex {
       .forEach((id) => fileIds.add(id))
     // `info` is missing when files were indexed before embeddings were
     // configured, so re-embed them too (and retry a failed first embedding).
-    if (model && (!info || info.model !== model)) {
+    if (model && (!info || !this.#current(model))) {
       this.#dropVectors()
       this.#indexedFileIds().forEach((id) => fileIds.add(id))
     }
@@ -178,6 +197,7 @@ export class ProjectIndex {
       const vectors = await this.#vectors(
         model,
         texts.slice(start, start + EMBED_BATCH),
+        'document',
       )
       // Removed while this batch was embedded: drop what was saved for it.
       if (!this.#projects.projectOf(fileId)) {
@@ -199,15 +219,17 @@ export class ProjectIndex {
     }
   }
 
-  /** Embeddings of `texts`, in order. */
+  /** Embeddings of `texts` (questions or chunks, each with its model's prefix), in order. */
   async #vectors(
     model: string,
     texts: string[],
+    kind: 'query' | 'document',
     signal?: AbortSignal,
   ): Promise<Float32Array[]> {
     const { client } = this.#embedding!
+    const prefix = this.#prefixes()[kind]
     const { data } = await client.embeddings.create(
-      { model, input: texts },
+      { model, input: prefix ? texts.map((text) => prefix + text) : texts },
       { signal },
     )
     return data
@@ -255,11 +277,11 @@ export class ProjectIndex {
     const only = fileId ? this.#chunkIds(fileId) : null
     const keyword = this.#keywordHits(projectId, query, fileId)
     const model = this.#model()
-    if (!model || this.#vectorInfo()?.model !== model) {
+    if (!model || !this.#current(model)) {
       return { keyword, meaning: null }
     }
     try {
-      const [vector] = await this.#vectors(model, [query], signal)
+      const [vector] = await this.#vectors(model, [query], 'query', signal)
       const nearest = this.#db
         .prepare(
           // The ids are our own integers, so listing them is safe.
@@ -374,7 +396,7 @@ export class ProjectIndex {
   /** Creates the vector table on first use, sized for the model. */
   #ensureVectors(model: string, dimensions: number) {
     const info = this.#vectorInfo()
-    if (info?.model === model && info.dimensions === dimensions) return
+    if (this.#current(model) && info?.dimensions === dimensions) return
     this.#dropVectors()
     this.#db.exec(
       `CREATE VIRTUAL TABLE chunk_vectors USING vec0(
@@ -382,8 +404,10 @@ export class ProjectIndex {
          embedding float[${dimensions}] distance_metric=cosine)`,
     )
     this.#db
-      .prepare('INSERT INTO embedding_model (model, dimensions) VALUES (?, ?)')
-      .run(model, dimensions)
+      .prepare(
+        'INSERT INTO embedding_model (model, dimensions, document_prefix) VALUES (?, ?, ?)',
+      )
+      .run(model, dimensions, this.#prefixes().document)
   }
 
   #dropVectors() {
@@ -394,7 +418,7 @@ export class ProjectIndex {
 
   #vectorInfo() {
     return this.#db.prepare('SELECT * FROM embedding_model').get() as
-      { model: string; dimensions: number } | undefined
+      { model: string; dimensions: number; document_prefix: string } | undefined
   }
 
   #indexedFileIds(): string[] {

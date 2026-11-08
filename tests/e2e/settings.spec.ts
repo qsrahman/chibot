@@ -438,3 +438,44 @@ test('warns when the server runs the model with less than the window set', async
   await expect(row).not.toContainText('below this setting')
   await resetSettings(page)
 })
+
+test('offers the text an embedding model expects, and keeps it', async ({
+  page,
+}) => {
+  await page.goto('/')
+  const dialog = await openSettings(page, 'Other models')
+  const embedding = dialog.getByLabel('Embedding model')
+  const query = dialog.getByLabel('Text before a question')
+  const document = dialog.getByLabel('Text before each file part')
+  const settings = async () =>
+    (await (await page.request.get('/api/settings')).json()).settings
+
+  // A model that takes plain text: nothing to suggest.
+  await expect(query).toBeVisible()
+  await expect(dialog.getByText('Use what e2e-embed expects')).toHaveCount(0)
+
+  await embedding.fill('nomic-embed-text')
+  await embedding.press('Enter')
+  await expect(
+    dialog.getByText('Use what nomic-embed-text expects'),
+  ).toBeVisible()
+  await expect(query).toHaveAttribute('placeholder', 'search_query: ')
+  await dialog.getByRole('button', { name: 'Use', exact: true }).click()
+  await expect(query).toHaveValue('search_query: ')
+  await expect(document).toHaveValue('search_document: ')
+  await expect
+    .poll(async () => (await settings()).embeddingDocumentPrefix)
+    .toBe('search_document: ')
+  // Nothing left to suggest.
+  await expect(
+    dialog.getByText('Use what nomic-embed-text expects'),
+  ).toHaveCount(0)
+
+  // Typed by hand: the trailing space is kept.
+  await query.fill('question: ')
+  await query.press('Enter')
+  await expect
+    .poll(async () => (await settings()).embeddingQueryPrefix)
+    .toBe('question: ')
+  await resetSettings(page)
+})

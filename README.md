@@ -115,7 +115,13 @@ and model failed, and what to set.
 
 For project files, embeddings can stay local:
 `ollama pull nomic-embed-text`, then
-`chibot config set embedding.model nomic-embed-text`.
+`chibot config set embedding.model nomic-embed-text`. Some embedding models
+(nomic-embed-text, embeddinggemma, the e5 family, mxbai-embed-large) are trained
+to expect a short instruction before each text: in **Settings → Other models**,
+**Use what <model> expects** fills the **Text before a question** and **Text
+before each file part** boxes for the ones chibot knows (type them by hand for
+others; leave them empty for OpenAI's, which take plain text). Changing the
+chunk one indexes the files again; the question one changes nothing stored.
 
 The `image.model`, `embedding.model` and `transcription.model` settings only
 give the starting models: the image, embedding and transcription models can be

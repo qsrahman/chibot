@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- **Text before a question and before each file part** (Settings → Other models) for embedding models trained to expect an instruction (nomic-embed-text, embeddinggemma, e5, mxbai-embed-large): **Use what <model> expects** fills them in. On the project-search evaluation they raised the right passage's rank slightly (by a question or two out of about twenty, within the noise of a small test set). Changing the file one embeds the files again.
+
 ### Fixed
 
 - The switches of an MCP server in Settings → Tools (on or off, **Ask before using its tools**, and each tool) are written to the server's entry in the config file (`"disabled": true`, `"ask": true`, `"disabledTools": ["…"]`), not to chibot's database, so `config.json` shows them and editing them there works. Only what differs from the default is written. A switch an older version kept in the settings still applies to a server whose entry has no value of its own, and is cleared the first time you use that switch. Editing a server leaves its switches alone, and changing only a switch no longer reconnects the server on Reload.

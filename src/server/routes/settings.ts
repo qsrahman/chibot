@@ -54,7 +54,14 @@ export function settingsRoutes({
     const updated = settings.update(patch)
     // A new embedding model: files are embedded again in the background
     // (vectors of different models don't mix); searching meanwhile is by keyword.
-    if (patch.embeddingModel !== undefined) void index.resume()
+    // (A new text before each chunk makes its vectors differently, too; one
+    // before the question changes nothing stored.)
+    if (
+      patch.embeddingModel !== undefined ||
+      patch.embeddingDocumentPrefix !== undefined
+    ) {
+      void index.resume()
+    }
     // Switched MCP servers connect or stop.
     await mcp.sync()
     return c.json(updated)

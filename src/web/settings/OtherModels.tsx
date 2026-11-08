@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { RotateCcw } from 'lucide-react'
+import { Check, RotateCcw } from 'lucide-react'
+import { suggestedPrefixes } from '../../shared/embedding-prefixes.ts'
 import type { ServiceModel } from '../../shared/service-models.ts'
 import type { Settings } from '../../shared/settings.ts'
 import type { SettingsApi } from './useSettings.ts'
@@ -67,6 +68,11 @@ export function OtherModels({
             connected={endpoints[service.setting]}
             onSave={(value) => onChange({ [service.setting]: value })}
           />
+          {service.setting === 'embeddingModel' &&
+            endpoints.embeddingModel &&
+            settings.embeddingModel && (
+              <Prefixes settings={settings} onChange={onChange} />
+            )}
         </Section>
       ))}
     </>
@@ -140,6 +146,110 @@ function ModelRow({
           onKeyDown={(e) => e.key === 'Enter' && void save()}
         />
       </div>
+    </Row>
+  )
+}
+
+/**
+ * The text some embedding models expect before a question and before each file
+ * chunk (nomic-embed-text, embeddinggemma, e5…). Saved on leaving the box;
+ * the chunk one indexes the files again, the question one changes nothing stored.
+ */
+function Prefixes({
+  settings,
+  onChange,
+}: {
+  settings: Settings
+  onChange: SettingsApi['update']
+}) {
+  const known = suggestedPrefixes(settings.embeddingModel)
+  const differs =
+    known !== null &&
+    (known.query !== settings.embeddingQueryPrefix ||
+      known.document !== settings.embeddingDocumentPrefix)
+  return (
+    <>
+      <PrefixRow
+        id="setting-embedding-query-prefix"
+        label="Text before a question"
+        description="Some embedding models expect a short instruction before the question (nomic-embed-text: “search_query: ”). Empty for models that take plain text, such as OpenAI's."
+        value={settings.embeddingQueryPrefix}
+        onSave={(value) => onChange({ embeddingQueryPrefix: value })}
+        suggestion={known?.query}
+      />
+      <PrefixRow
+        id="setting-embedding-document-prefix"
+        label="Text before each file part"
+        description="The matching instruction for the files (“search_document: ”). Changing it indexes the files again."
+        value={settings.embeddingDocumentPrefix}
+        onSave={(value) => onChange({ embeddingDocumentPrefix: value })}
+        suggestion={known?.document}
+      />
+      {differs && (
+        <Row
+          label={`Use what ${settings.embeddingModel} expects`}
+          description="Fills both boxes with the text its maker asks for."
+        >
+          <button
+            type="button"
+            className="button"
+            onClick={() =>
+              void onChange({
+                embeddingQueryPrefix: known.query,
+                embeddingDocumentPrefix: known.document,
+              })
+            }
+          >
+            <Check size={16} strokeWidth={1.5} aria-hidden /> Use
+          </button>
+        </Row>
+      )}
+    </>
+  )
+}
+
+function PrefixRow({
+  id,
+  label,
+  description,
+  value,
+  onSave,
+  suggestion,
+}: {
+  id: string
+  label: string
+  description: string
+  value: string
+  onSave: (value: string) => Promise<boolean>
+  /** What the model's maker asks for, shown while the box is empty. */
+  suggestion: string | undefined
+}) {
+  const [draft, setDraft] = useState(value)
+  const [seen, setSeen] = useState(value)
+  if (seen !== value) {
+    setSeen(value)
+    setDraft(value)
+  }
+  async function save() {
+    // Not trimmed: the space after the colon is part of it.
+    if (draft === value) return
+    if (!(await onSave(draft))) setDraft(value)
+  }
+  return (
+    <Row label={label} description={description} htmlFor={id}>
+      <input
+        id={id}
+        className="settings-text"
+        value={draft}
+        placeholder={suggestion || 'none'}
+        spellCheck={false}
+        autoCapitalize="none"
+        autoComplete="off"
+        maxLength={200}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => void save()}
+        onKeyDown={(e) => e.key === 'Enter' && void save()}
+      />
     </Row>
   )
 }

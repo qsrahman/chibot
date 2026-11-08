@@ -176,6 +176,10 @@ export function start({
         apiKey: config.embedding.apiKey,
       }),
       model: () => settings.get().embeddingModel,
+      prefixes: () => ({
+        query: settings.get().embeddingQueryPrefix,
+        document: settings.get().embeddingDocumentPrefix,
+      }),
     },
   )
   void index.resume()

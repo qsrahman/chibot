@@ -19,6 +19,8 @@ export function settingsDefaults(
     model,
     imageModel: services.imageModel ?? '',
     embeddingModel: services.embeddingModel ?? '',
+    embeddingQueryPrefix: '',
+    embeddingDocumentPrefix: '',
     transcribeModel: services.transcribeModel ?? '',
     reasoningEffort: null,
     aboutUser: '',

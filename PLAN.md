@@ -598,6 +598,13 @@ Models differ in dimensions, so a model change means re-embedding.
   (indexing / ready / failed with a reason) shows in the project. Unfinished
   files resume after a restart; a changed embedding model rebuilds the
   vectors, and a new `CHUNKER_VERSION` re-chunks files made with an older one.
+  Models trained for task instructions take two optional texts (Settings →
+  Other models: `embeddingQueryPrefix` before the question,
+  `embeddingDocumentPrefix` before each chunk when embedding, never stored with
+  the chunk, suggested for nomic-embed-text, embeddinggemma, e5 and
+  mxbai-embed-large in `shared/embedding-prefixes.ts`); the document one is
+  part of the vectors' identity (`embedding_model.document_prefix`), so changing
+  it embeds the files again and searches by keyword until then.
 - **`search_project_files`** (`query`, `file`, `limit`), offered only in project chats with
   files: keyword and vector hits merged by reciprocal rank fusion, the top 6
   chunks (the model may ask for 1 to 15 with `limit`) as JSON (file name, file
