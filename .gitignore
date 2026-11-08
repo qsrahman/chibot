@@ -15,3 +15,4 @@ mcp.json
 
 # Backups of local data (may hold chats and keys)
 data.bak/
+chibot-backup-*/
