@@ -1096,6 +1096,14 @@ Environment variables:
   tool results are always text (MCP images are saved as files and the model
   sees a note), which an import now enforces, so there is no image array to
   prune.
+- **Web pages as project sources (later).** A project could index a page by
+  its address and fetch it again when it changes, as a mirrored folder does
+  for files. It needs the fetching rules in [TOOLS.md](TOOLS.md) (no private
+  addresses, size and redirect limits, page text extracted as for `.html`
+  files), a place for the address and its last fetch (like
+  `project_files.source_mtime`, with `ETag` or a content hash), and a decision
+  on how often to refetch, since there is no watcher. Pasted text is already
+  covered by notes.
 - **Not planned yet** (from comparing Chatbox and nanobot): saved prompts
   inserted with `/`, a conversation minimap, and chats side by side. Not
   wanted: shell and file tools, scheduled automations, team sharing and
