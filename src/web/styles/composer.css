@@ -149,7 +149,7 @@
   cursor: default;
 }
 
-/* The mode chip (Auto / Fast / Thinking) left of the mic. */
+/* The reasoning effort chip left of the mic. */
 .mode-button {
   display: inline-flex;
   flex: none;

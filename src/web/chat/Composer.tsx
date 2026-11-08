@@ -12,7 +12,7 @@ import { loadDrafts, saveDrafts } from './composerDrafts.ts'
 import { appendQuote } from './quote.ts'
 import { DictationMeter } from './DictationMeter.tsx'
 import { DraftAttachments } from './DraftAttachments.tsx'
-import { ModeSwitch } from './ModeSwitch.tsx'
+import { EffortSwitch } from './EffortSwitch.tsx'
 import { QueuedMessage } from './QueuedMessage.tsx'
 import type { Attachment } from './turns.ts'
 import type { AttachmentsApi } from './useAttachments.ts'
@@ -46,7 +46,7 @@ interface Props {
   draftKey: string
   /** The server can transcribe (voice input). */
   transcription: boolean
-  /** Reasoning effort, picked as a mode (see `ModeSwitch`). */
+  /** Reasoning effort (see `EffortSwitch`). */
   effort: Settings['reasoningEffort']
   onEffort: (effort: Settings['reasoningEffort']) => void
   /** Text to put in the box (a starter prompt); a new `n` puts it again. */
@@ -309,7 +309,7 @@ export function Composer({
         }}
       />
       <div className="composer-actions">
-        <ModeSwitch effort={effort} onChange={onEffort} />
+        <EffortSwitch effort={effort} onChange={onEffort} />
         {dictation.stream && <DictationMeter stream={dictation.stream} />}
         <button
           type="button"

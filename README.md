@@ -286,9 +286,6 @@ needs the server running: there is no offline mode, since the server is local.
   (searchable; embedding, image and speech models are left out; type a name
   if yours isn't listed or your server can't list its models). Each answer shows the
   model that wrote it, so switching models and regenerating compares them.
-  The same menu's **Reasoning effort** row opens a sub-menu to set it (Auto, the model's
-  default, or None to Max; also in Settings → Model), shown next to the model name
-  when set.
 - **Tools:** the model uses chibot's tools on its own when they help, and the
   answer shows what it did ("Created an image", "Memory updated"; several
   calls share one row, which opens to each; open one to see the details):
@@ -355,9 +352,8 @@ needs the server running: there is no offline mode, since the server is local.
   sends it once they're up; editing a message keeps them.
 - **Thinking:** reasoning models show "Thinking…" while they think; afterwards
   the answer keeps a collapsed **Thoughts** section with their summary. The
-  composer's mode chip picks **Auto** (the model's default), **Fast** (low
-  reasoning effort) or **Thinking** (high); every level is in the header's
-  model menu and in Settings.
+  composer's reasoning effort chip picks **Auto** (the model's default) or a
+  level from Minimal to Max (also in Settings → Model).
 - **Settings** (sidebar gear, or ⌘/Ctrl+,):
   - *General:* theme (System, Light or Dark), and **Notify me about
     finished answers**: a browser notification when an answer finishes or a tool needs your

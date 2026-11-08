@@ -60,26 +60,6 @@
   width: min(360px, 100dvw - 32px);
 }
 
-/* The chosen reasoning effort, after the model's name. */
-.model-effort {
-  color: var(--fg-muted);
-}
-
-/* The model menu's "Reasoning effort" row and the sub-menu it opens to its
-   side (below on a phone, where there's no room beside it). */
-.submenu-row .menu-hint {
-  margin-left: auto;
-}
-
-.menu.submenu {
-  min-width: 160px;
-  margin: 0 4px;
-  position-area: inline-end span-block-end;
-  position-try-fallbacks:
-    flip-inline,
-    block-end span-inline-start;
-}
-
 .model-search {
   width: 100%;
   height: 36px;

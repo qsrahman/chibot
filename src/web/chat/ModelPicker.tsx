@@ -1,57 +1,21 @@
-import { useEffect, useRef, useState, type PointerEvent } from 'react'
-import { Check, ChevronDown, ChevronRight } from 'lucide-react'
-import { effortLabel, REASONING_EFFORTS } from '../../shared/reasoning.ts'
-import type { Settings } from '../../shared/settings.ts'
+import { useState } from 'react'
+import { Check, ChevronDown } from 'lucide-react'
 import { listModels } from '../settings/api.ts'
 import { useAnchoredPopover } from '../ui/popover.ts'
-
-type Effort = Settings['reasoningEffort']
 
 interface Props {
   model: string
   defaultModel: string
   onSelect: (model: string) => void
-  /** Reasoning effort (`null`: the model's default), also in Settings. */
-  effort: Effort
-  onEffort: (effort: Effort) => void
 }
 
 /**
  * The header's model menu: searchable when the server lists its models,
  * a plain name field when it can't. Enter picks the top match, or the typed
- * name if nothing matches (for models the list doesn't show). Below the
- * list, the reasoning effort.
+ * name if nothing matches (for models the list doesn't show).
  */
-export function ModelPicker({
-  model,
-  defaultModel,
-  onSelect,
-  effort,
-  onEffort,
-}: Props) {
+export function ModelPicker({ model, defaultModel, onSelect }: Props) {
   const popover = useAnchoredPopover()
-  const efforts = useAnchoredPopover()
-  const effortRow = useRef<HTMLButtonElement>(null)
-  const closing = useRef<number>(undefined)
-  useEffect(() => () => clearTimeout(closing.current), [])
-
-  // With a mouse, resting on the "Reasoning effort" row opens its sub-menu,
-  // and resting elsewhere in the model menu closes it after a moment, time
-  // enough to cross into the sub-menu. (Its events bubble here: it's a child.)
-  function hoverEfforts(e: PointerEvent<HTMLDivElement>) {
-    const sub = efforts.ref.current
-    if (e.pointerType !== 'mouse' || !sub) return
-    const target = e.target as Node
-    if (sub.contains(target)) return clearTimeout(closing.current)
-    const open = sub.matches(':popover-open')
-    if (effortRow.current?.contains(target)) {
-      clearTimeout(closing.current)
-      if (!open) sub.showPopover()
-    } else if (open) {
-      clearTimeout(closing.current)
-      closing.current = window.setTimeout(() => sub.hidePopover(), 250)
-    }
-  }
   // undefined: not loaded yet; null: the server can't list models.
   const [models, setModels] = useState<string[] | null>()
   const [query, setQuery] = useState('')
@@ -84,7 +48,6 @@ export function ModelPicker({
         onClick={open}
       >
         {model}
-        {effort && <span className="model-effort">{effortLabel(effort)}</span>}
         <ChevronDown size={16} strokeWidth={1.5} />
       </button>
       <div
@@ -93,10 +56,7 @@ export function ModelPicker({
         popover="auto"
         className="menu model-menu"
         style={popover.style}
-        onPointerOver={hoverEfforts}
         onToggle={(e) => {
-          // Not the effort sub-menu's toggle, which React passes up too.
-          if (e.target !== e.currentTarget) return
           if (e.newState === 'open') {
             e.currentTarget.querySelector('input')?.focus()
           }
@@ -144,64 +104,6 @@ export function ModelPicker({
               Use “{query.trim()}”
             </button>
           )}
-        </div>
-        <hr className="menu-divider" />
-        {/* A sub-menu: a popover inside this one, so opening it keeps the
-            model menu open and Esc closes just the sub-menu. */}
-        <button
-          ref={effortRow}
-          type="button"
-          className="menu-item submenu-row"
-          aria-haspopup="menu"
-          popoverTarget={efforts.id}
-          // Only opens: after a hover opened it, a click mustn't close it.
-          popoverTargetAction="show"
-          style={efforts.triggerStyle}
-          onKeyDown={(e) => {
-            if (e.key !== 'ArrowRight') return
-            e.preventDefault()
-            efforts.ref.current?.showPopover()
-          }}
-        >
-          <span className="menu-item-text">Reasoning effort</span>
-          <span className="menu-hint">{effortLabel(effort)}</span>
-          <ChevronRight size={16} strokeWidth={1.5} aria-hidden />
-        </button>
-        <div
-          id={efforts.id}
-          ref={efforts.ref}
-          popover="auto"
-          className="menu submenu"
-          role="menu"
-          aria-label="Reasoning effort"
-          style={efforts.style}
-          onToggle={efforts.menuProps.onToggle}
-          onKeyDown={(e) => {
-            if (e.key === 'ArrowLeft') {
-              e.preventDefault()
-              efforts.hide()
-              effortRow.current?.focus()
-              return
-            }
-            efforts.menuProps.onKeyDown(e)
-          }}
-        >
-          {[null, ...REASONING_EFFORTS].map((option) => (
-            <button
-              key={option ?? 'default'}
-              type="button"
-              role="menuitemradio"
-              aria-checked={option === effort}
-              className="menu-item"
-              onClick={() => {
-                efforts.hide()
-                if (option !== effort) onEffort(option)
-              }}
-            >
-              <span className="menu-item-text">{effortLabel(option)}</span>
-              {option === effort && <Check size={16} strokeWidth={1.5} />}
-            </button>
-          ))}
         </div>
       </div>
     </>

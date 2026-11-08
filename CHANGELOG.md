@@ -10,6 +10,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 - **Mirror a folder** in a project: give the path of a folder on this machine and the project's files follow it. New and changed files are indexed, deleted ones removed, and unchanged ones are left alone. It updates when the project page opens and on **Sync now**; files added by hand stay, and **Stop mirroring** keeps the files.
 - A larger project-search evaluation (`tests/server/projects/retrieval-docs.test.ts`): 87 questions plus 20 unanswerable ones over a frozen copy of the project docs, scoring first, third and sixth place and how close the best passage is.
 
+### Changed
+
+- **Reasoning effort has one list of levels**, in the composer and in Settings → Model: Auto, then Minimal to Max, each with a hint. The composer's Fast and Thinking modes (low and high under other names) and the model menu's Reasoning effort sub-menu, and the effort shown after the model name, are gone. **None** is no longer offered (a saved `none` still works and shows until you change it).
+
 ### Fixed
 
 - The switches of an MCP server in Settings → Tools (on or off, **Ask before using its tools**, and each tool) are written to the server's entry in the config file (`"disabled": true`, `"ask": true`, `"disabledTools": ["…"]`), not to chibot's database, so `config.json` shows them and editing them there works. Only what differs from the default is written. A switch an older version kept in the settings still applies to a server whose entry has no value of its own, and is cleared the first time you use that switch. Editing a server leaves its switches alone, and changing only a switch no longer reconnects the server on Reload.

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Check } from 'lucide-react'
-import { effortLabel, REASONING_EFFORTS } from '../../shared/reasoning.ts'
+import { effortChoices, effortLabel } from '../../shared/reasoning.ts'
 import type { Settings } from '../../shared/settings.ts'
 import type { SettingsApi } from './useSettings.ts'
 import { modelWindow } from './api.ts'
@@ -50,9 +50,8 @@ export function Model({
               })
             }
           >
-            <option value="default">{effortLabel(null)}</option>
-            {REASONING_EFFORTS.map((effort) => (
-              <option key={effort} value={effort}>
+            {effortChoices(settings.reasoningEffort).map((effort) => (
+              <option key={effort ?? 'default'} value={effort ?? 'default'}>
                 {effortLabel(effort)}
               </option>
             ))}

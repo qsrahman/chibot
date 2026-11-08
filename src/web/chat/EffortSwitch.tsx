@@ -1,23 +1,16 @@
 import { Check, ChevronDown } from 'lucide-react'
-import { effortLabel } from '../../shared/reasoning.ts'
+import {
+  EFFORT_HINTS,
+  effortChoices,
+  effortLabel,
+} from '../../shared/reasoning.ts'
 import type { Settings } from '../../shared/settings.ts'
 import { useAnchoredPopover } from '../ui/popover.ts'
 
 type Effort = Settings['reasoningEffort']
 
-/** The composer's modes: named reasoning efforts (the rest are in Settings). */
-const MODES: { label: string; effort: Effort; hint: string }[] = [
-  { label: 'Auto', effort: null, hint: 'The model decides how long to think' },
-  { label: 'Fast', effort: 'low', hint: 'Answers quickly' },
-  {
-    label: 'Thinking',
-    effort: 'high',
-    hint: 'Thinks longer for harder questions',
-  },
-]
-
-/** Picks the reasoning effort for the next messages, as a mode. */
-export function ModeSwitch({
+/** Picks the reasoning effort for the next messages (also in Settings). */
+export function EffortSwitch({
   effort,
   onChange,
 }: {
@@ -25,15 +18,13 @@ export function ModeSwitch({
   onChange: (effort: Effort) => void
 }) {
   const menu = useAnchoredPopover()
-  // An effort chosen elsewhere that no mode names shows as itself.
-  const label =
-    MODES.find((m) => m.effort === effort)?.label ?? effortLabel(effort)
+  const label = effortLabel(effort)
   return (
     <>
       <button
         type="button"
         className="mode-button"
-        aria-label={`Mode: ${label}`}
+        aria-label={`Reasoning effort: ${label}`}
         popoverTarget={menu.id}
         style={menu.triggerStyle}
       >
@@ -46,26 +37,29 @@ export function ModeSwitch({
         popover="auto"
         className="menu above"
         role="menu"
+        aria-label="Reasoning effort"
         style={menu.style}
         {...menu.menuProps}
       >
-        {MODES.map((mode) => (
+        {effortChoices(effort).map((option) => (
           <button
-            key={mode.label}
+            key={option ?? 'auto'}
             type="button"
             role="menuitemradio"
-            aria-checked={mode.effort === effort}
+            aria-checked={option === effort}
             className="menu-item has-hint"
             onClick={() => {
               menu.hide()
-              if (mode.effort !== effort) onChange(mode.effort)
+              if (option !== effort) onChange(option)
             }}
           >
             <span className="menu-item-text">
-              {mode.label}
-              <span className="menu-hint">{mode.hint}</span>
+              {effortLabel(option)}
+              <span className="menu-hint">
+                {EFFORT_HINTS[option ?? 'auto']}
+              </span>
             </span>
-            {mode.effort === effort && <Check size={16} strokeWidth={1.5} />}
+            {option === effort && <Check size={16} strokeWidth={1.5} />}
           </button>
         ))}
       </div>

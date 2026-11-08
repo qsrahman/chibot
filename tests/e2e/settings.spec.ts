@@ -45,108 +45,54 @@ test('picks a model and labels answers with it', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'e2e-other' })).toBeVisible()
 })
 
-test('picks the reasoning effort in the model menu', async ({ page }) => {
+test('picks the reasoning effort in the composer', async ({ page }) => {
   await page.goto('/')
   await appReady(page)
-  await page.getByRole('button', { name: 'e2e-model' }).click()
-  // A row in the model menu opens a sub-menu beside it.
-  const row = page.getByRole('button', { name: /Reasoning effort/ })
-  await expect(row).toContainText('Auto')
-  await row.click()
+  await page.getByRole('button', { name: 'Reasoning effort: Auto' }).click()
   const efforts = page.getByRole('menu', { name: 'Reasoning effort' })
   await expect(
-    efforts.getByRole('menuitemradio', { name: 'Auto' }),
+    efforts.getByRole('menuitemradio', { name: /^Auto/ }),
   ).toHaveAttribute('aria-checked', 'true')
-  await efforts
-    .getByRole('menuitemradio', { name: 'High', exact: true })
-    .click()
+  // Auto and the levels, but not None.
+  await expect(efforts.getByRole('menuitemradio')).toHaveText([
+    /^Auto/,
+    /^Minimal/,
+    /^Low/,
+    /^Medium/,
+    /^High/,
+    /^Xhigh/,
+    /^Max/,
+  ])
+  await efforts.getByRole('menuitemradio', { name: /^Medium/ }).click()
   await expect(efforts).toBeHidden()
-  await expect(row).toContainText('High')
-  await page.keyboard.press('Escape')
-  // The header shows it.
-  await expect(page.locator('.model-button')).toHaveText('e2e-modelHigh')
-
-  await send(page, 'Hello')
-  await answered(page)
-  expect((await lastRequest(page)).reasoning).toEqual({
-    summary: 'auto',
-    effort: 'high',
-  })
-  // It's the same setting as in Settings.
-  const dialog = await openSettings(page, 'Model')
-  await expect(dialog.getByLabel('Reasoning effort')).toHaveValue('high')
-})
-
-test('the effort sub-menu opens on hover', async ({ page }) => {
-  await page.goto('/')
-  await appReady(page)
-  await page.getByRole('button', { name: 'e2e-model' }).click()
-  const row = page.getByRole('button', { name: /Reasoning effort/ })
-  const efforts = page.getByRole('menu', { name: 'Reasoning effort' })
-
-  await row.hover()
-  await expect(efforts).toBeVisible()
-  // Moving into it keeps it open; a click on the row doesn't toggle it shut.
-  await efforts.getByRole('menuitemradio', { name: 'Medium' }).hover()
-  await page.waitForTimeout(400)
-  await expect(efforts).toBeVisible()
-  await row.click()
-  await expect(efforts).toBeVisible()
-
-  // Resting on another item closes it (the model menu stays).
-  await page.getByRole('option', { name: /e2e-other/ }).hover()
-  await expect(efforts).toBeHidden()
-  await expect(page.getByRole('listbox', { name: 'Models' })).toBeVisible()
-
-  await row.hover()
-  await efforts.getByRole('menuitemradio', { name: 'Medium' }).click()
-  await expect(row).toContainText('Medium')
-})
-
-test('the effort sub-menu works from the keyboard', async ({ page }) => {
-  await page.goto('/')
-  await appReady(page)
-  await page.getByRole('button', { name: 'e2e-model' }).click()
-  // The menu focuses its search box once open; then go to the row.
   await expect(
-    page.getByRole('textbox', { name: 'Search models' }),
-  ).toBeFocused()
-  const row = page.getByRole('button', { name: /Reasoning effort/ })
-  await row.focus()
-  await page.keyboard.press('ArrowRight')
-  const efforts = page.getByRole('menu', { name: 'Reasoning effort' })
-  // Opens on its first item; ← goes back to the row, the model menu stays.
-  await expect(
-    efforts.getByRole('menuitemradio', { name: 'Auto' }),
-  ).toBeFocused()
-  await page.keyboard.press('ArrowLeft')
-  await expect(efforts).toBeHidden()
-  await expect(row).toBeFocused()
-  await expect(page.getByRole('listbox', { name: 'Models' })).toBeVisible()
-  // Esc in the sub-menu closes only the sub-menu.
-  await page.keyboard.press('ArrowRight')
-  await page.keyboard.press('Escape')
-  await expect(efforts).toBeHidden()
-  await expect(page.getByRole('listbox', { name: 'Models' })).toBeVisible()
-})
-
-test('switches to Thinking mode in the composer', async ({ page }) => {
-  await page.goto('/')
-  await appReady(page)
-  await page.getByRole('button', { name: 'Mode: Auto' }).click()
-  await page.getByRole('menuitemradio', { name: /Thinking/ }).click()
-  await expect(
-    page.getByRole('button', { name: 'Mode: Thinking' }),
+    page.getByRole('button', { name: 'Reasoning effort: Medium' }),
   ).toBeVisible()
 
   await send(page, 'Hello')
   await answered(page)
   expect((await lastRequest(page)).reasoning).toEqual({
     summary: 'auto',
-    effort: 'high',
+    effort: 'medium',
   })
-  // One setting: the header's model menu shows it too.
-  await expect(page.locator('.model-button')).toContainText('High')
+  // It's the same setting as in Settings.
+  const dialog = await openSettings(page, 'Model')
+  await expect(dialog.getByLabel('Reasoning effort')).toHaveValue('medium')
+})
+
+test('the model menu has no reasoning effort', async ({ page }) => {
+  await page.goto('/')
+  await appReady(page)
+  await page.getByRole('button', { name: 'e2e-model' }).click()
+  await expect(page.getByRole('listbox', { name: 'Models' })).toBeVisible()
+  await expect(
+    page.locator('.model-menu').getByText('Reasoning effort'),
+  ).toBeHidden()
+  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: 'Reasoning effort: Auto' }).click()
+  await page.getByRole('menuitemradio', { name: /^High/ }).click()
+  // Nor does the header show it after the model's name.
+  await expect(page.locator('.model-button')).toHaveText('e2e-model')
 })
 
 test('applies reasoning effort and custom instructions', async ({ page }) => {

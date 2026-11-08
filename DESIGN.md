@@ -106,12 +106,7 @@ Code uses `"SF Mono", SFMono-Regular, ui-monospace, Consolas, "Liberation Mono",
   `--fg-muted`; the header's token total is left to each answer.
 - **Header.** Model name with a chevron on the left: the model picker, a
   popover with a search box over the model list (a name field when the
-  server can't list models), then a divider and a "Reasoning effort" row
-  showing the current effort (muted) and a `ChevronRight`. It opens a
-  sub-menu beside it (below it when there's no room, e.g. on a phone): Auto (the
-  model's default), then None … Max, with a check on the current one. Resting the mouse on the row opens it (resting elsewhere in the model menu closes it after 250 ms, time to move into it); a click, Enter or → opens it too, ← and Esc
-  close just the sub-menu. A chosen effort shows after the model name in
-  `--fg-muted`. Page actions sit on the right.
+  server can't list models). Page actions sit on the right.
 
 ## 4. Components
 
@@ -138,8 +133,8 @@ would leave the "+" alone above it). Below 768 px a chosen tool's chip and the
 "+" take a row above the box, like attachments, because beside the buttons the
 chip would leave the box a few pixels wide.
 
-*Mode chip.* A transparent 36 px pill (12 px left, 10 px right padding) with
-14 px `--fg` text, the mode's name (Auto, Fast or Thinking) and a 16 px
+*Effort chip.* A transparent 36 px pill (12 px left, 10 px right padding) with
+14 px `--fg` text, the reasoning effort (Auto, Minimal … Max) and a 16 px
 `ChevronDown`; `--surface-muted` on hover. It opens a menu above it and sits
 left of the mic.
 
@@ -159,10 +154,11 @@ same thumbnails (up to 240 px, 16 px radius) and cards sit right-aligned above
 the bubble. Dragging files over the chat outlines it with a 2 px dashed
 `--accent` border.
 
-**Mode switch.** Left of the mic: a 36 px pill showing the mode ("Auto",
-"Fast", "Thinking", or an effort set elsewhere) in `--fg-muted` 14 px text
-with a chevron, `--surface-muted` on hover. It opens an upward menu of the
-three modes, each a name over a muted hint, with a check on the current one.
+**Effort switch.** Left of the mic: a 36 px pill showing the reasoning effort
+("Auto", "Minimal" … "Max") in `--fg-muted` 14 px text with a chevron,
+`--surface-muted` on hover. It opens an upward menu of Auto and the levels
+(not None), each a name over a muted hint, with a check on the current one.
+The model menu has no effort.
 
 **Jump to latest.** While the message list is scrolled up, a 36 px round
 `ArrowDown` button (`--surface-raised`, `--border` outline, `--composer-shadow`)

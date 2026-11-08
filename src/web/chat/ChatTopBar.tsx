@@ -68,10 +68,6 @@ export function ChatTopBar({
               model={settings.settings.model}
               defaultModel={settings.defaults.model}
               onSelect={(model) => void settings.update({ model })}
-              effort={settings.settings.reasoningEffort}
-              onEffort={(reasoningEffort) =>
-                void settings.update({ reasoningEffort })
-              }
             />
           </span>
         ) : null}
