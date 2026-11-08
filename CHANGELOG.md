@@ -7,6 +7,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 ### Added
 
 - **Text before a question and before each file part** (Settings → Other models) for embedding models trained to expect an instruction (nomic-embed-text, embeddinggemma, e5, mxbai-embed-large): **Use what <model> expects** fills them in. On the project-search evaluation they raised the right passage's rank slightly (by a question or two out of about twenty, within the noise of a small test set). Changing the file one embeds the files again.
+- A larger project-search evaluation (`tests/server/projects/retrieval-docs.test.ts`): 87 questions plus 20 unanswerable ones over a frozen copy of the project docs, scoring first, third and sixth place and how close the best passage is.
 
 ### Fixed
 
