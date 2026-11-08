@@ -5,7 +5,7 @@ import type { FileStore } from '../file-store.ts'
 
 // Rows as `Project` objects.
 const PROJECT =
-  'id, name, description, instructions, created_at AS createdAt, updated_at AS updatedAt'
+  'id, name, description, instructions, folder, created_at AS createdAt, updated_at AS updatedAt'
 
 /**
  * Projects and their files. Chunks and vectors of a file (written by the
@@ -99,6 +99,49 @@ export class ProjectStore {
       .all(projectId) as unknown as ProjectFile[]
   }
 
+  /** Mirrors `folder` (or with `null`, stops: its files stay as they are). */
+  setFolder(id: string, folder: string | null): Project | null {
+    if (folder === null) {
+      this.#db
+        .prepare(
+          'UPDATE project_files SET source_mtime = NULL WHERE project_id = ?',
+        )
+        .run(id)
+    }
+    return (
+      (this.#db
+        .prepare(
+          `UPDATE projects SET folder = ?, updated_at = ?
+            WHERE id = ? RETURNING ${PROJECT}`,
+        )
+        .get(folder, Date.now(), id) as Project | undefined) ?? null
+    )
+  }
+
+  /** The files a folder brought in, by their name (the path in the folder). */
+  syncedFiles(
+    projectId: string,
+  ): { fileId: string; name: string; size: number; mtime: number }[] {
+    return this.#db
+      .prepare(
+        `SELECT p.file_id AS fileId, f.name, f.size, p.source_mtime AS mtime
+           FROM project_files p JOIN files f ON f.id = p.file_id
+          WHERE p.project_id = ? AND p.source_mtime IS NOT NULL`,
+      )
+      .all(projectId) as unknown as {
+      fileId: string
+      name: string
+      size: number
+      mtime: number
+    }[]
+  }
+
+  setMtime(fileId: string, mtime: number): void {
+    this.#db
+      .prepare('UPDATE project_files SET source_mtime = ? WHERE file_id = ?')
+      .run(mtime, fileId)
+  }
+
   /**
    * `name`, or `name (2)`, `name (3)`… (before the extension) if the project
    * has a file by that name already, so a file can be told apart by name.
@@ -165,13 +208,18 @@ export class ProjectStore {
     )
   }
 
-  addFile(projectId: string, fileId: string): void {
+  /** @param mtime when the file came from the project's folder */
+  addFile(
+    projectId: string,
+    fileId: string,
+    mtime: number | null = null,
+  ): void {
     this.#db
       .prepare(
-        `INSERT INTO project_files (project_id, file_id, status)
-         VALUES (?, ?, 'indexing')`,
+        `INSERT INTO project_files (project_id, file_id, status, source_mtime)
+         VALUES (?, ?, 'indexing', ?)`,
       )
-      .run(projectId, fileId)
+      .run(projectId, fileId, mtime)
     this.#touch(projectId)
   }
 

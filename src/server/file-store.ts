@@ -80,6 +80,16 @@ export class FileStore {
     return readFileSync(this.#path(id))
   }
 
+  /** Replaces a file's bytes (a project file whose source changed). */
+  replace(id: string, data: Uint8Array): void {
+    writeFileSync(this.#path(id), data)
+    this.#db
+      .prepare(
+        'UPDATE files SET size = ?, provider_file_id = NULL WHERE id = ?',
+      )
+      .run(data.byteLength, id)
+  }
+
   rename(id: string, name: string): void {
     this.#db.prepare('UPDATE files SET name = ? WHERE id = ?').run(name, id)
   }

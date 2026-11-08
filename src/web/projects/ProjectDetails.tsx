@@ -2,9 +2,12 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   addProjectFile,
   getProject,
+  linkProjectFolder,
   reindexProjectFile,
   removeProjectFile,
   suggestProjectInstructions,
+  syncProjectFolder,
+  unlinkProjectFolder,
   updateProject,
 } from './api.ts'
 import {
@@ -12,7 +15,7 @@ import {
   regenerateTitle,
   updateConversation,
 } from '../conversations/api.ts'
-import { keepFolderFiles } from './folderFiles.ts'
+import { keepFolderFiles, syncNotice } from './folderFiles.ts'
 import { useLoad } from '../ui/useLoad.ts'
 import { ProjectChats } from './ProjectChats.tsx'
 import { ProjectFiles } from './ProjectFiles.tsx'
@@ -46,6 +49,22 @@ export function ProjectDetails({
     return () => clearTimeout(timer)
   }, [indexing, contents, reload])
 
+  // The folder a project mirrors may have changed since it was last opened.
+  const folder = contents?.project.folder
+  useEffect(() => {
+    if (!folder) return
+    syncProjectFolder(projectId).then(
+      (result) => {
+        const note = syncNotice(result)
+        if (note) {
+          setNotice(note)
+          void reload()
+        }
+      },
+      (err: Error) => setNotice(err.message),
+    )
+  }, [projectId, folder, reload])
+
   if (!contents) {
     return error ? (
       <p className="error project-details" role="alert">
@@ -74,6 +93,7 @@ export function ProjectDetails({
       />
       <ProjectFiles
         files={contents.files}
+        folder={contents.project.folder}
         notice={notice}
         onAdd={(files) =>
           void act(async () => {
@@ -102,6 +122,20 @@ export function ProjectDetails({
             }
           })
         }
+        onLink={(path) =>
+          void act(async () => {
+            setNotice(syncNotice(await linkProjectFolder(projectId, path)))
+          })
+        }
+        onSync={() =>
+          void act(async () => {
+            setNotice(
+              syncNotice(await syncProjectFolder(projectId)) ??
+                'The folder has not changed.',
+            )
+          })
+        }
+        onUnlink={() => void act(() => unlinkProjectFolder(projectId))}
         onRetry={(fileId) =>
           void act(() => reindexProjectFile(projectId, fileId))
         }

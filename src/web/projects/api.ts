@@ -1,4 +1,5 @@
 import type {
+  FolderSync,
   Project,
   ProjectFile,
   ProjectWithContents,
@@ -42,3 +43,14 @@ export const reindexProjectFile = (projectId: string, fileId: string) =>
 
 export const removeProjectFile = (projectId: string, fileId: string) =>
   remove(`/api/projects/${projectId}/files/${fileId}`)
+
+/** Mirrors a folder on the machine chibot runs on, and brings its files in. */
+export const linkProjectFolder = (id: string, path: string) =>
+  request<FolderSync>(`/api/projects/${id}/folder`, send('PUT', { path }))
+
+export const syncProjectFolder = (id: string) =>
+  request<FolderSync>(`/api/projects/${id}/sync`, { method: 'POST' })
+
+/** Stops mirroring; the project keeps the files. */
+export const unlinkProjectFolder = (id: string) =>
+  remove(`/api/projects/${id}/folder`)

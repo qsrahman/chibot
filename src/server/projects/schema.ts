@@ -44,4 +44,8 @@ export const PROJECT_MIGRATIONS = {
   // The text put before each chunk when it was embedded: vectors made with a
   // different one don't mix, as with a different model.
   documentPrefix: `ALTER TABLE embedding_model ADD COLUMN document_prefix TEXT NOT NULL DEFAULT '';`,
+  // A folder on this machine a project mirrors (ProjectSync), and for the
+  // files it brought in, the modification time they had, to tell what changed.
+  folder: `ALTER TABLE projects ADD COLUMN folder TEXT;
+   ALTER TABLE project_files ADD COLUMN source_mtime INTEGER;`,
 }

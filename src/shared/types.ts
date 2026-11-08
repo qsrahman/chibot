@@ -98,8 +98,19 @@ export interface Project {
   description: string
   /** Added to the instructions of the project's chats. */
   instructions: string
+  /** A folder on this machine whose files the project mirrors. */
+  folder: string | null
   createdAt: number
   updatedAt: number
+}
+
+/** What syncing a project with its folder changed. */
+export interface FolderSync {
+  added: number
+  updated: number
+  removed: number
+  /** Files in the folder that projects don't take (their type, size, name). */
+  skipped: number
 }
 
 /** A file in a project, with how far its indexing got. */

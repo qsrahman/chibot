@@ -300,3 +300,32 @@ test('moves chats in and out, and deletes a project with them', async ({
   const chat = pathname.replace('/c/', '/api/conversations/')
   expect((await page.request.get(chat)).status()).toBe(404)
 })
+
+test('mirrors a folder: brings its files in, then follows changes', async ({
+  page,
+}) => {
+  const folder = mkdtempSync(join(tmpdir(), 'chibot-mirror-'))
+  try {
+    writeFileSync(join(folder, 'door.md'), 'The door code is 4417.')
+    await newProject(page, 'Mirror')
+    const files = page.getByRole('region', { name: 'Project files' })
+    await files.getByRole('button', { name: 'Mirror a folder' }).click()
+    await page.getByRole('textbox', { name: 'Folder path' }).fill(folder)
+    await page.getByRole('button', { name: 'Mirror folder' }).click()
+    await expect(files.getByText('door.md')).toBeVisible()
+    await expect(files.getByText(folder)).toBeVisible()
+    await expect(files.getByText('Folder synced: 1 added.')).toBeVisible()
+
+    writeFileSync(join(folder, 'gate.md'), 'The gate opens at 7.')
+    rmSync(join(folder, 'door.md'))
+    await files.getByRole('button', { name: 'Sync now' }).click()
+    await expect(files.getByText('gate.md')).toBeVisible()
+    await expect(files.getByText('door.md')).toBeHidden()
+
+    await files.getByRole('button', { name: 'Stop mirroring' }).click()
+    await expect(files.getByRole('button', { name: 'Sync now' })).toBeHidden()
+    await expect(files.getByText('gate.md')).toBeVisible()
+  } finally {
+    rmSync(folder, { recursive: true, force: true })
+  }
+})

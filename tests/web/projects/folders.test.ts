@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   keepFolderFiles,
   MAX_FOLDER_FILES,
+  syncNotice,
 } from '../../../src/web/projects/folderFiles.ts'
 
 const file = (name: string) => new File(['x'], name)
@@ -38,5 +39,15 @@ describe('keepFolderFiles', () => {
     const { kept, skipped } = keepFolderFiles(many)
     expect(kept).toHaveLength(MAX_FOLDER_FILES)
     expect(skipped).toBe(5)
+  })
+})
+
+describe('syncNotice', () => {
+  it('says what changed, and nothing when nothing did', () => {
+    const none = { added: 0, updated: 0, removed: 0, skipped: 3 }
+    expect(syncNotice(none)).toBeNull()
+    expect(syncNotice({ ...none, added: 2, removed: 1 })).toBe(
+      'Folder synced: 2 added, 1 removed.',
+    )
   })
 })

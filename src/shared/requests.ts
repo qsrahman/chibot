@@ -44,6 +44,11 @@ const description = z.string().trim().max(200)
 /** `POST /api/projects/:id/files`: a file from `POST /api/files`. */
 export const addProjectFileSchema = z.object({ fileId: z.string() })
 
+/** `PUT /api/projects/:id/folder`: a folder on the machine chibot runs on. */
+export const projectFolderSchema = z.object({
+  path: z.string().trim().min(1).max(1000),
+})
+
 /** `PATCH /api/projects/:id`. */
 export const projectPatchSchema = z.object({
   name: z.string().trim().min(1).max(100).optional(),

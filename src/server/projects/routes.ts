@@ -1,9 +1,13 @@
+import { statSync } from 'node:fs'
+import { homedir } from 'node:os'
+import { isAbsolute, join, resolve } from 'node:path'
 import { Hono } from 'hono'
 import OpenAI from 'openai'
 import { documentKind } from '../../shared/documents.ts'
 import {
   addProjectFileSchema,
   createProjectSchema,
+  projectFolderSchema,
   projectPatchSchema,
 } from '../../shared/requests.ts'
 import type { ProjectWithContents } from '../../shared/types.ts'
@@ -12,6 +16,7 @@ import type { ConversationStore } from '../conversations/index.ts'
 import type { FileStore } from '../file-store.ts'
 import type { InstructionWriter } from './instruction-writer.ts'
 import type { ProjectIndex } from './project-index.ts'
+import type { ProjectSync } from './project-sync.ts'
 import type { ProjectStore } from './project-store.ts'
 import { explainApiError } from '../api-errors.ts'
 import { NothingToSuggestFrom } from './instruction-writer.ts'
@@ -22,6 +27,7 @@ export function projectRoutes({
   files,
   projects,
   index,
+  sync,
   instructionWriter,
   attachments,
 }: {
@@ -29,6 +35,7 @@ export function projectRoutes({
   files: FileStore
   projects: ProjectStore
   index: ProjectIndex
+  sync: ProjectSync
   instructionWriter: InstructionWriter
   attachments: Attachments
 }) {
@@ -93,6 +100,56 @@ export function projectRoutes({
       c.req.param('fileId'),
     )
     return removed ? c.body(null, 204) : notFound(c, 'File')
+  })
+
+  // Links the project to a folder on this machine and brings its files in.
+  // Anyone who can reach chibot can already run commands through an MCP
+  // server, so reading a path is no further reach.
+  app.put('/api/projects/:id/folder', json(projectFolderSchema), (c) => {
+    const id = c.req.param('id')
+    if (!projects.get(id)) return notFound(c, 'Project')
+    const requested = c.req.valid('json').path
+    const folder = resolve(
+      requested === '~' || requested.startsWith('~/')
+        ? join(homedir(), requested.slice(1))
+        : requested,
+    )
+    if (!isAbsolute(requested) && !requested.startsWith('~')) {
+      return c.json({ error: 'Give the full path of the folder' }, 400)
+    }
+    if (!statSync(folder, { throwIfNoEntry: false })?.isDirectory()) {
+      return c.json({ error: `${folder} is not a folder` }, 400)
+    }
+    const before = projects.get(id)!.folder
+    projects.setFolder(id, folder)
+    try {
+      return c.json(sync.sync(id))
+    } catch (err) {
+      projects.setFolder(id, before)
+      return c.json(
+        { error: `Can't read ${folder}: ${(err as Error).message}` },
+        400,
+      )
+    }
+  })
+
+  // Stops mirroring; the files stay in the project as they are.
+  app.delete('/api/projects/:id/folder', (c) =>
+    projects.setFolder(c.req.param('id'), null)
+      ? c.body(null, 204)
+      : notFound(c, 'Project'),
+  )
+
+  // Brings the project's files up to date with its folder.
+  app.post('/api/projects/:id/sync', (c) => {
+    const project = projects.get(c.req.param('id'))
+    if (!project) return notFound(c, 'Project')
+    if (!project.folder) return c.json({ error: 'No folder is linked' }, 409)
+    try {
+      return c.json(sync.sync(project.id))
+    } catch (err) {
+      return c.json({ error: (err as Error).message }, 409)
+    }
   })
 
   // Indexes a file again, e.g. after a failure or once embeddings work.

@@ -1,6 +1,7 @@
 import { useState, type DragEvent } from 'react'
 import {
   FileText,
+  FolderSync,
   FolderUp,
   NotebookPen,
   RefreshCw,
@@ -11,24 +12,36 @@ import type { ProjectFile } from '../../shared/types.ts'
 import { IconButton } from '../ui/IconButton.tsx'
 import { FilePickerButton } from './FilePickerButton.tsx'
 import { droppedFiles } from './folders.ts'
-import { NoteDialog } from './ProjectDialogs.tsx'
+import { FolderDialog, NoteDialog } from './ProjectDialogs.tsx'
 
-/** The project's files: add (files, a folder, a note), index again, remove. */
+/**
+ * The project's files: add (files, a folder, a note), mirror a folder, index
+ * again, remove.
+ */
 export function ProjectFiles({
   files,
+  folder,
   notice,
   onAdd,
+  onLink,
+  onSync,
+  onUnlink,
   onRetry,
   onRemove,
 }: {
   files: ProjectFile[]
+  folder: string | null
   notice: string | null
   onAdd: (files: File[]) => void
+  onLink: (path: string) => void
+  onSync: () => void
+  onUnlink: () => void
   onRetry: (fileId: string) => void
   onRemove: (fileId: string) => void
 }) {
   const [dragging, setDragging] = useState(false)
   const [noting, setNoting] = useState(false)
+  const [linking, setLinking] = useState(false)
   const drop = (e: DragEvent) => {
     e.preventDefault()
     setDragging(false)
@@ -65,6 +78,9 @@ export function ProjectFiles({
             folder
             onPick={onAdd}
           />
+          <IconButton label="Mirror a folder" onClick={() => setLinking(true)}>
+            <FolderSync size={18} strokeWidth={1.5} />
+          </IconButton>
         </div>
       </header>
       <NoteDialog
@@ -73,6 +89,23 @@ export function ProjectFiles({
         onConfirm={(note) => onAdd([note])}
         onClose={() => setNoting(false)}
       />
+      <FolderDialog
+        key={String(linking)}
+        open={linking}
+        onConfirm={onLink}
+        onClose={() => setLinking(false)}
+      />
+      {folder && (
+        <p className="project-hint project-folder">
+          Mirrors <code>{folder}</code>
+          <button type="button" className="button" onClick={onSync}>
+            Sync now
+          </button>
+          <button type="button" className="button" onClick={onUnlink}>
+            Stop mirroring
+          </button>
+        </p>
+      )}
       {notice && <p className="project-hint">{notice}</p>}
       {files.length === 0 ? (
         <p className="project-hint">

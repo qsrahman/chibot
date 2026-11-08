@@ -212,3 +212,53 @@ export function NoteDialog({
     </Dialog>
   )
 }
+
+/** Asks for the path of a folder on the machine chibot runs on. */
+export function FolderDialog({
+  open,
+  onConfirm,
+  onClose,
+}: {
+  open: boolean
+  onConfirm: (path: string) => void
+  onClose: () => void
+}) {
+  const [path, setPath] = useState('')
+  return (
+    <Dialog open={open} onClose={onClose} title="Mirror a folder">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (!path.trim()) return
+          onConfirm(path.trim())
+          onClose()
+        }}
+      >
+        <p className="project-hint">
+          The project's files will match this folder: new and changed files are
+          indexed again, deleted ones are removed. Files you add by hand stay.
+        </p>
+        <input
+          className="dialog-input"
+          aria-label="Folder path"
+          placeholder="Full path, e.g. ~/Documents/notes"
+          value={path}
+          onChange={(e) => setPath(e.target.value)}
+          autoFocus
+        />
+        <div className="dialog-actions">
+          <button type="button" className="button" onClick={onClose}>
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="button primary"
+            disabled={!path.trim()}
+          >
+            Mirror folder
+          </button>
+        </div>
+      </form>
+    </Dialog>
+  )
+}

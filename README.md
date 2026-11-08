@@ -335,7 +335,7 @@ needs the server running: there is no offline mode, since the server is local.
   today's date and the time to the quarter hour.
 - **Projects** (sidebar → **New project**) group chats with their own files
   and instructions. On a project's page, add files (PDF, Word, text, notes,
-  code, data, including `Dockerfile`-style names; pick or drop them) or a whole folder, or write a note, retry a file that failed (a file already in the project is refused), and write instructions (preview first; **Suggest from files** drafts them with your chat model from the start of each file, for you to check); chats started there
+  code, data, including `Dockerfile`-style names; pick or drop them) or a whole folder, or write a note, or **mirror a folder** on this machine by its path (`~/notes` works): the project's files then follow it, indexing only what changed, whenever the page opens or you press **Sync now** (files added by hand stay; **Stop mirroring** keeps the files), retry a file that failed (a file already in the project is refused), and write instructions (preview first; **Suggest from files** drafts them with your chat model from the start of each file, for you to check); chats started there
   search the files (by keywords, and by meaning with an embedding model),
   read a whole file when asked about all of it, cite them under **Sources**,
   and follow the instructions. Their "search past chats" looks in the

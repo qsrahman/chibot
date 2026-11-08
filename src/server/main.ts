@@ -35,7 +35,7 @@ import {
 } from './mcp/index.ts'
 import { McpServerFile, McpServers } from './mcp/index.ts'
 import { MemoryStore } from './memory-store.ts'
-import { ProjectIndex } from './projects/index.ts'
+import { ProjectIndex, ProjectSync } from './projects/index.ts'
 import { ProjectStore } from './projects/index.ts'
 import { settingsDefaults, SettingsStore } from './settings-store.ts'
 import type { Tool } from './tool.ts'
@@ -230,6 +230,7 @@ export function start({
     memories,
     projects,
     index,
+    sync: new ProjectSync(projects, files, index),
     instructionWriter: new InstructionWriter(client, settings, projects, index),
     attachments,
     mcp,

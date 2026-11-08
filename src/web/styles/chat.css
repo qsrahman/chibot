@@ -169,6 +169,17 @@
   font-size: 0.8125rem;
 }
 
+.project-folder {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.project-folder code {
+  overflow-wrap: anywhere;
+}
+
 .project-files {
   display: grid;
   margin: 0;

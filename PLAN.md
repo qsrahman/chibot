@@ -605,6 +605,19 @@ Models differ in dimensions, so a model change means re-embedding.
   mxbai-embed-large in `shared/embedding-prefixes.ts`); the document one is
   part of the vectors' identity (`embedding_model.document_prefix`), so changing
   it embeds the files again and searches by keyword until then.
+- **A folder a project mirrors** (`projects.folder`, `project_files.source_mtime`):
+  `PUT /api/projects/:id/folder` takes a full path (`~` allowed) on the machine
+  chibot runs on; `ProjectSync` makes the project's files match it, naming each
+  by its path in the folder. A file is read again only when its size or
+  modification time changed and replaced only when its bytes did, and only
+  what changed is indexed. Files added by hand are left alone. Links are not
+  followed, folders such as `node_modules` and types projects don't read are
+  skipped (`shared/folder-files.ts`, also used by the web's folder picker).
+  It syncs when the link is made, when the project page opens and on **Sync
+  now** (`POST /api/projects/:id/sync`); `DELETE …/folder` stops mirroring and
+  keeps the files. There is no watcher: the scan only stats files. Reading a
+  path is no further reach than what anyone who can open chibot can do by
+  adding an MCP server that runs commands.
 - **`search_project_files`** (`query`, `file`, `limit`), offered only in project chats with
   files: keyword and vector hits merged by reciprocal rank fusion, the top 6
   chunks (the model may ask for 1 to 15 with `limit`) as JSON (file name, file

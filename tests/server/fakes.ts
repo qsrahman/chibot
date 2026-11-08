@@ -18,7 +18,7 @@ import { openDatabase } from '../../src/server/database.ts'
 import { FileStore } from '../../src/server/file-store.ts'
 import { InstructionWriter } from '../../src/server/projects/index.ts'
 import { MemoryStore } from '../../src/server/memory-store.ts'
-import { ProjectIndex } from '../../src/server/projects/index.ts'
+import { ProjectIndex, ProjectSync } from '../../src/server/projects/index.ts'
 import { McpServerFile, McpServers } from '../../src/server/mcp/index.ts'
 import { ProjectStore } from '../../src/server/projects/index.ts'
 import {
@@ -344,6 +344,7 @@ export function testApp(deps: Partial<AppDeps> = {}) {
     registry: new ToolRegistry([]),
     memories: new MemoryStore(db),
     index,
+    sync: new ProjectSync(projects, files, index),
     instructionWriter: new InstructionWriter(
       fakeClient([]),
       settings,
