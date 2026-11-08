@@ -1,3 +1,5 @@
+import type { DatabaseSync } from 'node:sqlite'
+
 // The projects feature's schema, as migrations. `database.ts` runs them in
 // its one ordered list (existing databases count them by position, so they
 // can't move); the SQL lives here, beside the code that uses it.
@@ -46,6 +48,22 @@ export const PROJECT_MIGRATIONS = {
   documentPrefix: `ALTER TABLE embedding_model ADD COLUMN document_prefix TEXT NOT NULL DEFAULT '';`,
   // A folder on this machine a project mirrors (ProjectSync), and for the
   // files it brought in, the modification time they had, to tell what changed.
-  folder: `ALTER TABLE projects ADD COLUMN folder TEXT;
-   ALTER TABLE project_files ADD COLUMN source_mtime INTEGER;`,
+  // Adds only what is missing: this and `documentPrefix` once ran in the wrong
+  // order on some databases (before `compactions`, which shifted the others),
+  // which left them with one of the two and not the other.
+  folder: (db: DatabaseSync) => {
+    const missing = (table: string, column: string) =>
+      !(
+        db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]
+      ).some((c) => c.name === column)
+    if (missing('embedding_model', 'document_prefix')) {
+      db.exec(PROJECT_MIGRATIONS.documentPrefix)
+    }
+    if (missing('projects', 'folder')) {
+      db.exec('ALTER TABLE projects ADD COLUMN folder TEXT')
+    }
+    if (missing('project_files', 'source_mtime')) {
+      db.exec('ALTER TABLE project_files ADD COLUMN source_mtime INTEGER')
+    }
+  },
 }

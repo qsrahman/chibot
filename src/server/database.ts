@@ -6,7 +6,7 @@ import { PROJECT_MIGRATIONS } from './projects/schema.ts'
 
 // Applied in order; PRAGMA user_version records how many have run. A function
 // migration is for steps SQL alone can't do.
-const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
+export const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
   `CREATE TABLE conversations (
      id TEXT PRIMARY KEY,
      title TEXT,
@@ -73,8 +73,6 @@ const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
   PROJECT_MIGRATIONS.chunker,
   PROJECT_MIGRATIONS.description,
   PROJECT_MIGRATIONS.page,
-  PROJECT_MIGRATIONS.documentPrefix,
-  PROJECT_MIGRATIONS.folder,
   // Summaries that stand in for the items up to one on the path (CONTEXT.md §5).
   `CREATE TABLE compactions (
      id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -89,6 +87,8 @@ const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
      created_at INTEGER NOT NULL
    );
    CREATE INDEX compactions_conversation ON compactions(conversation_id);`,
+  PROJECT_MIGRATIONS.documentPrefix,
+  PROJECT_MIGRATIONS.folder,
 ]
 
 /** How many migrations this version of chibot knows: the newest schema it can open. */

@@ -1,8 +1,10 @@
+import { createHash } from 'node:crypto'
+import { DatabaseSync } from 'node:sqlite'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { openDatabase } from '../../src/server/database.ts'
+import { MIGRATIONS, openDatabase } from '../../src/server/database.ts'
 
 describe('openDatabase', () => {
   it('loads sqlite-vec for nearest-neighbour search', () => {
@@ -33,6 +35,62 @@ describe('openDatabase', () => {
       db.exec('PRAGMA user_version = 999')
       db.close()
       expect(() => openDatabase(file)).toThrow(/newer than this version/)
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  // Existing databases count migrations by position, so a new one goes at the
+  // end of the list; one put in the middle runs an old step again (and skips
+  // itself) on every database made before. When you add a migration, leave
+  // this alone: it covers the ones that existed when it was written.
+  it('keeps the migrations that are already out in their place', () => {
+    const KNOWN = 12
+    // A function's name, not its source, which tools write differently.
+    const text = (m: unknown) =>
+      typeof m === 'string' ? m : (m as Function).name
+    const hash = createHash('sha256')
+      .update(MIGRATIONS.slice(0, KNOWN).map(text).join('\n--\n'))
+      .digest('hex')
+    expect(hash).toBe(
+      'fefc7f8602555dcd9ce398b94e82fd5c6de5e50599f3e143926425d1eeea294c',
+    )
+  })
+
+  // Version 12 is a database from before the embedding prefix and the
+  // mirrored folder; the other is one that got the folder step but not the
+  // prefix one, when they ran out of order.
+  it.each([
+    ['from before the prefix and folder columns', 12, true],
+    ['that has the folder columns but not the prefix', 13, false],
+  ])('brings a database %s up to date', (_, version, dropFolder) => {
+    const dir = mkdtempSync(join(tmpdir(), 'chibot-db-'))
+    const file = join(dir, 'chibot.db')
+    try {
+      openDatabase(file).close()
+      const old = new DatabaseSync(file)
+      old.exec('ALTER TABLE embedding_model DROP COLUMN document_prefix')
+      if (dropFolder) {
+        old.exec(
+          `ALTER TABLE projects DROP COLUMN folder;
+           ALTER TABLE project_files DROP COLUMN source_mtime`,
+        )
+      }
+      old.exec(`PRAGMA user_version = ${version}`)
+      old.close()
+      const db = openDatabase(file)
+      const columns = (table: string) =>
+        (
+          db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]
+        ).map((c) => c.name)
+      expect(columns('embedding_model')).toContain('document_prefix')
+      expect(columns('projects')).toContain('folder')
+      expect(columns('project_files')).toContain('source_mtime')
+      expect(
+        (db.prepare('PRAGMA user_version').get() as { user_version: number })
+          .user_version,
+      ).toBe(MIGRATIONS.length)
+      db.close()
     } finally {
       rmSync(dir, { recursive: true, force: true })
     }
