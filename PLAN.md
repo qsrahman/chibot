@@ -1172,6 +1172,21 @@ Environment variables:
   tool results are always text (MCP images are saved as files and the model
   sees a note), which an import now enforces, so there is no image array to
   prune.
+- **Reading documents in a worker thread (pending).** `documentText()` parses
+  PDFs, Word files and HTML in the server process (project indexing and chat
+  attachments), so the whole server, including a streaming answer, is frozen
+  for the length of a parse, and a file that never finishes cannot be stopped.
+  Measured on synthetic files: a plain 3,000-page PDF froze it for 0.44 s, an
+  8 MB HTML page for 2.8 s (with about 520 MB more memory); scanned or
+  image-heavy PDFs were not tried. A `worker_threads` worker held the freeze
+  to 6 ms and `worker.terminate()` stopped a job at its time limit; TypeScript
+  runs in a worker on Node 26 as it is. A fresh worker costs about 100 ms
+  (loading the parsers), so keep one alive and replace it only after a
+  timeout. The worker takes a fixed set of jobs (`pdf`, `docx`, `html`), never
+  code from the caller, and one job at a time. Not shown: that the worker
+  gives memory back (the process stayed large after a job), and PDF or Word
+  parsing inside a worker. Worth building if large or odd documents turn up;
+  for ordinary files the freeze is under a second.
 - **Web pages as project sources (later).** A project could index a page by
   its address and fetch it again when it changes, as a mirrored folder does
   for files. It needs the fetching rules in [TOOLS.md](TOOLS.md) (no private
