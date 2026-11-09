@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-11-09
+
 ### Added
 
 - **Skills.** Folders with a `SKILL.md` in the [Agent Skills](https://agentskills.io/specification) format, added to the `skills` folder beside `config.json`, are offered to the model by name and description; when a request matches one, the model reads it (and the reference files it names) with a new **Use skills** tool. Settings → Tools lists them, and says why a folder was left out. A skill found elsewhere can be used with a link. chibot cannot run a skill's scripts. Adds the `yaml` package to read the header.
