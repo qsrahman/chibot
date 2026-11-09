@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-11-09
+
 ### Added
 
 - **Reranking for project search** (optional): with a server that has a `/rerank` route (llama.cpp's `llama-server`, vLLM, Jina, Cohere), set `rerank.baseURL` and `rerank.model` (**Settings → Other models → Project search** can change or empty the model). Search then has the reranking model read the 20 best passages next to the question and puts the one that answers it first. If the server fails, search keeps its own order. Its effect on the evaluation set is measured with `RETRIEVAL_RERANK_URL` (TESTING.md); Ollama has no such route.
