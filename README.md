@@ -66,6 +66,11 @@ tools; a Mac uses these too, not `~/Library`.) Existing checkouts keep working:
 while `<chibot folder>/data` and `<chibot folder>/mcp.json` exist and the
 standard places are empty, chibot keeps using them and says so at startup.
 
+When an update changes the database's layout, chibot first copies the old
+database to `chibot.db.before-upgrade` beside it (readable only by you, and
+replaced by the next upgrade's copy), and says so at startup. To go back, stop
+chibot, run an older version, and put that file in place of `chibot.db`.
+
 **Precedence**, highest first: command-line flags (`--port`, `--host`), real
 environment variables, `config.json`, an old `.env`, defaults. So a variable such as
 `OPENAI_API_KEY` always overrides the file, which is how a deployment, a test

@@ -1,3 +1,4 @@
+import { chmodSync, rmSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
 import { getLoadablePath } from 'sqlite-vec'
 import { messageText } from '../shared/messages.ts'
@@ -120,6 +121,17 @@ export function openDatabase(path: string): DatabaseSync {
     db.close()
     throw new Error(
       `Database schema ${version} is newer than this version of chibot supports (${MIGRATIONS.length})`,
+    )
+  }
+  // An existing database about to change gets a copy first: a migration that
+  // goes wrong in a way no transaction undoes leaves something to restore.
+  if (version > 0 && version < MIGRATIONS.length && path !== ':memory:') {
+    const copy = `${path}.before-upgrade`
+    rmSync(copy, { force: true })
+    db.prepare('VACUUM INTO ?').run(copy)
+    chmodSync(copy, 0o600) // it holds the chats
+    console.info(
+      `Upgrading the database from version ${version} to ${MIGRATIONS.length}; a copy of the old one is at ${copy}`,
     )
   }
   MIGRATIONS.slice(version).forEach((migration, i) => {

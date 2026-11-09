@@ -1,9 +1,9 @@
 import { createHash } from 'node:crypto'
 import { DatabaseSync } from 'node:sqlite'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MIGRATIONS, openDatabase } from '../../src/server/database.ts'
 
 describe('openDatabase', () => {
@@ -147,5 +147,67 @@ describe('openDatabase', () => {
     } finally {
       rmSync(dir, { recursive: true, force: true })
     }
+  })
+
+  describe('before upgrading an existing database', () => {
+    let dir: string
+    beforeEach(() => {
+      dir = mkdtempSync(join(tmpdir(), 'chibot-db-'))
+      vi.spyOn(console, 'info').mockImplementation(() => {})
+    })
+    afterEach(() => {
+      vi.restoreAllMocks()
+      rmSync(dir, { recursive: true, force: true })
+    })
+    const copyOf = (file: string) => `${file}.before-upgrade`
+
+    it('keeps a private copy of it as it was', () => {
+      const file = join(dir, 'chibot.db')
+      const first = openDatabase(file)
+      first.exec(
+        "INSERT INTO conversations (id, title, created_at, updated_at) VALUES ('c', 'Kept', 1, 1)",
+      )
+      first.close()
+      const old = new DatabaseSync(file)
+      old.exec(`PRAGMA user_version = ${MIGRATIONS.length - 2}`)
+      old.close()
+
+      openDatabase(file).close()
+      const copy = new DatabaseSync(copyOf(file), { readOnly: true })
+      expect(copy.prepare('PRAGMA user_version').get()).toEqual({
+        user_version: MIGRATIONS.length - 2,
+      })
+      expect(copy.prepare('SELECT title FROM conversations').get()).toEqual({
+        title: 'Kept',
+      })
+      copy.close()
+      expect(statSync(copyOf(file)).mode & 0o777).toBe(0o600)
+    })
+
+    it('makes none for a new database, one that is up to date, or one in memory', () => {
+      const file = join(dir, 'chibot.db')
+      openDatabase(file).close()
+      expect(existsSync(copyOf(file))).toBe(false)
+      openDatabase(file).close()
+      expect(existsSync(copyOf(file))).toBe(false)
+      openDatabase(':memory:')
+      expect(console.info).not.toHaveBeenCalled()
+    })
+
+    it('replaces the copy of an earlier upgrade', () => {
+      const file = join(dir, 'chibot.db')
+      openDatabase(file).close()
+      for (const version of [MIGRATIONS.length - 2, MIGRATIONS.length - 1]) {
+        const old = new DatabaseSync(file)
+        old.exec(`PRAGMA user_version = ${version}`)
+        old.close()
+        openDatabase(file).close()
+      }
+      const copy = new DatabaseSync(copyOf(file), { readOnly: true })
+      expect(copy.prepare('PRAGMA user_version').get()).toEqual({
+        user_version: MIGRATIONS.length - 1,
+      })
+      copy.close()
+    })
   })
 })

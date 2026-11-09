@@ -13,6 +13,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- **A copy of the database is kept before an upgrade changes it**: `chibot.db.before-upgrade` beside `chibot.db` (private to you, replaced by the next upgrade's), and startup says where it is.
 - **Chats open faster as history grows.** The database gained an index on a chat's items (opening a chat took 25 ms at 200,000 items, now 0.08 ms) and one for project files, and runs in WAL mode, which makes the many small writes of a streaming answer about three times cheaper. Existing databases get the indexes on the next start; `chibot.db-wal` and `-shm` files now appear beside `chibot.db` while chibot runs.
 - **Reasoning effort has one list of levels**, in the composer and in Settings → Model: Auto, then Minimal to Max, each with a hint. The composer's Fast and Thinking modes (low and high under other names) and the model menu's Reasoning effort sub-menu, and the effort shown after the model name, are gone. **None** is no longer offered (a saved `none` still works and shows until you change it).
 

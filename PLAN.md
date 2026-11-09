@@ -205,7 +205,10 @@ The file runs in WAL mode (`openDatabase` sets it): about three times cheaper
 small writes while an answer streams, and a stopped chibot leaves no `-wal`,
 which is how `restore` tells it is running. Migrations are applied by position:
 a new one goes at the end of the list, and `tests/server/database.test.ts`
-fails if an existing one moves or changes.
+fails if an existing one moves or changes. Before applying any, `openDatabase`
+writes a copy of an existing file database to `chibot.db.before-upgrade`
+(`VACUUM INTO`, mode 0600, replacing the last upgrade's), so a step that fails
+in a way a transaction does not undo leaves a database to restore.
 
 ### HTTP API (grows per phase)
 
