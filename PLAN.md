@@ -1172,6 +1172,51 @@ Environment variables:
   tool results are always text (MCP images are saved as files and the model
   sees a note), which an import now enforces, so there is no image array to
   prune.
+- **Smaller ideas from a look at DeepTutor (pending, in the order to try them).**
+  1. **SVG blocks in answers.** A closed ` ```svg ` block shown as
+     `<img src="data:image/svg+xml,…">`: an image can't run scripts or fetch
+     anything, the page policy already allows `data:` images (`img-src 'self'
+     data: blob:`), so no sanitizer or dependency. A Source/Preview toggle and
+     a download button; fall back to the code block if the image fails; draw
+     only once the block is closed (streaming leaves it open). About 80 lines,
+     in `CodeBlock` (`MarkdownView.tsx`).
+  2. **Ask about a selection, version 1.** `QuoteSelection` already puts a
+     Quote button by selected text and `branchChat` copies a chat up to a turn;
+     an "Ask in new chat" button would branch at that answer and open the copy
+     with the quote in its draft (drafts are kept per chat). It adds a chat per
+     question to the sidebar; making the copy a temporary chat (branching
+     refuses a temporary source, but the new chat can be one) keeps it from
+     piling up, at the price of no memory or chat search there. About 40 lines.
+  3. **`ask_user` tool.** A tool with `question` and up to 5 `choices` that
+     waits for the user like an approval does: a flag on `Tool` that makes
+     `ToolRegistry` treat the call as waiting, the turn ending with an event
+     like `chibot.approval`, a request form `{ answers: { callId: text } }`
+     whose text becomes the call's output, and a question card beside
+     `ApprovalCard`. Sending a new message instead answers "the user did not
+     answer", as it denies a waiting approval. The pending question is, like an
+     approval, just history ending in an unanswered call, so it survives a
+     reload. The gain over a question in the reply is one-click choices and
+     asking in the middle of an MCP workflow; small models may ask too often,
+     so the prompt says to ask only when a wrong guess would waste the user's
+     time. Open edges: a chat exported or imported while a question is
+     pending, and several questions in one step. About 250 lines.
+  4. **Mermaid diagrams.** After SVG shows that diagrams are wanted. Mermaid
+     12 brings d3, dompurify, cytoscape and elkjs (its diagram types load on
+     demand); its effect on the bundle (about 960 kB now) is not measured, so
+     measure first. Load it on first use like KaTeX, `securityLevel: 'strict'`,
+     draw only closed blocks and cache by source so streaming doesn't redraw
+     per token, follow the light and dark themes, and show the code with a
+     short note when the model's Mermaid is invalid (common). Whether its HTML
+     labels show inside an `<img>` in Safari needs testing. The prompt's
+     formatting rules would have to say that diagrams can be drawn.
+  5. **Ask about a selection, version 2.** A real side thread in a panel
+     beside the text, kept apart from the main chat. As a sub-branch of the
+     same chat it would appear as another version in the version arrows, so
+     it needs a hidden chat linked to the answer (parent chat, anchor item and
+     quoted text, hidden from the sidebar) and a change to how a turn's input
+     is built, so the parent's history up to the anchor is the prefix without
+     being copied (files included). That reaches the turn loop and
+     compaction, so only if version 1 is used.
 - **Reading documents in a worker thread (pending).** `documentText()` parses
   PDFs, Word files and HTML in the server process (project indexing and chat
   attachments), so the whole server, including a streaming answer, is frozen
