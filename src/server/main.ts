@@ -35,7 +35,7 @@ import {
 } from './mcp/index.ts'
 import { McpServerFile, McpServers } from './mcp/index.ts'
 import { MemoryStore } from './memory-store.ts'
-import { ProjectIndex, ProjectSync } from './projects/index.ts'
+import { ProjectIndex, ProjectSync, Reranker } from './projects/index.ts'
 import { ProjectStore } from './projects/index.ts'
 import { settingsDefaults, SettingsStore } from './settings-store.ts'
 import type { Tool } from './tool.ts'
@@ -160,6 +160,7 @@ export function start({
     settingsDefaults(config.chat.model, {
       imageModel: config.image?.model,
       embeddingModel: config.embedding?.model,
+      rerankModel: config.rerank?.model,
       transcribeModel: config.transcription?.model,
     }),
   )
@@ -181,6 +182,13 @@ export function start({
         document: settings.get().embeddingDocumentPrefix,
       }),
     },
+    config.rerank?.baseURL
+      ? new Reranker({
+          baseURL: config.rerank.baseURL,
+          apiKey: config.rerank.apiKey,
+          model: () => settings.get().rerankModel,
+        })
+      : null,
   )
   void index.resume()
   // Temporary chats whose tab closed before it could delete them.

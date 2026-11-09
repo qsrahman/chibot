@@ -3,6 +3,7 @@
 export const SERVICE_MODELS = [
   'imageModel',
   'embeddingModel',
+  'rerankModel',
   'transcribeModel',
 ] as const
 export type ServiceModel = (typeof SERVICE_MODELS)[number]

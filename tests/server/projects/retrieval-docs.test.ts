@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { beforeAll, describe, expect, it } from 'vitest'
 import OpenAI from 'openai'
+import { Reranker } from '../../../src/server/projects/reranker.ts'
 import type { Hit } from '../../../src/server/projects/fusion.ts'
 import {
   HELD_OUT,
@@ -29,7 +30,8 @@ import {
 //   RETRIEVAL_EMBEDDING_MODEL=embeddinggemma-2 \
 //   RETRIEVAL_QUERY_PREFIX='task: search result | query: ' \
 //   RETRIEVAL_DOCUMENT_PREFIX='title: none | text: ' \
-//   pnpm exec vitest run tests/server/projects/retrieval-docs.test.ts
+//   pnpm exec vitest run tests/server/projects/retrieval-docs.test.ts \
+//     --disable-console-intercept
 
 const dir = join(import.meta.dirname, '../../fixtures/retrieval-docs')
 const corpus: [string, Uint8Array][] = readdirSync(dir)
@@ -193,5 +195,65 @@ describe.skipIf(!embeddingUrl)(
       if (prefixed) await closeness('with prefixes', prefixed)
       console.log(`\n${lines.join('\n')}\n`)
     }, 600_000)
+  },
+)
+
+// With a server that has a /rerank route (llama.cpp's llama-server with a
+// reranker GGUF, vLLM, Jina, Cohere): what reordering the best 20 passages
+// does to keyword search, and to the hybrid when embeddings are set too.
+//   RETRIEVAL_RERANK_URL=http://localhost:8080/v1 \
+//   RETRIEVAL_RERANK_MODEL=bge-reranker-v2-m3 [RETRIEVAL_RERANK_KEY=…] \
+//   pnpm exec vitest run tests/server/projects/retrieval-docs.test.ts \
+//     --disable-console-intercept
+describe.skipIf(!process.env.RETRIEVAL_RERANK_URL)(
+  'project search over real documents (reranking)',
+  () => {
+    const sets = [
+      ['same words', SAME_WORDS],
+      ['paraphrases', PARAPHRASES],
+      ['held out', HELD_OUT],
+    ] as const
+    const pct = (n: number) => `${(n * 100).toFixed(0)}%`.padStart(4)
+
+    it('compares search with and without reordering by a reranking model', async () => {
+      const reranker = () =>
+        new Reranker({
+          baseURL: process.env.RETRIEVAL_RERANK_URL!,
+          apiKey: process.env.RETRIEVAL_RERANK_KEY ?? 'unused',
+          model: () => process.env.RETRIEVAL_RERANK_MODEL!,
+        })
+      const embedding = embeddingUrl
+        ? {
+            client: new OpenAI({ baseURL: embeddingUrl, apiKey: 'none' }),
+            model: () => process.env.RETRIEVAL_EMBEDDING_MODEL!,
+          }
+        : null
+      const rows: [string, Awaited<ReturnType<typeof indexCorpus>>][] = [
+        ['keyword', await indexCorpus(corpus, null)],
+        ['keyword + rerank', await indexCorpus(corpus, null, reranker())],
+      ]
+      if (embedding) {
+        rows.push(
+          ['hybrid', await indexCorpus(corpus, embedding)],
+          ['hybrid + rerank', await indexCorpus(corpus, embedding, reranker())],
+        )
+      }
+      const lines = [
+        `${''.padEnd(20)}${sets.map(([name]) => name.padEnd(24)).join('')}(first hit / first three / first six)`,
+      ]
+      for (const [label, index] of rows) {
+        const cells: string[] = []
+        for (const [, questions] of sets) {
+          const { recall } = await score(index, questions)
+          cells.push(
+            `${pct(recall(1))} /${pct(recall(3))} /${pct(recall(6))}`.padEnd(
+              24,
+            ),
+          )
+        }
+        lines.push(`${label.padEnd(20)}${cells.join('')}`)
+      }
+      console.log(`\n${lines.join('\n')}\n`)
+    }, 900_000)
   },
 )

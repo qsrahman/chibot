@@ -17,6 +17,7 @@ export function useSettings() {
   const [endpoints, setEndpoints] = useState<Record<ServiceModel, boolean>>({
     imageModel: false,
     embeddingModel: false,
+    rerankModel: false,
     transcribeModel: false,
   })
   const [error, setError] = useState<string | null>(null)

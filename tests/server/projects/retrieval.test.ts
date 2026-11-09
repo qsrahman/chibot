@@ -325,7 +325,7 @@ describe('project search quality', () => {
 // otherwise). For a local one:
 //   RETRIEVAL_EMBEDDING_URL=http://localhost:11434/v1 \
 //   RETRIEVAL_EMBEDDING_MODEL=nomic-embed-text-v2-moe pnpm exec vitest run \
-//   tests/server/projects/retrieval.test.ts
+//   tests/server/projects/retrieval.test.ts --disable-console-intercept
 // It prints keyword-only against hybrid scores, for both question sets.
 const embeddingUrl = process.env.RETRIEVAL_EMBEDDING_URL
 describe.skipIf(!embeddingUrl)('project search by meaning', () => {

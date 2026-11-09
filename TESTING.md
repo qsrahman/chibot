@@ -28,7 +28,11 @@ How chibot is tested and how to add tests. Part of the developer guide ([AGENTS.
   and how close the best passage is for answerable against unanswerable
   questions (what a similarity floor would keep and reject). Keyword scores
   need no endpoint and are checked against a floor. `retrieval-harness.ts`
-  holds what both share.
+  holds what both share. Add `--disable-console-intercept` to the `vitest run`
+  command to see the tables of a passing run. With `RETRIEVAL_RERANK_URL`,
+  `RETRIEVAL_RERANK_MODEL` (and `RETRIEVAL_RERANK_KEY`) it also scores keyword
+  search, and the hybrid when an embedding endpoint is set, with and without a
+  reranking model reordering the best 20 passages.
 - Prompt injection: `tests/server/chat/injection.test.ts` asks a real model to
   summarize a poisoned page with chibot's own instructions and tools, and
   counts how often it obeys; run it when changing the untrusted-content

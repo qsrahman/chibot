@@ -19,6 +19,7 @@ export function settingsDefaults(
     model,
     imageModel: services.imageModel ?? '',
     embeddingModel: services.embeddingModel ?? '',
+    rerankModel: services.rerankModel ?? '',
     embeddingQueryPrefix: '',
     embeddingDocumentPrefix: '',
     transcribeModel: services.transcribeModel ?? '',

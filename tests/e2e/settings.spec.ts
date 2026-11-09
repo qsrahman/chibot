@@ -385,6 +385,27 @@ test('warns when the server runs the model with less than the window set', async
   await resetSettings(page)
 })
 
+test('chooses the reranking model, and can turn it off', async ({ page }) => {
+  await page.goto('/')
+  const dialog = await openSettings(page, 'Other models')
+  const rerank = dialog.getByLabel('Reranking model')
+  await expect(rerank).toHaveValue('e2e-rerank')
+  await rerank.fill('')
+  await rerank.press('Enter')
+  await expect(
+    dialog.getByRole('button', { name: 'Reset' }).first(),
+  ).toBeVisible()
+  // Kept after a reload.
+  await page.reload()
+  const again = await openSettings(page, 'Other models')
+  await expect(again.getByLabel('Reranking model')).toHaveValue('')
+  await again
+    .getByRole('button', { name: 'Reset to the default' })
+    .first()
+    .click()
+  await expect(again.getByLabel('Reranking model')).toHaveValue('e2e-rerank')
+})
+
 test('offers the text an embedding model expects, and keeps it', async ({
   page,
 }) => {

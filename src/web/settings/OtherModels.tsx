@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { Check, RotateCcw } from 'lucide-react'
 import { suggestedPrefixes } from '../../shared/embedding-prefixes.ts'
 import type { ServiceModel } from '../../shared/service-models.ts'
@@ -36,6 +36,15 @@ const SERVICES: {
     example: 'text-embedding-3-small',
   },
   {
+    setting: 'rerankModel',
+    section: 'Project search',
+    label: 'Reranking model',
+    description:
+      'Reorders the best passages of a search by how well each answers the question, on a server with a /rerank route (llama.cpp, vLLM, Jina, Cohere). Empty keeps the order keywords and meaning give.',
+    configure: 'rerank.baseURL',
+    example: 'bge-reranker-v2-m3',
+  },
+  {
     setting: 'transcribeModel',
     section: 'Voice input',
     label: 'Transcription model',
@@ -59,20 +68,24 @@ export function OtherModels({
 }) {
   return (
     <>
-      {SERVICES.map((service) => (
-        <Section key={service.setting} title={service.section}>
-          <ModelRow
-            {...service}
-            value={settings[service.setting]}
-            fallback={defaults[service.setting]}
-            connected={endpoints[service.setting]}
-            onSave={(value) => onChange({ [service.setting]: value })}
-          />
-          {service.setting === 'embeddingModel' &&
-            endpoints.embeddingModel &&
-            settings.embeddingModel && (
-              <Prefixes settings={settings} onChange={onChange} />
-            )}
+      {[...new Set(SERVICES.map((s) => s.section))].map((section) => (
+        <Section key={section} title={section}>
+          {SERVICES.filter((s) => s.section === section).map((service) => (
+            <Fragment key={service.setting}>
+              <ModelRow
+                {...service}
+                value={settings[service.setting]}
+                fallback={defaults[service.setting]}
+                connected={endpoints[service.setting]}
+                onSave={(value) => onChange({ [service.setting]: value })}
+              />
+              {service.setting === 'embeddingModel' &&
+                endpoints.embeddingModel &&
+                settings.embeddingModel && (
+                  <Prefixes settings={settings} onChange={onChange} />
+                )}
+            </Fragment>
+          ))}
         </Section>
       ))}
     </>

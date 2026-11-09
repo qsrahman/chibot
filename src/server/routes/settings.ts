@@ -13,7 +13,7 @@ import type { SettingsStore } from '../settings-store.ts'
 import type { ToolRegistry } from '../tool-registry.ts'
 import { json } from './helpers.ts'
 
-type ServiceEndpoints = 'image' | 'embedding' | 'transcription'
+type ServiceEndpoints = 'image' | 'embedding' | 'rerank' | 'transcription'
 
 export function settingsRoutes({
   settings,
@@ -39,6 +39,7 @@ export function settingsRoutes({
       endpoints: {
         imageModel: config.image !== null,
         embeddingModel: config.embedding !== null,
+        rerankModel: config.rerank !== null,
         transcribeModel: config.transcription !== null,
       },
     } satisfies SettingsResponse),

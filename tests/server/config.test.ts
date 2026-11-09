@@ -154,6 +154,27 @@ describe('Config', () => {
     })
   })
 
+  it('has no reranking server unless one is named, and then shares the chat key', () => {
+    const chat = {
+      OPENAI_BASE_URL: 'http://localhost:8080/v1',
+      OPENAI_API_KEY: 'k',
+      OPENAI_MODEL: 'gemma4',
+    }
+    // The chat server is not assumed to have a /rerank route.
+    expect(new Config(chat).rerank).toBeNull()
+    expect(
+      new Config({
+        ...chat,
+        OPENAI_RERANK_BASE_URL: 'http://localhost:9000/v1',
+        OPENAI_RERANK_MODEL: 'bge-reranker-v2-m3',
+      }).rerank,
+    ).toEqual({
+      baseURL: 'http://localhost:9000/v1',
+      apiKey: 'k',
+      model: 'bge-reranker-v2-m3',
+    })
+  })
+
   it('inherits the chat endpoint for transcription', () => {
     expect(new Config({ OPENAI_API_KEY: 'k' }).transcription?.model).toBe(
       'gpt-transcribe',

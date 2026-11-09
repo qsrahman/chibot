@@ -13,6 +13,8 @@ export const settingsSchema = z.object({
    */
   imageModel: z.string().trim().max(200),
   embeddingModel: z.string().trim().max(200),
+  /** Reorders the best passages of a project search; `''` is off. */
+  rerankModel: z.string().trim().max(200),
   /** Text before each question and each file chunk when embedding, for models that expect one. */
   embeddingQueryPrefix: z.string().max(200),
   embeddingDocumentPrefix: z.string().max(200),

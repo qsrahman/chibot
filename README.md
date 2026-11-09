@@ -84,6 +84,7 @@ whatever folder it is in.
 | `server.port` | `PORT` | `3000` | API server port |
 | `image.baseURL` / `.apiKey` / `.model` | `OPENAI_IMAGE_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Image generation; the model must be an image-generation model (not a chat model), and defaults to `gpt-image-2` on OpenAI |
 | `embedding.baseURL` / `.apiKey` / `.model` | `OPENAI_EMBEDDING_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Project file search by meaning; the model defaults to `text-embedding-3-small` on OpenAI, and must be named on other servers (without one, project files are searched by keywords) |
+| `rerank.baseURL` / `.apiKey` / `.model` | `OPENAI_RERANK_BASE_URL` / `_API_KEY` / `_MODEL` | none (the API key is the chat one) | Project search reordered by a reranking model, on a server with a `/rerank` route (llama.cpp's `llama-server`, vLLM, Jina, Cohere); `baseURL` is the address up to `/rerank`, e.g. `http://localhost:8080/v1`. Without it, or with the model emptied in Settings, passages keep the order keywords and meaning give |
 | `transcription.baseURL` / `.apiKey` / `.model` | `OPENAI_TRANSCRIBE_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Voice input; the model defaults to `gpt-transcribe` on OpenAI, and must be named on other servers (without one, the mic is off). With chat on Ollama, point this at OpenAI |
 | `token` | `CHIBOT_TOKEN` | — | Requires a token (16+ characters) to use chibot; set it when `server.host` exposes chibot |
 | — | `CHIBOT_ALLOW_OPEN` | — | `1` (or `chibot --allow-open`) lets chibot listen beyond this machine without a token, e.g. behind a firewall or proxy that restricts who can reach it |
@@ -122,6 +123,13 @@ to expect a short instruction before each text: in **Settings → Other models**
 before each file part** boxes for the ones chibot knows (type them by hand for
 others; leave them empty for OpenAI's, which take plain text). Changing the
 chunk one indexes the files again; the question one changes nothing stored.
+
+A reranking model is optional: it reads the 20 best passages next to the
+question and puts the one that answers it first, which helps when the right
+passage is found but ranked low. It needs a server with a `/rerank` route
+(Ollama has none); set `rerank.baseURL` and `rerank.model`, and the model can
+then be changed or emptied under **Settings → Other models → Project search**.
+If the server fails, search keeps its own order.
 
 The `image.model`, `embedding.model` and `transcription.model` settings only
 give the starting models: the image, embedding and transcription models can be

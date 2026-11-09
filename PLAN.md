@@ -616,6 +616,21 @@ Models differ in dimensions, so a model change means re-embedding.
   mxbai-embed-large in `shared/embedding-prefixes.ts`); the document one is
   part of the vectors' identity (`embedding_model.document_prefix`), so changing
   it embeds the files again and searches by keyword until then.
+- **Reranking** (optional): `OPENAI_RERANK_BASE_URL` / `_API_KEY` / `_MODEL`
+  (`config.rerank`; unlike the other features it does not inherit the chat
+  endpoint, since few chat servers have the route) and the `rerankModel`
+  setting (`''` is off). `Reranker` posts `{model, query, documents, top_n}` to
+  `<baseURL>/rerank`, the shape Cohere, Jina, llama.cpp's server and vLLM share,
+  and reads `results[].index` / `relevance_score`. `ProjectIndex.search` sends
+  the best 20 passages of the merged lists (at least as many as were asked
+  for) and returns them in the new order; on any failure (an error, a timeout
+  after 30 s, a malformed answer) it keeps the merged order, so search never
+  depends on it. A stop still ends the call. Passages are about 800 tokens, so
+  a reranker with a 512-token limit sees the start of each. `candidates()`
+  stays un-reranked: the evaluations compare it with the full search. Ollama
+  has no rerank route, and no reranker was available locally, so its effect on
+  the evaluation set is not measured here: `retrieval-docs.test.ts` measures it
+  when `RETRIEVAL_RERANK_URL` is set.
 - **A folder a project mirrors** (`projects.folder`, `project_files.source_mtime`):
   `PUT /api/projects/:id/folder` takes a full path (`~` allowed) on the machine
   chibot runs on; `ProjectSync` makes the project's files match it, naming each
@@ -1056,7 +1071,7 @@ Environment variables:
 | `OPENAI_BASE_URL` | SDK default (OpenAI) | Chat endpoint; any Responses-API server, e.g. `http://localhost:11434/v1` for Ollama |
 | `OPENAI_API_KEY` | — | Required for OpenAI; optional with `OPENAI_BASE_URL` |
 | `OPENAI_MODEL` | `gpt-6-astra` | Chat model; required with `OPENAI_BASE_URL` |
-| `OPENAI_<FEATURE>_BASE_URL` / `_API_KEY` / `_MODEL` | inherit chat endpoint | Per-feature override, `<FEATURE>` ∈ `IMAGE` (Phase 6), `EMBEDDING` (Phase 8), `TRANSCRIBE` (Phase 9) |
+| `OPENAI_<FEATURE>_BASE_URL` / `_API_KEY` / `_MODEL` | inherit chat endpoint | Per-feature override, `<FEATURE>` ∈ `IMAGE` (Phase 6), `EMBEDDING` (Phase 8), `TRANSCRIBE` (Phase 9); `OPENAI_RERANK_*` has the same shape but no chat fallback for its address |
 | `OPENAI_TRANSCRIBE_MODEL` | `gpt-transcribe` on OpenAI | Voice input transcription (Phase 9); the starting value of Settings → Other models |
 | `OPENAI_IMAGE_MODEL` | `gpt-image-2` on OpenAI | Image generation tool (Phase 6); the starting value of Settings → Other models |
 | `OPENAI_EMBEDDING_MODEL` | `text-embedding-3-small` on OpenAI | Project file embeddings (Phase 8); the starting value of Settings → Other models |

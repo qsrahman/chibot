@@ -6,6 +6,7 @@ import {
   ProjectIndex,
   type EmbeddingDeps,
 } from '../../../src/server/projects/project-index.ts'
+import type { Reranker } from '../../../src/server/projects/reranker.ts'
 import { ProjectStore } from '../../../src/server/projects/project-store.ts'
 import { testFiles } from '../fakes.ts'
 
@@ -22,15 +23,19 @@ export interface Question {
   page?: number
 }
 
-/** Indexes `corpus` into a fresh project (by keyword, and by meaning with `embedding`). */
+/**
+ * Indexes `corpus` into a fresh project (by keyword, and by meaning with
+ * `embedding`); searches are put in order by `reranker` when given.
+ */
 export async function indexCorpus(
   corpus: [string, Uint8Array][],
   embedding: EmbeddingDeps | null,
+  reranker: Reranker | null = null,
 ) {
   const db = openDatabase(':memory:')
   const files = testFiles(db)
   const projects = new ProjectStore(db, files)
-  const index = new ProjectIndex(db, projects, files, embedding)
+  const index = new ProjectIndex(db, projects, files, embedding, reranker)
   const projectId = projects.create('Corpus').id
   for (const [name, bytes] of corpus) {
     const file = files.save(null, name, 'application/octet-stream', bytes)

@@ -13,6 +13,7 @@ import {
 import type { Prefixes } from '../../shared/embedding-prefixes.ts'
 import { documentText } from '../text.ts'
 import { fuse, type Hit } from './fusion.ts'
+import type { Reranker } from './reranker.ts'
 
 // About 1,500 chunks: plenty for notes and documents, bounded for embedding.
 const MAX_TEXT = 5_000_000
@@ -23,6 +24,9 @@ const CANDIDATES = 30
 // may return (each is about 3,200 characters of the model's context).
 export const DEFAULT_RESULTS = 6
 export const MAX_RESULTS = 15
+// Passages sent to the reranking model: the best of the merged lists, as many
+// as it can read in a moment.
+const RERANK_POOL = 20
 // Parts of a file `read` returns at once (about 10,000 characters).
 const READ_PARTS = 3
 
@@ -59,6 +63,7 @@ export class ProjectIndex {
   readonly #projects: ProjectStore
   readonly #files: FileStore
   readonly #embedding: EmbeddingDeps | null
+  readonly #reranker: Reranker | null
   #queue: Promise<void> = Promise.resolve()
 
   constructor(
@@ -66,11 +71,13 @@ export class ProjectIndex {
     projects: ProjectStore,
     files: FileStore,
     embedding: EmbeddingDeps | null,
+    reranker: Reranker | null = null,
   ) {
     this.#db = db
     this.#projects = projects
     this.#files = files
     this.#embedding = embedding
+    this.#reranker = reranker
   }
 
   /** The embedding model now in use, or `null`: no meaning search. */
@@ -255,12 +262,19 @@ export class ProjectIndex {
       signal,
       fileId,
     })
-    return this.passages(
-      fuse(keyword, meaning).slice(
-        0,
-        Math.min(Math.max(limit, 1), MAX_RESULTS),
-      ),
+    const wanted = Math.min(Math.max(limit, 1), MAX_RESULTS)
+    const merged = fuse(keyword, meaning)
+    if (!this.#reranker?.on || merged.length < 2) {
+      return this.passages(merged.slice(0, wanted))
+    }
+    // The reranking model reads the best of them next to the question.
+    const pool = this.passages(merged.slice(0, Math.max(RERANK_POOL, wanted)))
+    const order = await this.#reranker.rank(
+      query,
+      pool.map((p) => p.text),
+      signal,
     )
+    return (order ? order.map((i) => pool[i]!) : pool).slice(0, wanted)
   }
 
   /**

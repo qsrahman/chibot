@@ -35,6 +35,7 @@ export const configFileSchema = z
     chat: endpoint.optional(),
     image: endpoint.optional(),
     embedding: endpoint.optional(),
+    rerank: endpoint.optional(),
     transcription: endpoint.optional(),
     server: z
       .object({
@@ -87,6 +88,9 @@ const SETTINGS: [path: string, variable: string][] = [
   ['embedding.baseURL', 'OPENAI_EMBEDDING_BASE_URL'],
   ['embedding.apiKey', 'OPENAI_EMBEDDING_API_KEY'],
   ['embedding.model', 'OPENAI_EMBEDDING_MODEL'],
+  ['rerank.baseURL', 'OPENAI_RERANK_BASE_URL'],
+  ['rerank.apiKey', 'OPENAI_RERANK_API_KEY'],
+  ['rerank.model', 'OPENAI_RERANK_MODEL'],
   ['transcription.baseURL', 'OPENAI_TRANSCRIBE_BASE_URL'],
   ['transcription.apiKey', 'OPENAI_TRANSCRIBE_API_KEY'],
   ['transcription.model', 'OPENAI_TRANSCRIBE_MODEL'],

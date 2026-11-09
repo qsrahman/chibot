@@ -93,6 +93,9 @@ const envSchema = z
     OPENAI_EMBEDDING_BASE_URL: optional,
     OPENAI_EMBEDDING_API_KEY: optional,
     OPENAI_EMBEDDING_MODEL: optional,
+    OPENAI_RERANK_BASE_URL: optional,
+    OPENAI_RERANK_API_KEY: optional,
+    OPENAI_RERANK_MODEL: optional,
     OPENAI_TRANSCRIBE_BASE_URL: optional,
     OPENAI_TRANSCRIBE_API_KEY: optional,
     OPENAI_TRANSCRIBE_MODEL: optional,
@@ -142,6 +145,12 @@ export class Config {
   readonly image: Endpoint | null
   /** Project file embeddings, or `null`: then search is by keywords only. */
   readonly embedding: Endpoint | null
+  /**
+   * A server with a `/rerank` route, or `null`: then search keeps the order
+   * keywords and meaning give. Not the chat endpoint's by default: most chat
+   * servers have no such route.
+   */
+  readonly rerank: Endpoint | null
   /** Voice input, or `null`: then the mic is off. */
   readonly transcription: Endpoint | null
   readonly host: string
@@ -195,6 +204,13 @@ export class Config {
     }
     this.image = feature('IMAGE', 'gpt-image-2')
     this.embedding = feature('EMBEDDING', 'text-embedding-3-small')
+    this.rerank = e.OPENAI_RERANK_BASE_URL
+      ? endpoint(
+          e.OPENAI_RERANK_BASE_URL,
+          e.OPENAI_RERANK_API_KEY ?? e.OPENAI_API_KEY,
+          e.OPENAI_RERANK_MODEL,
+        )
+      : null
     this.transcription = feature('TRANSCRIBE', 'gpt-transcribe')
     this.host = e.HOST
     this.port = e.PORT

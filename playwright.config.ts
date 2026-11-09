@@ -46,6 +46,9 @@ export default defineConfig({
         OPENAI_EMBEDDING_BASE_URL: FAKE_V1,
         OPENAI_EMBEDDING_API_KEY: '',
         OPENAI_EMBEDDING_MODEL: 'e2e-embed',
+        // Only its setting is tried: no spec searches with it.
+        OPENAI_RERANK_BASE_URL: FAKE_V1,
+        OPENAI_RERANK_MODEL: 'e2e-rerank',
         OPENAI_TRANSCRIBE_BASE_URL: FAKE_V1,
         OPENAI_TRANSCRIBE_API_KEY: '',
         OPENAI_TRANSCRIBE_MODEL: 'e2e-transcribe',

@@ -148,6 +148,7 @@ describe('settings routes and use', () => {
     expect((await got()).endpoints).toEqual({
       imageModel: true,
       embeddingModel: true,
+      rerankModel: false,
       transcribeModel: true,
     })
     const res = await patch({ imageModel: ' my-image ', transcribeModel: '' })

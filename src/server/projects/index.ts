@@ -3,6 +3,7 @@
 export { InstructionWriter } from './instruction-writer.ts'
 export { ProjectIndex } from './project-index.ts'
 export { ProjectSync } from './project-sync.ts'
+export { Reranker } from './reranker.ts'
 export { ProjectStore } from './project-store.ts'
 export { projectRoutes } from './routes.ts'
 export { ReadProjectFileTool } from './read-file.ts'
