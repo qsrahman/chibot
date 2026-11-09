@@ -213,14 +213,21 @@ describe('FolderWatcher on a real folder', () => {
     const watcher = new FolderWatcher(projects, sync, { quietMs: 50 })
     try {
       watcher.update(project)
-      writeFileSync(join(dir, 'later.md'), 'arrived after the watch began')
+      // A system may start watching a moment after fs.watch returns, and a
+      // change before that is never reported: keep changing the folder until
+      // one is heard.
+      let n = 0
       await vi.waitFor(
-        () =>
-          expect(projects.files(project).map((f) => f.name)).toEqual([
-            'later.md',
-          ]),
-        { timeout: 20_000, interval: 50 },
+        () => {
+          writeFileSync(
+            join(dir, `later-${n++}.md`),
+            'arrived after the watch began',
+          )
+          expect(projects.files(project).length).toBeGreaterThan(0)
+        },
+        { timeout: 20_000, interval: 250 },
       )
+      expect(projects.files(project)[0]!.name).toMatch(/^later-\d+\.md$/)
     } finally {
       watcher.close()
       rmSync(dir, { recursive: true, force: true })
