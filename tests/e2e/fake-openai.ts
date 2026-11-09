@@ -1,7 +1,8 @@
 // A stand-in for an OpenAI-compatible Responses API, for the e2e tests.
 // Streams `Answer #n to: <last user message>` word by word. A question that
-// contains "slow" streams a long answer slowly (to act mid-answer), "drip"
-// streams a normal one slowly (to queue a message), "think"
+// contains "slow" streams a long answer slowly (to act mid-answer), "hold"
+// streams its first word and waits there until POST /debug/release (so a test
+// can act mid-answer without racing a timer), "think"
 // first streams a reasoning summary, and "compact" returns a compaction item.
 // A question's words can call a tool ("approve", "draw", "remember <fact>",
 // "mcp echo <text>", …): `TRIGGERS` below lists
@@ -38,6 +39,20 @@ let lastImageRequest: unknown = null
 const app = new Hono()
 
 app.get('/health', (c) => c.text('ok'))
+// Answers that "hold" wait here; a test lets them finish with POST /debug/release.
+// (Thirty seconds at most, so a test that fails leaves nothing hanging.)
+const held = new Set<() => void>()
+const hold = () =>
+  new Promise<void>((resolve) => {
+    held.add(resolve)
+    setTimeout(resolve, 30_000).unref()
+  })
+app.post('/debug/release', (c) => {
+  for (const release of held) release()
+  held.clear()
+  return c.body(null, 204)
+})
+
 app.get('/debug/last-request', (c) => c.json(lastRequest))
 app.get('/debug/requests', (c) => c.json(requests.slice(-10)))
 app.get('/debug/last-image-request', (c) => c.json(lastImageRequest))
@@ -252,7 +267,7 @@ app.post('/v1/responses', async (c) => {
       ? body.input
       : textOf(body.input.findLast((i) => i.role === 'user')?.content)
   const slow = question.includes('slow')
-  const drip = question.includes('drip')
+  const holding = question.includes('hold')
   const text = slow
     ? Array.from({ length: 200 }, (_, i) => `word${i}`).join(' ')
     : `Answer #${++answers} to: ${question}`
@@ -323,7 +338,8 @@ app.post('/v1/responses', async (c) => {
         content_index: 0,
         delta: i === 0 ? word : ` ${word}`,
       })
-      await stream.sleep(slow ? 100 : drip ? 150 : 5)
+      if (holding && i === 0) await hold()
+      await stream.sleep(slow ? 100 : 5)
     }
     await send({
       type: 'response.completed',

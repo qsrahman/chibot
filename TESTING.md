@@ -44,8 +44,9 @@ How chibot is tested and how to add tests. Part of the developer guide ([AGENTS.
   `tests/e2e/`, which drive a production build with the real SDK pointed at
   `tests/e2e/fake-openai.ts` via `OPENAI_BASE_URL`. The fake answers
   `Answer #n to: <question>`; a question containing "slow" streams a long
-  answer slowly, "drip" a normal one slowly (to queue a message while it
-  streams), "think" adds a reasoning summary, "huge" a reported context past the trigger (so the next message is
+  answer slowly, "hold" a normal one that stops after its first word until
+  `POST /debug/release` (to queue a message while it streams, however slow the
+  machine), "think" adds a reasoning summary, "huge" a reported context past the trigger (so the next message is
   summarized first, and "fail-summary" makes that summary fail),
   and a question's words call a tool ("approve", "draw", "mcp echo <text>", …:
   the `TRIGGERS` table in the file lists them, and a new tool needs one row
