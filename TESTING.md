@@ -24,7 +24,8 @@ How chibot is tested and how to add tests. Part of the developer guide ([AGENTS.
   docs (`tests/fixtures/retrieval-docs`, about 100 chunks) with 87 questions
   (43 in the answer's words, 30 paraphrases, 14 held out; each `has` string
   occurs once, in its file) and 20 that no document answers. It prints the
-  share found at first, third and sixth place for keyword, meaning and hybrid,
+  share found at first, third and sixth place (and the mean reciprocal rank, MRR,
+  which rewards a higher place) for keyword, meaning and hybrid,
   and how close the best passage is for answerable against unanswerable
   questions (what a similarity floor would keep and reject). Keyword scores
   need no endpoint and are checked against a floor. `retrieval-harness.ts`

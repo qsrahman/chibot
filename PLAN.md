@@ -624,6 +624,17 @@ Models differ in dimensions, so a model change means re-embedding.
   mxbai-embed-large in `shared/embedding-prefixes.ts`); the document one is
   part of the vectors' identity (`embedding_model.document_prefix`), so changing
   it embeds the files again and searches by keyword until then.
+- **Neighbouring hits (measured, left alone).** Chunks overlap by 480
+  characters, and in the top 6 of the 87 evaluation questions 28% of results
+  sit next to another result of the same file (3.5 distinct files of 6).
+  Three remedies were scored against the evaluation set, keeping the text sent
+  to the model equal: dropping a hit whose neighbour ranks higher lowered
+  recall in hybrid search (80% to 72% in the top 6); moving such hits behind the
+  rest did the same; merging neighbours into one longer passage (overlap
+  trimmed) found 3 to 4 more of 87 answers in hybrid search and 4 fewer in
+  keyword-only, within the noise and of opposite signs. The answer sometimes sits in
+  the neighbour of the best hit, so search returns every chunk as it is; the
+  model can read on with `read_project_file`. Revisit with a larger set.
 - **Reranking** (optional): `OPENAI_RERANK_BASE_URL` / `_API_KEY` / `_MODEL`
   (`config.rerank`; unlike the other features it does not inherit the chat
   endpoint, since few chat servers have the route) and the `rerankModel`

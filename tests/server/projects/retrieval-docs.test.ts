@@ -104,7 +104,7 @@ describe.skipIf(!embeddingUrl)(
         ['hybrid (shipped)', undefined, 'plain'],
       ]
       const lines = [
-        `${''.padEnd(26)}${sets.map(([name]) => name.padEnd(24)).join('')}(first hit / first three / first six)`,
+        `${''.padEnd(26)}${sets.map(([name]) => name.padEnd(30)).join('')}(first hit / first three / first six  MRR)`,
       ]
       const rows = async (
         name: string,
@@ -115,10 +115,10 @@ describe.skipIf(!embeddingUrl)(
         for (const [label, merge, use] of which) {
           const cells: string[] = []
           for (const [, questions] of sets) {
-            const { recall } = await score(indexes[use]!, questions, merge)
+            const { recall, mrr } = await score(indexes[use]!, questions, merge)
             cells.push(
-              `${pct(recall(1))} /${pct(recall(3))} /${pct(recall(6))}`.padEnd(
-                24,
+              `${pct(recall(1))} /${pct(recall(3))} /${pct(recall(6))}  ${mrr.toFixed(2)}`.padEnd(
+                30,
               ),
             )
           }
@@ -239,15 +239,15 @@ describe.skipIf(!process.env.RETRIEVAL_RERANK_URL)(
         )
       }
       const lines = [
-        `${''.padEnd(20)}${sets.map(([name]) => name.padEnd(24)).join('')}(first hit / first three / first six)`,
+        `${''.padEnd(20)}${sets.map(([name]) => name.padEnd(30)).join('')}(first hit / first three / first six  MRR)`,
       ]
       for (const [label, index] of rows) {
         const cells: string[] = []
         for (const [, questions] of sets) {
-          const { recall } = await score(index, questions)
+          const { recall, mrr } = await score(index, questions)
           cells.push(
-            `${pct(recall(1))} /${pct(recall(3))} /${pct(recall(6))}`.padEnd(
-              24,
+            `${pct(recall(1))} /${pct(recall(3))} /${pct(recall(6))}  ${mrr.toFixed(2)}`.padEnd(
+              30,
             ),
           )
         }

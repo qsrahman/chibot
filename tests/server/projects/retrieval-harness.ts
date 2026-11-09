@@ -51,13 +51,18 @@ export type Merge = (found: {
   meaning: Hit[] | null
 }) => number[]
 
-/** How often the answer is the first hit, and among the first three. */
+/**
+ * How often the answer is the first hit, and among the first three and six,
+ * and the mean reciprocal rank (1 for a first hit, 1/2 for a second… 0 when
+ * it is not among the six: it rewards a higher place more than recall@k does).
+ */
 export async function score(
   { index, projectId }: { index: ProjectIndex; projectId: string },
   questions: Question[],
   merge?: Merge,
 ) {
   const missed = { 1: [] as string[], 3: [] as string[], 6: [] as string[] }
+  let reciprocalRanks = 0
   for (const { ask, file, has, page } of questions) {
     const hits = merge
       ? index.passages(
@@ -73,16 +78,18 @@ export async function score(
         h.text.includes(has) &&
         (page === undefined || pageOf(h.text, has) === page),
     )
+    if (rank >= 0) reciprocalRanks += 1 / (rank + 1)
     if (rank !== 0) missed[1].push(ask)
     if (rank < 0 || rank >= 3) missed[3].push(ask)
     if (rank < 0 || rank >= 6) missed[6].push(ask)
   }
   const recall = (at: 1 | 3 | 6) => 1 - missed[at].length / questions.length
+  const mrr = reciprocalRanks / questions.length
   const summary =
-    `recall@1: ${(recall(1) * 100).toFixed(0)}%  recall@3: ${(recall(3) * 100).toFixed(0)}%  recall@6: ${(recall(6) * 100).toFixed(0)}% (${questions.length} questions)` +
+    `recall@1: ${(recall(1) * 100).toFixed(0)}%  recall@3: ${(recall(3) * 100).toFixed(0)}%  recall@6: ${(recall(6) * 100).toFixed(0)}%  MRR: ${mrr.toFixed(3)} (${questions.length} questions)` +
     (missed[3].length ? `\nnot in the first 3: ${missed[3].join(' | ')}` : '') +
     (missed[1].length ? `\nnot first: ${missed[1].join(' | ')}` : '')
-  return { recall, summary }
+  return { recall, mrr, summary }
 }
 
 /**
