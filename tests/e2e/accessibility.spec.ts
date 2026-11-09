@@ -211,15 +211,21 @@ test('jumps to the latest message at once under reduced motion, and glides other
   await page.goto(`/c/${id}`)
   await appReady(page)
   await expect(page.locator('.turn')).toHaveCount(40)
-  const jumpAndCheck = async () => {
-    await page.evaluate(() => {
-      document.querySelector('.messages')!.scrollTop = 0
-    })
-    // The button comes once the scroll has been noticed (a slow page takes a while).
-    await expect(page.locator('button.jump-latest')).toBeVisible()
-    return page.evaluate(() => {
+  const jumpAndCheck = () =>
+    page.evaluate(async () => {
       const list = document.querySelector('.messages')!
-      document.querySelector<HTMLButtonElement>('button.jump-latest')!.click()
+      // The button comes once the scroll has been noticed. A page still laying
+      // out its messages can scroll itself back down, so go to the top again
+      // until the button stays, and click it in the same breath.
+      let jump: HTMLButtonElement | null = null
+      for (let attempt = 0; attempt < 50 && !jump; attempt++) {
+        list.scrollTop = 0
+        for (let i = 0; i < 10 && !jump; i++) {
+          await new Promise((resolve) => setTimeout(resolve, 20))
+          jump = document.querySelector<HTMLButtonElement>('button.jump-latest')
+        }
+      }
+      jump!.click()
       // Right after the click: is the latest turn on screen, or still on its way?
       const last = [...document.querySelectorAll('.turn')]
         .at(-1)!
@@ -227,7 +233,6 @@ test('jumps to the latest message at once under reduced motion, and glides other
       const view = list.getBoundingClientRect()
       return last.bottom > view.top && last.top < view.bottom
     })
-  }
 
   expect(await jumpAndCheck()).toBe(false)
   // Let that glide finish before the next one.
