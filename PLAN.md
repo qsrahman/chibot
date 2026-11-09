@@ -36,7 +36,10 @@ phases*). Next: Phase 11a (multiple providers, design agreed) and Phase 11
 - Several chat providers at once (until Phase 11a): one chat provider is
   configured in `config.json` or the environment; switching means changing it
   and restarting.
-- A git remote or CI. Commits stay local; checks run before each commit.
+- Hosted CI for the browser tests. The GitHub remote runs the fast checks
+  (typecheck, unit tests, formatting, import rules) on each push
+  (`.github/workflows/ci.yml`); the Playwright specs run on the developer's
+  machine, which also runs every check before each commit.
 - Dollar cost estimates. The SDK has no pricing data and a hand-kept price
   table would go stale, so usage is shown in tokens only.
 - Read-aloud (text-to-speech), realtime voice conversations, mobile apps.

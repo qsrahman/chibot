@@ -81,7 +81,7 @@ pnpm start        # production: serves the API and dist/web (= `chibot`)
 pnpm add -g .     # puts `chibot` on your PATH, linked to the checkout (run `pnpm build` first)
 pnpm seed:perf    # fill a scratch data folder with many chats (see TESTING.md)
 pnpm measure:chat # time opening a long chat, scrolling, typing (see TESTING.md)
-pnpm release      # patch|minor|major|X.Y.Z: bump, CHANGELOG, checks, commit
+pnpm release      # patch|minor|major|X.Y.Z: bump, CHANGELOG, checks, commit, tag
 ```
 
 ## TypeScript constraints
@@ -245,7 +245,8 @@ invariants, API quirks. No line-by-line narration.
    Fixes released between phases bump the patch version instead
    (`chore: release vX.Y.Z`). `pnpm release patch|minor|X.Y.Z` does the
    bump, moves the CHANGELOG entries, runs the checks (`--e2e` adds the
-   Playwright specs) and makes the commit; it needs a clean working tree
-   (`--no-commit` leaves the commit to you).
+   Playwright specs), makes the commit and tags it `vX.Y.Z`; it needs a clean
+   working tree (`--no-commit` leaves the commit to you). Push with
+   `git push --follow-tags`. GitHub runs the fast checks on each push (CI).
 5. **Stop after each phase.** Report what works and how it was verified, then
    wait for the owner's go-ahead before starting the next phase.

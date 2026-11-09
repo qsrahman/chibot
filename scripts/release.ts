@@ -1,8 +1,8 @@
 // Cuts a release: `pnpm release patch|minor|major|X.Y.Z [--e2e] [--no-commit]`.
 // Bumps package.json, moves CHANGELOG.md's [Unreleased] entries under the new
 // version, runs the checks (reverting both files if one fails) and commits
-// `chore: release vX.Y.Z`. Needs a clean working tree, so the release commit
-// holds only those two files.
+// `chore: release vX.Y.Z`, which it tags `vX.Y.Z`. Needs a clean working tree,
+// so the release commit holds only those two files.
 import { execFileSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
 
@@ -91,6 +91,8 @@ function main(args: string[]) {
   }
   run('git', 'add', 'package.json', 'CHANGELOG.md')
   run('git', 'commit', '-m', `chore: release v${version}`)
+  // Annotated, so `git push --follow-tags` sends it with the commit.
+  run('git', 'tag', '-a', `v${version}`, '-m', `chibot v${version}`)
 }
 
 if (import.meta.main) {
