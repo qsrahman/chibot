@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
-import {
-  SERVICE_MODELS,
-  type ServiceModel,
-} from '../../shared/service-models.ts'
+import type { ServiceModel } from '../../shared/service-models.ts'
 import type { Settings, SettingsPatch } from '../../shared/settings.ts'
 import type { ToolInfo } from '../../shared/tools.ts'
 import { getSettings, listTools, updateSettings } from './api.ts'
 
-const RELOAD_TOOLS = SERVICE_MODELS
+// The settings that change which tools can be used: the image tools need an image model.
+const RELOAD_TOOLS = [
+  'imageModel',
+] as const satisfies readonly (keyof Settings)[]
 
 /** The user's settings (PLAN.md §6, layer 2) and how to change them. */
 export function useSettings() {

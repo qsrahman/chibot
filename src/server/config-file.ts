@@ -56,6 +56,12 @@ export const configFileSchema = z
      */
     mcpServers: z.record(z.string(), z.unknown()).optional(),
     /**
+     * chibot's own tools switched off in Settings → Tools (by name, as the
+     * tools list gives them). Absent when none is. Read again at each use,
+     * so a hand edit applies without a restart.
+     */
+    disabledTools: z.array(z.string()).optional(),
+    /**
      * Variables for `${NAME}` in the MCP servers, below the real environment,
      * so a server's secret needs no place of its own. They reach nothing else:
      * not chibot's settings, and not the servers unless a value is passed on.
@@ -297,4 +303,26 @@ export function redacted(file: ConfigFile): Record<string, unknown> {
     )
   }
   return out
+}
+
+/**
+ * The tools switched off in `dir`'s config file, or `null` when the file has
+ * none (or can't be read just now, e.g. mid-edit: the caller falls back).
+ */
+export function readDisabledTools(dir: string): string[] | null {
+  try {
+    return readConfigFile(dir).file.disabledTools ?? null
+  } catch {
+    return null
+  }
+}
+
+/** Saves the tools switched off (none: the key is left out, as a default is). */
+export function writeDisabledTools(dir: string, tools: string[]): void {
+  const { file } = readConfigFile(dir)
+  const { disabledTools: _, ...rest } = file
+  writeConfigFile(
+    dir,
+    tools.length > 0 ? { ...rest, disabledTools: tools } : rest,
+  )
 }

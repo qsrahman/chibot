@@ -15,10 +15,12 @@ import {
   fromEnv,
   mcpVariables,
   readConfigFile,
+  readDisabledTools,
   redacted,
   toEnv,
   withSetting,
   writeConfigFile,
+  writeDisabledTools,
   type ConfigFile,
 } from '../../src/server/config-file.ts'
 
@@ -250,5 +252,33 @@ describe('a setting that no longer does anything', () => {
     // Other unknown settings are still refused (typos).
     writeFileSync(join(dir, 'config.json'), '{"brave":"x"}')
     expect(() => readConfigFile(dir)).toThrow(/Unrecognized key/)
+  })
+})
+
+describe('the tools switched off in config.json', () => {
+  let dir: string
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'chibot-config-'))
+  })
+  afterEach(() => rmSync(dir, { recursive: true, force: true }))
+
+  it('are saved beside the other settings, and the key goes when none is left', () => {
+    expect(readDisabledTools(dir)).toBeNull()
+    writeConfigFile(dir, { chat: { model: 'm' } })
+    writeDisabledTools(dir, ['memory', 'generate_image'])
+    expect(readDisabledTools(dir)).toEqual(['memory', 'generate_image'])
+    expect(readConfigFile(dir).file).toEqual({
+      chat: { model: 'm' },
+      disabledTools: ['memory', 'generate_image'],
+    })
+    expect(statSync(join(dir, 'config.json')).mode & 0o777).toBe(0o600)
+    writeDisabledTools(dir, [])
+    expect(readConfigFile(dir).file).toEqual({ chat: { model: 'm' } })
+    expect(readDisabledTools(dir)).toBeNull()
+  })
+
+  it('read as none while the file can’t be read, so a hand edit never breaks a request', () => {
+    writeFileSync(join(dir, 'config.json'), '{ "disabledTools": [')
+    expect(readDisabledTools(dir)).toBeNull()
   })
 })

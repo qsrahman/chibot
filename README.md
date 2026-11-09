@@ -230,6 +230,15 @@ whether or not Settings may add servers, since nothing there runs a command.
 applies to a server whose entry has no value of its own, and goes away the
 first time you use that switch.)
 
+**chibot's own tools** (image creation, memory, search in chats and files) are
+switched the same way: the names of those that are off are the top-level
+`"disabledTools"` list in `config.json`, written by Settings → Tools and by
+Settings → Personalization's memory switch, and read again at each use, so a
+hand edit applies without a restart. (A list kept in chibot's settings by an
+older version applies until the file has its own, and goes away the first time
+you use a switch.) The rest of Settings (models, instructions, long chats) stays
+in chibot's database, since it isn't about how chibot starts.
+
 Their tools are offered
 as `<server>__<tool>` and run without asking first, so add only servers you
 trust, or switch on **Ask before using its tools** for a server in Settings →

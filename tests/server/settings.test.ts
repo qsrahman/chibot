@@ -97,6 +97,91 @@ describe('SettingsStore', () => {
   })
 })
 
+describe('the switches of chibot’s own tools', () => {
+  // A stand-in for the config file's list.
+  function make(file: string[] | null, legacy?: string[]) {
+    const db = openDatabase(':memory:')
+    const state = { file, writes: 0 }
+    const settings = new SettingsStore(db, settingsDefaults('m'), {
+      read: () => state.file,
+      write: (tools) => {
+        state.writes++
+        state.file = tools.length > 0 ? tools : null
+      },
+    })
+    if (legacy) settings.update({ disabledTools: legacy })
+    return { db, settings, state }
+  }
+  const stored = (db: DatabaseSync) =>
+    db.prepare("SELECT value FROM settings WHERE key = 'disabledTools'").get()
+
+  it('come from the file, over those an older version kept in SQLite', () => {
+    const { db, settings } = make(['memory'])
+    db.prepare(
+      'INSERT INTO settings VALUES (\'disabledTools\', \'["generate_image","srv__tool"]\')',
+    ).run()
+    // The older built-in switch is ignored; an MCP tool's older switch still applies.
+    expect(settings.get().disabledTools).toEqual(['memory', 'srv__tool'])
+  })
+
+  it('come from SQLite until the file has a list', () => {
+    const { db, settings } = make(null)
+    db.prepare(
+      "INSERT INTO settings VALUES ('disabledTools', '[\"generate_image\"]')",
+    ).run()
+    expect(settings.get().disabledTools).toEqual(['generate_image'])
+  })
+
+  it('are saved to the file, with the older ones left behind', () => {
+    const { db, settings, state } = make(null)
+    db.prepare(
+      'INSERT INTO settings VALUES (\'disabledTools\', \'["generate_image","srv__tool"]\')',
+    ).run()
+    const next = settings.update({
+      disabledTools: ['generate_image', 'memory', 'srv__tool'],
+    })
+    expect(state.file).toEqual(['generate_image', 'memory'])
+    // SQLite keeps only the MCP tool's older switch.
+    expect(JSON.parse((stored(db) as { value: string }).value)).toEqual([
+      'srv__tool',
+    ])
+    expect(next.disabledTools).toEqual([
+      'generate_image',
+      'memory',
+      'srv__tool',
+    ])
+    // Turning the last one back on leaves nothing to fall back to.
+    expect(
+      settings.update({ disabledTools: ['srv__tool'] }).disabledTools,
+    ).toEqual(['srv__tool'])
+    expect(state.file).toBeNull()
+  })
+
+  it('change nothing when the file can’t be written', () => {
+    const db = openDatabase(':memory:')
+    const settings = new SettingsStore(db, settingsDefaults('m'), {
+      read: () => ['memory'],
+      write: () => {
+        throw new Error('config.json is locked')
+      },
+    })
+    expect(() => settings.update({ disabledTools: [], model: 'x' })).toThrow(
+      'locked',
+    )
+    expect(settings.get()).toMatchObject({ model: 'm' })
+  })
+
+  it('leave other settings alone', () => {
+    const { settings, state } = make(['memory'])
+    settings.update({ model: 'x' })
+    expect(state.writes).toBe(0)
+    expect(settings.get()).toMatchObject({
+      model: 'x',
+      disabledTools: ['memory'],
+    })
+  })
+})
+
 describe('settings routes and use', () => {
   const config = new Config({ OPENAI_API_KEY: 'k' })
   let settings: SettingsStore

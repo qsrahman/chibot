@@ -17,8 +17,10 @@ import { Config, layered, readEnvFiles } from './config.ts'
 import {
   mcpVariables,
   readConfigFile,
+  readDisabledTools,
   readMcpServers,
   writeConfigFile,
+  writeDisabledTools,
 } from './config-file.ts'
 import { MediaProxy, type AddressGuard } from './media-proxy.ts'
 import { locations, openFolders, ROOT } from './locations.ts'
@@ -163,6 +165,10 @@ export function start({
       rerankModel: config.rerank?.model,
       transcribeModel: config.transcription?.model,
     }),
+    {
+      read: () => readDisabledTools(config.configDir),
+      write: (tools) => writeDisabledTools(config.configDir, tools),
+    },
   )
   const files = new FileStore(db, join(config.dataDir, 'files'))
   const memories = new MemoryStore(db)

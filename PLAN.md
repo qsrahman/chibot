@@ -499,8 +499,13 @@ on Ollama, images need `OPENAI_IMAGE_BASE_URL` / `_API_KEY`.
   retries by itself (`maxRetries: 0`; the SDK's default is two): a request
   that failed or timed out may still have made, and billed, an image, so the
   model decides whether to ask again.
-- **Turning tools on and off.** A switch per tool in Settings → Tools
-  (`disabledTools` setting); disabled tools aren't sent. The composer's "+"
+- **Turning tools on and off.** A switch per tool in Settings → Tools; disabled
+  tools aren't sent. chibot's own tools' switches are the top-level
+  `disabledTools` list in `config.json` (`SettingsStore` reads it at each `get()`
+  and writes it on `update()`, so the web and `chat-service` still see the
+  `disabledTools` setting; an unreadable file reads as no list); the
+  SQLite value of older versions applies until the file has a list, and holds
+  only MCP tools' older `<server>__<tool>` switches once the list is written. The composer's "+"
   menu (Web search, Create image) forces one tool for the next message with
   `tool_choice`; otherwise the model decides.
 - **Answers.** Generated images render in the answer (open full size,
@@ -1033,7 +1038,7 @@ Configuration lives in three layers, split by who changes it and how often:
 | Layer | Holds | Where | Changed by |
 |---|---|---|---|
 | Startup & secrets | API keys, base URLs, `HOST`/`PORT`, data dir | `config.json` (mode 0600) in the platform's config folder, overridden by the environment | Owner (`chibot init`, `chibot config set`), then restart |
-| User preferences | Chat model, custom instructions, reasoning effort, tool switches (memory's is the memory on/off) | SQLite `settings` table (`SettingsStore`, Phase 4) | Settings dialog, live |
+| User preferences | Chat model, custom instructions, reasoning effort, tool switches (memory's is the memory on/off; these are in `config.json`) | SQLite `settings` table (`SettingsStore`, Phase 4) | Settings dialog, live |
 | Browser preferences | Theme, sidebar collapsed, unsent message drafts (text) | `localStorage` | The UI, per browser |
 
 - **Precedence:** user setting → environment default. (Projects add

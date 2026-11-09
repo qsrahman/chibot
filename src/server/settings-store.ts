@@ -39,15 +39,32 @@ export function settingsDefaults(
   }
 }
 
-/** User preferences in SQLite, over defaults that come from the environment. */
+/** Where chibot's own tools' switches are kept: the config file. */
+export interface ToolSwitches {
+  /** The tools switched off there, or `null` if it says nothing about them. */
+  read: () => string[] | null
+  write: (tools: string[]) => void
+}
+
+// An MCP server's tool is `<server>__<tool>`; chibot's own names have no `__`.
+const isMcp = (name: string) => name.includes('__')
+
+/**
+ * User preferences in SQLite, over defaults that come from the environment;
+ * except the switches of chibot's own tools, which live in the config file
+ * beside the MCP servers' (SQLite still holds those of older versions, used
+ * until the file has a list, and the MCP tools' older switches).
+ */
 export class SettingsStore {
   readonly #db: DatabaseSync
   readonly #defaults: Settings
+  readonly #tools: ToolSwitches | null
 
   /** @param db from `openDatabase()` */
-  constructor(db: DatabaseSync, defaults: Settings) {
+  constructor(db: DatabaseSync, defaults: Settings, tools?: ToolSwitches) {
     this.#db = db
     this.#defaults = defaults
+    this.#tools = tools ?? null
   }
 
   get defaults(): Settings {
@@ -75,11 +92,20 @@ export class SettingsStore {
       const parsed = settingsSchema.shape[key].safeParse(stored[key])
       if (parsed.success) Object.assign(settings, { [key]: parsed.data })
     }
+    const own = this.#tools?.read()
+    if (own) {
+      settings.disabledTools = [...own, ...settings.disabledTools.filter(isMcp)]
+    }
     return settings
   }
 
   /** Saves a validated patch and returns the resulting settings. */
   update(patch: SettingsPatch): Settings {
+    if (this.#tools && patch.disabledTools) {
+      // The file first: if it can't be written, nothing has changed.
+      this.#tools.write(patch.disabledTools.filter((name) => !isMcp(name)))
+      patch = { ...patch, disabledTools: patch.disabledTools.filter(isMcp) }
+    }
     const upsert = this.#db.prepare(
       `INSERT INTO settings (key, value) VALUES (?, ?)
        ON CONFLICT (key) DO UPDATE SET value = excluded.value`,
