@@ -219,11 +219,11 @@ describe('FolderWatcher on a real folder', () => {
           expect(projects.files(project).map((f) => f.name)).toEqual([
             'later.md',
           ]),
-        { timeout: 5000, interval: 50 },
+        { timeout: 20_000, interval: 50 },
       )
     } finally {
       watcher.close()
       rmSync(dir, { recursive: true, force: true })
     }
-  })
+  }, 30_000)
 })

@@ -499,6 +499,25 @@ on Ollama, images need `OPENAI_IMAGE_BASE_URL` / `_API_KEY`.
   retries by itself (`maxRetries: 0`; the SDK's default is two): a request
   that failed or timed out may still have made, and billed, an image, so the
   model decides whether to ask again.
+- **Skills** (`src/server/skills/`): folders in the Agent Skills format
+  (agentskills.io) in `<config folder>/skills/<name>/SKILL.md`, a YAML header
+  (`name`, which must match the folder and be lowercase words joined by single
+  hyphens, 64 characters at most; `description`, 1 to 1024 characters) and
+  the instructions. The folder is read at each use, so adding a skill needs no
+  restart; a link to a folder works (skills are often shared that way). The
+  `read_skill` tool (`name`, `file`) follows the format's progressive
+  disclosure: its instructions (like the memory tool's) list each skill as
+  `name: description` (cut at 400 characters, at most 50) in a `<skills>`
+  section, and the model calls it with a name to get the SKILL.md body and the
+  names of the skill's other files, then with `file` for one of them (text,
+  200 kB at most, inside the skill's real path, so a link cannot lead out). It
+  is unavailable, with a hint saying where to add skills, while there are none.
+  chibot has no code runner, so a skill's scripts are not run, and the prompt
+  says so. A folder that isn't a valid skill is left out and listed with the
+  reason in Settings → Tools (`GET /api/skills`). Skills are the user's own
+  files, so their text is trusted like project instructions. Of 22 folders in
+  one real `~/.claude/skills`, 21 were valid; listing them costs about 7,500
+  characters of instructions.
 - **Turning tools on and off.** A switch per tool in Settings → Tools; disabled
   tools aren't sent. chibot's own tools' switches are the top-level
   `disabledTools` list in `config.json` (`SettingsStore` reads it at each `get()`

@@ -1,8 +1,8 @@
 // Who may import whom, checked by `pnpm deps` and by `pnpm test`
 // (tests/architecture.test.ts). The layers are described in AGENTS.md.
 // Server features: a folder with an index.ts. From the bottom up: conversations
-// (data), then mcp and projects, then chat, which uses the others.
-const SERVER_FEATURES = ['conversations', 'mcp', 'projects', 'chat']
+// (data), then mcp, projects and skills, then chat, which uses the others.
+const SERVER_FEATURES = ['conversations', 'mcp', 'projects', 'skills', 'chat']
 const WEB_FEATURES = 'chat|conversations|projects|settings'
 const WEB_SHELL = 'App|Sidebar|ShortcutsDialog|main'
 
@@ -127,6 +127,14 @@ module.exports = {
       severity: 'error',
       from: { path: '^src/server/projects/' },
       to: { path: '^src/server/(chat|mcp)/' },
+    },
+    {
+      name: 'skills-stand-alone',
+      comment:
+        'Skills are files the user adds: they know nothing of the chat, conversations, MCP or projects.',
+      severity: 'error',
+      from: { path: '^src/server/skills/' },
+      to: { path: '^src/server/(chat|conversations|mcp|projects)/' },
     },
     {
       name: 'database-takes-only-the-projects-schema',

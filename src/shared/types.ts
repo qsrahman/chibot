@@ -104,6 +104,20 @@ export interface Project {
   updatedAt: number
 }
 
+/** A folder in the skills folder that isn't a usable skill, and why. */
+export interface SkillProblem {
+  folder: string
+  reason: string
+}
+
+/** `GET /api/skills`: the skills found, and the folders left out. */
+export interface SkillsResponse {
+  /** Where skills are added. */
+  dir: string
+  skills: { name: string; description: string }[]
+  problems: SkillProblem[]
+}
+
 /** What syncing a project with its folder changed. */
 export interface FolderSync {
   added: number

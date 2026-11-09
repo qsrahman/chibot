@@ -1,3 +1,5 @@
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { expect, test, type Page } from '@playwright/test'
 import {
   FAKE_OPENAI,
@@ -445,4 +447,36 @@ test('offers the text an embedding model expects, and keeps it', async ({
     .poll(async () => (await settings()).embeddingQueryPrefix)
     .toBe('question: ')
   await resetSettings(page)
+})
+
+test('lists the skills in the skills folder, and the folders left out', async ({
+  page,
+}) => {
+  // The e2e server's config folder (see playwright.config.ts) holds the skills folder.
+  const skills = join(import.meta.dirname, '../../.e2e-data/config/skills')
+  try {
+    mkdirSync(join(skills, 'e2e-skill'), { recursive: true })
+    writeFileSync(
+      join(skills, 'e2e-skill', 'SKILL.md'),
+      '---\nname: e2e-skill\ndescription: Writes e2e notes. Use when asked for e2e notes.\n---\n\nWrite them.\n',
+    )
+    mkdirSync(join(skills, 'broken-skill'), { recursive: true })
+    writeFileSync(join(skills, 'broken-skill', 'SKILL.md'), 'no header here')
+
+    await page.goto('/')
+    const dialog = await openSettings(page, 'Tools')
+    const section = dialog.locator('section', {
+      has: page.getByRole('heading', { name: 'Skills', exact: true }),
+    })
+    await expect(section.getByText('e2e-skill')).toBeVisible()
+    await expect(
+      section.getByText('Use when asked for e2e notes'),
+    ).toBeVisible()
+    await expect(section.getByText('broken-skill')).toBeVisible()
+    await expect(section.getByText(/Left out: .*--- header/)).toBeVisible()
+    // The tool that reads them can now be switched on and off.
+    await expect(dialog.getByLabel('Use skills')).toBeEnabled()
+  } finally {
+    rmSync(skills, { recursive: true, force: true })
+  }
 })

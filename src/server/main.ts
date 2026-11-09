@@ -58,6 +58,7 @@ import { MemoryTool } from './tools/memory.ts'
 import { SearchProjectFilesTool } from './projects/index.ts'
 import { ReadProjectFileTool } from './projects/index.ts'
 import { SearchChatsTool } from './tools/search-chats.ts'
+import { ReadSkillTool, SkillStore } from './skills/index.ts'
 
 /** What tools may need to be built. */
 export interface ToolDeps {
@@ -68,6 +69,7 @@ export interface ToolDeps {
   projects: ProjectStore
   index: ProjectIndex
   settings: SettingsStore
+  skills: SkillStore
 }
 
 /** The shipped tools; web search and reading pages come from MCP servers. */
@@ -79,6 +81,7 @@ export function defaultTools({
   projects,
   index,
   settings,
+  skills,
 }: ToolDeps): Tool[] {
   const image = config.image && {
     client: imageClient(config.image),
@@ -90,6 +93,7 @@ export function defaultTools({
     new SearchChatsTool(search),
     new SearchProjectFilesTool(projects, index),
     new ReadProjectFileTool(projects, index),
+    new ReadSkillTool(skills),
     // Listed in Settings even without their setup, saying what's missing.
     new GenerateImageTool(image),
     new EditImageTool(image),
@@ -226,8 +230,19 @@ export function start({
     },
   })
   void mcp.start()
+  // Folders of instructions the user adds (see skills/).
+  const skills = new SkillStore(join(config.configDir, 'skills'))
   const registry = new ToolRegistry(
-    tools({ config, search, files, memories, projects, index, settings }),
+    tools({
+      config,
+      search,
+      files,
+      memories,
+      projects,
+      index,
+      settings,
+      skills,
+    }),
     mcpTools(mcp, files),
   )
   const attachments = new Attachments(client, files)
@@ -256,6 +271,7 @@ export function start({
     index,
     sync,
     watcher,
+    skills,
     instructionWriter: new InstructionWriter(client, settings, projects, index),
     attachments,
     mcp,

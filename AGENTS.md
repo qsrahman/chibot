@@ -38,7 +38,8 @@ src/server/<feature>/
               chibot tells the model, and
               the /api/conversations routes), projects/ (store, search index,
               chunking, instruction writer, routes, tools, schema) and mcp/
-              (config, connections, OAuth, routes, the tool)
+              (config, connections, OAuth, routes, the tool) and skills/
+              (the skills folder, the read_skill tool, its route)
 src/shared/   used by both server and web: API record types, chibot's own SSE
               events, message text extraction, zod schemas (requests,
               settings, export, MCP server shape and presets) and reasoning efforts (zod-free, so the web
@@ -119,7 +120,7 @@ transpiles it.
   routes and tools, its schema) lives in `src/server/<feature>/`, with an
   `index.ts` listing what the rest of the server may use; import from the
   index, not from files inside, so the feature can change inside. They depend
-  upwards only: `conversations/` (data) ← `mcp/` and `projects/` ← `chat/`,
+  upwards only: `conversations/` (data) ← `mcp/`, `projects/` and `skills/` ← `chat/`,
   and `pnpm deps` fails otherwise. Routes name the collaborators they use (`xRoutes({ store, files })`)
   and never import `app.ts`. The one exception: `database.ts` imports
   `projects/schema.ts` (SQL only) because migrations run in one fixed order.

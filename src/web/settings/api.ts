@@ -15,6 +15,7 @@ import type {
   Memory,
   ModelsResponse,
   ModelWindowResponse,
+  SkillsResponse,
 } from '../../shared/types.ts'
 import { remove, request, send } from '../http.ts'
 
@@ -77,3 +78,6 @@ export const updateMemory = (id: number, text: string) =>
 /** Deletes one memory, or all without `id`. */
 export const deleteMemories = (id?: number) =>
   remove(`/api/memories${id === undefined ? '' : `/${id}`}`)
+
+/** The skills in chibot's skills folder, and the folders in it that aren't valid ones. */
+export const listSkills = () => request<SkillsResponse>('/api/skills')

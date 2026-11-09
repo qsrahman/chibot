@@ -12,6 +12,7 @@ import { withMember } from './mcp.ts'
 import { Data } from './Data.tsx'
 import { General } from './General.tsx'
 import { McpServers } from './McpServers.tsx'
+import { Skills } from './Skills.tsx'
 import { Memory, Personalization } from './Personalization.tsx'
 import { Model } from './Model.tsx'
 import { OtherModels } from './OtherModels.tsx'
@@ -154,6 +155,7 @@ export function SettingsDialog({
                 disabled={current.disabledTools}
                 onChange={save}
               />
+              <Skills />
               <McpServers onToolsChanged={() => void settings.reloadTools()} />
             </>
           )}

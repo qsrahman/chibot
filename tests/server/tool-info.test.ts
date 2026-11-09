@@ -1,4 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterAll, describe, expect, it } from 'vitest'
 import { sortTools, type ToolInfo } from '../../src/shared/tools.ts'
 import { Config } from '../../src/server/config.ts'
 import { ConversationSearch } from '../../src/server/conversations/index.ts'
@@ -6,6 +9,7 @@ import { openDatabase } from '../../src/server/database.ts'
 import { defaultTools } from '../../src/server/main.ts'
 import { MemoryStore } from '../../src/server/memory-store.ts'
 import { ProjectIndex } from '../../src/server/projects/index.ts'
+import { SkillStore } from '../../src/server/skills/index.ts'
 import { ProjectStore } from '../../src/server/projects/index.ts'
 import {
   EditImageTool,
@@ -19,6 +23,15 @@ import { MemoryTool } from '../../src/server/tools/memory.ts'
 import { EchoTool, testFiles } from './fakes.ts'
 
 const context = { conversationId: 'c' }
+
+// A skills folder with one skill, so the tool that reads them is available.
+const skillsDir = mkdtempSync(join(tmpdir(), 'chibot-skills-'))
+mkdirSync(join(skillsDir, 'one'))
+writeFileSync(
+  join(skillsDir, 'one', 'SKILL.md'),
+  '---\nname: one\ndescription: A skill.\n---\nDo it.',
+)
+afterAll(() => rmSync(skillsDir, { recursive: true, force: true }))
 
 /** The shipped tools, built from `env` (whatever it sets up). */
 function shipped(env: Record<string, string>) {
@@ -39,6 +52,7 @@ function shipped(env: Record<string, string>) {
     memories: new MemoryStore(db),
     projects,
     index: new ProjectIndex(db, projects, files, null),
+    skills: new SkillStore(skillsDir),
   })
 }
 
@@ -92,6 +106,7 @@ describe('shipped tools', () => {
       'generate_image',
       'memory',
       'read_project_file',
+      'read_skill',
       'search_chats',
       'search_project_files',
     ])

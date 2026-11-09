@@ -24,6 +24,7 @@ import {
   ProjectSync,
 } from '../../src/server/projects/index.ts'
 import { McpServerFile, McpServers } from '../../src/server/mcp/index.ts'
+import { SkillStore } from '../../src/server/skills/index.ts'
 import { ProjectStore } from '../../src/server/projects/index.ts'
 import {
   settingsDefaults,
@@ -353,6 +354,7 @@ export function testApp(deps: Partial<AppDeps> = {}) {
     memories: new MemoryStore(db),
     index,
     sync,
+    skills: new SkillStore(join(tmpdir(), 'chibot-no-skills')),
     watcher: new FolderWatcher(projects, sync, { watch: () => noWatcher }),
     instructionWriter: new InstructionWriter(
       fakeClient([]),

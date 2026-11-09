@@ -34,6 +34,7 @@ import { conversationRoutes } from './chat/index.ts'
 import { fileRoutes } from './routes/files.ts'
 import { memoryRoutes } from './routes/memories.ts'
 import { projectRoutes } from './projects/index.ts'
+import { skillRoutes, type SkillStore } from './skills/index.ts'
 import { settingsRoutes } from './routes/settings.ts'
 import { notFound } from './routes/helpers.ts'
 import { mediaRoutes } from './routes/media.ts'
@@ -55,6 +56,7 @@ export interface AppDeps {
   index: ProjectIndex
   sync: ProjectSync
   watcher: FolderWatcher
+  skills: SkillStore
   instructionWriter: InstructionWriter
   attachments: Attachments
   mcp: McpServers
@@ -137,6 +139,7 @@ export function createApp(deps: AppDeps) {
   app.route('/', mcpRoutes(deps))
   app.route('/', conversationRoutes(deps))
   app.route('/', projectRoutes(deps))
+  app.route('/', skillRoutes(deps))
   app.route('/', memoryRoutes(deps))
   app.route('/', fileRoutes(deps))
   app.route('/', mediaRoutes(deps))

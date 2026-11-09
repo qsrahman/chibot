@@ -308,6 +308,18 @@ needs the server running: there is no offline mode, since the server is local.
   (searchable; embedding, image and speech models are left out; type a name
   if yours isn't listed or your server can't list its models). Each answer shows the
   model that wrote it, so switching models and regenerating compares them.
+- **Skills:** add a folder with a `SKILL.md` (the [Agent Skills](https://agentskills.io/specification)
+  format: a YAML header with a `name` that matches the folder and a
+  `description` saying what it does and when to use it, then the
+  instructions) to the `skills` folder beside `config.json`
+  (`~/.config/chibot/skills`; Settings → Tools shows the exact path, lists
+  the skills, and says why a folder was left out). The model sees each
+  skill's description and, when a request matches one, reads it with the
+  **Use skills** tool, plus any reference files it names. A skill found
+  elsewhere can be used with a link, for example
+  `ln -s ~/.claude/skills/<name> ~/.config/chibot/skills/<name>`. Skills are
+  read at each use, so adding one needs no restart. chibot can't run a
+  skill's scripts, so only skills that work from their written steps do.
 - **Tools:** the model uses chibot's tools on its own when they help, and the
   answer shows what it did ("Created an image", "Memory updated"; several
   calls share one row, which opens to each; open one to see the details):
