@@ -3,3 +3,9 @@
 # the stylesheet we import from katex.
 overrides:
   katex: ^0.19.1
+
+# pnpm 12 fails an install that meets a dependency with unreviewed install
+# scripts (ERR_PNPM_IGNORED_BUILDS). @swc/core's only checks that its native
+# binary (an optional dependency) arrived, so it stays blocked.
+allowBuilds:
+  '@swc/core': false
