@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-11-10
+
 ### Added
 
 - 147 questions for the project-search evaluation that a model wrote from the documents, each with the sentence that answers it, checked to be in the file word for word, and `scripts/generate-retrieval-questions.ts` to make such a set for other documents (TESTING.md).
