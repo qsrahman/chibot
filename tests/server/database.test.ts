@@ -95,4 +95,57 @@ describe('openDatabase', () => {
       rmSync(dir, { recursive: true, force: true })
     }
   })
+
+  it("reads a chat's items and a project file by index, not by scanning", () => {
+    const db = openDatabase(':memory:')
+    const plan = (sql: string) =>
+      (db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all('x') as { detail: string }[])
+        .map((r) => r.detail)
+        .join('; ')
+    expect(
+      plan('SELECT * FROM items WHERE conversation_id = ? ORDER BY id'),
+    ).toContain('USING INDEX items_conversation')
+    expect(plan('SELECT * FROM project_files WHERE file_id = ?')).toContain(
+      'project_files_file',
+    )
+  })
+
+  it('writes a file database in WAL mode', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'chibot-db-'))
+    try {
+      const db = openDatabase(join(dir, 'chibot.db'))
+      expect(db.prepare('PRAGMA journal_mode').get()).toEqual({
+        journal_mode: 'wal',
+      })
+      db.close()
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('adds the indexes to a database made without them', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'chibot-db-'))
+    const file = join(dir, 'chibot.db')
+    try {
+      openDatabase(file).close()
+      const old = new DatabaseSync(file)
+      old.exec(
+        `DROP INDEX items_conversation;
+         DROP INDEX project_files_file;
+         PRAGMA user_version = ${MIGRATIONS.length - 2}`,
+      )
+      old.close()
+      const db = openDatabase(file)
+      const indexes = (
+        db
+          .prepare("SELECT name FROM sqlite_master WHERE type = 'index'")
+          .all() as { name: string }[]
+      ).map((i) => i.name)
+      expect(indexes).toContain('items_conversation')
+      expect(indexes).toContain('project_files_file')
+      db.close()
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
 })

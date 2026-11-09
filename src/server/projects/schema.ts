@@ -65,5 +65,6 @@ export const PROJECT_MIGRATIONS = {
     if (missing('project_files', 'source_mtime')) {
       db.exec('ALTER TABLE project_files ADD COLUMN source_mtime INTEGER')
     }
-  },
+  }, // Files are looked up by id alone (the primary key leads with the project).
+  fileLookup: `CREATE INDEX IF NOT EXISTS project_files_file ON project_files(file_id);`,
 }

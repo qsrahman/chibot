@@ -196,6 +196,17 @@ compactions(id INTEGER PK AUTOINCREMENT,                  -- v0.13
 Search indexes the plain text of user and assistant messages (no reasoning or
 tool payloads), written in the same transaction as the item.
 
+Beyond the primary keys, indexes serve the lookups the code makes:
+`items(conversation_id, id)` (a chat's items, path and usage; without it each
+is a scan of every item of every chat: 25 ms at 200,000 items, 0.08 ms with
+it), `items(parent_id)`, `conversations(project_id)`, `files(conversation_id)`,
+`chunks(file_id)`, `compactions(conversation_id)` and `project_files(file_id)`.
+The file runs in WAL mode (`openDatabase` sets it): about three times cheaper
+small writes while an answer streams, and a stopped chibot leaves no `-wal`,
+which is how `restore` tells it is running. Migrations are applied by position:
+a new one goes at the end of the list, and `tests/server/database.test.ts`
+fails if an existing one moves or changes.
+
 ### HTTP API (grows per phase)
 
 | Method & path | Phase | Purpose |

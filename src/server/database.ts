@@ -89,6 +89,9 @@ export const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
    CREATE INDEX compactions_conversation ON compactions(conversation_id);`,
   PROJECT_MIGRATIONS.documentPrefix,
   PROJECT_MIGRATIONS.folder,
+  // A chat's items are read by conversation: its path, usage and branches.
+  `CREATE INDEX IF NOT EXISTS items_conversation ON items(conversation_id, id);`,
+  PROJECT_MIGRATIONS.fileLookup,
 ]
 
 /** How many migrations this version of chibot knows: the newest schema it can open. */
@@ -106,6 +109,10 @@ export function openDatabase(path: string): DatabaseSync {
   // switched off again, so SQL can't load extensions of its own.
   db.loadExtension(getLoadablePath())
   db.enableLoadExtension(false)
+  // Appending to a log instead of rewriting a journal makes the many small
+  // writes of a streaming answer cheaper, and readers don't wait for writers.
+  // (A file setting: it stays, and the in-memory test databases ignore it.)
+  db.exec('PRAGMA journal_mode = WAL')
   const { user_version: version } = db.prepare('PRAGMA user_version').get() as {
     user_version: number
   }
