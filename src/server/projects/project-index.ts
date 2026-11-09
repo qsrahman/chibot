@@ -15,20 +15,21 @@ import { documentText } from '../text.ts'
 import { fuse, type Hit } from './fusion.ts'
 import type { Reranker } from './reranker.ts'
 
-// About 1,500 chunks: plenty for notes and documents, bounded for embedding.
+// About 3,000 chunks: plenty for notes and documents, bounded for embedding.
 const MAX_TEXT = 5_000_000
 const EMBED_BATCH = 64
 // Hits taken from each search before merging, and the usual RRF constant.
 const CANDIDATES = 30
 // Passages a search returns unless asked for more or fewer, and the most it
-// may return (each is about 3,200 characters of the model's context).
-export const DEFAULT_RESULTS = 6
+// may return (each is about 1,600 characters of the model's context, so the
+// usual search sends the model about 19,000).
+export const DEFAULT_RESULTS = 12
 export const MAX_RESULTS = 15
 // Passages sent to the reranking model: the best of the merged lists, as many
 // as it can read in a moment.
 const RERANK_POOL = 20
 // Parts of a file `read` returns at once (about 10,000 characters).
-const READ_PARTS = 3
+const READ_PARTS = 6
 
 /** A passage of a project file; `part` of `parts` (1-based). */
 export interface Passage {
@@ -377,7 +378,7 @@ export class ProjectIndex {
   }
 
   #keywordHits(projectId: string, query: string, fileId?: string): Hit[] {
-    const match = anyWordQuery(query)
+    const match = anyWordQuery(query, { stopwords: true })
     if (!match) return []
     const rows = this.#db
       .prepare(

@@ -21,15 +21,26 @@ How chibot is tested and how to add tests. Part of the developer guide ([AGENTS.
   two sets and confirm on the held-out one: they have 41 questions between
   them, so a difference of one or two is noise.
   `retrieval-docs.test.ts` does the same over a frozen copy of chibot's own
-  docs (`tests/fixtures/retrieval-docs`, about 100 chunks) with 87 questions
+  docs (`tests/fixtures/retrieval-docs`, eight files) with 87 questions
   (43 in the answer's words, 30 paraphrases, 14 held out; each `has` string
   occurs once, in its file) and 20 that no document answers. It prints the
-  share found at first, third and sixth place (and the mean reciprocal rank, MRR,
+  share found at first, third and all twelve places (and the mean reciprocal rank, MRR,
   which rewards a higher place) for keyword, meaning and hybrid,
   and how close the best passage is for answerable against unanswerable
   questions (what a similarity floor would keep and reject). Keyword scores
   need no endpoint and are checked against a floor. `retrieval-harness.ts`
-  holds what both share. Add `--disable-console-intercept` to the `vitest run`
+  holds what both share. The same file scores 147 questions that a model wrote
+  from those documents (`tests/fixtures/retrieval-docs-generated.json`, made
+  with `scripts/generate-retrieval-questions.ts`, gemma4:12b-mlx, seed 11): each
+  has the sentence that answers it, checked to be in the file word for word and
+  nowhere else, so they use the user's kind of words more than the hand-written
+  ones, and most are paraphrases. The table splits them by how much of the
+  question's words are in the quote. Keep this set frozen: regenerating writes
+  different questions, and scores no longer compare. To make a set for other
+  documents (`--docs`), a local model keeps them on the machine; `--effort none`
+  (the default) matters, since a model that thinks takes minutes over this. A
+  different corpus (the hybrid-retrieval and agentic-rag tutorials' notes) gave
+  the same direction on chunk size (PLAN.md, Phase 8). Add `--disable-console-intercept` to the `vitest run`
   command to see the tables of a passing run. With `RETRIEVAL_RERANK_URL`,
   `RETRIEVAL_RERANK_MODEL` (and `RETRIEVAL_RERANK_KEY`) it also scores keyword
   search, and the hybrid when an embedding endpoint is set, with and without a

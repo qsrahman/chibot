@@ -101,14 +101,27 @@ describe('project file search', () => {
     }
   })
 
+  it('looks for the words that carry a question, not its filler', async () => {
+    await add(
+      'filler.md',
+      'What is the way? What is the thing? It is what it is, and the rest is the same.',
+    )
+    await add('hours.md', 'Opening hours: nine to five.')
+    const first = async (query: string) =>
+      (await index.search(projectId, query))[0]?.name
+    expect(await first('what is the opening hours')).toBe('hours.md')
+    // A question of nothing but filler still finds something.
+    expect(await first('what is the')).toBe('filler.md')
+  })
+
   it('returns as many passages as asked for, within limits', async () => {
     for (let n = 1; n <= 20; n++)
       await add(`f${n}.md`, `Note about otters ${n}.`)
     const count = async (limit?: number) =>
       (await index.search(projectId, 'otters', { limit })).length
-    expect(await count()).toBe(6)
+    expect(await count()).toBe(12)
     expect(await count(2)).toBe(2)
-    expect(await count(12)).toBe(12)
+    expect(await count(14)).toBe(14)
     expect(await count(100)).toBe(15)
     expect(await count(0)).toBe(1)
   })
@@ -117,7 +130,11 @@ describe('project file search', () => {
     const tool = new SearchProjectFilesTool(projects, index)
     const reader = new ReadProjectFileTool(projects, index)
     const paragraph = (n: number) => `Section ${n}. ${'word '.repeat(300)}`
-    await add('long.md', [1, 2, 3, 4, 5, 6, 7].map(paragraph).join('\n\n'))
+    // Each paragraph is a part of its own (a chunk holds about 1,600 characters).
+    await add(
+      'long.md',
+      [1, 2, 3, 4, 5, 6, 7, 8, 9].map(paragraph).join('\n\n'),
+    )
     const context = { conversationId: 'c', projectId }
 
     const found = JSON.parse(
@@ -126,19 +143,19 @@ describe('project file search', () => {
         context,
       ),
     )
-    expect(found.results[0]).toMatchObject({ file: 'long.md', parts: 4 })
+    expect(found.results[0]).toMatchObject({ file: 'long.md', parts: 9 })
 
     const first = JSON.parse(
       await reader.run({ file: 'LONG.md', from_part: null }, context),
     )
-    expect(first).toMatchObject({ file: 'long.md', parts: 4, from: 1, to: 3 })
+    expect(first).toMatchObject({ file: 'long.md', parts: 9, from: 1, to: 6 })
     expect(first.text).toContain('Section 1.')
-    expect(first.text).not.toContain('Section 7.')
+    expect(first.text).not.toContain('Section 9.')
     const last = JSON.parse(
-      await reader.run({ file: 'long.md', from_part: 4 }, context),
+      await reader.run({ file: 'long.md', from_part: 7 }, context),
     )
-    expect(last).toMatchObject({ from: 4, to: 4 })
-    expect(last.text).toContain('Section 7.')
+    expect(last).toMatchObject({ from: 7, to: 9 })
+    expect(last.text).toContain('Section 9.')
   })
 
   it("names the project's files when asked for one it does not have", async () => {

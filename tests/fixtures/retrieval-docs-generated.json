@@ -1,0 +1,884 @@
+[
+ {
+  "file": "README.md",
+  "question": "How do I configure image generation when using a chat model?",
+  "evidence": "Chat models (such as `gemma4` or `gpt-oss`) can't make images, so leave `OPENAI_IMAGE_MODEL` unset (or set it to an image model) and point image generation at OpenAI:",
+  "overlap": 0.67
+ },
+ {
+  "file": "README.md",
+  "question": "How can I access this service from a different computer?",
+  "evidence": "From another device, open it by IP address, or set `server.host` to the name you use.",
+  "overlap": 0
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "What happens to the send button when a response is being generated?",
+  "evidence": "While an answer streams it becomes **stop** (square icon);",
+  "overlap": 0
+ },
+ {
+  "file": "PLAN.md",
+  "question": "Where can I find the new security measures for web searches?",
+  "evidence": "What replaced the protections is in §5's injection guard.",
+  "overlap": 0
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "What are the specific styling rules for the buttons in a dialog?",
+  "evidence": "Buttons are pill-shaped: primary is `--button`, secondary is outlined, destructive is `--danger`.",
+  "overlap": 0.2
+ },
+ {
+  "file": "README.md",
+  "question": "How can I put this software on my device's home screen?",
+  "evidence": "chibot has a web manifest and icons, so a browser can install it (Chrome and Edge: the install button in the address bar; Safari: Share → Add to Dock or Home Screen).",
+  "overlap": 0.5
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "What happens if a summary is too long for the original content?",
+  "evidence": "reject and treat as failed a summary that is empty, missing a closed `</summary>`, cut off by the output cap, or larger than the text it replaces.",
+  "overlap": 0.2
+ },
+ {
+  "file": "README.txt",
+  "question": "Why shouldn't I modify the files in the retrieval-docs folder?",
+  "evidence": "Do not update them: the questions in ../retrieval-docs-questions.ts are written against these exact texts.",
+  "overlap": 0.33
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "How is the summary structured?",
+  "evidence": "Fixed headings: `## Goal`, `## Constraints & Preferences`, `## Progress` (`### Done`, `### In Progress`, `### Blocked`), `## Key Decisions`, `## Next Steps`, `## Critical Context`.",
+  "overlap": 0
+ },
+ {
+  "file": "TURN.md",
+  "question": "What happens if a tool has incorrect arguments or is currently disabled?",
+  "evidence": "an unknown or switched-off tool, bad arguments, or an error in the tool become an `Error: …` output the model can react to, and a stop becomes `TOOL_STOPPED`.",
+  "overlap": 0.33
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How does the sidebar behave on mobile devices?",
+  "evidence": "Below 768 px (phones) it's a drawer instead: hidden by default, opened by a panel button at the header's left, `min(300px, 85vw)` wide over the chat with `--dialog-shadow` and a `--scrim` behind it; tapping the scrim, pressing Escape or opening a chat closes it.",
+  "overlap": 0
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "What is the maximum number of tokens allowed for the response?",
+  "evidence": "a response cap (8,000 tokens)",
+  "overlap": 0.4
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "How are messages handled if they exceed the summary model's capacity?",
+  "evidence": "If it would not fit the summary model's window, drop the oldest messages first and say so in the summary's header (Codex, OpenClaw).",
+  "overlap": 0.5
+ },
+ {
+  "file": "TURN.md",
+  "question": "What happens to pending tool requests when a user submits a new message?",
+  "evidence": "Any tool calls still waiting for approval get `TOOL_DENIED` outputs first: sending a new message denies them.",
+  "overlap": 0.29
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How does the layout change when the screen width is smaller than 768 pixels?",
+  "evidence": "Below 768 px a chosen tool's chip and the \"+\" take a row above the box, like attachments, because beside the buttons the chip would leave the box a few pixels wide.",
+  "overlap": 0.17
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "What happens if a summary fails a check during safeguard mode?",
+  "evidence": "failed checks get corrective attempts; if still failing, the best summary is stored and flagged `qualityDegraded`, shown in `/status`.",
+  "overlap": 0.14
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "What is the purpose of this specific file?",
+  "evidence": "This file is the > design and its reasoning; README.md and PLAN.md describe how it behaves now.",
+  "overlap": 0.33
+ },
+ {
+  "file": "PLAN.md",
+  "question": "What happens if I try to use a file ID that has been removed?",
+  "evidence": "a deleted `file_id` fails the turn with a 404 `NotFoundError`.",
+  "overlap": 0.25
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "What happens to the background color when the --bg variable is updated?",
+  "evidence": "changing `--bg` switches to a dark-grey page.",
+  "overlap": 0
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "Which additional components require a similar audit?",
+  "evidence": "Other OpenAI-only pieces in chibot, outside this document's scope but the same kind of problem: `include: ['reasoning.encrypted_content']` and replaying reasoning items, `reasoning.summary`, and (with fallbacks already) the Files API.",
+  "overlap": 0
+ },
+ {
+  "file": "TURN.md",
+  "question": "Where can I find the recorded calls for unit tests?",
+  "evidence": "in unit tests, `testChat(...)` records the calls (`tests/server/fakes.ts`).",
+  "overlap": 0.6
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How are multiple tool actions organized when they occur together in a single response?",
+  "evidence": "Several calls in one answer sit in one collapsed group, a `<details>` labelled with what they did (\"Searched the web, Memory updated\"; repeats listed once, so a memory change stays visible) or, while one runs, its live label; opened, its body (behind the same 2 px rule) lists each call.",
+  "overlap": 0
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "What elements are included in the card that appears while waiting for tool calls?",
+  "evidence": "a card (`--surface`, hairline border, 16 px radius, 16 px padding) with a 15 px title \"chibot wants to use <tool>\" and a `Wrench` icon, each call's arguments, a 13 px muted hint that a new message denies it, and Deny (secondary) / Approve (primary) at the bottom right.",
+  "overlap": 0.25
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "How did hiding previous tool results affect the cost and success of solving tasks?",
+  "evidence": "plain **observation masking** (hiding old tool outputs) halved cost and matched, sometimes beat, LLM summarization on solve rate",
+  "overlap": 0.33
+ },
+ {
+  "file": "TURN.md",
+  "question": "What happens when an error occurs during the process?",
+  "evidence": "A failure becomes `chibot.error` with the provider's message (`explainApiError` says what a 429 means).",
+  "overlap": 0.2
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "Does the interface include any branding or logos from the original site?",
+  "evidence": "It borrows **aesthetics only**: no ChatGPT name, logo, icons or copy.",
+  "overlap": 0
+ },
+ {
+  "file": "TURN.md",
+  "question": "What happens if I exit the conversation while the system is still generating a response?",
+  "evidence": "leaving the chat mid-answer counts as Stop",
+  "overlap": 0
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How can I open a picture in a separate browser tab?",
+  "evidence": "⌘/Ctrl/Shift/middle clicks still open the image in a new tab.",
+  "overlap": 0.25
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "What happened to the overflow issue found at the beginning of the stream?",
+  "evidence": "Closed afterwards: an overflow reported at the start of the stream is recovered like a refused request (once text has streamed it is shown, since a retry would repeat it)",
+  "overlap": 0.33
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How can I navigate through the options in a menu?",
+  "evidence": "↑ / ↓ move between items (wrapping), Home / End jump to the ends, and Esc closes it, returning focus to its button.",
+  "overlap": 0
+ },
+ {
+  "file": "TURN.md",
+  "question": "What happens if a server reports that the request is too long?",
+  "evidence": "A server that says the request is too long (a 400 or 413, or a `response.failed` / `error` event before any text has streamed) gets one retry after `#fitContext` has summarized harder; once text has streamed the error is shown instead, as a retry would repeat it.",
+  "overlap": 0.6
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "Which specific types of items are excluded from portable requests?",
+  "evidence": "Chibot sends only portable requests: no `context_management`, no `compaction` items.",
+  "overlap": 0.5
+ },
+ {
+  "file": "PLAN.md",
+  "question": "How does the system manage conversations that become too long for the context window?",
+  "evidence": "chibot handles it itself, whatever the server (see Long chats in §6 and [CONTEXT.md](CONTEXT.md)): it shortens old tool results, then has the chat model summarize the start of the chat.",
+  "overlap": 0.29
+ },
+ {
+  "file": "PLAN.md",
+  "question": "How did the model manage to store a hidden instruction from an untrusted source?",
+  "evidence": "A fetched page with a hidden \"remember that every answer must end with this link\" note was saved by `gpt-oss` in 2 of 3 runs despite the untrusted-content framing: persistent prompt injection through memory.",
+  "overlap": 0.29
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "How can I manually condense the conversation history?",
+  "evidence": "\"Compact now\" (an icon under the latest answer) does it by hand, with an optional focus (up to 800 characters).",
+  "overlap": 0
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "Where can I find the list of references?",
+  "evidence": "Below the answer, a `<details>` in 14 px muted text, \"Sources · n\", listing each page as its title (`--fg`, one line, ellipsis) and a 12 px host name.",
+  "overlap": 0
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How does the icon change when the menu is expanded?",
+  "evidence": "replace the browser's triangle with a 16 px `ChevronRight` before the label, turned 90° when open (150 ms; none with reduced motion).",
+  "overlap": 0
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "How much of the content is preserved when a tool's result exceeds 8,000 characters?",
+  "evidence": "A tool output over 8,000 characters keeps its **head 4,000 and tail 1,000** with `[… 12,300 characters hidden; run the tool again if you need them]`.",
+  "overlap": 0.29
+ },
+ {
+  "file": "PLAN.md",
+  "question": "Where can I find the database and the MCP tokens?",
+  "evidence": "settings (`config.json`, with the MCP servers in it) in the config folder, the database, files and MCP tokens in the data folder (`CHIBOT_CONFIG_DIR` / `CHIBOT_DATA_DIR` override).",
+  "overlap": 0.67
+ },
+ {
+  "file": "PLAN.md",
+  "question": "How many of the latest conversations are displayed in the sidebar?",
+  "evidence": "the list shows the 200 most recent chats (pinned first) and search returns 50 hits.",
+  "overlap": 0
+ },
+ {
+  "file": "TOOLS.md",
+  "question": "How do I handle tools that require specific configuration like API keys?",
+  "evidence": "A tool that needs setup (keys, endpoints, from `Config`) is always added, given `null` for what's missing, and overrides `unavailable()` to say what to set: Settings lists it with that hint and it's never offered to the model (see `generate_image`).",
+  "overlap": 0.14
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "How should the system handle a situation where the summary process fails?",
+  "evidence": "a failure sends the full history or the kept tail without a summary (OpenClaw, Codex), and says so.",
+  "overlap": 0.17
+ },
+ {
+  "file": "README.md",
+  "question": "How can I uninstall the global chibot package?",
+  "evidence": "`pnpm remove -g chibot` takes it off again.",
+  "overlap": 0.25
+ },
+ {
+  "file": "PLAN.md",
+  "question": "How does the Playwright test connect to a local mock server?",
+  "evidence": "The Playwright test instead points the real SDK at a local fake server through the SDK's built-in `OPENAI_BASE_URL` support.",
+  "overlap": 0.67
+ },
+ {
+  "file": "README.md",
+  "question": "How can I switch the transcription or image models without rebooting?",
+  "evidence": "the image, embedding and transcription models can be changed (or emptied, to turn the feature off) in **Settings → Other models**, without a restart.",
+  "overlap": 0.67
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "How does the standard tool-result pruner handle results exceeding 50,000?",
+  "evidence": "results above 50,000 spill to disk with an inline preview.",
+  "overlap": 0.14
+ },
+ {
+  "file": "TURN.md",
+  "question": "Where can I find information about the process after clicking Send?",
+  "evidence": "Read this with [AGENTS.md](AGENTS.md) (conventions) and [PLAN.md](PLAN.md) §3 (the history tree).",
+  "overlap": 0
+ },
+ {
+  "file": "README.md",
+  "question": "How can I prevent a server from executing actions without my permission?",
+  "evidence": "or switch on **Ask before using its tools** for a server in Settings → Tools (worth it for one that can run commands or change files).",
+  "overlap": 0.17
+ },
+ {
+  "file": "TESTING.md",
+  "question": "How can I find conversations that aren't in the recent list?",
+  "evidence": "The sidebar lists the 200 newest chats; older ones are reached by search.",
+  "overlap": 0
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "What happens to reasoning items when a server fails to interpret them?",
+  "evidence": "a server that cannot read them is the case to fix when one appears.",
+  "overlap": 0.17
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "What color is the dot in the logo?",
+  "evidence": "the dot (`#3566f0`) closes the right one.",
+  "overlap": 0
+ },
+ {
+  "file": "README.md",
+  "question": "How do I add new tools to the system?",
+  "evidence": "List them under `mcpServers` in `config.json` (`chibot config path` shows where it is; [mcp.example.json](mcp.example.json) shows the format, which is the usual one, so a snippet from an MCP server's docs fits as it is), then **Reload** in Settings → Tools (or restart chibot).",
+  "overlap": 0.5
+ },
+ {
+  "file": "README.md",
+  "question": "How do I configure the system to include specific instructions for certain embedding models?",
+  "evidence": "in **Settings → Other models**, **Use what <model> expects** fills the **Text before a question** and **Text before each file part** boxes for the ones chibot knows (type them by hand for others; leave them empty for OpenAI's, which take plain text).",
+  "overlap": 0.13
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "What determines the current trigger value now that the old setting was removed?",
+  "evidence": "the trigger is derived (`min(window × share, window − reserve)`).",
+  "overlap": 0.17
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How long do these notifications remain visible on the screen?",
+  "evidence": "they stay six seconds, longer under the pointer.",
+  "overlap": 0
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "Where can I find the documentation for OpenClaw compaction?",
+  "evidence": "OpenClaw: [compaction docs](https://docs.openclaw.ai/concepts/compaction).",
+  "overlap": 0.5
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "Which specific details regarding DeepSeek Harness were not confirmed?",
+  "evidence": "and DeepSeek Harness's built-in compaction trigger and keep rules (not in anything I could read).",
+  "overlap": 0.29
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "How many tokens of recent user messages are kept during the history reconstruction process?",
+  "evidence": "the initial context, **recent user messages up to 20,000 tokens** (`COMPACT_USER_MESSAGE_MAX_TOKENS`, newest first, the oldest that fits is truncated), and the summary behind a fixed prefix.",
+  "overlap": 0.4
+ },
+ {
+  "file": "PLAN.md",
+  "question": "How does the system handle multiple outputs like tool calls or reasoning within a single response?",
+  "evidence": "A response that yields several output items (reasoning, message, tool calls) stores them as a chain, each the parent of the next.",
+  "overlap": 0.36
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "What is the standard token limit if a server fails to provide one?",
+  "evidence": "5. **Default window** when a server does not report one: 32,000 tokens.",
+  "overlap": 0.17
+ },
+ {
+  "file": "README.md",
+  "question": "How can I run the application on a different port?",
+  "evidence": "and `chibot --port 8080` picks another port.",
+  "overlap": 0.33
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "Where is the circular down arrow button positioned when the message list is scrolled up?",
+  "evidence": "While the message list is scrolled up, a 36 px round `ArrowDown` button (`--surface-raised`, `--border` outline, `--composer-shadow`) sticks 12 px above the list's bottom, centred over the composer.",
+  "overlap": 0.5
+ },
+ {
+  "file": "PLAN.md",
+  "question": "What happens if a user maintains a setup using only the old configuration?",
+  "evidence": "A setup with only the legacy configuration behaves exactly as before: one `default` provider, no new setting needed.",
+  "overlap": 0.43
+ },
+ {
+  "file": "PLAN.md",
+  "question": "What features were introduced in version 0.11.3?",
+  "evidence": "queued messages, context usage per answer, memory editing and de-duplication, and the logo (0.11.3);",
+  "overlap": 0
+ },
+ {
+  "file": "README.md",
+  "question": "How can I access the tool from a different computer on my local network?",
+  "evidence": "To use it from another device on your network, set `server.host` to `0.0.0.0` (or run `chibot --host 0.0.0.0`) together with a token:",
+  "overlap": 0.17
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "How can we evaluate if a model remembers specific facts after a compaction?",
+  "evidence": "An **opt-in recall test with a real model** (like `injection.test.ts`): plant facts in the first turns, compact, ask about them, and report the share recalled for each prompt variant and for pruning on/off, so the prompt can be tuned on evidence rather than taste.",
+  "overlap": 0.29
+ },
+ {
+  "file": "README.md",
+  "question": "Where are the initial configuration details and private keys stored?",
+  "evidence": "Startup settings and keys are kept in `config.json`, which `chibot init` writes (readable only by you; it holds your keys).",
+  "overlap": 0.17
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "Where is the mode chip located in relation to the microphone?",
+  "evidence": "It opens a menu above it and sits left of the mic.",
+  "overlap": 0
+ },
+ {
+  "file": "PLAN.md",
+  "question": "What specific items does Brave provide for each search result?",
+  "evidence": "Brave returns title, URL, description (with `<strong>` tags), age and extra snippets per result.",
+  "overlap": 0.29
+ },
+ {
+  "file": "AGENTS.md",
+  "question": "Which tools are used to verify the server and front-end helpers?",
+  "evidence": "vitest for the server and pure web helpers (`tests/server`, `tests/web`, fakes in `tests/server/fakes.ts`, `:memory:` SQLite)",
+  "overlap": 0.33
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How do file cards appear when they are being uploaded?",
+  "evidence": "A spinning `LoaderCircle` covers a chip while it uploads (dimmed), and a 20 px round `--button` × sits on its top-right corner.",
+  "overlap": 0
+ },
+ {
+  "file": "PLAN.md",
+  "question": "Which models and configurations support streamed function calling with the store setting disabled?",
+  "evidence": "streamed function calling with `store: false` works on OpenAI and on Ollama `gemma4:cloud` and `gpt-oss:120b-cloud`, with tools declared by `zodResponsesFunction` (`strict: true`).",
+  "overlap": 0.44
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "Where can I find the CSS variables for the design system?",
+  "evidence": "The tokens are CSS variables in [`src/web/styles/base.css`](src/web/styles/base.css);",
+  "overlap": 0.25
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "What happens if I remove the row?",
+  "evidence": "Deleting the row undoes the compaction, because nothing was deleted.",
+  "overlap": 0
+ },
+ {
+  "file": "README.md",
+  "question": "What happens to the configuration when I turn off a specific tool?",
+  "evidence": "switching off a tool adds its name (as the server gives it, without the `<server>__` prefix) to `",
+  "overlap": 0.2
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "Where is the Projects area located in the sidebar?",
+  "evidence": "The sidebar's Projects section (\"New project\", then a `Folder` row each) sits above the chats.",
+  "overlap": 0.5
+ },
+ {
+  "file": "AGENTS.md",
+  "question": "Where can I find the instructions for creating new tools?",
+  "evidence": "Read [TOOLS.md](TOOLS.md) before adding one: the steps, the approval and untrusted-output flags, and the network rule.",
+  "overlap": 0.25
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How long does the motion animation last?",
+  "evidence": "Motion is short and subtle (150 ms ease).",
+  "overlap": 0.25
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "What happens if the compaction model's window is too small for the input?",
+  "evidence": "if the compaction model's window cannot hold the input, it **falls back to the main model**.",
+  "overlap": 0.67
+ },
+ {
+  "file": "TURN.md",
+  "question": "What happens once the response is finished or approved?",
+  "evidence": "On `response.completed` (the answer is saved) or `chibot.approval` it re-reads the chat (`getConversation`) and shows it as `toTurns(items)` (`chat/turns.ts`), which also finds sources and waiting calls.",
+  "overlap": 0.2
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How can I see the different available modes?",
+  "evidence": "It opens an upward menu of the three modes, each a name over a muted hint, with a check on the current one.",
+  "overlap": 0.33
+ },
+ {
+  "file": "README.md",
+  "question": "What happens if I try to use an image model after the recent update?",
+  "evidence": "Ollama's own image generation was removed in Ollama 0.32.6, so pulled image models such as `x/z-image-turbo` can't be used: its images endpoint answers 404.",
+  "overlap": 0.17
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How can I remove a specific memory from the list?",
+  "evidence": "one row per memory (14 px text, `Pencil` edit and `Trash2` delete icon buttons).",
+  "overlap": 0.25
+ },
+ {
+  "file": "README.md",
+  "question": "Where can I find the mcpServers entry in the config.json file?",
+  "evidence": "In `config.json`, the `mcpServers` entry sits beside the other settings.",
+  "overlap": 0.67
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "What happens if the server indicates the request exceeds the length limit?",
+  "evidence": "If the server answers that the request is too long (a 400 or 413 whose message says so, or a truncated chat that the window setting says should fit), chibot compacts (pruning harder first), retries **once**, and shows the result.",
+  "overlap": 0.29
+ },
+ {
+  "file": "README.md",
+  "question": "What other software can this tool connect to besides OpenAI?",
+  "evidence": "It works with OpenAI and with OpenAI-compatible servers that implement the Responses API, such as [Ollama](https://docs.ollama.com/openai) and [LM Studio](https://lmstudio.ai/).",
+  "overlap": 0.17
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "Why was this specific piece of writing created?",
+  "evidence": "Written because chibot's current approach is tied to one company's API and does not work on the servers chibot is meant for.",
+  "overlap": 0
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "Where exactly should the break occur when a turn exceeds the limit?",
+  "evidence": "if one turn is larger than the budget, cut at an assistant message and summarize its early part with the rest (pi's split turn, later).",
+  "overlap": 0.17
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How long does a user need to hover over an item before the tooltip appears?",
+  "evidence": "It shows after 350 ms of hovering (at once when another was just up)",
+  "overlap": 0
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "What specific parts of the requests library involve compaction?",
+  "evidence": "`context_management` in requests, `compaction` items in `fromLastCompaction` (replaced by §5.4), the \"compaction\" wording in the meter, and `ModelRequests`' special handling for rejecting it.",
+  "overlap": 0.33
+ },
+ {
+  "file": "PLAN.md",
+  "question": "Can I use this software with multiple people at the same time?",
+  "evidence": "Multi-user support, accounts or authentication (it's a local, single-user app).",
+  "overlap": 0
+ },
+ {
+  "file": "PLAN.md",
+  "question": "What needs to be finished before a release commit is made?",
+  "evidence": "Each phase is built as small commits, one per step, and ends with tests green, `pnpm typecheck` clean, docs + CHANGELOG updated, and a release commit that bumps the minor version.",
+  "overlap": 0.33
+ },
+ {
+  "file": "PLAN.md",
+  "question": "Which tool is used to pull text from Word files?",
+  "evidence": "and `mammoth` `.docx` text.",
+  "overlap": 0.17
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "What fonts are used for the system stack and code?",
+  "evidence": "The system stack, `ui-sans-serif, -apple-system, system-ui, \"Segoe UI\", Helvetica, \"Apple Color Emoji\", Arial, sans-serif`. Code uses `",
+  "overlap": 0.6
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How do I find the option to include pictures or documents?",
+  "evidence": "\"Add photos & files\" has a muted hint line (\"Images, PDF, Word, text and code\")",
+  "overlap": 0
+ },
+ {
+  "file": "README.md",
+  "question": "Where are authentication tokens stored when using a remote server?",
+  "evidence": "Tokens are kept in `mcp-auth.json` in the data folder, readable only by you; **Sign out** removes them.",
+  "overlap": 0.17
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "Can the community replace the standard compaction tool?",
+  "evidence": "compaction is **replaceable** (community plugins swap it).",
+  "overlap": 0.4
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "What color does the remove button change to when a user hovers over it?",
+  "evidence": "the destructive one (remove) turns `--danger` on hover.",
+  "overlap": 0.14
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "What colors are used for the interface elements?",
+  "evidence": "Greys, plus one blue accent for what's *yours* or *actionable*: your message bubbles, the send button, switches.",
+  "overlap": 0
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "What shadow effect is applied when the interface is in dark mode?",
+  "evidence": "Dark mode uses an inset hairline instead: `inset 0 0 1px rgb(255 255 255/20%)`.",
+  "overlap": 0.33
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "How does the system ensure that summarizing content doesn't bypass security checks?",
+  "evidence": "the approval check that looks for untrusted tool output must look at the **whole saved path**, not only what is sent, so pruning and summarizing never make a chat look cleaner than it is.",
+  "overlap": 0.13
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "How does the prune feature work?",
+  "evidence": "1. **Prune** (free, per request, never saved): hide old tool outputs and old images.",
+  "overlap": 0.33
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "How does the Qwen model handle the tail compared to others?",
+  "evidence": "where the trigger sits (75 to 95%), whether a tail is kept (Qwen keeps none), and whether the \"tail\" is the last turns or only the user's messages (Codex).",
+  "overlap": 0.33
+ },
+ {
+  "file": "PLAN.md",
+  "question": "How was the software developed and structured?",
+  "evidence": "Built **incrementally**: every phase ships working code, tests, docs and a commit.",
+  "overlap": 0
+ },
+ {
+  "file": "PLAN.md",
+  "question": "What is the next scheduled phase for the project?",
+  "evidence": "Next: Phase 11a (multiple providers, design agreed) and Phase 11 (code runner).",
+  "overlap": 0.5
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "What icons are displayed next to the labels in the queued message row?",
+  "evidence": "a 15 px muted `Clock`, the label **Queued** (500 weight), the text in `--fg` on one ellipsized line, then 24 px muted **Edit** (`Pencil`) and **Cancel** (`X`) buttons.",
+  "overlap": 0.17
+ },
+ {
+  "file": "README.md",
+  "question": "Where does the software look for configuration files on a Mac?",
+  "evidence": "a Mac uses these too, not `~/Library`.",
+  "overlap": 0
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How is the content organized within the cards?",
+  "evidence": "Content is grouped as section heading (16 px, 500) + card (`--surface`, 16 px radius, hairline border).",
+  "overlap": 0.25
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "What is the font size for the code?",
+  "evidence": "Code is 16/26 px monospace.",
+  "overlap": 0.33
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "What file format is used when capturing a picture through the camera tool?",
+  "evidence": "the picture attaches as a JPEG like an uploaded image.",
+  "overlap": 0.13
+ },
+ {
+  "file": "README.md",
+  "question": "How can I start the server if a firewall is already blocking access?",
+  "evidence": "If a firewall or proxy in front already restricts who can reach it, `chibot --allow-open` (or `CHIBOT_ALLOW_OPEN=1`) starts it anyway, with a warning.",
+  "overlap": 0.33
+ },
+ {
+  "file": "PLAN.md",
+  "question": "Which software platforms can this chatbot run on?",
+  "evidence": "It works with OpenAI and with any OpenAI-compatible server that implements the Responses API (e.g. Ollama, LM Studio).",
+  "overlap": 0
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How wide can the created pictures be?",
+  "evidence": "Generated images sit above the answer text, up to 400 px wide with 16 px radius; a square shimmer placeholder stands in while one is made.",
+  "overlap": 0.33
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How does the app handle text you've highlighted in the chat?",
+  "evidence": "It adds the text to the message box as a Markdown block quote and clears the selection.",
+  "overlap": 0.25
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How tall is the input area when it contains only a single line?",
+  "evidence": "7×10 px padding and 52 px tall when one line.",
+  "overlap": 0.29
+ },
+ {
+  "file": "PLAN.md",
+  "question": "Where can I find the tools for searching the web and reading pages now?",
+  "evidence": "Web search and > reading pages come from MCP servers (Settings → Tools)",
+  "overlap": 0.6
+ },
+ {
+  "file": "README.md",
+  "question": "Can I use this tool without an internet connection?",
+  "evidence": "It still needs the server running: there is no offline mode, since the server is local.",
+  "overlap": 0
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "What happens if the system encounters three consecutive summary errors?",
+  "evidence": "after 3 consecutive failures auto-compaction pauses until the user compacts by hand (a circuit breaker).",
+  "overlap": 0.14
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "How much can a single request's input be?",
+  "evidence": "One request, input capped at 160,000 characters (about 40,000 tokens), weighted to the newest messages, then the user's older requests and decisions, the oldest messages, and samples of the middle, with gaps marked by a count of omitted messages.",
+  "overlap": 0.5
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "Which files explain the current behavior of this project?",
+  "evidence": "README.md and PLAN.md describe how it behaves now.",
+  "overlap": 0
+ },
+ {
+  "file": "PLAN.md",
+  "question": "Which models are capable of processing images provided as inline data?",
+  "evidence": "inline images work on vision models (`gemma4:cloud`, `gemma4:e4b`, `qwen3.5:9b`; `gpt-oss` answers 400 \"this model does not support image input\")",
+  "overlap": 0.43
+ },
+ {
+  "file": "TURN.md",
+  "question": "How can I check the previous request sent during a test run?",
+  "evidence": "To see what chibot sent in a test run, `GET /debug/last-request` on the fake OpenAI server (`tests/e2e/fake-openai.ts`);",
+  "overlap": 0.5
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "How did hiding previous tool results affect the cost of the SWE-agent?",
+  "evidence": "plain **observation masking** (hiding old tool outputs) halved cost and matched, sometimes beat, LLM summarization on solve rate; tool output was about 84% of an average turn's tokens.",
+  "overlap": 0.43
+ },
+ {
+  "file": "TURN.md",
+  "question": "What specific types of events does the browser receive from the SDK?",
+  "evidence": "The browser gets the SDK's `ResponseStreamEvent`s unchanged, plus ours (`src/shared/types.ts`): `chibot.tool_output`, `chibot.approval`, `chibot.title`, `chibot.error`.",
+  "overlap": 0.4
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "What happened to the overflow issue found at the beginning of the stream?",
+  "evidence": "Closed afterwards: an overflow reported at the start of the stream is recovered like a refused request (once text has streamed it is shown, since a retry would repeat it);",
+  "overlap": 0.33
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How do I navigate through the options in a menu?",
+  "evidence": "Items are 36 px rows with an icon and a label, 10 px radius, and a `--surface-muted` hover. Groups are separated by hairlines, with optional 12 px muted section labels. A menu opens with focus on its first item; ↑ / ↓ move between items (wrapping), Home / End jump to the ends, and Esc closes it, returning focus to its button.",
+  "overlap": 0.25
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "How does DeepSeek handle its API caching mechanism?",
+  "evidence": "DeepSeek's own API caches by **prefix** (`prompt_cache_hit_tokens` / `prompt_cache_miss_tokens`), and advises appending to history rather than rewriting it: relevant because any compaction or pruning rewrites the prefix.",
+  "overlap": 0.25
+ },
+ {
+  "file": "PLAN.md",
+  "question": "How does the system manage conversations that become too long for the context window?",
+  "evidence": "it shortens old tool results, then has the chat model summarize the start of the chat.",
+  "overlap": 0
+ },
+ {
+  "file": "PLAN.md",
+  "question": "Where are the database and MCP tokens stored?",
+  "evidence": "the database, files and MCP tokens in the data folder (`CHIBOT_CONFIG_DIR` / `CHIBOT_DATA_DIR` override).",
+  "overlap": 0.67
+ },
+ {
+  "file": "TOOLS.md",
+  "question": "What should I do if a tool has side effects like deleting or sending data?",
+  "evidence": "Set `override readonly requiresApproval = true` if it has side effects (sends, writes, deletes, spends): the turn then waits for Approve / Deny.",
+  "overlap": 0.29
+ },
+ {
+  "file": "TURN.md",
+  "question": "Where can I find information about the process after hitting Send?",
+  "evidence": "What happens from pressing Send to the answer on screen. Read this with [AGENTS.md](AGENTS.md) (conventions) and [PLAN.md](PLAN.md) §3 (the history tree).",
+  "overlap": 0.17
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "How is the handling of the reasoning.encrypted_content field different now?",
+  "evidence": "`include: reasoning.encrypted_content` was a plain request field that a rejecting server turned into a failed chat: it is now optional beside `reasoning` (including `reasoning.summary`), retried without on a 400.",
+  "overlap": 0.67
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "Which specific details regarding DeepSeek Harness were not confirmed?",
+  "evidence": "DeepSeek Harness's built-in compaction trigger and keep rules (not in anything I could read).",
+  "overlap": 0.29
+ },
+ {
+  "file": "AGENTS.md",
+  "question": "How should I verify my changes before I submit them?",
+  "evidence": "Every change adds tests for what it adds; run `pnpm test` before committing.",
+  "overlap": 0.25
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How do file attachments appear when they are being sent?",
+  "evidence": "In a sent message the same thumbnails (up to 240 px, 16 px radius) and cards sit right-aligned above the bubble.",
+  "overlap": 0.2
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "What does the thinking section look like when it is expanded?",
+  "evidence": "Opened, the summary sits behind a 2 px `--border` rule.",
+  "overlap": 0
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How can I adjust what the summary includes?",
+  "evidence": "it opens a one-line form for what the summary should keep in mind.",
+  "overlap": 0.33
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How much space is allocated for the padding of user messages?",
+  "evidence": "right-aligned bubble with `--bubble-bg` and `--bubble-fg` text, 22 px radius, 10×16 px padding, max 70 % width, `white-space: pre-wrap`.",
+  "overlap": 0.33
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How can I remove an entire memory from the list?",
+  "evidence": "Delete all (danger) sits below, with a confirm dialog.",
+  "overlap": 0
+ },
+ {
+  "file": "CONTEXT.md",
+  "question": "What specific components make up the context management system?",
+  "evidence": "context management is a set of **plugins**, \"basic compaction, a tool-result pruner, image offload and a token meter\"",
+  "overlap": 0.33
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "What visual style is used for the primary action buttons like saving or signing in?",
+  "evidence": "the primary one (add, sign in, save an edit) is filled `--button`;",
+  "overlap": 0.11
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How much space is allocated for the central column containing the chat?",
+  "evidence": "The thread and composer share a centred column of at most 48 rem (768 px).",
+  "overlap": 0.14
+ },
+ {
+  "file": "PLAN.md",
+  "question": "What features were included in the recent v0.12–0.13 update?",
+  "evidence": "phases 0–10 are complete, and v0.12–0.13 added the config file, the `chibot` command and provider-neutral long-chat summaries (see *Between phases*).",
+  "overlap": 0
+ },
+ {
+  "file": "README.md",
+  "question": "Where does the software look for files if the default directories are currently vacant?",
+  "evidence": "while `<chibot folder>/data` and `<chibot folder>/mcp.json` exist and the standard places are empty, chibot keeps using them and says so at startup.",
+  "overlap": 0
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "How do the tabs behave when the screen width is smaller than 768 pixels?",
+  "evidence": "Below 768 px the tabs become a scrolling row above the content, scrolled to the current tab.",
+  "overlap": 0.17
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "What information can I provide when setting up a new MCP server?",
+  "evidence": "A dialog (560 px) from Settings → Tools: preset, name, kind, then command, arguments (one per line) and working folder, or URL; a list of name / value rows for environment variables or headers (values are password fields that show \"Saved (hidden)\" when editing); a note that local servers run with the user's rights; errors in a `role=\"alert\"` line.",
+  "overlap": 0
+ },
+ {
+  "file": "DESIGN.md",
+  "question": "What are the specific dimensions for the icons in the action rows?",
+  "evidence": "ChatGPT uses thin line icons: 20 px in action rows and the header, 16 px on code blocks, 24 px for the composer's \"+\".",
+  "overlap": 0.6
+ }
+]

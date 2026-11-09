@@ -1,12 +1,16 @@
 // Splits a document into chunks for search, at the seams it has: markdown
 // sections, top-level code units, paragraphs, and only then lines, sentences
 // or words, so a chunk reads as a unit rather than as a slice.
-const CHUNK_SIZE = 3200
-const CHUNK_OVERLAP = 480
+// About 400 tokens, with 15% overlap. Measured on two sets of questions
+// (PLAN.md, Phase 8): at the same amount of text per search, smaller chunks put
+// the answer in the results more often on long documents (71% at 3,200
+// characters, 80% at 1,600, 85% at 1,200) and made no difference on short notes.
+const CHUNK_SIZE = 1600
+const CHUNK_OVERLAP = 240
 
 // Raise when chunking changes: project files chunked by an older version are
 // indexed again at startup.
-export const CHUNKER_VERSION = 2
+export const CHUNKER_VERSION = 3
 
 export type ChunkStyle = 'prose' | 'markdown' | 'code'
 

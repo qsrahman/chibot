@@ -150,14 +150,35 @@ export function openDatabase(path: string): DatabaseSync {
  * which are whole phrases). Words are quoted, so FTS5 operators in them
  * aren't parsed. Words of 4 letters or more also match as prefixes; shorter
  * ones only whole, or "do" would find "door". `null` when there are no words.
+ * With `stopwords`, common English filler words are left out.
  */
-export function anyWordQuery(text: string): string | null {
-  const words = text.split(/\s+/).filter(Boolean)
+export function anyWordQuery(
+  text: string,
+  { stopwords = false } = {},
+): string | null {
+  let words = text.split(/\s+/).filter(Boolean)
+  if (stopwords) {
+    // A question's filler ("how do I …") matches nearly every passage and
+    // crowds out the words that carry the meaning; a query of nothing else
+    // keeps its words.
+    const kept = words.filter(
+      (w) => !STOPWORDS.has(w.toLowerCase().replace(/[^a-z]/g, '')),
+    )
+    if (kept.length > 0) words = kept
+  }
   if (words.length === 0) return null
   return words
     .map((w) => `"${w.replaceAll('"', '""')}"${w.length >= 4 ? '*' : ''}`)
     .join(' OR ')
 }
+
+// English filler. In other languages the same letters are mostly filler too.
+const STOPWORDS = new Set(
+  `a an the of to in on at for and or is are was were be been it its this that
+  these those what which who whom how when where why do does did can could
+  should would will with from by as about into than then there their they them
+  you your i we our not no`.split(/\s+/),
+)
 
 /** Runs `fn` in a transaction, rolling back if it throws. */
 export function transaction(db: DatabaseSync, fn: () => void): void {

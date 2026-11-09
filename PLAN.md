@@ -632,7 +632,7 @@ Models differ in dimensions, so a model change means re-embedding.
   text formats (txt, md, code, json, csv, html), ≤ 50 MB.
   `POST /api/projects/:id/files` attaches a file and indexes it in the
   background: extract text (`unpdf`, `mammoth`, Readability for HTML, the rest
-  as is), chunk (~3,200 characters, 15% overlap, at the document's own seams: markdown
+  as is), chunk (~1,600 characters, 15% overlap, at the document's own seams: markdown
   sections, top-level code units, paragraphs, then lines or sentences; see
   `chunking.ts`), add to
   the FTS index and, with an embedding endpoint, embed in batches. Status
@@ -646,8 +646,32 @@ Models differ in dimensions, so a model change means re-embedding.
   mxbai-embed-large in `shared/embedding-prefixes.ts`); the document one is
   part of the vectors' identity (`embedding_model.document_prefix`), so changing
   it embeds the files again and searches by keyword until then.
-- **Neighbouring hits (measured, left alone).** Chunks overlap by 480
-  characters, and in the top 6 of the 87 evaluation questions 28% of results
+- **Chunk size, result count and filler words (measured).** Chunks
+  were 3,200 characters with 6 results. Two sets of questions were scored
+  with the same amount of text per search (about 14,000 characters; the 87
+  hand-written ones, 147 written by a model from chibot's own docs, and 100
+  written from another project's short notes). On long documents the answer
+  was in the results more often the smaller the chunk: with embeddings 71% of
+  the 147 at 3,200 characters and 6 results, 76% at 2,000 and 10, 80% at 1,600
+  and 12, 85% at 1,200 and 15 (keyword only 54%, 60% at 1,600, 65% at 1,200);
+  on short notes it made no difference, and it never lost more than noise.
+  The gain held at overlaps of 5% to 20%. Ranking barely changed (the same
+  MRR): more answers are *in* the results, not first. With a local 12B model
+  answering from the passages and judging against the quote, 100 of the
+  questions went from 69 correct (3,200) to 72 (1,600) and 76 (1,200), a
+  smaller gain than the search shows. So chunks are 1,600 characters (about
+  400 tokens, as the hybrid-retrieval tutorial advises), a search returns 12
+  (the 15-result limit stops 1,200 from being tried further; very small chunks
+  also risk too little to answer from), and `read_project_file` reads 6 parts.
+  Dropping common English filler from the keyword query (`anyWordQuery` with
+  `stopwords`, project search only) found 116 against 104 of the 147 with
+  embeddings, and made no difference on the other two sets. Not worth
+  changing, scored the same way: 10, 50 or 100 candidates per search instead
+  of 30 (only 10 was worse), and stemming (FTS5 `porter`). Chat search
+  (`search_chats`) still uses the unfiltered query: it was not scored. Bumping
+  `CHUNKER_VERSION` to 3 indexes every project file again at the first start.
+- **Neighbouring hits (measured, left alone).** With the 3,200-character chunks of
+  the time, which overlapped by 480 characters, and in the top 6 of the 87 evaluation questions 28% of results
   sit next to another result of the same file (3.5 distinct files of 6).
   Three remedies were scored against the evaluation set, keeping the text sent
   to the model equal: dropping a hit whose neighbour ranks higher lowered
@@ -666,8 +690,8 @@ Models differ in dimensions, so a model change means re-embedding.
   the best 20 passages of the merged lists (at least as many as were asked
   for) and returns them in the new order; on any failure (an error, a timeout
   after 30 s, a malformed answer) it keeps the merged order, so search never
-  depends on it. A stop still ends the call. Passages are about 800 tokens, so
-  a reranker with a 512-token limit sees the start of each. `candidates()`
+  depends on it. A stop still ends the call. Passages are about 400 tokens, so
+  a reranker with a 512-token limit sees them whole. `candidates()`
   stays un-reranked: the evaluations compare it with the full search. Ollama
   has no rerank route, and no reranker was available locally, so its effect on
   the evaluation set is not measured here: `retrieval-docs.test.ts` measures it
@@ -698,11 +722,11 @@ Models differ in dimensions, so a model change means re-embedding.
   path is no further reach than what anyone who can open chibot can do by
   adding an MCP server that runs commands.
 - **`search_project_files`** (`query`, `file`, `limit`), offered only in project chats with
-  files: keyword and vector hits merged by reciprocal rank fusion, the top 6
+  files: keyword and vector hits merged by reciprocal rank fusion, the top 12
   chunks (the model may ask for 1 to 15 with `limit`) as JSON (file name, file
   id, part, text); the description asks the model to cite file names. Project chats' instructions add the project's instructions
   and its file names. `read_project_file` (`file`, `from_part`) reads a file's
-  chunks in order, three at a time, for questions about the whole file; hits
+  chunks in order, six at a time, for questions about the whole file; hits
   carry their `part` of `parts`, `file` limits a search to one file, and
   longer PDFs have `[Page n]` lines. In a project chat `search_chats` is
   limited to the project's chats. Answers show "Searched project files", and Sources lists

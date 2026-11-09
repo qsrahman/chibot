@@ -18,11 +18,13 @@ import {
 } from './retrieval-harness.ts'
 
 // Project search over real documents: a frozen copy of chibot's own docs
-// (tests/fixtures/retrieval-docs, about 100 chunks) with 87 questions whose
+// (tests/fixtures/retrieval-docs, eight files) with 87 questions whose
 // answers are single facts in them, in three sets (the answer's own words,
 // paraphrases, and paraphrases held out), and 20 that no document answers.
 // The small corpus in retrieval.test.ts has 28 chunks, six of them real; this
-// one is for telling a better change from noise. Keyword search needs no
+// one is for telling a better change from noise. A second set of 147 questions
+// was written by a model from the documents, quote and all (see the end of
+// this file). Keyword search needs no
 // endpoint (below); with an embedding endpoint it compares keyword, meaning and
 // the shipped hybrid, with and without the model's task prefixes, and shows how
 // close the best passage is for questions the documents can't answer:
@@ -104,7 +106,7 @@ describe.skipIf(!embeddingUrl)(
         ['hybrid (shipped)', undefined, 'plain'],
       ]
       const lines = [
-        `${''.padEnd(26)}${sets.map(([name]) => name.padEnd(30)).join('')}(first hit / first three / first six  MRR)`,
+        `${''.padEnd(26)}${sets.map(([name]) => name.padEnd(30)).join('')}(first hit / first three / all 12  MRR)`,
       ]
       const rows = async (
         name: string,
@@ -117,7 +119,7 @@ describe.skipIf(!embeddingUrl)(
           for (const [, questions] of sets) {
             const { recall, mrr } = await score(indexes[use]!, questions, merge)
             cells.push(
-              `${pct(recall(1))} /${pct(recall(3))} /${pct(recall(6))}  ${mrr.toFixed(2)}`.padEnd(
+              `${pct(recall(1))} /${pct(recall(3))} /${pct(recall(12))}  ${mrr.toFixed(2)}`.padEnd(
                 30,
               ),
             )
@@ -239,14 +241,14 @@ describe.skipIf(!process.env.RETRIEVAL_RERANK_URL)(
         )
       }
       const lines = [
-        `${''.padEnd(20)}${sets.map(([name]) => name.padEnd(30)).join('')}(first hit / first three / first six  MRR)`,
+        `${''.padEnd(20)}${sets.map(([name]) => name.padEnd(30)).join('')}(first hit / first three / all 12  MRR)`,
       ]
       for (const [label, index] of rows) {
         const cells: string[] = []
         for (const [, questions] of sets) {
           const { recall, mrr } = await score(index, questions)
           cells.push(
-            `${pct(recall(1))} /${pct(recall(3))} /${pct(recall(6))}  ${mrr.toFixed(2)}`.padEnd(
+            `${pct(recall(1))} /${pct(recall(3))} /${pct(recall(12))}  ${mrr.toFixed(2)}`.padEnd(
               30,
             ),
           )
@@ -257,3 +259,102 @@ describe.skipIf(!process.env.RETRIEVAL_RERANK_URL)(
     }, 900_000)
   },
 )
+
+// Questions a model wrote from the documents (scripts/generate-retrieval-questions.ts,
+// gemma4:12b-mlx, seed 11), each with the sentence that answers it, checked to
+// be in the file word for word and nowhere else. They are in the user's own
+// kind of words more than the 87 above are, and there are more of them. The
+// generator read README.txt too, so it is in this corpus.
+interface Generated {
+  file: string
+  question: string
+  evidence: string
+  /** Share of the question's content words that are in the quote: low is a paraphrase. */
+  overlap: number
+}
+const generated = JSON.parse(
+  readFileSync(
+    join(import.meta.dirname, '../../fixtures/retrieval-docs-generated.json'),
+    'utf8',
+  ),
+) as Generated[]
+const generatedQuestions = generated.map(({ file, question, evidence }) => ({
+  ask: question,
+  file,
+  has: evidence,
+}))
+const generatedCorpus: [string, Uint8Array][] = readdirSync(dir)
+  .filter((name) => /\.(md|txt)$/.test(name))
+  .sort()
+  .map((name) => [name, new Uint8Array(readFileSync(join(dir, name)))])
+const flat = (text: string) => text.replace(/\s+/g, ' ').trim()
+
+// The share of them a keyword search puts in its results (all 12 passages).
+const GENERATED_FOUND = 0.6
+
+describe('project search over questions a model wrote (keywords)', () => {
+  it('has quotes that are in their files, once', () => {
+    const texts = new Map(
+      generatedCorpus.map(([name, bytes]) => [
+        name,
+        flat(Buffer.from(bytes).toString()),
+      ]),
+    )
+    const everything = [...texts.values()].join(' | ')
+    expect(generated).toHaveLength(147)
+    for (const { file, evidence } of generated) {
+      expect(texts.get(file)!, evidence).toContain(evidence)
+      expect(everything.split(evidence).length - 1, evidence).toBe(1)
+    }
+  })
+
+  it('finds the answer in its results for most of them', async () => {
+    const keyword = await indexCorpus(generatedCorpus, null)
+    const { recall, mrr, summary } = await score(keyword, generatedQuestions)
+    // (the lists of what was missed are too long to print for this many)
+    console.log(`keyword, questions a model wrote\n${summary.split('\n')[0]}\n`)
+    expect(recall(12)).toBeGreaterThanOrEqual(GENERATED_FOUND)
+    expect(mrr).toBeGreaterThan(0.25)
+  })
+})
+
+describe.skipIf(!embeddingUrl)(
+  'project search over questions a model wrote (meaning)',
+  () => {
+    it('compares keyword and the shipped hybrid, by how much the question repeats the quote', async () => {
+      const embedding = {
+        client: new OpenAI({ baseURL: embeddingUrl, apiKey: 'none' }),
+        model: () => process.env.RETRIEVAL_EMBEDDING_MODEL!,
+      }
+      const buckets: [string, (g: Generated) => boolean][] = [
+        ['all', () => true],
+        ['paraphrases (overlap < 0.3)', (g) => g.overlap < 0.3],
+        [
+          'some of its words (0.3 to 0.6)',
+          (g) => g.overlap >= 0.3 && g.overlap < 0.6,
+        ],
+        ['most of its words (0.6 and up)', (g) => g.overlap >= 0.6],
+      ]
+      const lines = ['found in the 12 results / first hit / MRR']
+      for (const [label, index] of [
+        ['keyword', await indexCorpus(generatedCorpus, null)],
+        ['hybrid', await indexCorpus(generatedCorpus, embedding)],
+      ] as const) {
+        for (const [bucket, keep] of buckets) {
+          const questions = generatedQuestions.filter((_, i) =>
+            keep(generated[i]!),
+          )
+          const { recall, mrr } = await score(index, questions)
+          lines.push(
+            `${label.padEnd(8)}${bucket.padEnd(34)}${pct(recall(12))} /${pct(recall(1))} / ${mrr.toFixed(2)}  (${questions.length} questions)`,
+          )
+        }
+      }
+      console.log(`\n${lines.join('\n')}\n`)
+    }, 600_000)
+  },
+)
+
+function pct(n: number) {
+  return `${(n * 100).toFixed(0)}%`.padStart(4)
+}

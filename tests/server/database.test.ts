@@ -4,7 +4,11 @@ import { existsSync, mkdtempSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { MIGRATIONS, openDatabase } from '../../src/server/database.ts'
+import {
+  anyWordQuery,
+  MIGRATIONS,
+  openDatabase,
+} from '../../src/server/database.ts'
 
 describe('openDatabase', () => {
   it('loads sqlite-vec for nearest-neighbour search', () => {
@@ -209,5 +213,23 @@ describe('openDatabase', () => {
       })
       copy.close()
     })
+  })
+})
+
+describe('anyWordQuery', () => {
+  it('matches any word, the longer ones also as prefixes', () => {
+    expect(anyWordQuery('how do I add a tool')).toBe(
+      '"how" OR "do" OR "I" OR "add" OR "a" OR "tool"*',
+    )
+    expect(anyWordQuery('   ')).toBeNull()
+  })
+
+  it('can leave common English filler out, unless that is all there is', () => {
+    const lean = { stopwords: true }
+    expect(anyWordQuery('How do I add a tool?', lean)).toBe('"add" OR "tool?"*')
+    expect(anyWordQuery('What are the Straße rules', lean)).toBe(
+      '"Straße"* OR "rules"*',
+    )
+    expect(anyWordQuery('what is the', lean)).toBe('"what"* OR "is" OR "the"')
   })
 })

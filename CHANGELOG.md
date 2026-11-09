@@ -4,6 +4,15 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- 147 questions for the project-search evaluation that a model wrote from the documents, each with the sentence that answers it, checked to be in the file word for word, and `scripts/generate-retrieval-questions.ts` to make such a set for other documents (TESTING.md).
+
+### Changed
+
+- **Project search finds the answer more often.** Files are cut into chunks of about 1,600 characters (were 3,200), a search returns 12 passages (were 6) and `read_project_file` reads 6 parts at a time (were 3), so the model gets about the same amount of text from more places. On 147 questions a model wrote from chibot's own documents, the answer was in the results for 82% (was 71%) with embeddings and 63% (was 54%) by keywords alone. On short notes it made no difference. Files are indexed again at the first start, which means more chunks to embed.
+- **The keyword search leaves out English filler** ("how do I…", "what is the…") so the words that carry the question count more: 116 against 104 of those 147 with embeddings. Searching past chats is unchanged.
+
 ## [0.15.0] - 2026-11-09
 
 ### Added
