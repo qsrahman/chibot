@@ -4,13 +4,21 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
-## [0.14.0] - 2026-11-09
-
 ### Added
 
 - **Skills.** Folders with a `SKILL.md` in the [Agent Skills](https://agentskills.io/specification) format, added to the `skills` folder beside `config.json`, are offered to the model by name and description; when a request matches one, the model reads it (and the reference files it names) with a new **Use skills** tool. Settings → Tools lists them, and says why a folder was left out. A skill found elsewhere can be used with a link. chibot cannot run a skill's scripts. Adds the `yaml` package to read the header.
 - The project-search evaluation (TESTING.md) also reports the mean reciprocal rank (MRR), which rewards the answer coming earlier in the results; it showed that merging or dropping neighbouring passages doesn't help search, so it was left as it is.
 - **A mirrored folder is followed while chibot runs.** When something in the folder changes, the project's files are brought up to date a moment after it settles, indexing only what changed; at startup chibot also catches up with what changed while it was off. An open project page shows the changes within a few seconds. Where watching isn't possible (some network drives), opening the page and **Sync now** still work.
+
+### Changed
+
+- **Switching chibot's own tools on and off is saved in `config.json`**, as a top-level `disabledTools` list, like the MCP servers' switches (the memory switch too). A hand edit applies at once; a list an older version kept in chibot's settings applies until the file has its own.
+- Changing the reranking, embedding or transcription model no longer reloads the tool list; only the image model does, since the image tools need it.
+
+## [0.14.0] - 2026-11-09
+
+### Added
+
 - **Reranking for project search** (optional): with a server that has a `/rerank` route (llama.cpp's `llama-server`, vLLM, Jina, Cohere), set `rerank.baseURL` and `rerank.model` (**Settings → Other models → Project search** can change or empty the model). Search then has the reranking model read the 20 best passages next to the question and puts the one that answers it first. If the server fails, search keeps its own order. Its effect on the evaluation set is measured with `RETRIEVAL_RERANK_URL` (TESTING.md); Ollama has no such route.
 - **Text before a question and before each file part** (Settings → Other models) for embedding models trained to expect an instruction (nomic-embed-text, embeddinggemma, e5, mxbai-embed-large): **Use what <model> expects** fills them in. On the project-search evaluation they raised the right passage's rank slightly (by a question or two out of about twenty, within the noise of a small test set). Changing the file one embeds the files again.
 - **Mirror a folder** in a project: give the path of a folder on this machine and the project's files follow it. New and changed files are indexed, deleted ones removed, and unchanged ones are left alone. It updates when the project page opens and on **Sync now**; files added by hand stay, and **Stop mirroring** keeps the files.
@@ -18,8 +26,6 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
-- **Switching chibot's own tools on and off is saved in `config.json`**, as a top-level `disabledTools` list, like the MCP servers' switches (the memory switch too). A hand edit applies at once; a list an older version kept in chibot's settings applies until the file has its own.
-- Changing the reranking, embedding or transcription model no longer reloads the tool list; only the image model does, since the image tools need it.
 - **A copy of the database is kept before an upgrade changes it**: `chibot.db.before-upgrade` beside `chibot.db` (private to you, replaced by the next upgrade's), and startup says where it is.
 - **Chats open faster as history grows.** The database gained an index on a chat's items (opening a chat took 25 ms at 200,000 items, now 0.08 ms) and one for project files, and runs in WAL mode, which makes the many small writes of a streaming answer about three times cheaper. Existing databases get the indexes on the next start; `chibot.db-wal` and `-shm` files now appear beside `chibot.db` while chibot runs.
 - **Reasoning effort has one list of levels**, in the composer and in Settings → Model: Auto, then Minimal to Max, each with a hint. The composer's Fast and Thinking modes (low and high under other names) and the model menu's Reasoning effort sub-menu, and the effort shown after the model name, are gone. **None** is no longer offered (a saved `none` still works and shows until you change it).
