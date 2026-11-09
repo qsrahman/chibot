@@ -16,6 +16,7 @@ import type { ConversationStore } from '../conversations/index.ts'
 import type { FileStore } from '../file-store.ts'
 import type { InstructionWriter } from './instruction-writer.ts'
 import type { ProjectIndex } from './project-index.ts'
+import type { FolderWatcher } from './folder-watcher.ts'
 import type { ProjectSync } from './project-sync.ts'
 import type { ProjectStore } from './project-store.ts'
 import { explainApiError } from '../api-errors.ts'
@@ -28,6 +29,7 @@ export function projectRoutes({
   projects,
   index,
   sync,
+  watcher,
   instructionWriter,
   attachments,
 }: {
@@ -36,6 +38,7 @@ export function projectRoutes({
   projects: ProjectStore
   index: ProjectIndex
   sync: ProjectSync
+  watcher: FolderWatcher
   instructionWriter: InstructionWriter
   attachments: Attachments
 }) {
@@ -123,7 +126,9 @@ export function projectRoutes({
     const before = projects.get(id)!.folder
     projects.setFolder(id, folder)
     try {
-      return c.json(sync.sync(id))
+      const result = sync.sync(id)
+      watcher.update(id)
+      return c.json(result)
     } catch (err) {
       projects.setFolder(id, before)
       return c.json(
@@ -134,11 +139,12 @@ export function projectRoutes({
   })
 
   // Stops mirroring; the files stay in the project as they are.
-  app.delete('/api/projects/:id/folder', (c) =>
-    projects.setFolder(c.req.param('id'), null)
-      ? c.body(null, 204)
-      : notFound(c, 'Project'),
-  )
+  app.delete('/api/projects/:id/folder', (c) => {
+    const id = c.req.param('id')
+    if (!projects.setFolder(id, null)) return notFound(c, 'Project')
+    watcher.update(id)
+    return c.body(null, 204)
+  })
 
   // Brings the project's files up to date with its folder.
   app.post('/api/projects/:id/sync', (c) => {
@@ -146,7 +152,10 @@ export function projectRoutes({
     if (!project) return notFound(c, 'Project')
     if (!project.folder) return c.json({ error: 'No folder is linked' }, 409)
     try {
-      return c.json(sync.sync(project.id))
+      const result = sync.sync(project.id)
+      // Starts watching again if it had stopped (a drive that came back).
+      watcher.update(project.id)
+      return c.json(result)
     } catch (err) {
       return c.json({ error: (err as Error).message }, 409)
     }
@@ -195,6 +204,7 @@ export function projectRoutes({
       .projectConversationIds(id)
       .forEach((chat) => store.deleteConversation(chat))
     projects.delete(id)
+    watcher.update(id)
     attachments.deleteOrphans()
     return c.body(null, 204)
   })

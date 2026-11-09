@@ -649,7 +649,19 @@ Models differ in dimensions, so a model change means re-embedding.
   skipped (`shared/folder-files.ts`, also used by the web's folder picker).
   It syncs when the link is made, when the project page opens and on **Sync
   now** (`POST /api/projects/:id/sync`); `DELETE …/folder` stops mirroring and
-  keeps the files. There is no watcher: the scan only stats files. Reading a
+  keeps the files. `FolderWatcher` follows the folder while chibot runs: it
+  watches each mirrored project's folder with `fs.watch` (recursive; events in
+  `node_modules` and the like are ignored), and once the folder has been quiet
+  for 1.5 s runs the project's sync, which only stats files (5 ms for a
+  thousand) and reads what changed. It learns only that something changed,
+  never which file. At startup it syncs each mirrored project to catch up
+  with what changed while chibot was off, then watches; link, unlink, sync and
+  project deletion call `update(projectId)` to make the watching match. A
+  watcher that fails (a vanished folder, no inotify watches left, a network
+  drive that sends no events) is dropped with a log line, and the other
+  triggers keep working. Watchers are `unref`'d so they never hold chibot open.
+  The project page asks for the project every 5 s while it is visible and
+  has a folder, so the file list follows. Reading a
   path is no further reach than what anyone who can open chibot can do by
   adding an MCP server that runs commands.
 - **`search_project_files`** (`query`, `file`, `limit`), offered only in project chats with
@@ -1136,7 +1148,8 @@ Environment variables:
   addresses, size and redirect limits, page text extracted as for `.html`
   files), a place for the address and its last fetch (like
   `project_files.source_mtime`, with `ETag` or a content hash), and a decision
-  on how often to refetch, since there is no watcher. Pasted text is already
+  on how often to refetch (a page can't be watched, so on opening the project
+  when stale, and a button). Pasted text is already
   covered by notes.
 - **Not planned yet** (from comparing Chatbox and nanobot): saved prompts
   inserted with `/`, a conversation minimap, and chats side by side. Not

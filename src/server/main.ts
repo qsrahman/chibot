@@ -37,7 +37,12 @@ import {
 } from './mcp/index.ts'
 import { McpServerFile, McpServers } from './mcp/index.ts'
 import { MemoryStore } from './memory-store.ts'
-import { ProjectIndex, ProjectSync, Reranker } from './projects/index.ts'
+import {
+  FolderWatcher,
+  ProjectIndex,
+  ProjectSync,
+  Reranker,
+} from './projects/index.ts'
 import { ProjectStore } from './projects/index.ts'
 import { settingsDefaults, SettingsStore } from './settings-store.ts'
 import type { Tool } from './tool.ts'
@@ -197,6 +202,11 @@ export function start({
       : null,
   )
   void index.resume()
+  const sync = new ProjectSync(projects, files, index)
+  // Mirrored folders: catch up with what changed while chibot was off, then
+  // follow the changes.
+  const watcher = new FolderWatcher(projects, sync)
+  watcher.startAll()
   // Temporary chats whose tab closed before it could delete them.
   store.deleteTemporaryConversations()
   const client = new OpenAI({
@@ -244,7 +254,8 @@ export function start({
     memories,
     projects,
     index,
-    sync: new ProjectSync(projects, files, index),
+    sync,
+    watcher,
     instructionWriter: new InstructionWriter(client, settings, projects, index),
     attachments,
     mcp,

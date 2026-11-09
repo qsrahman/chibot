@@ -9,7 +9,7 @@ import {
 } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openDatabase } from '../../../src/server/database.ts'
 import type { FileStore } from '../../../src/server/file-store.ts'
 import {
@@ -28,6 +28,7 @@ describe('a project that mirrors a folder', () => {
   let sync: ProjectSync
   let project: Project
   let app: ReturnType<typeof testApp>
+  const update = vi.fn()
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), 'chibot-folder-'))
     const db = openDatabase(':memory:')
@@ -36,7 +37,14 @@ describe('a project that mirrors a folder', () => {
     index = new ProjectIndex(db, projects, files, null)
     sync = new ProjectSync(projects, files, index)
     project = projects.create('Docs')
-    app = testApp({ files, projects, index, sync })
+    update.mockClear()
+    app = testApp({
+      files,
+      projects,
+      index,
+      sync,
+      watcher: { update } as never,
+    })
   })
   afterEach(() => rmSync(dir, { recursive: true, force: true }))
 
@@ -172,9 +180,13 @@ describe('a project that mirrors a folder', () => {
     })
     expect(linked).toMatchObject({ status: 200, body: { added: 1 } })
     expect(projects.get(project.id)!.folder).toBe(dir)
+    // Each change of the link or a sync tells the watcher.
+    expect(update).toHaveBeenLastCalledWith(project.id)
+    expect(update).toHaveBeenCalledTimes(1)
 
     put('b.md', 'bravo')
     expect((await call<FolderSync>('POST', `${base}/sync`)).body.added).toBe(1)
+    expect(update).toHaveBeenCalledTimes(2)
 
     // Relative paths are ambiguous, and the path must be a folder.
     expect(
@@ -190,9 +202,21 @@ describe('a project that mirrors a folder', () => {
       await call('PUT', '/api/projects/nope/folder', { path: dir }),
     ).toMatchObject({ status: 404 })
 
+    // Refused links don't reach it.
+    expect(update).toHaveBeenCalledTimes(2)
+
     expect((await call('DELETE', `${base}/folder`)).status).toBe(204)
     expect(projects.get(project.id)!.folder).toBeNull()
+    expect(update).toHaveBeenCalledTimes(3)
     expect((await call('DELETE', '/api/projects/nope/folder')).status).toBe(404)
+  })
+
+  it('tells the watcher when the project goes', async () => {
+    const res = await app.request(`/api/projects/${project.id}`, {
+      method: 'DELETE',
+    })
+    expect(res.status).toBe(204)
+    expect(update).toHaveBeenCalledWith(project.id)
   })
 
   it('reads ~ as the home folder', async () => {

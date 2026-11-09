@@ -18,7 +18,11 @@ import { openDatabase } from '../../src/server/database.ts'
 import { FileStore } from '../../src/server/file-store.ts'
 import { InstructionWriter } from '../../src/server/projects/index.ts'
 import { MemoryStore } from '../../src/server/memory-store.ts'
-import { ProjectIndex, ProjectSync } from '../../src/server/projects/index.ts'
+import {
+  FolderWatcher,
+  ProjectIndex,
+  ProjectSync,
+} from '../../src/server/projects/index.ts'
 import { McpServerFile, McpServers } from '../../src/server/mcp/index.ts'
 import { ProjectStore } from '../../src/server/projects/index.ts'
 import {
@@ -318,6 +322,9 @@ export function callEvents(
   ] as unknown as ResponseStreamEvent[]
 }
 
+/** A watcher that never sees a change, so a test app touches no real folders. */
+const noWatcher = { close: () => {}, on: () => noWatcher } as never
+
 /**
  * The app on one in-memory database, with fakes for whatever `deps` leaves
  * out (an OpenAI key config, a chat service whose client streams nothing).
@@ -329,6 +336,7 @@ export function testApp(deps: Partial<AppDeps> = {}) {
   const files = deps.files ?? testFiles(db)
   const projects = deps.projects ?? new ProjectStore(db, files)
   const index = new ProjectIndex(db, projects, files, null)
+  const sync = new ProjectSync(projects, files, index)
   const { chat, compactor, titles, model } = chatServices(
     fakeClient([]),
     store,
@@ -344,7 +352,8 @@ export function testApp(deps: Partial<AppDeps> = {}) {
     registry: new ToolRegistry([]),
     memories: new MemoryStore(db),
     index,
-    sync: new ProjectSync(projects, files, index),
+    sync,
+    watcher: new FolderWatcher(projects, sync, { watch: () => noWatcher }),
     instructionWriter: new InstructionWriter(
       fakeClient([]),
       settings,

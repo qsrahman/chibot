@@ -21,6 +21,9 @@ import { ProjectChats } from './ProjectChats.tsx'
 import { ProjectFiles } from './ProjectFiles.tsx'
 import { ProjectInstructions } from './ProjectInstructions.tsx'
 
+// How often the page of a project with a mirrored folder looks for changes.
+const FOLDER_POLL_MS = 5000
+
 /**
  * Below the composer on the project page: files, instructions and chats.
  * `onChatsChanged`: a chat left the project (so the sidebar should reload).
@@ -64,6 +67,16 @@ export function ProjectDetails({
       (err: Error) => setNotice(err.message),
     )
   }, [projectId, folder, reload])
+
+  // The server follows a mirrored folder as it changes; the page asks now and
+  // then, only while it is on screen.
+  useEffect(() => {
+    if (!folder) return
+    const timer = setInterval(() => {
+      if (document.visibilityState === 'visible') void reload()
+    }, FOLDER_POLL_MS)
+    return () => clearInterval(timer)
+  }, [folder, reload])
 
   if (!contents) {
     return error ? (

@@ -329,3 +329,26 @@ test('mirrors a folder: brings its files in, then follows changes', async ({
     rmSync(folder, { recursive: true, force: true })
   }
 })
+
+test('follows a mirrored folder as it changes, without Sync now', async ({
+  page,
+}) => {
+  const folder = mkdtempSync(join(tmpdir(), 'chibot-follow-'))
+  try {
+    writeFileSync(join(folder, 'first.md'), 'The first note.')
+    await newProject(page, 'Follow')
+    const files = page.getByRole('region', { name: 'Project files' })
+    await files.getByRole('button', { name: 'Mirror a folder' }).click()
+    await page.getByRole('textbox', { name: 'Folder path' }).fill(folder)
+    await page.getByRole('button', { name: 'Mirror folder' }).click()
+    await expect(files.getByText('first.md')).toBeVisible()
+
+    // The server watches the folder and the page looks now and then.
+    writeFileSync(join(folder, 'second.md'), 'Written while the page was open.')
+    rmSync(join(folder, 'first.md'))
+    await expect(files.getByText('second.md')).toBeVisible({ timeout: 20_000 })
+    await expect(files.getByText('first.md')).toBeHidden()
+  } finally {
+    rmSync(folder, { recursive: true, force: true })
+  }
+})

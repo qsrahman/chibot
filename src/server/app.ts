@@ -22,7 +22,11 @@ import {
   type McpServers,
 } from './mcp/index.ts'
 import { type MemoryStore } from './memory-store.ts'
-import type { ProjectIndex, ProjectSync } from './projects/index.ts'
+import type {
+  FolderWatcher,
+  ProjectIndex,
+  ProjectSync,
+} from './projects/index.ts'
 import type { ProjectStore } from './projects/index.ts'
 import type { SettingsStore } from './settings-store.ts'
 import type { Transcription } from './transcription.ts'
@@ -50,6 +54,7 @@ export interface AppDeps {
   projects: ProjectStore
   index: ProjectIndex
   sync: ProjectSync
+  watcher: FolderWatcher
   instructionWriter: InstructionWriter
   attachments: Attachments
   mcp: McpServers

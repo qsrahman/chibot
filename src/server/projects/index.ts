@@ -1,6 +1,7 @@
 // Projects: chats and files that share instructions, with search over the
 // files. Code outside this folder imports from here only; the rest is internal.
 export { InstructionWriter } from './instruction-writer.ts'
+export { FolderWatcher } from './folder-watcher.ts'
 export { ProjectIndex } from './project-index.ts'
 export { ProjectSync } from './project-sync.ts'
 export { Reranker } from './reranker.ts'
