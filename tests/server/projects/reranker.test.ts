@@ -59,6 +59,11 @@ describe('Reranker', () => {
     const fetch = vi.spyOn(globalThis, 'fetch')
     fetch.mockImplementationOnce(() => reply({ error: 'no model' }, 404))
     expect(await make().rank('q', ['a'])).toBeNull()
+    // One line saying what happened, not a stack trace.
+    expect(console.error).toHaveBeenCalledOnce()
+    expect(console.error).toHaveBeenCalledWith(
+      expect.stringMatching(/^Reranking failed: 404 /),
+    )
     fetch.mockImplementationOnce(() => reply({ nothing: true }))
     expect(await make().rank('q', ['a'])).toBeNull()
     fetch.mockImplementationOnce(() => Promise.reject(new Error('refused')))

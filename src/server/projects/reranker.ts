@@ -76,7 +76,9 @@ export class Reranker {
     } catch (err) {
       // A stop ends the call; any other failure keeps the order search gave.
       if (signal?.aborted) throw err
-      console.error('Reranking failed:', err)
+      // One line: a server without a /rerank route would otherwise print a
+      // stack trace for every search.
+      console.error(`Reranking failed: ${(err as Error).message}`)
       return null
     }
   }
