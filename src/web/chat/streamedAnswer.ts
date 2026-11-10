@@ -169,6 +169,7 @@ export const turnSoFar = (
           thinking,
           tools,
           usage: null,
+          lastUsage: null,
           model: null,
           versions: null,
           incomplete,

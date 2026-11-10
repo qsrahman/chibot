@@ -48,7 +48,13 @@ export interface Answer {
   /** The model's reasoning summary, `''` if it gave none. */
   thinking: string
   tools: ToolActivity[]
+  /** Tokens used by all of the answer's responses (a tool call makes another). */
   usage: ResponseUsage | null
+  /**
+   * What its last response used. Each response sends the whole context, so
+   * this, not the sum, is the context's size.
+   */
+  lastUsage: ResponseUsage | null
   /** The model that wrote it, if known. */
   model: string | null
   /** Regenerations of this answer, or `null` if there are none. */
@@ -71,7 +77,7 @@ export interface Turn {
  * Groups a path into turns: each user message, then the output items that
  * answer it (reasoning, tool calls, messages, …) as one answer. Only message
  * text, thoughts and tool activity are shown. The answer's usage is the sum
- * of its responses', and its model the last one named.
+ * of its responses' (`lastUsage`: the last one's), and its model the last one named.
  */
 export function toTurns(
   items: StoredItem[],
@@ -113,6 +119,7 @@ export function toTurns(
       thinking: '',
       tools: [],
       usage: null,
+      lastUsage: null,
       model: null,
       versions: versionsOf(item),
       incomplete: false,
@@ -143,7 +150,10 @@ export function toTurns(
         turn.answer.thinking = join(turn.answer.thinking, part.text)
       }
     }
-    if (item.usage) turn.answer.usage = addUsage(turn.answer.usage, item.usage)
+    if (item.usage) {
+      turn.answer.usage = addUsage(turn.answer.usage, item.usage)
+      turn.answer.lastUsage = item.usage
+    }
     if (item.model) turn.answer.model = item.model
   }
   return turns

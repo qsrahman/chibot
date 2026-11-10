@@ -28,6 +28,38 @@ const item = (
 })
 
 describe('toTurns', () => {
+  it('keeps the usage of the last response apart from the sum, as the context size', () => {
+    const first = { ...usage, input_tokens: 40_000, total_tokens: 40_003 }
+    const last = { ...usage, input_tokens: 57_000, total_tokens: 57_003 }
+    const [turn] = toTurns([
+      item(1, { role: 'user', content: 'Hi' }),
+      item(
+        2,
+        {
+          type: 'function_call',
+          call_id: 'c',
+          name: 'search',
+          arguments: '{}',
+        },
+        { usage: first },
+      ),
+      item(3, { type: 'function_call_output', call_id: 'c', output: 'x' }),
+      item(
+        4,
+        {
+          type: 'message',
+          role: 'assistant',
+          status: 'completed',
+          id: 'm',
+          content: [{ type: 'output_text', text: 'Done', annotations: [] }],
+        },
+        { usage: last },
+      ),
+    ])
+    expect(turn!.answer!.usage!.input_tokens).toBe(97_000)
+    expect(turn!.answer!.lastUsage).toEqual(last)
+  })
+
   it('knows an answer that stopped early, from the model’s limit or the user’s Stop', () => {
     const answerOf = (data: unknown) =>
       toTurns([item(1, { role: 'user', content: 'Hi' }), item(2, data)])[0]!
@@ -105,6 +137,7 @@ describe('toTurns', () => {
           thinking: '**Plan**\n\nSay hello.',
           tools: [],
           usage,
+          lastUsage: usage,
           model: 'm-1',
           versions: null,
           incomplete: false,
@@ -238,6 +271,7 @@ describe('sourcesOf and imagesOf', () => {
       text: '',
       thinking: '',
       usage: null,
+      lastUsage: null,
       model: null,
       versions: null,
       incomplete: false,
@@ -272,6 +306,7 @@ describe('sourcesOf and imagesOf', () => {
       text: '',
       thinking: '',
       usage: null,
+      lastUsage: null,
       model: null,
       versions: null,
       incomplete: false,
@@ -418,6 +453,7 @@ describe('sourcesOf with past chats', () => {
         text: '',
         thinking: '',
         usage: null,
+        lastUsage: null,
         model: null,
         versions: null,
         incomplete: false,
@@ -442,6 +478,7 @@ describe('sourcesOf with project files', () => {
         text: '',
         thinking: '',
         usage: null,
+        lastUsage: null,
         model: null,
         versions: null,
         incomplete: false,
@@ -463,6 +500,7 @@ describe('sourcesOf with project files', () => {
       text: '',
       thinking: '',
       usage: null,
+      lastUsage: null,
       model: null,
       versions: null,
       incomplete: false,
@@ -501,6 +539,7 @@ describe('sourcesOf with project files', () => {
         text: '',
         thinking: '',
         usage: null,
+        lastUsage: null,
         model: null,
         versions: null,
         incomplete: false,

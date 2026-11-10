@@ -73,7 +73,7 @@ export function TurnView({
   const sources = answer ? sourcesOf(answer) : []
   const answerUsage = describeUsage(answer?.usage)
   const contextUsage = describeContext(
-    answer?.usage,
+    answer?.lastUsage,
     context.window,
     context.trigger,
   )

@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- The context meter under an answer that used tools showed the input of all its responses added together (115K for a 57K context), because each tool call sends the whole context again. It now shows the last response's input, which is what the next request starts from.
+
 ### Changed
 
 - Skills in Settings → Tools: a switch for each skill, its whole description when opened (one line otherwise), a count in the title, buttons to copy the skills folder's path and to refresh, and a note when skills are left out (more than 50 on, or 100 folders). The model's list of skills gives each description a share of a fixed budget, so many skills cost less per skill (400 characters each for a few, down to 120).
