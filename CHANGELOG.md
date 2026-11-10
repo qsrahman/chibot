@@ -15,6 +15,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Fixed
 
+- **The page loads about 90 kB less JavaScript (17% of the main script, 26 kB gzipped).** Settings' list of MCP server presets was imported from a file that also holds zod, so all of zod was in the browser bundle. The presets now have a file of their own, and a test builds the page and fails if zod gets back in or a script passes 500 kB, which also ends the "chunks are larger than 500 kB" warning on `pnpm build`.
 - **Sync now (and the folder watcher) no longer fail for the whole folder over one file that can't be read.** A file with no read permission, or one that vanished mid-sync, stopped the sync with a raw error at the top of the page, kept every file after it (by name) from being synced, and made the watcher stop watching. Now the file is skipped and named, and the rest comes in; files below a folder that won't open stay in the project, not taken for deleted.
 - **Sync now says what it left out and why**, next to the button: files of a type projects can't read, over 50 MB, over the limit of 1,000 files, a name taken by a file you added, or no access. Before, it said "The folder has not changed" while files were being passed over without a word. A failed sync is shown there too.
 - **The 1,000-file limit of a mirrored folder only keeps new files out.** A file that sorted before the ones already in could push a later one past the limit and have it removed from the project as if deleted.

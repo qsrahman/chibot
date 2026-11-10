@@ -1206,8 +1206,14 @@ Environment variables:
   types smoothly (about 1.2 s at 6× slower CPU), so there is no windowing or
   paging of old turns (numbers in TESTING.md). Revisit past a couple of
   thousand turns.
-- **Bundle size:** the web bundle is ~960 kB (highlight.js grammars, KaTeX).
-  That's acceptable for a local app; code-split if it starts to matter.
+- **Bundle size:** the page's main script is 416 kB (129 kB gzipped: React and
+  its router, the app, icons); the Markdown renderer (341 kB, with highlight.js)
+  and KaTeX (265 kB) load only when an answer is shown or has math. That is
+  fine for a local app. It was 504 kB until `MCP_PRESETS` moved out of
+  `shared/mcp.ts`: a value imported from a file that imports zod had put all of
+  zod in the page. `tests/web/bundle.test.ts` builds the page in memory and fails
+  if a chunk holds zod or passes 500 kB (what Vite warns about), so neither
+  returns quietly.
 - **Future tools:** a code runner comes with Phase 11. Deliberately out:
   shell/filesystem tools (too costly when mis-approved on an unauthenticated
   server) and narrow APIs like weather, which a web search MCP server plus a

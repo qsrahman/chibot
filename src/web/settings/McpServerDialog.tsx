@@ -1,10 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Plus, X } from 'lucide-react'
-import {
-  MCP_PRESETS,
-  type McpPreset,
-  type McpServerConfig,
-} from '../../shared/mcp.ts'
+import type { McpServerConfig } from '../../shared/mcp.ts'
+import { MCP_PRESETS, type McpPreset } from '../../shared/mcp-presets.ts'
 import { Dialog } from '../ui/Dialog.tsx'
 
 type Pair = { key: string; value: string }

@@ -137,7 +137,7 @@ transpiles it.
 - **Validation** uses zod schemas in `src/shared` (`requests.ts`, `settings.ts`),
   applied to routes with `json(schema)` (`@hono/zod-validator`). Shared types
   are inferred from them; the web imports them as types only, which keeps zod
-  out of the browser bundle.
+  out of the browser bundle (`tests/web/bundle.test.ts` builds the page and fails if it is back, so what the web needs at run time, such as the MCP presets, lives in files that don't import zod).
 - **Use the SDK's types.** Persisted items are `ResponseInputItem`. Streamed
   events are `ResponseStreamEvent`. The web imports them with
   `import type … from 'openai/resources/responses/responses'`. Never write
