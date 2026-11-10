@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- Several controls in a Settings row (the MCP server buttons) sit together at the right with even gaps, instead of spreading across the row.
 - Toasts stand above the message box however tall it grows, and the Settings dialog keeps one height on every tab.
 - Sync now, Stop mirroring, Use this folder, Undo and Summarize are icon buttons with tooltips, as the other row actions are.
 

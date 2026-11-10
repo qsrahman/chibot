@@ -58,8 +58,7 @@
 .settings-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 8px;
   min-height: 52px;
   padding: 8px 16px;
 }
@@ -84,8 +83,12 @@
   font-weight: 500;
 }
 
+/* Takes the room the controls leave, so several controls sit together at the
+   right, not spread across the row. */
 .settings-label {
+  flex: 1;
   min-width: 0;
+  margin-right: 8px;
 }
 
 .settings-label p {
