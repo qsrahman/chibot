@@ -119,7 +119,16 @@ test('a toast stays above the message box as it grows', async ({ page }) => {
   await chatTitled(page, 'Toast other')
   await page.goto('/')
   await appReady(page)
+  // Wait for the chat to open: a message sent while it is still loading is
+  // dropped when the chat's (empty) history arrives.
+  const loaded = page.waitForResponse(
+    (r) =>
+      /\/api\/conversations\/[\w-]+$/.test(r.url()) &&
+      r.request().method() === 'GET',
+  )
   await row(page, 'Toast over box').click()
+  await loaded
+  await expect(page).toHaveURL(/\/c\//)
   // The box sits at the bottom once the chat has a message.
   await send(page, 'Hello')
   await answered(page)
