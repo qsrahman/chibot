@@ -138,6 +138,22 @@ chip would leave the box a few pixels wide.
 `ChevronDown`; `--surface-muted` on hover. It opens a menu above it and sits
 left of the mic.
 
+**Project files.** A project's files whose names have folders are a tree
+inside the files card: a folder is a 40 px row (a chevron that turns when open,
+an 18 px `Folder` icon, its name, and at the right its file count in
+`--fg-muted` 12 px, with "· n failed" in `--danger` and "· n indexing"),
+closed to begin with; what is inside is indented 22 px, with the same rows as a
+plain list (file icon, name, status, retry, remove). **Expand all** / **Collapse
+all** is a muted text button above the list, at its right. A long status is cut
+with an ellipsis, never wider than the card.
+
+**Folder browser.** In the Mirror a folder dialog, **Browse** (a button beside
+the path box) opens it below: a bar with Up and Home icon buttons and the
+current path (wrapping, never wider than the dialog), a list of the folders
+there (36 px rows, `--surface-muted` on hover, scrolling past 240 px), a muted
+line naming the readable files in it, and a primary **Use this folder** at the
+right, which fills the path box and closes it.
+
 **Queued message.** A row above the text, like attachments: a 15 px muted
 `Clock`, the label **Queued** (500 weight), the text in `--fg` on one
 ellipsized line, then 24 px muted **Edit** (`Pencil`) and **Cancel** (`X`)

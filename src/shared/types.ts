@@ -118,6 +118,20 @@ export interface SkillsResponse {
   problems: SkillProblem[]
 }
 
+/** `GET /api/folders?path=`: a folder on the machine chibot runs on, to choose one to mirror. */
+export interface FolderListing {
+  path: string
+  /** The folder above it, or `null` at the top. */
+  parent: string | null
+  home: string
+  /** Its subfolders, hidden ones left out. */
+  folders: { name: string; path: string }[]
+  /** The files in it that a project can read, by name. */
+  files: string[]
+  /** Folders and files left out of the lists above, for being too many. */
+  more: number
+}
+
 /** What syncing a project with its folder changed. */
 export interface FolderSync {
   added: number

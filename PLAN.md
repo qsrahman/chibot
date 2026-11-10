@@ -696,6 +696,20 @@ Models differ in dimensions, so a model change means re-embedding.
   has no rerank route, and no reranker was available locally, so its effect on
   the evaluation set is not measured here: `retrieval-docs.test.ts` measures it
   when `RETRIEVAL_RERANK_URL` is set.
+- **Choosing the folder to mirror and listing a project's files.** A browser's
+  folder picker hides where a folder is, and the mirror reads a path on the
+  machine chibot runs on, so the dialog's **Browse** walks that machine's folders:
+  `GET /api/folders?path=` (the home folder when empty; `~` allowed) returns the
+  folder, the one above it (`null` at the top), its subfolders and the files a
+  project can read (hidden ones left out, at most 500 folders and 100 files, with
+  how many more), as full paths so the page does no path arithmetic (the
+  server may be on Windows). Reading a path is no further reach than mirroring
+  one. The files of a project whose names have folders (a folder added or
+  mirrored) are listed as a tree (`web/projects/fileTree.ts`, `<details>`
+  folders, closed to begin with, each saying how many files it holds and how
+  many failed or are indexing; a folder holding only one folder is joined with
+  it, `src/server`; what was opened stays open while the list is refreshed). A
+  list without folders is the plain list it was.
 - **A folder a project mirrors** (`projects.folder`, `project_files.source_mtime`):
   `PUT /api/projects/:id/folder` takes a full path (`~` allowed) on the machine
   chibot runs on; `ProjectSync` makes the project's files match it, naming each

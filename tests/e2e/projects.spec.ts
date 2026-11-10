@@ -221,10 +221,21 @@ test('adds a folder, keeping paths and skipping what projects cannot use', async
     await files
       .getByLabel('Add folder (file input)')
       .setInputFiles(join(dir, 'app'))
-    await expect(files.getByText('app/docs/readme.md')).toBeVisible()
-    await expect(files.getByText('app/src/main.ts')).toBeVisible()
+    // Folders, closed to begin with, say how many files they hold.
+    const app = files.locator('details', { hasText: 'app' }).first()
+    await expect(app.getByText('2 files').first()).toBeVisible()
+    await expect(files.getByText('readme.md')).toBeHidden()
+    await files.getByRole('button', { name: 'Expand all' }).click()
+    await expect(files.getByText('readme.md')).toBeVisible()
+    await expect(files.getByText('main.ts')).toBeVisible()
     await expect(files.getByText('Ready')).toHaveCount(2)
     await expect(files.getByText('dep/index.js')).toHaveCount(0)
+    // Each file keeps its whole path for its name, and folders close again.
+    await expect(
+      files.getByRole('link', { name: 'readme.md' }),
+    ).toHaveAttribute('title', 'app/docs/readme.md')
+    await files.getByRole('button', { name: 'Collapse all' }).click()
+    await expect(files.getByText('readme.md')).toBeHidden()
     await expect(files.getByText(/Skipped 2 of 4 files/)).toBeVisible()
   } finally {
     rmSync(dir, { recursive: true })
@@ -351,4 +362,78 @@ test('follows a mirrored folder as it changes, without Sync now', async ({
   } finally {
     rmSync(folder, { recursive: true, force: true })
   }
+})
+
+test('chooses the folder to mirror by browsing for it', async ({ page }) => {
+  const parent = mkdtempSync(join(tmpdir(), 'chibot-browse-'))
+  try {
+    mkdirSync(join(parent, 'guide', 'extra'), { recursive: true })
+    mkdirSync(join(parent, 'other'))
+    writeFileSync(join(parent, 'guide', 'door.md'), 'The door code is 4417.')
+    writeFileSync(
+      join(parent, 'guide', 'extra', 'gate.md'),
+      'The gate opens at 7.',
+    )
+    writeFileSync(join(parent, 'guide', 'photo.png'), 'not a document')
+    await newProject(page, 'Browse')
+    const files = page.getByRole('region', { name: 'Project files' })
+    await files.getByRole('button', { name: 'Mirror a folder' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Mirror a folder' })
+    const box = dialog.getByRole('textbox', { name: 'Folder path' })
+    await box.fill(parent)
+    await dialog.getByRole('button', { name: 'Browse' }).click()
+
+    // It starts where the box points, and lists the folders there.
+    const picker = dialog.getByRole('group', { name: 'Choose a folder' })
+    await expect(picker.getByText(parent)).toBeVisible()
+    await expect(picker.getByRole('button', { name: 'guide' })).toBeVisible()
+    await expect(picker.getByRole('button', { name: 'other' })).toBeVisible()
+    // Open one: what a project can read there is named, the rest left out.
+    await picker.getByRole('button', { name: 'guide' }).click()
+    await expect(
+      picker.getByText('1 file here that a project can read: door.md'),
+    ).toBeVisible()
+    await picker.getByRole('button', { name: 'extra' }).click()
+    await expect(picker.getByText('gate.md')).toBeVisible()
+    await picker.getByRole('button', { name: 'Up one folder' }).click()
+    await expect(picker.getByText('door.md')).toBeVisible()
+
+    await picker.getByRole('button', { name: 'Use this folder' }).click()
+    await expect(box).toHaveValue(join(parent, 'guide'))
+    await expect(picker).toBeHidden()
+    await dialog.getByRole('button', { name: 'Mirror folder' }).click()
+
+    // door.md is at the top of the mirrored folder; gate.md is in a folder
+    // that is closed until it is opened.
+    await expect(files.getByText('door.md')).toBeVisible()
+    await expect(files.getByText('1 file', { exact: true })).toBeVisible()
+    await expect(files.getByText('gate.md')).toBeHidden()
+    await files.getByRole('button', { name: 'Expand all' }).click()
+    await expect(files.getByText('gate.md')).toBeVisible()
+  } finally {
+    rmSync(parent, { recursive: true, force: true })
+  }
+})
+
+test('the folder browser says why it cannot open a path, and goes home', async ({
+  page,
+}) => {
+  await newProject(page, 'Lost')
+  const files = page.getByRole('region', { name: 'Project files' })
+  await files.getByRole('button', { name: 'Mirror a folder' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Mirror a folder' })
+  await dialog
+    .getByRole('textbox', { name: 'Folder path' })
+    .fill('/chibot/no/such/place')
+  await dialog.getByRole('button', { name: 'Browse' }).click()
+  const picker = dialog.getByRole('group', { name: 'Choose a folder' })
+  await expect(picker.getByRole('alert')).toContainText("Can't read")
+  await expect(
+    picker.getByRole('button', { name: 'Use this folder' }),
+  ).toBeHidden()
+  await picker.getByRole('button', { name: 'Home folder' }).click()
+  await expect(
+    picker.getByRole('button', { name: 'Use this folder' }),
+  ).toBeVisible()
+  await expect(picker.getByRole('alert')).toBeHidden()
 })

@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Folder } from 'lucide-react'
+import { Folder, FolderSearch } from 'lucide-react'
 import type { Project } from '../../shared/types.ts'
 import { Dialog } from '../ui/Dialog.tsx'
+import { FolderBrowser } from './FolderBrowser.tsx'
 
 /** Asks for a new project's name. */
 export function ProjectNameDialog({
@@ -224,6 +225,7 @@ export function FolderDialog({
   onClose: () => void
 }) {
   const [path, setPath] = useState('')
+  const [browsing, setBrowsing] = useState(false)
   return (
     <Dialog open={open} onClose={onClose} title="Mirror a folder">
       <form
@@ -238,14 +240,34 @@ export function FolderDialog({
           The project's files will match this folder: new and changed files are
           indexed again, deleted ones are removed. Files you add by hand stay.
         </p>
-        <input
-          className="dialog-input"
-          aria-label="Folder path"
-          placeholder="Full path, e.g. ~/Documents/notes"
-          value={path}
-          onChange={(e) => setPath(e.target.value)}
-          autoFocus
-        />
+        <div className="folder-input-row">
+          <input
+            className="dialog-input"
+            aria-label="Folder path"
+            placeholder="Full path, e.g. ~/Documents/notes"
+            value={path}
+            onChange={(e) => setPath(e.target.value)}
+            autoFocus
+          />
+          <button
+            type="button"
+            className="button"
+            aria-expanded={browsing}
+            onClick={() => setBrowsing(!browsing)}
+          >
+            <FolderSearch size={18} strokeWidth={1.5} aria-hidden />
+            Browse
+          </button>
+        </div>
+        {browsing && (
+          <FolderBrowser
+            start={path}
+            onChoose={(chosen) => {
+              setPath(chosen)
+              setBrowsing(false)
+            }}
+          />
+        )}
         <div className="dialog-actions">
           <button type="button" className="button" onClick={onClose}>
             Cancel

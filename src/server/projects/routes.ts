@@ -1,6 +1,4 @@
 import { statSync } from 'node:fs'
-import { homedir } from 'node:os'
-import { isAbsolute, join, resolve } from 'node:path'
 import { Hono } from 'hono'
 import OpenAI from 'openai'
 import { documentKind } from '../../shared/documents.ts'
@@ -16,6 +14,7 @@ import type { ConversationStore } from '../conversations/index.ts'
 import type { FileStore } from '../file-store.ts'
 import type { InstructionWriter } from './instruction-writer.ts'
 import type { ProjectIndex } from './project-index.ts'
+import { absolutePath, listFolder } from './folder-list.ts'
 import type { FolderWatcher } from './folder-watcher.ts'
 import type { ProjectSync } from './project-sync.ts'
 import type { ProjectStore } from './project-store.ts'
@@ -105,19 +104,31 @@ export function projectRoutes({
     return removed ? c.body(null, 204) : notFound(c, 'File')
   })
 
+  // The folders of this machine, for choosing the one to mirror (the browser's
+  // own picker can't say where a folder is). Reading a path is no further
+  // reach than mirroring one, or than an MCP server that runs commands.
+  app.get('/api/folders', (c) => {
+    const requested = c.req.query('path')?.trim() || '~'
+    const path = absolutePath(requested)
+    if (!path) return c.json({ error: 'Give the full path of the folder' }, 400)
+    try {
+      return c.json(listFolder(path))
+    } catch (err) {
+      return c.json(
+        { error: `Can't read ${path}: ${(err as Error).message}` },
+        400,
+      )
+    }
+  })
+
   // Links the project to a folder on this machine and brings its files in.
   // Anyone who can reach chibot can already run commands through an MCP
   // server, so reading a path is no further reach.
   app.put('/api/projects/:id/folder', json(projectFolderSchema), (c) => {
     const id = c.req.param('id')
     if (!projects.get(id)) return notFound(c, 'Project')
-    const requested = c.req.valid('json').path
-    const folder = resolve(
-      requested === '~' || requested.startsWith('~/')
-        ? join(homedir(), requested.slice(1))
-        : requested,
-    )
-    if (!isAbsolute(requested) && !requested.startsWith('~')) {
+    const folder = absolutePath(c.req.valid('json').path)
+    if (!folder) {
       return c.json({ error: 'Give the full path of the folder' }, 400)
     }
     if (!statSync(folder, { throwIfNoEntry: false })?.isDirectory()) {

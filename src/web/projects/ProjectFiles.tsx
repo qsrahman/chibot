@@ -1,18 +1,11 @@
 import { useState, type DragEvent } from 'react'
-import {
-  FileText,
-  FolderSync,
-  FolderUp,
-  NotebookPen,
-  RefreshCw,
-  Upload,
-  X,
-} from 'lucide-react'
+import { FolderSync, FolderUp, NotebookPen, Upload } from 'lucide-react'
 import type { ProjectFile } from '../../shared/types.ts'
 import { IconButton } from '../ui/IconButton.tsx'
 import { FilePickerButton } from './FilePickerButton.tsx'
 import { droppedFiles } from './folders.ts'
 import { FolderDialog, NoteDialog } from './ProjectDialogs.tsx'
+import { ProjectFileTree } from './ProjectFileTree.tsx'
 
 /**
  * The project's files: add (files, a folder, a note), mirror a folder, index
@@ -113,51 +106,7 @@ export function ProjectFiles({
           this project can search. Drop them here, or add a whole folder.
         </p>
       ) : (
-        <ul className="project-files">
-          {files.map((file) => (
-            <li key={file.fileId}>
-              <FileText size={18} strokeWidth={1.5} aria-hidden />
-              <a
-                className="project-file-name"
-                href={`/api/files/${file.fileId}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {file.name}
-              </a>
-              <span
-                className={`file-status ${file.status}`}
-                title={file.error ?? undefined}
-              >
-                {file.status === 'indexing'
-                  ? 'Indexing…'
-                  : file.status === 'failed'
-                    ? `Failed: ${file.error}`
-                    : (file.error ?? 'Ready')}
-              </span>
-              {file.status !== 'indexing' && file.error && (
-                <button
-                  type="button"
-                  className="icon-button"
-                  aria-label={`Index ${file.name} again`}
-                  title="Index again"
-                  onClick={() => onRetry(file.fileId)}
-                >
-                  <RefreshCw size={16} strokeWidth={1.5} />
-                </button>
-              )}
-              <button
-                type="button"
-                className="icon-button"
-                aria-label={`Remove ${file.name}`}
-                title="Remove"
-                onClick={() => onRemove(file.fileId)}
-              >
-                <X size={16} strokeWidth={1.5} />
-              </button>
-            </li>
-          ))}
-        </ul>
+        <ProjectFileTree files={files} onRetry={onRetry} onRemove={onRemove} />
       )}
     </section>
   )

@@ -4,6 +4,16 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- **A project's files are shown as a tree** when they come from folders (added, or mirrored): folders open and close, all closed to begin with, each saying how many files it holds and how many failed or are being indexed; **Expand all** / **Collapse all** does every folder at once. A folder that holds only another folder is joined with it (`src/server`).
+- **Browse in the Mirror a folder dialog** walks the folders of the machine chibot runs on, lists the files a project can read in each, and fills the path box with the one you choose.
+
+### Fixed
+
+- A long status in a project's file list (an embedding error, for instance) no longer pushes the files card wider than the page; it is cut with an ellipsis.
+- `~someone` is no longer taken as a relative path when mirroring a folder; it asks for the full path.
+
 ## [0.16.0] - 2026-11-10
 
 ### Added

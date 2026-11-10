@@ -180,8 +180,11 @@
   overflow-wrap: anywhere;
 }
 
+/* One column that can be narrower than its longest line: a long status
+   (an embedding error, say) is cut with an ellipsis, not pushed past the card. */
 .project-files {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -226,6 +229,68 @@
 
 .file-status.failed {
   color: var(--danger);
+}
+
+/* A folder in the list of files: a row that opens, with its files indented. */
+.project-files li.tree-folder {
+  display: block;
+}
+
+.tree-folder > details > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.tree-folder > details > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* `Summary` wraps its label in a span: that is the row. */
+.tree-folder > details > summary > span {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tree-folder-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tree-folder-meta {
+  flex: none;
+  margin-left: auto;
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+}
+
+.project-files.nested {
+  padding-left: 22px;
+}
+
+/* Above the list, at its right. */
+.tree-toggle {
+  display: block;
+  margin-left: auto;
+  padding: 2px 4px;
+  border: none;
+  background: none;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.tree-toggle:hover {
+  color: var(--fg);
 }
 
 .project-chats {
@@ -930,4 +995,84 @@ details[open] > summary > .disclosure-chevron {
 
 .quote-button:hover {
   background: var(--surface-muted);
+}
+
+/* The path of the folder to mirror, with the button that browses for it. */
+.folder-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.folder-input-row .dialog-input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The folders of this machine, in the dialog: a bar, a list that scrolls. */
+.folder-browser {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.folder-browser-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.folder-browser-path {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.folder-browser-list {
+  display: grid;
+  max-height: 240px;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-row);
+  list-style: none;
+}
+
+.folder-browser-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 8px;
+  border: none;
+  border-radius: var(--radius-row);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.folder-browser-row:hover {
+  background: var(--surface-muted);
+}
+
+.folder-browser-row span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folder-browser-empty {
+  padding: 8px;
+}
+
+.folder-browser .button {
+  justify-self: end;
 }

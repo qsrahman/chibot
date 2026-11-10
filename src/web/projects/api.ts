@@ -1,4 +1,5 @@
 import type {
+  FolderListing,
   FolderSync,
   Project,
   ProjectFile,
@@ -54,3 +55,7 @@ export const syncProjectFolder = (id: string) =>
 /** Stops mirroring; the project keeps the files. */
 export const unlinkProjectFolder = (id: string) =>
   remove(`/api/projects/${id}/folder`)
+
+/** The folders of the machine chibot runs on (the home folder when `path` is empty). */
+export const listFolders = (path = '') =>
+  request<FolderListing>(`/api/folders?path=${encodeURIComponent(path)}`)
