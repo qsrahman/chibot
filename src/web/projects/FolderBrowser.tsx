@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { ArrowUp, Folder, House } from 'lucide-react'
+import { ArrowUp, Check, Folder, House } from 'lucide-react'
 import { IconButton } from '../ui/IconButton.tsx'
 import { useLoad } from '../ui/useLoad.ts'
 import { listFolders } from './api.ts'
@@ -74,13 +74,13 @@ export function FolderBrowser({
               : `${files.length} ${files.length === 1 ? 'file' : 'files'} here that a project can read: ${files.slice(0, SHOWN_FILES).join(', ')}${files.length > SHOWN_FILES ? ', …' : ''}`}
             {listing.more > 0 && ` (${listing.more} more not listed)`}
           </p>
-          <button
-            type="button"
-            className="button primary"
+          <IconButton
+            label="Use this folder"
+            variant="primary"
             onClick={() => onChoose(listing.path)}
           >
-            Use this folder
-          </button>
+            <Check size={18} strokeWidth={1.5} />
+          </IconButton>
         </>
       )}
     </div>

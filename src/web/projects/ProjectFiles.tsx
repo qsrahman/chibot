@@ -4,6 +4,8 @@ import {
   FolderSync,
   FolderUp,
   NotebookPen,
+  RefreshCw,
+  Unlink,
   Upload,
 } from 'lucide-react'
 import type { ProjectFile } from '../../shared/types.ts'
@@ -112,12 +114,12 @@ export function ProjectFiles({
       {folder && (
         <p className="project-hint project-folder">
           Mirrors <code>{folder}</code>
-          <button type="button" className="button" onClick={onSync}>
-            Sync now
-          </button>
-          <button type="button" className="button" onClick={onUnlink}>
-            Stop mirroring
-          </button>
+          <IconButton label="Sync now" onClick={onSync}>
+            <RefreshCw size={18} strokeWidth={1.5} />
+          </IconButton>
+          <IconButton label="Stop mirroring" onClick={onUnlink}>
+            <Unlink size={18} strokeWidth={1.5} />
+          </IconButton>
         </p>
       )}
       {notice && <p className="project-hint">{notice}</p>}

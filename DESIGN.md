@@ -407,6 +407,8 @@ equivalents use a 1.5 px stroke:
 | Tool approval / Settings → Tools | `Wrench` |
 | Project / new project / move in / remove / add files | `Folder` / `FolderPlus` / `FolderInput` / `FolderMinus` / `Upload` |
 | Create an image / download | `ImagePlus` / `Download` |
+| Sync now / stop mirroring / use this folder | `RefreshCw` / `Unlink` / `Check` |
+| Undo a summary / summarize now | `Undo2` / `ListCollapse` |
 
 **Brand.** The mark is a forked path whose right arm ends in the accent dot:
 drawn on a 32-unit grid with a 3.2-unit round stroke, the stem forks into two

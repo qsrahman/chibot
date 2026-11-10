@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Plus, X } from 'lucide-react'
+import { IconButton } from '../ui/IconButton.tsx'
 import type { McpServerConfig } from '../../shared/mcp.ts'
 import { MCP_PRESETS, type McpPreset } from '../../shared/mcp-presets.ts'
 import { Dialog } from '../ui/Dialog.tsx'
@@ -258,15 +259,15 @@ export function McpServerDialog({
                 </button>
               </div>
             ))}
-            <button
-              type="button"
-              className="button"
+            <IconButton
+              label="Add"
+              hint="Add a variable"
               onClick={() =>
                 set({ pairs: [...form.pairs, { key: '', value: '' }] })
               }
             >
-              <Plus size={16} strokeWidth={1.5} aria-hidden /> Add
-            </button>
+              <Plus size={18} strokeWidth={1.5} />
+            </IconButton>
             <p className="mcp-hint">
               Keys go here, not in the arguments or URL: values are kept in
               config.json and never shown again. Leave a saved value blank to

@@ -1,7 +1,8 @@
 // A summary in the chat: the line where earlier messages end, opening to the
 // summary, and the form that asks for another.
 import { useState } from 'react'
-import { ListCollapse } from 'lucide-react'
+import { ListCollapse, Undo2 } from 'lucide-react'
+import { IconButton } from '../ui/IconButton.tsx'
 import { IconAction } from './MessageActions.tsx'
 import { Markdown } from './Markdown.tsx'
 import { Summary } from '../ui/Summary.tsx'
@@ -31,14 +32,9 @@ export function CompactionNote({
           {compaction.degraded &&
             ' It may have left out a name or link you wrote.'}
         </p>
-        <button
-          type="button"
-          className="button"
-          disabled={busy}
-          onClick={onUndo}
-        >
-          Undo
-        </button>
+        <IconButton label="Undo" disabled={busy} onClick={onUndo}>
+          <Undo2 size={18} strokeWidth={1.5} />
+        </IconButton>
       </div>
     </details>
   )
@@ -80,9 +76,9 @@ export function CompactNow({
             aria-label="What the summary should keep in mind"
             onChange={(e) => setFocus(e.target.value)}
           />
-          <button type="submit" className="button" disabled={busy}>
-            Summarize
-          </button>
+          <IconButton label="Summarize" type="submit" disabled={busy}>
+            <ListCollapse size={18} strokeWidth={1.5} />
+          </IconButton>
         </form>
       )}
     </div>
