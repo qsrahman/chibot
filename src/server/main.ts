@@ -8,11 +8,13 @@ import { serveStatic } from '@hono/node-server/serve-static'
 import OpenAI from 'openai'
 import { createApp } from './app.ts'
 import { WEB_ROOT } from './build-id.ts'
-import { OAUTH_CALLBACK } from './mcp/index.ts'
 import { Attachments } from './attachments.ts'
-import { ChatService, Compactor } from './chat/index.ts'
-import { ModelRequests } from './chat/index.ts'
-import { TitleWriter } from './chat/index.ts'
+import {
+  ChatService,
+  Compactor,
+  ModelRequests,
+  TitleWriter,
+} from './chat/index.ts'
 import { Config, layered, readEnvFiles } from './config.ts'
 import {
   mcpVariables,
@@ -24,26 +26,30 @@ import {
 } from './config-file.ts'
 import { MediaProxy, type AddressGuard } from './media-proxy.ts'
 import { locations, openFolders, ROOT } from './locations.ts'
-import { InstructionWriter } from './projects/index.ts'
-import { ConversationSearch } from './conversations/index.ts'
-import { ConversationStore } from './conversations/index.ts'
+import { ConversationSearch, ConversationStore } from './conversations/index.ts'
 import { openDatabase } from './database.ts'
 import { FileStore } from './file-store.ts'
-import { McpAuthStore } from './mcp/index.ts'
 import {
   loadMcpConfig,
+  McpAuthStore,
+  McpServerFile,
+  McpServers,
+  mcpTools,
+  OAUTH_CALLBACK,
   parseMcpConfig,
   type McpServerConfig,
 } from './mcp/index.ts'
-import { McpServerFile, McpServers } from './mcp/index.ts'
 import { MemoryStore } from './memory-store.ts'
 import {
   FolderWatcher,
+  InstructionWriter,
   ProjectIndex,
+  ProjectStore,
   ProjectSync,
+  ReadProjectFileTool,
   Reranker,
+  SearchProjectFilesTool,
 } from './projects/index.ts'
-import { ProjectStore } from './projects/index.ts'
 import { settingsDefaults, SettingsStore } from './settings-store.ts'
 import type { Tool } from './tool.ts'
 import { ToolRegistry } from './tool-registry.ts'
@@ -53,12 +59,10 @@ import {
   GenerateImageTool,
   imageClient,
 } from './tools/images.ts'
-import { mcpTools } from './mcp/index.ts'
 import { MemoryTool } from './tools/memory.ts'
-import { SearchProjectFilesTool } from './projects/index.ts'
-import { ReadProjectFileTool } from './projects/index.ts'
 import { SearchChatsTool } from './tools/search-chats.ts'
 import { ReadSkillTool, SkillStore } from './skills/index.ts'
+import { errorMessage } from '../shared/errors.ts'
 
 /** What tools may need to be built. */
 export interface ToolDeps {
@@ -386,7 +390,7 @@ function mcpConfig(config: Config): Record<string, McpServerConfig> {
   try {
     return loadMcpServers(config)
   } catch (err) {
-    console.error(`MCP servers are off: ${(err as Error).message}`)
+    console.error(`MCP servers are off: ${errorMessage(err)}`)
     return {}
   }
 }
