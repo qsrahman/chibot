@@ -37,6 +37,10 @@ export function Skills({
   }
   const { dir, skills, problems, skipped } = data
   const on = skills.filter(({ name }) => !disabled.includes(skillSwitch(name)))
+  // With the tool that reads skills off, no skill is used whatever its own
+  // switch says: the rows stay as they were set, but can't be changed.
+  const used =
+    !tool || (tool.unavailable === null && !disabled.includes(tool.name))
   return (
     <Section title={skills.length > 0 ? `Skills · ${skills.length}` : 'Skills'}>
       {tool && (
@@ -67,7 +71,7 @@ export function Skills({
           <div
             key={name}
             className={
-              off
+              off || !used
                 ? 'settings-row skill-row unavailable'
                 : 'settings-row skill-row'
             }
@@ -89,6 +93,7 @@ export function Skills({
               role="switch"
               className="switch"
               aria-label={`Use the skill ${name}`}
+              disabled={!used}
               checked={!off}
               onChange={(e) =>
                 void onChange({

@@ -11,6 +11,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- With "Use skills" off, each skill's row is dimmed and its switch can't be changed, since no skill is used then; the switches keep their state for when skills are on again.
 - Primary buttons, and the toast, are a softer light grey (`#e8e8e8`) in the dark theme instead of pure white, which glared against the dark cards.
 - The "Use skills" switch is the first row of Settings → Tools → Skills, with the skills it controls, instead of in "Your chats and files".
 - Skills in Settings → Tools: a switch for each skill, its whole description when opened (one line otherwise), a count in the title, buttons to copy the skills folder's path and to refresh, and a note when skills are left out (more than 50 on, or 100 folders). The model's list of skills gives each description a share of a fixed budget, so many skills cost less per skill (400 characters each for a few, down to 120).

@@ -499,6 +499,14 @@ test('lists the skills in the skills folder, and the folders left out', async ({
     await expect(section.getByText(/Left out: .*--- header/)).toBeVisible()
     // The tool that reads them can now be switched on and off.
     await expect(dialog.getByLabel('Use skills')).toBeEnabled()
+    // With it off no skill is used: their switches keep their state but can't be changed.
+    await dialog.getByLabel('Use skills').click()
+    await expect(use).toBeDisabled()
+    await expect(use).toBeChecked()
+    await expect(skill).toHaveClass(/unavailable/)
+    await dialog.getByLabel('Use skills').click()
+    await expect(use).toBeEnabled()
+    await expect(skill).not.toHaveClass(/unavailable/)
   } finally {
     rmSync(skills, { recursive: true, force: true })
   }
