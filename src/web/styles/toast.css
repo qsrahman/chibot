@@ -3,7 +3,7 @@
 
 .toasts {
   position: fixed;
-  inset: auto 0 72px;
+  inset: auto 0 var(--toast-bottom, 72px);
   display: flex;
   flex-direction: column;
   align-items: center;

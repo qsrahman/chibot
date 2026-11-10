@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { appReady } from './helpers.ts'
+import { answered, appReady, send } from './helpers.ts'
 
 // Brief feedback: a toast per action, with Undo where it can be undone.
 
@@ -112,4 +112,27 @@ test('a toast raised inside Settings is above the dialog, not behind it', async 
   expect(
     await page.locator('.toasts').evaluate((el) => el.matches(':popover-open')),
   ).toBe(true)
+})
+
+test('a toast stays above the message box as it grows', async ({ page }) => {
+  await chatTitled(page, 'Toast over box')
+  await chatTitled(page, 'Toast other')
+  await page.goto('/')
+  await appReady(page)
+  await row(page, 'Toast over box').click()
+  // The box sits at the bottom once the chat has a message.
+  await send(page, 'Hello')
+  await answered(page)
+  await page
+    .getByRole('textbox', { name: 'Message' })
+    .fill('1\n2\n3\n4\n5\n6\n7')
+  // Another chat, so this one stays open under the toast.
+  await optionsOf(page, 'Toast other')
+  await page.getByRole('menuitem', { name: 'Archive' }).click()
+
+  const toast = page.locator('.toast', { hasText: 'Chat archived' })
+  await expect(toast).toBeVisible()
+  const box = await page.locator('form.composer').boundingBox()
+  const above = await toast.boundingBox()
+  expect(above!.y + above!.height).toBeLessThanOrEqual(box!.y)
 })

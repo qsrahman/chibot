@@ -2,8 +2,7 @@
 
 .dialog.settings {
   width: min(100% - 32px, 760px);
-  /* Anchored near the top and as tall as its tab, so switching tabs only
-     grows or shrinks it downwards instead of jumping around the centre. */
+  /* Anchored near the top, so it opens in the same place at any window height. */
   margin-top: max(16px, 10dvh);
 }
 
@@ -12,7 +11,6 @@
   grid-template-columns: 180px 1fr;
   gap: 16px;
   align-items: start;
-  min-height: 240px;
 }
 
 .settings-tabs {
@@ -27,7 +25,8 @@
 }
 
 .settings-panel {
-  max-height: min(70dvh, 560px);
+  /* The same height on every tab, so the dialog doesn't resize as they change. */
+  height: min(70dvh, 560px);
   overflow-y: auto;
   padding-right: 4px;
   overscroll-behavior: contain;

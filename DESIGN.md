@@ -228,8 +228,8 @@ pill-shaped: primary is `--button`, secondary is outlined, destructive is
 `--danger`. Used for confirmations such as "Delete chat?".
 
 **Settings.** A large dialog (max 760 px), anchored 10 vh from the top
-and as tall as its tab (at least 240 px; the panel scrolls past
-`min(70vh, 560px)`), so switching tabs grows or shrinks it downwards. Below
+with a panel of one height on every tab (`min(70vh, 560px)`, scrolling past
+it), so switching tabs never resizes it. Below
 768 px the tabs become a scrolling row above the content, scrolled to the
 current tab. A vertical tab list on
 the left (General, Personalization, Model, Tools, Data; the current tab
@@ -288,7 +288,8 @@ chip (`--bubble-bg` / `--bubble-fg`, 36 px tall, icon + "Search"/"Image" +
 `X`) before the text; it applies to one message.
 
 **Toasts.** An inverted pill (`--button` background, `--button-fg` text, 22 px
-radius, 44 px tall, dialog shadow, no border) at the bottom centre, 72 px up: an
+radius, 44 px tall, dialog shadow, no border) at the bottom centre, 72 px up (12 px above the message box when that is
+at the bottom of the window and has grown taller): an
 18 px icon (`CircleCheck` for a confirmation, `CircleAlert` for a failure,
 `Info` for a note), the message, an underlined semibold action such as Undo, and
 a 28 px dismiss `X`. The layer is a `popover="manual"` element, so it is in the

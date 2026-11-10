@@ -238,8 +238,37 @@ export function Composer({
     }
   }
 
+  const formRef = useRef<HTMLFormElement>(null)
+  // Toasts stand above the box however tall it grows (see toast.css); a box
+  // that is not at the bottom (a project's, or the new-chat page's) leaves
+  // them at the default.
+  useEffect(() => {
+    const form = formRef.current
+    if (!form) return
+    const root = document.documentElement
+    const place = () => {
+      const { top, bottom } = form.getBoundingClientRect()
+      if (window.innerHeight - bottom < 160) {
+        root.style.setProperty(
+          '--toast-bottom',
+          `${window.innerHeight - top + 12}px`,
+        )
+      } else root.style.removeProperty('--toast-bottom')
+    }
+    place()
+    const observer = new ResizeObserver(place)
+    observer.observe(form)
+    window.addEventListener('resize', place)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', place)
+      root.style.removeProperty('--toast-bottom')
+    }
+  }, [])
+
   return (
     <form
+      ref={formRef}
       className="composer"
       onSubmit={(e) => {
         e.preventDefault()

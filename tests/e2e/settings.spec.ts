@@ -480,3 +480,16 @@ test('lists the skills in the skills folder, and the folders left out', async ({
     rmSync(skills, { recursive: true, force: true })
   }
 })
+
+test('the settings dialog keeps its height from tab to tab', async ({
+  page,
+}) => {
+  await page.goto('/')
+  const dialog = await openSettings(page, 'General')
+  const heights = new Set<number>()
+  for (const tab of ['General', 'Model', 'Tools', 'Data']) {
+    await dialog.getByRole('button', { name: tab, exact: true }).click()
+    heights.add(Math.round((await dialog.boundingBox())!.height))
+  }
+  expect(heights.size).toBe(1)
+})
