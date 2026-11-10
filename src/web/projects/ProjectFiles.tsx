@@ -1,5 +1,11 @@
 import { useState, type DragEvent } from 'react'
-import { FolderSync, FolderUp, NotebookPen, Upload } from 'lucide-react'
+import {
+  ChevronRight,
+  FolderSync,
+  FolderUp,
+  NotebookPen,
+  Upload,
+} from 'lucide-react'
 import type { ProjectFile } from '../../shared/types.ts'
 import { IconButton } from '../ui/IconButton.tsx'
 import { FilePickerButton } from './FilePickerButton.tsx'
@@ -35,6 +41,7 @@ export function ProjectFiles({
   const [dragging, setDragging] = useState(false)
   const [noting, setNoting] = useState(false)
   const [linking, setLinking] = useState(false)
+  const [listOpen, setListOpen] = useState(true)
   const drop = (e: DragEvent) => {
     e.preventDefault()
     setDragging(false)
@@ -55,7 +62,21 @@ export function ProjectFiles({
       onDrop={drop}
     >
       <header>
-        <h2>Files</h2>
+        <h2>
+          <button
+            type="button"
+            className="card-toggle"
+            aria-expanded={listOpen}
+            disabled={files.length === 0}
+            onClick={() => setListOpen(!listOpen)}
+          >
+            <ChevronRight size={16} aria-hidden />
+            Files
+            {files.length > 0 && (
+              <span className="card-count">{files.length}</span>
+            )}
+          </button>
+        </h2>
         <div className="project-card-actions">
           <IconButton label="Add note" onClick={() => setNoting(true)}>
             <NotebookPen size={18} strokeWidth={1.5} />
@@ -106,7 +127,13 @@ export function ProjectFiles({
           this project can search. Drop them here, or add a whole folder.
         </p>
       ) : (
-        <ProjectFileTree files={files} onRetry={onRetry} onRemove={onRemove} />
+        listOpen && (
+          <ProjectFileTree
+            files={files}
+            onRetry={onRetry}
+            onRemove={onRemove}
+          />
+        )
       )}
     </section>
   )

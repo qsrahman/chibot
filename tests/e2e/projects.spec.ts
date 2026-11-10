@@ -476,3 +476,24 @@ test('Sync now says what it left out, and carries on past a file it cannot read'
     rmSync(folder, { recursive: true, force: true })
   }
 })
+
+test('the list of files can be collapsed', async ({ page }) => {
+  await newProject(page, 'Collapse')
+  const files = page.getByRole('region', { name: 'Project files' })
+  const toggle = files.getByRole('button', { name: /^Files/ })
+  await expect(toggle).toBeDisabled()
+
+  await files.getByLabel('Add files (file input)').setInputFiles({
+    name: 'a.md',
+    mimeType: 'text/markdown',
+    buffer: Buffer.from('Some text.'),
+  })
+  await expect(files.getByText('a.md')).toBeVisible()
+  await expect(toggle).toHaveAccessibleName('Files 1')
+
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+  await expect(files.getByText('a.md')).toBeHidden()
+  await toggle.click()
+  await expect(files.getByText('a.md')).toBeVisible()
+})

@@ -79,6 +79,40 @@
   margin-bottom: 8px;
 }
 
+.card-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.card-toggle:disabled {
+  cursor: default;
+}
+
+.card-toggle:disabled svg {
+  visibility: hidden;
+}
+
+.card-toggle svg {
+  transition: transform 0.15s;
+}
+
+.card-toggle[aria-expanded='true'] svg {
+  transform: rotate(90deg);
+}
+
+.card-count {
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
 .project-card-actions {
   display: flex;
   flex-wrap: wrap;

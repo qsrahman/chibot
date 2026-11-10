@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- A project's list of files can be collapsed from its "Files" heading, which also shows how many there are.
+
 ## [0.17.0] - 2026-11-10
 
 ### Added
