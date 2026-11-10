@@ -11,6 +11,8 @@ export const SHORTCUTS = {
   stop: { keys: 'Escape', label: 'Stop the answer' },
   // Handled by the composer itself (only when it's empty), not bound here.
   editLast: { keys: 'ArrowUp', label: 'Edit your last message (empty box)' },
+  // Bound by the composer, which owns the recorder. M for microphone.
+  dictate: { keys: '$mod+Shift+M', label: 'Start or stop dictation' },
   settings: { keys: '$mod+,', label: 'Open settings' },
   showShortcuts: { keys: '$mod+/', label: 'Show keyboard shortcuts' },
   // Not while typing (the sidebar checks), or it could not be typed.

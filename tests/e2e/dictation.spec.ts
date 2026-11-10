@@ -25,6 +25,48 @@ test('dictates into the message box at the cursor', async ({ page }) => {
   })
 })
 
+test('a shortcut starts and stops dictation, also while typing', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  const box = page.getByRole('textbox', { name: 'Message' })
+  await box.fill('Say: ')
+  // The box has focus: shortcuts work while typing.
+  await page.keyboard.press('ControlOrMeta+Shift+M')
+  await expect(
+    page.getByRole('button', { name: 'Stop recording' }),
+  ).toBeVisible()
+  await page.waitForTimeout(500)
+  await page.keyboard.press('ControlOrMeta+Shift+M')
+  await expect(box).toHaveValue('Say: Hello from the microphone')
+  await expect(page.getByRole('button', { name: 'Dictate' })).toBeVisible()
+
+  // It is listed with the other shortcuts.
+  await page.keyboard.press('ControlOrMeta+/')
+  await expect(
+    page.getByRole('dialog', { name: 'Keyboard shortcuts' }),
+  ).toContainText('Start or stop dictation')
+})
+
+test('the shortcut does nothing without a transcription model', async ({
+  page,
+}) => {
+  await page.route('/api/health', async (route) => {
+    const res = await route.fetch()
+    const health = (await res.json()) as Record<string, unknown>
+    await route.fulfill({
+      json: { ...health, features: { transcription: false } },
+    })
+  })
+  await page.goto('/')
+  await appReady(page)
+  await page.keyboard.press('ControlOrMeta+Shift+M')
+  await expect(
+    page.getByRole('button', { name: 'Stop recording' }),
+  ).toHaveCount(0)
+})
+
 test('says why voice input is off without transcription', async ({ page }) => {
   await page.route('/api/health', async (route) => {
     const res = await route.fetch()

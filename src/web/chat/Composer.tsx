@@ -17,6 +17,7 @@ import { QueuedMessage } from './QueuedMessage.tsx'
 import type { Attachment } from './turns.ts'
 import type { AttachmentsApi } from './useAttachments.ts'
 import { useDictation } from './useDictation.ts'
+import { SHORTCUTS, useShortcuts } from '../ui/shortcuts.ts'
 import { useToast } from '../ui/toast.tsx'
 import { TOUCH_ONLY, useMediaQuery } from '../ui/useMediaQuery.ts'
 
@@ -137,6 +138,17 @@ export function Composer({
     if (dictation.state === 'recording') announce('Recording')
     if (dictation.state === 'transcribing') announce('Transcribing')
   }, [dictation.state, announce])
+  function toggleDictation() {
+    if (!transcription) return
+    if (recording) dictation.stop()
+    else if (dictation.state === 'idle') void dictation.start()
+  }
+  useShortcuts({
+    [SHORTCUTS.dictate.keys]: (e) => {
+      e.preventDefault()
+      toggleDictation()
+    },
+  })
   const micLabel = !transcription
     ? 'Voice input needs a transcription model: choose one in Settings → Other models'
     : recording
@@ -348,11 +360,7 @@ export function Composer({
           // aria-disabled rather than disabled, so the tooltip still shows.
           aria-disabled={!transcription || dictation.state === 'transcribing'}
           aria-pressed={recording}
-          onClick={() => {
-            if (!transcription) return
-            if (recording) dictation.stop()
-            else if (dictation.state === 'idle') void dictation.start()
-          }}
+          onClick={toggleDictation}
         >
           {dictation.state === 'transcribing' ? (
             <LoaderCircle className="spin" size={20} strokeWidth={1.5} />

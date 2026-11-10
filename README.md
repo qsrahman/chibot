@@ -449,8 +449,8 @@ needs the server running: there is no offline mode, since the server is local.
   all versions.
 - **Keyboard shortcuts:** ⌘/Ctrl+/ (or **Keyboard shortcuts** in the sidebar)
   lists them: new chat, search, toggle sidebar, focus the message box, copy
-  the last answer, Esc to stop, and ↑ in an empty message box to edit your
-  last message.
+  the last answer, ⌘/Ctrl+Shift+M to start and stop dictation, Esc to stop,
+  and ↑ in an empty message box to edit your last message.
 - If the model server reports an error (e.g. a bad API key), it's shown with
   its status and request id. Your message is kept. A 429 says which kind it
   is: you've used up the provider's plan (pick another model, or add credits),
