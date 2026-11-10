@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.17.2] - 2026-11-10
+
 ### Added
 
 - **⌘/Ctrl+Shift+M starts and stops dictation**, also while typing in the message box, and is listed in Keyboard shortcuts.
