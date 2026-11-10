@@ -155,7 +155,11 @@ export function SettingsDialog({
                 disabled={current.disabledTools}
                 onChange={save}
               />
-              <Skills disabled={current.disabledTools} onChange={save} />
+              <Skills
+                tool={settings.tools.find((tool) => tool.group === 'Skills')}
+                disabled={current.disabledTools}
+                onChange={save}
+              />
               <McpServers onToolsChanged={() => void settings.reloadTools()} />
             </>
           )}

@@ -1,4 +1,5 @@
 import { ChevronRight, Copy, RefreshCw } from 'lucide-react'
+import type { ToolInfo } from '../../shared/tools.ts'
 import { MAX_LISTED_SKILLS, skillSwitch } from '../../shared/skills.ts'
 import { IconButton } from '../ui/IconButton.tsx'
 import { useToast } from '../ui/toast.tsx'
@@ -6,6 +7,7 @@ import { useLoad } from '../ui/useLoad.ts'
 import { listSkills } from './api.ts'
 import { withMember } from './mcp.ts'
 import { Row, Section } from './parts.tsx'
+import { ToolSwitch } from './Tools.tsx'
 import type { SettingsApi } from './useSettings.ts'
 
 /**
@@ -15,9 +17,12 @@ import type { SettingsApi } from './useSettings.ts'
  * left out.
  */
 export function Skills({
+  tool,
   disabled,
   onChange,
 }: {
+  /** The tool that reads skills, whose switch heads the section. */
+  tool: ToolInfo | undefined
   disabled: string[]
   onChange: SettingsApi['update']
 }) {
@@ -34,6 +39,9 @@ export function Skills({
   const on = skills.filter(({ name }) => !disabled.includes(skillSwitch(name)))
   return (
     <Section title={skills.length > 0 ? `Skills · ${skills.length}` : 'Skills'}>
+      {tool && (
+        <ToolSwitch tool={tool} disabled={disabled} onChange={onChange} />
+      )}
       <Row
         label="Skills folder"
         description={`Add a folder with a SKILL.md to ${dir}, then refresh. Skills are instructions: the model can't run their scripts.`}

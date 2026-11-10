@@ -3,7 +3,12 @@
 // per-tool tables.
 
 /** Settings' sections, in the order they're shown. */
-export const TOOL_GROUPS = ['Images', 'Your chats and files', 'Other'] as const
+export const TOOL_GROUPS = [
+  'Images',
+  'Your chats and files',
+  'Skills',
+  'Other',
+] as const
 export type ToolGroup = (typeof TOOL_GROUPS)[number]
 
 /** The icons the composer's menu can show for a tool. */

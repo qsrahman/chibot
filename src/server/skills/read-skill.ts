@@ -16,8 +16,8 @@ const LIST_BUDGET = 8000
 export class ReadSkillTool extends Tool {
   readonly name = 'read_skill'
   readonly label = 'Use skills'
-  // Skills are files the user keeps, like memories and project files.
-  override readonly group = 'Your chats and files'
+  // Settings shows its switch in the Skills section, not with the tools.
+  override readonly group = 'Skills'
   override readonly summary =
     'Reads the instructions of a skill you added (a folder with a SKILL.md) when a request matches it. Off, no skill is used.'
   override readonly running = 'Reading a skill…'
