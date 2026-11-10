@@ -7,11 +7,12 @@ export function skillRoutes({ skills }: { skills: SkillStore }) {
 
   // What Settings lists: the skills, and the folders that are not valid ones.
   app.get('/api/skills', (c) => {
-    const { skills: found, problems } = skills.list()
+    const { skills: found, problems, skipped } = skills.list()
     return c.json({
       dir: skills.dir,
       skills: found.map(({ name, description }) => ({ name, description })),
       problems,
+      skipped,
     } satisfies SkillsResponse)
   })
 

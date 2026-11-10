@@ -1,12 +1,16 @@
 import { z } from 'zod'
+import { MAX_LISTED_SKILLS, skillSwitch } from '../../shared/skills.ts'
 import { section } from '../prompt-tags.ts'
 import { Tool } from '../tool.ts'
 import type { SkillStore } from './skill-store.ts'
 
-// Each skill is listed in the instructions with when it applies; a long
-// description is cut there, and only so many are listed.
-const LISTED_DESCRIPTION = 400
-const LISTED_SKILLS = 50
+// Each skill is listed in the instructions with when it applies. Every request
+// carries the list, so the descriptions share a budget: a few skills get their
+// whole description (up to the longest), many get a shorter one (down to the
+// least that still says when to use it), and only so many are listed.
+const LONGEST_DESCRIPTION = 400
+const SHORTEST_DESCRIPTION = 120
+const LIST_BUDGET = 8000
 
 /** Loads the instructions of a skill the user added, when a request matches it. */
 export class ReadSkillTool extends Tool {
@@ -31,25 +35,42 @@ export class ReadSkillTool extends Tool {
   })
   readonly #skills: SkillStore
 
-  constructor(skills: SkillStore) {
+  /** The skills switched off in Settings (see `skillSwitch`). */
+  readonly #off: () => readonly string[]
+
+  constructor(skills: SkillStore, off: () => readonly string[] = () => []) {
     super()
     this.#skills = skills
+    this.#off = off
+  }
+
+  #isOff(name: string) {
+    return this.#off().includes(skillSwitch(name))
   }
 
   override unavailable() {
-    return this.#skills.list().skills.length > 0
+    const { skills } = this.#skills.list()
+    if (skills.length === 0) {
+      return `No skills yet: add a folder with a SKILL.md to ${this.#skills.dir}.`
+    }
+    return skills.some(({ name }) => !this.#isOff(name))
       ? null
-      : `No skills yet: add a folder with a SKILL.md to ${this.#skills.dir}.`
+      : 'Every skill is switched off.'
   }
 
   override instructions() {
-    const { skills } = this.#skills.list()
-    const listed = skills
-      .slice(0, LISTED_SKILLS)
-      .map(({ name, description }) => {
-        const text = description.replace(/\s+/g, ' ')
-        return `${name}: ${text.length > LISTED_DESCRIPTION ? `${text.slice(0, LISTED_DESCRIPTION)}…` : text}`
-      })
+    const skills = this.#skills
+      .list()
+      .skills.filter(({ name }) => !this.#isOff(name))
+      .slice(0, MAX_LISTED_SKILLS)
+    const cap = Math.min(
+      LONGEST_DESCRIPTION,
+      Math.max(SHORTEST_DESCRIPTION, Math.floor(LIST_BUDGET / skills.length)),
+    )
+    const listed = skills.map(({ name, description }) => {
+      const text = description.replace(/\s+/g, ' ')
+      return `${name}: ${text.length > cap ? `${text.slice(0, cap)}…` : text}`
+    })
     return [
       'The user has added skills: written instructions for particular kinds of ' +
         'task. Each is listed below with when it applies. When a request matches ' +
@@ -62,6 +83,9 @@ export class ReadSkillTool extends Tool {
   }
 
   async run({ name, file }: z.output<typeof this.parameters>) {
+    if (this.#isOff(name)) {
+      throw new Error(`the skill "${name}" is switched off in Settings`)
+    }
     if (file) return this.#skills.readFile(name, file)
     const { body, files } = this.#skills.load(name)
     return [

@@ -313,8 +313,12 @@ needs the server running: there is no offline mode, since the server is local.
   `description` saying what it does and when to use it, then the
   instructions) to the `skills` folder beside `config.json`
   (`~/.config/chibot/skills`; Settings → Tools shows the exact path, lists
-  the skills, and says why a folder was left out). The model sees each
-  skill's description and, when a request matches one, reads it with the
+  the skills with a switch each and their whole description when opened, and
+  says why a folder was left out; the folder's row has buttons to copy its
+  path and to refresh). The model sees each skill's description (every request
+  carries the list, so the descriptions share a budget: 400 characters each
+  for a few skills, down to 120 for many, and at most 50 skills are listed;
+  switch off the ones you don't need) and, when a request matches one, reads it with the
   **Use skills** tool, plus any reference files it names. A skill found
   elsewhere can be used with a link, for example
   `ln -s ~/.claude/skills/<name> ~/.config/chibot/skills/<name>`. Skills are

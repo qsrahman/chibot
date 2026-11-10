@@ -62,6 +62,7 @@ describe('SkillStore', () => {
     expect(new SkillStore(join(dir, 'missing')).list()).toEqual({
       skills: [],
       problems: [],
+      skipped: 0,
     })
   })
 
@@ -203,6 +204,51 @@ describe('ReadSkillTool', () => {
     expect(text).toContain('cannot run a skill’s scripts')
   })
 
+  it('leaves out a skill that is switched off, and refuses to read it', async () => {
+    skill('one')
+    skill('two')
+    const off = ['skill:two']
+    const tool = new ReadSkillTool(new SkillStore(dir), () => off)
+    const text = tool.instructions()
+    expect(text).toContain('one: ')
+    expect(text).not.toContain('two: ')
+    await expect(tool.run({ name: 'two', file: null })).rejects.toThrow(
+      'switched off',
+    )
+    expect(await tool.run({ name: 'one', file: null })).toContain(
+      'Do the thing.',
+    )
+    expect(tool.unavailable()).toBeNull()
+    off.push('skill:one')
+    expect(tool.unavailable()).toBe('Every skill is switched off.')
+  })
+
+  it('shares a budget between the descriptions: many skills get shorter ones', () => {
+    const long = 'x'.repeat(1000)
+    skill('a-first', long)
+    const few = new ReadSkillTool(new SkillStore(dir)).instructions()
+    expect(few).toContain(`a-first: ${'x'.repeat(400)}…`)
+    for (let i = 0; i < 39; i++) skill(`s${String(i).padStart(2, '0')}`, long)
+    const many = new ReadSkillTool(new SkillStore(dir)).instructions()
+    // 8,000 characters shared by 40 skills: 200 each.
+    expect(many).toContain(`s00: ${'x'.repeat(200)}…\n`)
+    expect(many).not.toContain('x'.repeat(201))
+    // Only 50 are listed, so 160 each (never under 120).
+    for (let i = 39; i < 60; i++) skill(`s${i}`, long)
+    const most = new ReadSkillTool(new SkillStore(dir)).instructions()
+    expect(most).toContain(`${'x'.repeat(160)}…\n`)
+    expect(most).not.toContain('x'.repeat(161))
+  })
+
+  it('lists at most 50 skills to the model', () => {
+    for (let i = 0; i < 60; i++) skill(`s${String(i).padStart(2, '0')}`)
+    const lines = new ReadSkillTool(new SkillStore(dir))
+      .instructions()
+      .split('\n')
+      .filter((line) => /^s\d\d: /.test(line))
+    expect(lines).toHaveLength(50)
+  })
+
   it('returns the instructions, with the other files named, or a file', async () => {
     skill('report', 'Writes reports.', 'Read references/style.md first.')
     put('report/references/style.md', 'Be brief.')
@@ -242,7 +288,15 @@ describe('GET /api/skills', () => {
       problems: [
         { folder: 'bad', reason: expect.stringContaining('--- header') },
       ],
+      skipped: 0,
     })
+  })
+
+  it('counts the folders past the most that are read', () => {
+    for (let i = 0; i < 103; i++) skill(`s${String(i).padStart(3, '0')}`)
+    const { skills, skipped } = new SkillStore(dir).list()
+    expect(skills).toHaveLength(100)
+    expect(skipped).toBe(3)
   })
 })
 

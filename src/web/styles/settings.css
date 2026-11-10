@@ -383,3 +383,53 @@ label.button {
   color: var(--fg-muted);
   font-size: 0.8125rem;
 }
+
+/* A skill: its name and the start of its description on one line; opened, the
+   whole description. */
+.skill-row details {
+  flex: 1;
+  min-width: 0;
+}
+
+.skill-row summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.skill-row summary::-webkit-details-marker {
+  display: none;
+}
+
+.skill-name {
+  flex: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.skill-peek {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skill-row details[open] .skill-peek {
+  display: none;
+}
+
+.skill-row details p {
+  margin: 0 0 4px 24px;
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.settings-row.skill-row.unavailable .skill-name {
+  color: var(--fg-muted);
+}

@@ -116,6 +116,8 @@ export interface SkillsResponse {
   dir: string
   skills: { name: string; description: string }[]
   problems: SkillProblem[]
+  /** Folders past the most that are read, so not listed at all. */
+  skipped: number
 }
 
 /** `GET /api/folders?path=`: a folder on the machine chibot runs on, to choose one to mirror. */

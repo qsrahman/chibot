@@ -510,8 +510,10 @@ on Ollama, images need `OPENAI_IMAGE_BASE_URL` / `_API_KEY`.
   restart; a link to a folder works (skills are often shared that way). The
   `read_skill` tool (`name`, `file`) follows the format's progressive
   disclosure: its instructions (like the memory tool's) list each skill as
-  `name: description` (cut at 400 characters, at most 50) in a `<skills>`
-  section, and the model calls it with a name to get the SKILL.md body and the
+  `name: description` in a `<skills>` section (every request carries it, so
+  the descriptions share 8,000 characters: 400 each for a few skills, down to
+  120 for many, never more than 50 skills; a skill switched off is left out),
+  and the model calls it with a name to get the SKILL.md body and the
   names of the skill's other files, then with `file` for one of them (text,
   200 kB at most, inside the skill's real path, so a link cannot lead out). It
   is unavailable, with a hint saying where to add skills, while there are none.
@@ -520,7 +522,11 @@ on Ollama, images need `OPENAI_IMAGE_BASE_URL` / `_API_KEY`.
   reason in Settings → Tools (`GET /api/skills`). Skills are the user's own
   files, so their text is trusted like project instructions. Of 22 folders in
   one real `~/.claude/skills`, 21 were valid; listing them costs about 7,500
-  characters of instructions.
+  characters of instructions. Each skill has a switch in Settings → Tools,
+  kept as `skill:<name>` in the same `disabledTools` list (a tool's name has
+  no colon); `read_skill` leaves a switched-off skill out of its list and
+  refuses to read it, and Settings says when skills are left out (past the
+  first 50 that are on, or the first 100 folders).
 - **Turning tools on and off.** A switch per tool in Settings → Tools; disabled
   tools aren't sent. chibot's own tools' switches are the top-level
   `disabledTools` list in `config.json` (`SettingsStore` reads it at each `get()`

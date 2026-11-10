@@ -93,7 +93,7 @@ export function defaultTools({
     new SearchChatsTool(search),
     new SearchProjectFilesTool(projects, index),
     new ReadProjectFileTool(projects, index),
-    new ReadSkillTool(skills),
+    new ReadSkillTool(skills, () => settings.get().disabledTools),
     // Listed in Settings even without their setup, saying what's missing.
     new GenerateImageTool(image),
     new EditImageTool(image),

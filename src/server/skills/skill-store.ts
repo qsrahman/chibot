@@ -47,15 +47,18 @@ export class SkillStore {
     this.dir = dir
   }
 
-  /** Every valid skill, and why each folder that isn't one is left out. */
-  list(): { skills: Skill[]; problems: SkillProblem[] } {
+  /**
+   * Every valid skill, and why each folder that isn't one is left out;
+   * `skipped` counts the folders past the most that are read.
+   */
+  list(): { skills: Skill[]; problems: SkillProblem[]; skipped: number } {
     const skills: Skill[] = []
     const problems: SkillProblem[] = []
     let entries
     try {
       entries = readdirSync(this.dir, { withFileTypes: true })
     } catch {
-      return { skills, problems } // no folder yet: no skills
+      return { skills, problems, skipped: 0 } // no folder yet: no skills
     }
     entries.sort((a, b) => (a.name < b.name ? -1 : 1))
     for (const { name: folder } of entries.slice(0, MAX_SKILLS)) {
@@ -71,7 +74,11 @@ export class SkillStore {
       if (typeof parsed === 'string') problems.push({ folder, reason: parsed })
       else skills.push(parsed.skill)
     }
-    return { skills, problems }
+    return {
+      skills,
+      problems,
+      skipped: Math.max(0, entries.length - MAX_SKILLS),
+    }
   }
 
   /** A skill's instructions, and the other files it has (to read with `file`). */

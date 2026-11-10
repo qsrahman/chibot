@@ -466,12 +466,35 @@ test('lists the skills in the skills folder, and the folders left out', async ({
     await page.goto('/')
     const dialog = await openSettings(page, 'Tools')
     const section = dialog.locator('section', {
-      has: page.getByRole('heading', { name: 'Skills', exact: true }),
+      has: page.getByRole('heading', { name: /^Skills · \d+$/ }),
     })
     await expect(section.getByText('e2e-skill')).toBeVisible()
-    await expect(
-      section.getByText('Use when asked for e2e notes'),
-    ).toBeVisible()
+    // The description opens under the name.
+    const skill = section.locator('.skill-row', { hasText: 'e2e-skill' })
+    await expect(skill.locator('p')).toBeHidden()
+    await skill.locator('summary').click()
+    await expect(skill.locator('p')).toHaveText(/Use when asked for e2e notes/)
+    // Each skill has a switch, kept in the settings with the tools' switches.
+    const settings = async () =>
+      (await (await page.request.get('/api/settings')).json()).settings
+    const use = section.getByLabel('Use the skill e2e-skill')
+    await expect(use).toBeChecked()
+    await use.click()
+    await expect
+      .poll(async () => (await settings()).disabledTools)
+      .toContain('skill:e2e-skill')
+    await use.click()
+    await expect
+      .poll(async () => (await settings()).disabledTools)
+      .not.toContain('skill:e2e-skill')
+    // A folder added meanwhile shows up on Refresh.
+    mkdirSync(join(skills, 'later-skill'), { recursive: true })
+    writeFileSync(
+      join(skills, 'later-skill', 'SKILL.md'),
+      '---\nname: later-skill\ndescription: Comes later.\n---\n\nx\n',
+    )
+    await section.getByRole('button', { name: 'Refresh the skills' }).click()
+    await expect(section.getByText('later-skill')).toBeVisible()
     await expect(section.getByText('broken-skill')).toBeVisible()
     await expect(section.getByText(/Left out: .*--- header/)).toBeVisible()
     // The tool that reads them can now be switched on and off.
