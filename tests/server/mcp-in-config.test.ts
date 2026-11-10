@@ -12,7 +12,7 @@ import {
   writeConfigFile,
 } from '../../src/server/config-file.ts'
 import { offerMcpImport, type Prompts } from '../../src/server/init.ts'
-import { loadMcpServers } from '../../src/server/main.ts'
+import { loadMcpServers } from '../../src/server/mcp/index.ts'
 
 const local = { type: 'local', command: 'node', args: ['server.js'] }
 

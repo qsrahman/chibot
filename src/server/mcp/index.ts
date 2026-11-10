@@ -5,6 +5,12 @@ export {
   parseMcpConfig,
   type McpServerConfig,
 } from './mcp-config.ts'
+export {
+  loadMcpServers,
+  mcpServerFile,
+  mcpServersAtStartup,
+  oauthRedirectUrl,
+} from './config-source.ts'
 export { McpAuthStore } from './mcp-auth.ts'
 export { McpServers } from './mcp-servers.ts'
 export { mcpTools } from './mcp-tool.ts'

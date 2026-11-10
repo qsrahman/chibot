@@ -1,7 +1,6 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { isIP } from 'node:net'
-import { basename, join } from 'node:path'
+import { existsSync, mkdirSync } from 'node:fs'
+import { join } from 'node:path'
 import { serve } from '@hono/node-server'
 import type { Hono } from 'hono'
 import { serveStatic } from '@hono/node-server/serve-static'
@@ -17,11 +16,8 @@ import {
 } from './chat/index.ts'
 import { Config, layered, readEnvFiles } from './config.ts'
 import {
-  mcpVariables,
   readConfigFile,
   readDisabledTools,
-  readMcpServers,
-  writeConfigFile,
   writeDisabledTools,
 } from './config-file.ts'
 import { MediaProxy, type AddressGuard } from './media-proxy.ts'
@@ -30,14 +26,13 @@ import { ConversationSearch, ConversationStore } from './conversations/index.ts'
 import { openDatabase } from './database.ts'
 import { FileStore } from './file-store.ts'
 import {
-  loadMcpConfig,
+  loadMcpServers,
   McpAuthStore,
-  McpServerFile,
   McpServers,
+  mcpServerFile,
+  mcpServersAtStartup,
   mcpTools,
-  OAUTH_CALLBACK,
-  parseMcpConfig,
-  type McpServerConfig,
+  oauthRedirectUrl,
 } from './mcp/index.ts'
 import { MemoryStore } from './memory-store.ts'
 import {
@@ -51,6 +46,7 @@ import {
   SearchProjectFilesTool,
 } from './projects/index.ts'
 import { settingsDefaults, SettingsStore } from './settings-store.ts'
+import { reportConfig } from './startup-notes.ts'
 import type { Tool } from './tool.ts'
 import { ToolRegistry } from './tool-registry.ts'
 import { Transcription } from './transcription.ts'
@@ -62,7 +58,6 @@ import {
 import { MemoryTool } from './tools/memory.ts'
 import { SearchChatsTool } from './tools/search-chats.ts'
 import { ReadSkillTool, SkillStore } from './skills/index.ts'
-import { errorMessage } from '../shared/errors.ts'
 
 /** What tools may need to be built. */
 export interface ToolDeps {
@@ -134,32 +129,7 @@ export function start({
     }),
   )
   if (config.exposure) throw new Error(config.exposure)
-  if (read.exists) console.log(`Settings: ${read.path}`)
-  for (const name of read.obsolete) {
-    console.warn(
-      `Note: ${name} in ${read.path} is no longer used (web search and reading pages come from MCP servers) and is left out the next time chibot saves it.`,
-    )
-  }
-  if (read.tooOpen) {
-    console.warn(
-      `Warning: ${read.path} holds keys and others can read it. Run: chmod 600 "${read.path}"`,
-    )
-  }
-  for (const path of legacy.files) {
-    console.warn(
-      `Note: reading ${path}, which is no longer the place for settings. Run \`chibot init\` to move them into ${read.path}, then delete it.`,
-    )
-  }
-  config.legacyNotes.forEach((note) => console.warn(`Note: ${note}`))
-  if (
-    !config.mcpConfigExplicit &&
-    !read.file.mcpServers &&
-    existsSync(config.mcpConfigPath)
-  ) {
-    console.warn(
-      `Note: reading MCP servers from ${config.mcpConfigPath}; they can live in ${read.path} under "mcpServers". Run \`chibot init\` to move them.`,
-    )
-  }
+  reportConfig(read, legacy, config)
   // Chats and files: for the owner only (the config folder is 0700 too).
   mkdirSync(config.dataDir, { recursive: true, mode: 0o700 })
   for (const dir of openFolders([config.dataDir, config.configDir])) {
@@ -221,7 +191,7 @@ export function start({
     baseURL: config.chat.baseURL,
     apiKey: config.chat.apiKey,
   })
-  const mcp = new McpServers(mcpConfig(config), {
+  const mcp = new McpServers(mcpServersAtStartup(config), {
     // The settings' old lists: an entry's own switches win (see McpServers).
     disabled: () => settings.get().disabledMcpServers,
     ask: () => settings.get().askMcpServers,
@@ -318,92 +288,6 @@ export function start({
       }
     },
   )
-}
-
-/**
- * The MCP servers to use. `CHIBOT_MCP_CONFIG`, if given, names the file;
- * otherwise `mcpServers` in `config.json`, else the older standalone
- * `mcp.json`. `${VAR}` is filled from the environment, then `config.json`'s
- * `env`. Throws, saying what is wrong, so Reload can show it.
- */
-export function loadMcpServers(
-  config: Config,
-): Record<string, McpServerConfig> {
-  const { file } = readConfigFile(config.configDir)
-  const variables = mcpVariables(config.configDir)
-  if (file.mcpServers && !config.mcpConfigExplicit) {
-    return parseMcpConfig(
-      { mcpServers: file.mcpServers },
-      variables,
-      'config.json',
-    )
-  }
-  return loadMcpConfig(config.mcpConfigPath, variables)
-}
-
-/**
- * Where Settings keeps MCP servers: the file `loadMcpServers` reads. Only
- * where chibot is not open to the network without a token, since a `local`
- * server is a command chibot runs.
- */
-function mcpServerFile(config: Config): McpServerFile {
-  const inConfig =
-    !config.mcpConfigExplicit &&
-    (!!readConfigFile(config.configDir).file.mcpServers ||
-      !existsSync(config.mcpConfigPath))
-  const source = inConfig ? 'config.json' : basename(config.mcpConfigPath)
-  return new McpServerFile({
-    source,
-    locked:
-      config.isLoopback || config.token
-        ? null
-        : 'chibot is open to your network without a token, so anyone who can reach it could add a server that runs commands. Set CHIBOT_TOKEN, or edit the servers in the config file.',
-    read: () =>
-      (inConfig
-        ? readConfigFile(config.configDir).file.mcpServers
-        : readMcpServers(config.mcpConfigPath)) ?? {},
-    write: (servers) => {
-      if (inConfig) {
-        const { file } = readConfigFile(config.configDir)
-        writeConfigFile(config.configDir, { ...file, mcpServers: servers })
-      } else {
-        // Owner only, as config.json is: headers and env can hold keys.
-        const json = JSON.parse(readFileSync(config.mcpConfigPath, 'utf8'))
-        writeFileSync(
-          config.mcpConfigPath,
-          `${JSON.stringify({ ...json, mcpServers: servers }, null, 2)}\n`,
-          { mode: 0o600 },
-        )
-      }
-    },
-    check: (servers) =>
-      void parseMcpConfig(
-        { mcpServers: servers },
-        mcpVariables(config.configDir),
-        source,
-      ),
-  })
-}
-
-/** The MCP servers at startup; none, with the error, if they are invalid. */
-function mcpConfig(config: Config): Record<string, McpServerConfig> {
-  try {
-    return loadMcpServers(config)
-  } catch (err) {
-    console.error(`MCP servers are off: ${errorMessage(err)}`)
-    return {}
-  }
-}
-
-/**
- * Where OAuth providers send the browser back after an MCP server's sign-in:
- * chibot's own address (loopback for all interfaces), so the sign-in is done
- * on the machine running it.
- */
-function oauthRedirectUrl({ host, port }: Config): string {
-  const name = ['0.0.0.0', '::'].includes(host) ? '127.0.0.1' : host
-  const origin = `http://${isIP(name) === 6 ? `[${name}]` : name}:${port}`
-  return origin + OAUTH_CALLBACK
 }
 
 /**
