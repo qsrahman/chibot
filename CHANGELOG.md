@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.17.1] - 2026-11-10
+
 ### Fixed
 
 - The user's message bubble (and the Search / Image chip in the message box) is ChatGPT's neutral grey (`#303030` with white text in the dark theme, `#f4f4f4` with near-black text in the light one) instead of a saturated navy with bright blue text, which was too dark and too bright against the page.
