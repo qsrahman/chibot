@@ -73,7 +73,10 @@ How chibot is tested and how to add tests. Part of the developer guide ([AGENTS.
   settings reset them afterwards (`resetSettings` restores the server's
   defaults, so a new setting needs no change there). `contrast.spec.ts` runs
   axe over the main screens in both colour schemes; a new screen, dialog or
-  colour belongs in it. First run:
+  colour belongs in it. To test a request that is still running when something
+  else happens (leaving the chat), hold it with `page.route` until the test
+  lets it through, as `chat-switch.spec.ts` does, rather than waiting a set
+  time. First run:
   `pnpm exec playwright install chromium`.
 
 ## Performance
