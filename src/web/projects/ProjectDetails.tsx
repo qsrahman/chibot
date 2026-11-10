@@ -20,6 +20,7 @@ import { useLoad } from '../ui/useLoad.ts'
 import { ProjectChats } from './ProjectChats.tsx'
 import { ProjectFiles } from './ProjectFiles.tsx'
 import { ProjectInstructions } from './ProjectInstructions.tsx'
+import { errorMessage } from '../../shared/errors.ts'
 
 // How often the page of a project with a mirrored folder looks for changes.
 const FOLDER_POLL_MS = 5000
@@ -150,7 +151,7 @@ export function ProjectDetails({
               )
             } catch (err) {
               // Beside the button that was pressed, not in the banner above.
-              setNotice(`Couldn't sync: ${(err as Error).message}`)
+              setNotice(`Couldn't sync: ${errorMessage(err)}`)
             }
           })
         }

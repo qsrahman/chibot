@@ -11,6 +11,7 @@ import type { SettingsStore } from '../settings-store.ts'
 import type { McpServers } from './mcp-servers.ts'
 import type { McpServerFile } from './server-file.ts'
 import { json, notFound } from '../routes/helpers.ts'
+import { errorMessage } from '../../shared/errors.ts'
 
 export function mcpRoutes({
   mcp,
@@ -75,7 +76,7 @@ export function mcpRoutes({
     try {
       await mcp.reload()
     } catch (err) {
-      return c.json({ error: (err as Error).message }, 400)
+      return c.json({ error: errorMessage(err) }, 400)
     }
     return mcpStatus(c)
   })
@@ -90,14 +91,14 @@ export function mcpRoutes({
       const url = await mcp.signIn(c.req.param('name'), returnTo)
       return c.json({ url: url?.href ?? null })
     } catch (err) {
-      return c.json({ error: (err as Error).message }, 400)
+      return c.json({ error: errorMessage(err) }, 400)
     }
   })
   app.post('/api/mcp/:name/sign-out', async (c) => {
     try {
       await mcp.signOut(c.req.param('name'))
     } catch (err) {
-      return c.json({ error: (err as Error).message }, 400)
+      return c.json({ error: errorMessage(err) }, 400)
     }
     return mcpStatus(c)
   })
@@ -105,7 +106,7 @@ export function mcpRoutes({
     try {
       return c.redirect(await mcp.finishSignIn(new URL(c.req.url).searchParams))
     } catch (err) {
-      return c.text((err as Error).message, 400)
+      return c.text(errorMessage(err), 400)
     }
   })
 
@@ -143,7 +144,7 @@ function forgetOldSwitches(
 }
 
 const failure = (err: unknown) =>
-  err instanceof z.ZodError ? z.prettifyError(err) : (err as Error).message
+  err instanceof z.ZodError ? z.prettifyError(err) : errorMessage(err)
 
 /** Where OAuth providers send the browser back after an MCP sign-in. */
 export const OAUTH_CALLBACK = '/api/mcp/oauth/callback'

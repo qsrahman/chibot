@@ -29,6 +29,7 @@ import { useScrollFollow } from './useScrollFollow.ts'
 import { UNTITLED } from '../conversations/useConversations.ts'
 import type { ProjectsApi } from '../projects/useProjects.ts'
 import type { SettingsApi } from '../settings/useSettings.ts'
+import { errorMessage } from '../../shared/errors.ts'
 
 interface Props {
   health: Health | undefined
@@ -88,7 +89,7 @@ export function ChatPage({
       onListChanged()
       navigate(`/c/${created.id}`)
     } catch (err) {
-      toast((err as Error).message, { kind: 'error' })
+      toast(errorMessage(err), { kind: 'error' })
     }
   }
   // Unsent text and files are kept per chat (a new chat per project).

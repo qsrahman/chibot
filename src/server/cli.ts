@@ -15,6 +15,7 @@ import { readEnvFiles } from './config.ts'
 import { offerMcpImport, runInit, terminalPrompts } from './init.ts'
 import { locations, ROOT } from './locations.ts'
 import { start } from './main.ts'
+import { errorMessage } from '../shared/errors.ts'
 
 const HELP = `chibot: a local chat app for the OpenAI Responses API and compatible servers
 
@@ -171,7 +172,7 @@ if (import.meta.main) {
   try {
     process.exitCode = (await run(process.argv.slice(2))) ?? 0
   } catch (err) {
-    console.error((err as Error).message)
+    console.error(errorMessage(err))
     process.exitCode = 1
   }
 }

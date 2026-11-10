@@ -2,6 +2,7 @@ import { watch as fsWatch, type FSWatcher } from 'node:fs'
 import { skipsPath } from '../../shared/folder-files.ts'
 import type { ProjectSync } from './project-sync.ts'
 import type { ProjectStore } from './project-store.ts'
+import { errorMessage } from '../../shared/errors.ts'
 
 /** What `FolderWatcher` needs of `fs.watch` (tests pass their own). */
 export type Watch = (
@@ -83,7 +84,7 @@ export class FolderWatcher {
       })
       this.#watching.set(projectId, { folder, watcher })
     } catch (err) {
-      console.error(`Can't watch ${folder}:`, (err as Error).message)
+      console.error(`Can't watch ${folder}:`, errorMessage(err))
     }
   }
 
@@ -111,7 +112,7 @@ export class FolderWatcher {
       this.#sync.sync(projectId)
     } catch (err) {
       // Most likely the folder is gone (a drive unmounted): stop; Sync now tries again.
-      console.error(`Syncing the folder failed:`, (err as Error).message)
+      console.error(`Syncing the folder failed:`, errorMessage(err))
       this.stop(projectId)
     }
   }

@@ -5,6 +5,7 @@ import { fileKind } from '../../shared/documents.ts'
 import type { FileStore } from '../file-store.ts'
 import type { Transcription } from '../transcription.ts'
 import { disposition, form, notFound } from './helpers.ts'
+import { errorMessage } from '../../shared/errors.ts'
 
 export function fileRoutes({
   files,
@@ -68,7 +69,7 @@ export function fileRoutes({
         const text = await transcription.transcribe(file, c.req.raw.signal)
         return c.json({ text })
       } catch (err) {
-        return c.json({ error: (err as Error).message }, 502)
+        return c.json({ error: errorMessage(err) }, 502)
       }
     },
   )

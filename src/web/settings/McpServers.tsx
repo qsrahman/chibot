@@ -26,6 +26,7 @@ import { IconButton } from '../ui/IconButton.tsx'
 import { useLoad } from '../ui/useLoad.ts'
 import { McpServerDialog } from './McpServerDialog.tsx'
 import { Row, Section } from './parts.tsx'
+import { errorMessage } from '../../shared/errors.ts'
 
 /** The MCP servers from the config: a switch, status and actions each, and tools. */
 export function McpServers({
@@ -246,7 +247,7 @@ export function McpServers({
             try {
               await saveMcpServer(name, server)
             } catch (err) {
-              return (err as Error).message
+              return errorMessage(err)
             }
             await Promise.all([reload(), definitions.reload()])
             onToolsChanged()

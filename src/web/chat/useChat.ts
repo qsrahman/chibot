@@ -26,6 +26,7 @@ import {
   type Question,
   type Turn,
 } from './turns.ts'
+import { errorMessage } from '../../shared/errors.ts'
 
 /** The turn being answered, shown after the first `keep` turns. */
 interface Pending {
@@ -123,9 +124,7 @@ export function useChat(
         } catch (err) {
           // An item the page can't read (an import from elsewhere): say so,
           // rather than leaving the chat blank.
-          setError(
-            `This chat could not be displayed: ${(err as Error).message}`,
-          )
+          setError(`This chat could not be displayed: ${errorMessage(err)}`)
           setLoadedId(conversationId)
           return
         }
@@ -206,7 +205,7 @@ export function useChat(
         if (!live()) return
         // The answer is saved even if fetching the updated history failed.
         // Keep what streamed; otherwise it would vanish with the pending turn.
-        setError((err as Error).message)
+        setError(errorMessage(err))
         setTurns((prev) => [
           ...prev.slice(0, display.keep),
           soFar(crypto.randomUUID()),
@@ -284,7 +283,7 @@ export function useChat(
         // follow it (the server saves it as the aborted request unwinds).
         if (id) drain(id, display.keep + 1)
       } else {
-        setError((err as Error).message)
+        setError(errorMessage(err))
         if (id) await showHistory(id).catch(() => {})
       }
     } finally {
@@ -378,7 +377,7 @@ export function useChat(
       const loaded = await getConversation(id)
       if (current()) showItems(loaded)
     } catch (err) {
-      if (current()) setError((err as Error).message)
+      if (current()) setError(errorMessage(err))
     }
   }
 
@@ -403,7 +402,7 @@ export function useChat(
       if (conversationIdRef.current === id) showItems(loaded)
     } catch (err) {
       if (!controller.signal.aborted && conversationIdRef.current === id) {
-        setError((err as Error).message)
+        setError(errorMessage(err))
       }
     } finally {
       if (compacting.current === controller) {
@@ -422,7 +421,7 @@ export function useChat(
       const loaded = await getConversation(id)
       if (conversationIdRef.current === id) showItems(loaded)
     } catch (err) {
-      setError((err as Error).message)
+      setError(errorMessage(err))
     }
   }
 

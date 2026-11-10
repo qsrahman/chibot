@@ -14,6 +14,7 @@ import { homedir } from 'node:os'
 import type { McpServerStatus } from '../../shared/types.ts'
 import { McpSignIn, type McpAuthStore } from './mcp-auth.ts'
 import type { McpServerConfig } from './mcp-config.ts'
+import { errorMessage } from '../../shared/errors.ts'
 
 // A local server may first have to download itself (`npx -y …`).
 const CONNECT_TIMEOUT = { local: 60_000, remote: 10_000 }
@@ -195,7 +196,7 @@ export class McpServers {
       } else {
         Object.assign(server, {
           state: 'failed',
-          error: stderrOf(transport) ?? (err as Error).message,
+          error: stderrOf(transport) ?? errorMessage(err),
         })
       }
     }
@@ -248,7 +249,7 @@ export class McpServers {
     } catch (err) {
       Object.assign(server, {
         state: 'failed',
-        error: `Sign-in failed: ${(err as Error).message}`,
+        error: `Sign-in failed: ${errorMessage(err)}`,
       })
       return signIn.returnTo
     }

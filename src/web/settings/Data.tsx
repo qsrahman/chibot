@@ -5,6 +5,7 @@ import { importConversation } from '../conversations/api.ts'
 import { IconButton } from '../ui/IconButton.tsx'
 import { useToast } from '../ui/toast.tsx'
 import { Row, Section } from './parts.tsx'
+import { errorMessage } from '../../shared/errors.ts'
 
 export function Data({
   onImported,
@@ -48,7 +49,7 @@ export function Data({
                 navigate(`/c/${onImported(id)}`)
                 toast('Chat imported')
               } catch (err) {
-                setError((err as Error).message)
+                setError(errorMessage(err))
               }
             }}
           />

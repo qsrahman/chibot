@@ -9,6 +9,7 @@ import { isAbsolute, join, resolve, sep } from 'node:path'
 import YAML from 'yaml'
 import { z } from 'zod'
 import type { SkillProblem } from '../../shared/types.ts'
+import { errorMessage } from '../../shared/errors.ts'
 
 // Skills are folders in the Agent Skills format (https://agentskills.io/specification):
 // a SKILL.md with a YAML header naming and describing the skill, then its
@@ -151,7 +152,7 @@ export class SkillStore {
     try {
       data = YAML.parse(match[1]!)
     } catch (err) {
-      return `the header is not valid YAML: ${(err as Error).message.split('\n')[0]}`
+      return `the header is not valid YAML: ${errorMessage(err).split('\n')[0]}`
     }
     const parsed = header.safeParse(data)
     if (!parsed.success) {

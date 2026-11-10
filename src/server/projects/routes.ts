@@ -21,6 +21,7 @@ import type { ProjectStore } from './project-store.ts'
 import { explainApiError } from '../api-errors.ts'
 import { NothingToSuggestFrom } from './instruction-writer.ts'
 import { json, notFound } from '../routes/helpers.ts'
+import { errorMessage } from '../../shared/errors.ts'
 
 export function projectRoutes({
   store,
@@ -114,10 +115,7 @@ export function projectRoutes({
     try {
       return c.json(listFolder(path))
     } catch (err) {
-      return c.json(
-        { error: `Can't read ${path}: ${(err as Error).message}` },
-        400,
-      )
+      return c.json({ error: `Can't read ${path}: ${errorMessage(err)}` }, 400)
     }
   })
 
@@ -143,7 +141,7 @@ export function projectRoutes({
     } catch (err) {
       projects.setFolder(id, before)
       return c.json(
-        { error: `Can't read ${folder}: ${(err as Error).message}` },
+        { error: `Can't read ${folder}: ${errorMessage(err)}` },
         400,
       )
     }
@@ -168,7 +166,7 @@ export function projectRoutes({
       watcher.update(project.id)
       return c.json(result)
     } catch (err) {
-      return c.json({ error: (err as Error).message }, 409)
+      return c.json({ error: errorMessage(err) }, 409)
     }
   })
 
@@ -197,7 +195,7 @@ export function projectRoutes({
       const message =
         err instanceof OpenAI.APIError
           ? explainApiError(err)
-          : (err as Error).message
+          : errorMessage(err)
       return c.json({ error: message }, 502)
     }
   })

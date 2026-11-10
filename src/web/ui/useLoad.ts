@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { errorMessage } from '../../shared/errors.ts'
 
 /**
  * Data from `load` (a stable function: wrap it in `useCallback`), loaded
@@ -29,7 +30,7 @@ export function useLoad<T>(load: () => Promise<T>, active = true) {
       if (request !== generation.current || load !== currentLoad.current) return
       if (loadedLoad.current !== load) setData(undefined)
       loadedLoad.current = load
-      setError((err as Error).message)
+      setError(errorMessage(err))
     }
   }, [load])
 
@@ -62,7 +63,7 @@ export function useLoad<T>(load: () => Promise<T>, active = true) {
         // Resync first (the data may be stale, e.g. deleted elsewhere), then
         // show the error, which a successful reload would clear.
         await reload()
-        if (load === currentLoad.current) setError((err as Error).message)
+        if (load === currentLoad.current) setError(errorMessage(err))
         return false
       }
     },

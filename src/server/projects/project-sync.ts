@@ -11,6 +11,7 @@ import type { FolderSync } from '../../shared/types.ts'
 import type { FileStore } from '../file-store.ts'
 import type { ProjectIndex } from './project-index.ts'
 import type { ProjectStore } from './project-store.ts'
+import { errorMessage } from '../../shared/errors.ts'
 
 /**
  * Makes a project's files match its folder: adds new files, replaces changed
@@ -106,7 +107,7 @@ export class ProjectSync {
         const code = (err as NodeJS.ErrnoException).code
         left.push({
           path: name,
-          why: `can't be read (${code ?? (err as Error).message})`,
+          why: `can't be read (${code ?? errorMessage(err)})`,
         })
       }
     }

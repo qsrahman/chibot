@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { errorMessage } from '../../shared/errors.ts'
 
 // What Cohere, Jina, llama.cpp's server and vLLM all answer to `POST /rerank`.
 const response = z.object({
@@ -78,7 +79,7 @@ export class Reranker {
       if (signal?.aborted) throw err
       // One line: a server without a /rerank route would otherwise print a
       // stack trace for every search.
-      console.error(`Reranking failed: ${(err as Error).message}`)
+      console.error(`Reranking failed: ${errorMessage(err)}`)
       return null
     }
   }

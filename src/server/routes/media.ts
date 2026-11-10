@@ -6,6 +6,7 @@ import type { StoredItem } from '../../shared/types.ts'
 import type { ConversationStore } from '../conversations/index.ts'
 import { BlockedAddressError, type MediaProxy } from '../media-proxy.ts'
 import { notFound } from './helpers.ts'
+import { errorMessage } from '../../shared/errors.ts'
 
 const MB = 1024 * 1024
 
@@ -94,7 +95,7 @@ export function mediaRoutes({
       })
     } catch (err) {
       const status = err instanceof BlockedAddressError ? 403 : 502
-      return c.json({ error: (err as Error).message }, status)
+      return c.json({ error: errorMessage(err) }, status)
     }
 
     const { status, headers, body } = upstream

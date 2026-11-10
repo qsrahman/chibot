@@ -9,6 +9,7 @@ import {
 } from 'node:fs'
 import { join } from 'node:path'
 import { z } from 'zod'
+import { errorMessage } from '../shared/errors.ts'
 
 // `config.json`: the settings that used to live in `.env`, kept in chibot's
 // config folder with mode 0600. It holds secrets, so it never goes into the
@@ -175,7 +176,7 @@ export function readConfigFile(dir: string): {
   try {
     json = JSON.parse(readFileSync(path, 'utf8'))
   } catch (err) {
-    throw new Error(`${path} isn't valid JSON: ${(err as Error).message}`)
+    throw new Error(`${path} isn't valid JSON: ${errorMessage(err)}`)
   }
   const obsolete = OBSOLETE.filter(
     (name) => json !== null && typeof json === 'object' && name in json,

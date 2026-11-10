@@ -3,6 +3,7 @@ import type { ServiceModel } from '../../shared/service-models.ts'
 import type { Settings, SettingsPatch } from '../../shared/settings.ts'
 import type { ToolInfo } from '../../shared/tools.ts'
 import { getSettings, listTools, updateSettings } from './api.ts'
+import { errorMessage } from '../../shared/errors.ts'
 
 // The settings that change which tools can be used: the image tools need an image model.
 const RELOAD_TOOLS = [
@@ -56,7 +57,7 @@ export function useSettings() {
         if (RELOAD_TOOLS.some((key) => key in patch)) void reloadTools()
         return true
       } catch (err) {
-        setError((err as Error).message)
+        setError(errorMessage(err))
         return false
       }
     },

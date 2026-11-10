@@ -14,6 +14,7 @@ import type { Prefixes } from '../../shared/embedding-prefixes.ts'
 import { documentText } from '../text.ts'
 import { fuse, type Hit } from './fusion.ts'
 import type { Reranker } from './reranker.ts'
+import { errorMessage } from '../../shared/errors.ts'
 
 // About 3,000 chunks: plenty for notes and documents, bounded for embedding.
 const MAX_TEXT = 5_000_000
@@ -162,13 +163,13 @@ export class ProjectIndex {
         try {
           await this.#embed(model, fileId, projectId, ids, chunks)
         } catch (err) {
-          const keywords = `Searchable by keywords only: ${(err as Error).message}`
+          const keywords = `Searchable by keywords only: ${errorMessage(err)}`
           note = cut ? `${keywords}. ${cut}` : keywords
         }
       }
       this.#projects.setStatus(fileId, 'ready', note)
     } catch (err) {
-      this.#projects.setStatus(fileId, 'failed', (err as Error).message)
+      this.#projects.setStatus(fileId, 'failed', errorMessage(err))
     }
   }
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { transcribe } from './api.ts'
+import { errorMessage } from '../../shared/errors.ts'
 
 /**
  * Voice input: records from the microphone in the browser's own format
@@ -47,7 +48,7 @@ export function useDictation(onText: (text: string) => void) {
       setError(
         (err as Error).name === 'NotAllowedError'
           ? 'Microphone access was denied'
-          : `Can’t use the microphone: ${(err as Error).message}`,
+          : `Can’t use the microphone: ${errorMessage(err)}`,
       )
       return
     }

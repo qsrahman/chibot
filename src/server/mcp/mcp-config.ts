@@ -6,6 +6,7 @@ import {
   mcpServerSchema,
   type McpServerConfig,
 } from '../../shared/mcp.ts'
+import { errorMessage } from '../../shared/errors.ts'
 
 // Servers are only ever set up by the owner: a `local` server is a command
 // chibot runs with the owner's rights, and chibot has no login. (Settings may
@@ -32,7 +33,7 @@ export function loadMcpConfig(
   try {
     json = JSON.parse(readFileSync(path, 'utf8'))
   } catch (err) {
-    throw new Error(`${basename(path)}: ${(err as Error).message}`)
+    throw new Error(`${basename(path)}: ${errorMessage(err)}`)
   }
   return parseMcpConfig(json, env, basename(path))
 }
