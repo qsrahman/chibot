@@ -164,9 +164,7 @@ test('describes a project, and drafts its instructions from the files', async ({
 }) => {
   await newProject(page, 'Trip')
   await page.getByRole('button', { name: 'Project options' }).click()
-  await page
-    .getByRole('menuitem', { name: 'Edit name and description' })
-    .click()
+  await page.getByRole('menuitem', { name: 'Edit' }).click()
   const edit = page.getByRole('dialog', { name: 'Edit project' })
   await edit.getByLabel('Description').fill('Two weeks in April')
   await edit.getByRole('button', { name: 'Save' }).click()

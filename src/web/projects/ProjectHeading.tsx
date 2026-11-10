@@ -52,7 +52,7 @@ export function ProjectHeading({
           {...menu.menuProps}
         >
           <MenuItem icon={<Pencil />} onClick={act(() => setEditing(true))}>
-            Edit name and description
+            Edit
           </MenuItem>
           <MenuItem
             icon={<Trash2 />}
