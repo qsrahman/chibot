@@ -27,8 +27,8 @@
   --accent-fg: #ffffff;
   --button: light-dark(#0d0d0d, #ffffff);
   --button-fg: light-dark(#ffffff, #0d0d0d);
-  --bubble-bg: light-dark(#edf3ff, #020562);
-  --bubble-fg: light-dark(#2451da, #d9e6ff);
+  --bubble-bg: light-dark(#f4f4f4, #303030);
+  --bubble-fg: light-dark(#0d0d0d, #ffffff);
   --code-chip: light-dark(rgb(238 238 238 / 82%), rgb(42 42 42 / 82%));
   --danger: light-dark(#d93025, #ff6b6b);
   /* Text on a danger-coloured button: white on the light red would be 2.5:1. */

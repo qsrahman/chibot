@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Fixed
 
+- The user's message bubble (and the Search / Image chip in the message box) is ChatGPT's neutral grey (`#303030` with white text in the dark theme, `#f4f4f4` with near-black text in the light one) instead of a saturated navy with bright blue text, which was too dark and too bright against the page.
 - The context meter under an answer that used tools showed the input of all its responses added together (115K for a 57K context), because each tool call sends the whole context again. It now shows the last response's input, which is what the next request starts from.
 
 ### Changed

@@ -40,7 +40,7 @@ follows; changing `--bg` switches to a dark-grey page.
 | `--surface` | `#ffffff` | `#212121` | Composer, cards |
 | `--surface-raised` | `#ffffff` | `#303030` | Dialogs, menus, popovers |
 | `--surface-muted` | `#f4f4f4` | `#303030` | Hover rows |
-| `--bubble-bg` / `--bubble-fg` | `#edf3ff` / `#2451da` | `#020562` / `#d9e6ff` | User message bubble |
+| `--bubble-bg` / `--bubble-fg` | `#f4f4f4` / `#0d0d0d` | `#303030` / `#ffffff` | User message bubble |
 | `--code-chip` | `rgb(238 238 238 / 82%)` | `rgb(42 42 42 / 82%)` | Inline code |
 | `--chip` | `#ececec` | `#414141` | Chips, switch track, and hover/selected rows inside menus and dialogs (where `--surface-muted` would match the raised background) |
 | `--fg` | `#0d0d0d` | `#ffffff` | Text |
