@@ -7,28 +7,15 @@ import { Sidebar } from './Sidebar.tsx'
 import { useConversations } from './conversations/useConversations.ts'
 import { NARROW, useMediaQuery } from './ui/useMediaQuery.ts'
 import { useProjects } from './projects/useProjects.ts'
+import { readStored, writeStored } from './ui/storage.ts'
 import { useUpdateNotice } from './ui/updates.ts'
 import { useSettings } from './settings/useSettings.ts'
 
 const COLLAPSED_KEY = 'chibot.sidebarCollapsed'
 
-// Storage can throw (private windows, blocked site data). The sidebar state
-// is a convenience, so it just falls back to expanded.
-function loadCollapsed(): boolean {
-  try {
-    return localStorage.getItem(COLLAPSED_KEY) === '1'
-  } catch {
-    return false
-  }
-}
-
-function saveCollapsed(collapsed: boolean): void {
-  try {
-    localStorage.setItem(COLLAPSED_KEY, collapsed ? '1' : '0')
-  } catch {
-    // ignore
-  }
-}
+const loadCollapsed = () => readStored(COLLAPSED_KEY) === '1'
+const saveCollapsed = (collapsed: boolean) =>
+  writeStored(COLLAPSED_KEY, collapsed ? '1' : '0')
 
 export function App() {
   const [health, setHealth] = useState<Health>()

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { readStored, writeStored } from './storage.ts'
 
 /** `null` follows the system; otherwise the user's override. */
 export type ColorScheme = 'light' | 'dark' | null
@@ -9,12 +10,8 @@ const meta = () =>
   document.querySelector<HTMLMetaElement>('meta[name="color-scheme"]')!
 
 function load(): ColorScheme {
-  try {
-    const value = localStorage.getItem(KEY)
-    return value === 'light' || value === 'dark' ? value : null
-  } catch {
-    return null
-  }
+  const value = readStored(KEY)
+  return value === 'light' || value === 'dark' ? value : null
 }
 
 // --bg in base.css, for the browser's own bars (a <meta> can't take light-dark()).
@@ -60,12 +57,7 @@ export function useColorScheme() {
   function choose(next: ColorScheme) {
     setScheme(next)
     apply(next)
-    try {
-      if (next) localStorage.setItem(KEY, next)
-      else localStorage.removeItem(KEY)
-    } catch {
-      // Not persisted (e.g. blocked site data), but applied for this visit.
-    }
+    writeStored(KEY, next)
   }
 
   return {

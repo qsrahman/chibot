@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { readStored, writeStored } from './storage.ts'
 
 // A browser preference (PLAN.md §6): whether to raise a notification when an
 // answer is ready while chibot is in the background. Off until asked for,
@@ -8,15 +9,11 @@ const KEY = 'chibot.notify'
 const supported = () => typeof Notification !== 'undefined'
 
 export function notificationsOn(): boolean {
-  try {
-    return (
-      supported() &&
-      localStorage.getItem(KEY) === '1' &&
-      Notification.permission === 'granted'
-    )
-  } catch {
-    return false
-  }
+  return (
+    supported() &&
+    readStored(KEY) === '1' &&
+    Notification.permission === 'granted'
+  )
 }
 
 /** Raises a notification, if they are on; clicking it brings chibot back. */
@@ -46,11 +43,7 @@ export function useNotifyPreference() {
         setBlocked(permission === 'denied')
         next = permission === 'granted'
       }
-      try {
-        localStorage.setItem(KEY, next ? '1' : '0')
-      } catch {
-        // Not remembered; it still applies until the page is closed.
-      }
+      writeStored(KEY, next ? '1' : '0')
       setOn(next)
     },
   }
