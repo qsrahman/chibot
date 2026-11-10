@@ -298,7 +298,7 @@ test('moves chats in and out, and deletes a project with them', async ({
     .click()
   await page.locator('nav').getByRole('link', { name: 'Work' }).click()
   await page.getByRole('button', { name: 'Project options' }).click()
-  await page.getByRole('menuitem', { name: 'Delete project' }).click()
+  await page.getByRole('menuitem', { name: 'Delete' }).click()
   await page
     .getByRole('dialog', { name: 'Delete project?' })
     .getByRole('button', { name: 'Delete' })

@@ -59,7 +59,7 @@ export function ProjectHeading({
             danger
             onClick={act(() => setDeleting(true))}
           >
-            Delete project
+            Delete
           </MenuItem>
         </div>
       </div>

@@ -307,7 +307,7 @@ test('the menus on a chat row and on a project are menus', async ({ page }) => {
   await page.getByRole('button', { name: 'Project options' }).click()
   await expect(page.getByRole('menu')).toBeVisible()
   await expect(
-    page.getByRole('menuitem', { name: 'Delete project' }),
+    page.getByRole('menuitem', { name: 'Delete' }),
   ).toBeVisible()
 })
 
