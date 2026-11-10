@@ -8,7 +8,7 @@ import {
 } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 import { answer, answered, appReady, lastRequest, send } from './helpers.ts'
 
 // Phase 8: projects, against tests/e2e/fake-openai.ts, where "in my files
@@ -31,6 +31,14 @@ async function newProject(page: Page, name: string) {
   await expect(page.getByRole('heading', { name })).toBeVisible()
 }
 
+// The list of files starts closed; open it once there is something in it.
+async function showFiles(files: Locator) {
+  const toggle = files.getByRole('button', { name: /^Files/ })
+  await expect(toggle).toBeEnabled()
+  if ((await toggle.getAttribute('aria-expanded')) === 'false')
+    await toggle.click()
+}
+
 const sidebarChats = (page: Page) => page.locator('nav .conversation-row')
 
 test('answers from project files, with its instructions', async ({ page }) => {
@@ -50,6 +58,7 @@ test('answers from project files, with its instructions', async ({ page }) => {
       buffer: readFileSync(join(import.meta.dirname, '../fixtures/secret.pdf')),
     },
   ])
+  await showFiles(files)
   await expect(files.getByText('Ready')).toHaveCount(2)
 
   const instructions = page.getByRole('region', {
@@ -97,6 +106,7 @@ test('adds a note, reads a whole file, and indexes a failed file again', async (
     .getByLabel('Note', { exact: true })
     .fill('The garage code is 9027.')
   await dialog.getByRole('button', { name: 'Add note' }).click()
+  await showFiles(files)
   await expect(files.getByText('Codes.md')).toBeVisible()
   await expect(files.getByText('Ready')).toHaveCount(1)
 
@@ -149,6 +159,7 @@ test('refuses a file that is already in the project', async ({ page }) => {
     buffer: Buffer.from('The same text.'),
   })
   await files.getByLabel('Add files (file input)').setInputFiles(note('a.md'))
+  await showFiles(files)
   await expect(files.getByText('Ready')).toHaveCount(1)
   await files
     .getByLabel('Add files (file input)')
@@ -192,6 +203,7 @@ test('describes a project, and drafts its instructions from the files', async ({
       mimeType: 'text/markdown',
       buffer: Buffer.from('Day 2: Kyoto.'),
     })
+  await showFiles(page.getByRole('region', { name: 'Project files' }))
   await expect(page.getByText('Ready')).toBeVisible()
   await suggest.click()
   await expect(instructions.getByLabel('Instructions')).toHaveValue('E2E Title')
@@ -221,6 +233,7 @@ test('adds a folder, keeping paths and skipping what projects cannot use', async
       .getByLabel('Add folder (file input)')
       .setInputFiles(join(dir, 'app'))
     // Folders, closed to begin with, say how many files they hold.
+    await showFiles(files)
     const app = files.locator('details', { hasText: 'app' }).first()
     await expect(app.getByText('2 files').first()).toBeVisible()
     await expect(files.getByText('readme.md')).toBeHidden()
@@ -253,6 +266,7 @@ test('adds a file dropped on the files card', async ({ page }) => {
       new DragEvent('drop', { dataTransfer: data, bubbles: true }),
     )
   })
+  await showFiles(files)
   await expect(files.getByText('drop.md')).toBeVisible()
   await expect(files.getByText('Ready')).toBeVisible()
 })
@@ -322,6 +336,7 @@ test('mirrors a folder: brings its files in, then follows changes', async ({
     await files.getByRole('button', { name: 'Mirror a folder' }).click()
     await page.getByRole('textbox', { name: 'Folder path' }).fill(folder)
     await page.getByRole('button', { name: 'Mirror folder' }).click()
+    await showFiles(files)
     await expect(files.getByText('door.md')).toBeVisible()
     await expect(files.getByText(folder)).toBeVisible()
     await expect(files.getByText('Folder synced: 1 added.')).toBeVisible()
@@ -351,6 +366,7 @@ test('follows a mirrored folder as it changes, without Sync now', async ({
     await files.getByRole('button', { name: 'Mirror a folder' }).click()
     await page.getByRole('textbox', { name: 'Folder path' }).fill(folder)
     await page.getByRole('button', { name: 'Mirror folder' }).click()
+    await showFiles(files)
     await expect(files.getByText('first.md')).toBeVisible()
 
     // The server watches the folder and the page looks now and then.
@@ -404,6 +420,7 @@ test('chooses the folder to mirror by browsing for it', async ({ page }) => {
 
     // door.md is at the top of the mirrored folder; gate.md is in a folder
     // that is closed until it is opened.
+    await showFiles(files)
     await expect(files.getByText('door.md')).toBeVisible()
     await expect(files.getByText('1 file', { exact: true })).toBeVisible()
     await expect(files.getByText('gate.md')).toBeHidden()
@@ -461,6 +478,7 @@ test('Sync now says what it left out, and carries on past a file it cannot read'
       writeFileSync(join(folder, 'z.md'), 'The last note.')
       try {
         await files.getByRole('button', { name: 'Sync now' }).click()
+        await showFiles(files)
         await expect(files.getByText('z.md')).toBeVisible()
         await expect(
           files.getByText(/locked\.md \(can't be read \(EACCES\)\)/),
@@ -475,7 +493,9 @@ test('Sync now says what it left out, and carries on past a file it cannot read'
   }
 })
 
-test('the list of files can be collapsed', async ({ page }) => {
+test('the list of files starts closed, and opens and closes', async ({
+  page,
+}) => {
   await newProject(page, 'Collapse')
   const files = page.getByRole('region', { name: 'Project files' })
   const toggle = files.getByRole('button', { name: /^Files/ })
@@ -486,12 +506,13 @@ test('the list of files can be collapsed', async ({ page }) => {
     mimeType: 'text/markdown',
     buffer: Buffer.from('Some text.'),
   })
-  await expect(files.getByText('a.md')).toBeVisible()
   await expect(toggle).toHaveAccessibleName('Files 1')
-
-  await toggle.click()
   await expect(toggle).toHaveAttribute('aria-expanded', 'false')
   await expect(files.getByText('a.md')).toBeHidden()
+
   await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true')
   await expect(files.getByText('a.md')).toBeVisible()
+  await toggle.click()
+  await expect(files.getByText('a.md')).toBeHidden()
 })

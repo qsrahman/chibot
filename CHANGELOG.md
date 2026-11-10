@@ -13,7 +13,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Added
 
-- A project's list of files can be collapsed from its "Files" heading, which also shows how many there are.
+- A project's list of files opens and closes from its "Files" heading, which also shows how many there are. It starts closed, so a project with many files doesn't push its instructions and chats out of view.
 
 ## [0.17.0] - 2026-11-10
 

@@ -43,7 +43,7 @@ export function ProjectFiles({
   const [dragging, setDragging] = useState(false)
   const [noting, setNoting] = useState(false)
   const [linking, setLinking] = useState(false)
-  const [listOpen, setListOpen] = useState(true)
+  const [listOpen, setListOpen] = useState(false)
   const drop = (e: DragEvent) => {
     e.preventDefault()
     setDragging(false)
