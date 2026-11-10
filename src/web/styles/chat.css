@@ -96,7 +96,7 @@
 }
 
 .card-toggle:disabled svg {
-  visibility: hidden;
+  display: none;
 }
 
 .card-toggle svg {
