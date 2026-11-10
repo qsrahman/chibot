@@ -25,7 +25,7 @@
   --border-control: #8a8a8a;
   --accent: #3566f0;
   --accent-fg: #ffffff;
-  --button: light-dark(#0d0d0d, #ffffff);
+  --button: light-dark(#0d0d0d, #e8e8e8);
   --button-fg: light-dark(#ffffff, #0d0d0d);
   --bubble-bg: light-dark(#f4f4f4, #303030);
   --bubble-fg: light-dark(#0d0d0d, #ffffff);

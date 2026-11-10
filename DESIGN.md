@@ -47,7 +47,7 @@ follows; changing `--bg` switches to a dark-grey page.
 | `--fg-muted` | `#5d5d5d` | `#cdcdcd` | Descriptions, captions, footer, action icons, code labels |
 | `--border` | `rgb(0 0 0 / 10%)` | `rgb(255 255 255 / 15%)` | Hairlines, composer outline |
 | `--accent` / `--accent-fg` | `#3566f0` / `#fff` | `#3566f0` / `#fff` | Send button, switches (measured `oklch(0.56 0.21 265)`) |
-| `--button` / `--button-fg` | `#0d0d0d` / `#fff` | `#fff` / `#0d0d0d` | Primary buttons in dialogs |
+| `--button` / `--button-fg` | `#0d0d0d` / `#fff` | `#e8e8e8` / `#0d0d0d` | Primary buttons in dialogs |
 | `--danger` | `#d93025` | `#ff6b6b` | Errors, destructive buttons |
 | `--scrim` | `rgb(0 0 0 / 50%)` | same | Behind dialogs and the phone sidebar |
 
