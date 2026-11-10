@@ -137,8 +137,10 @@ export interface FolderSync {
   added: number
   updated: number
   removed: number
-  /** Files in the folder that projects don't take (their type, size, name). */
+  /** How many files in the folder were left out (see `left`). */
   skipped: number
+  /** The first of them, with why: their type, size, a name taken, no access. */
+  left: { path: string; why: string }[]
 }
 
 /** A file in a project, with how far its indexing got. */

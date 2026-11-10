@@ -11,6 +11,9 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Fixed
 
+- **Sync now (and the folder watcher) no longer fail for the whole folder over one file that can't be read.** A file with no read permission, or one that vanished mid-sync, stopped the sync with a raw error at the top of the page, kept every file after it (by name) from being synced, and made the watcher stop watching. Now the file is skipped and named, and the rest comes in; files below a folder that won't open stay in the project, not taken for deleted.
+- **Sync now says what it left out and why**, next to the button: files of a type projects can't read, over 50 MB, over the limit of 1,000 files, a name taken by a file you added, or no access. Before, it said "The folder has not changed" while files were being passed over without a word. A failed sync is shown there too.
+- **The 1,000-file limit of a mirrored folder only keeps new files out.** A file that sorted before the ones already in could push a later one past the limit and have it removed from the project as if deleted.
 - A long status in a project's file list (an embedding error, for instance) no longer pushes the files card wider than the page; it is cut with an ellipsis.
 - `~someone` is no longer taken as a relative path when mirroring a folder; it asks for the full path.
 

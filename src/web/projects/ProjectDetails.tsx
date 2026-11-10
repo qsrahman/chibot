@@ -58,7 +58,8 @@ export function ProjectDetails({
     if (!folder) return
     syncProjectFolder(projectId).then(
       (result) => {
-        const note = syncNotice(result)
+        // Only what changed: what is left out is told when asked (Sync now).
+        const note = syncNotice(result, { details: false })
         if (note) {
           setNotice(note)
           void reload()
@@ -142,10 +143,15 @@ export function ProjectDetails({
         }
         onSync={() =>
           void act(async () => {
-            setNotice(
-              syncNotice(await syncProjectFolder(projectId)) ??
-                'The folder has not changed.',
-            )
+            try {
+              setNotice(
+                syncNotice(await syncProjectFolder(projectId)) ??
+                  'The folder has not changed.',
+              )
+            } catch (err) {
+              // Beside the button that was pressed, not in the banner above.
+              setNotice(`Couldn't sync: ${(err as Error).message}`)
+            }
           })
         }
         onUnlink={() => void act(() => unlinkProjectFolder(projectId))}

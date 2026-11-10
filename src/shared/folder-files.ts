@@ -11,17 +11,24 @@ export const MAX_FOLDER_FILES = 1000
 export const MAX_FILE_SIZE = 50 * 1024 * 1024
 
 /**
- * Whether a file found in a folder is worth adding to a project: a type
- * projects read, outside folders like node_modules, and not huge. `path` is
- * relative to the folder, with `/` between its parts.
+ * Why a file found in a folder is not taken, in words for the person who
+ * wonders where it went, or `null` when it is: a type projects read, outside
+ * folders like node_modules, and not huge. `path` is relative to the folder,
+ * with `/` between its parts.
  */
-export function keepsFolderFile(path: string, size: number): boolean {
-  return (
-    !path
+export function whyLeftOut(path: string, size: number): string | null {
+  if (
+    path
       .split('/')
       .slice(0, -1)
-      .some((dir) => IGNORED_FOLDERS.has(dir)) &&
-    documentKind(path) !== null &&
-    size <= MAX_FILE_SIZE
-  )
+      .some((dir) => IGNORED_FOLDERS.has(dir))
+  ) {
+    return 'in a folder that is skipped'
+  }
+  if (documentKind(path) === null) return "a type projects can't read"
+  if (size > MAX_FILE_SIZE) return 'larger than 50 MB'
+  return null
 }
+
+export const keepsFolderFile = (path: string, size: number): boolean =>
+  whyLeftOut(path, size) === null

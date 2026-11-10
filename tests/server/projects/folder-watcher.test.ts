@@ -1,4 +1,10 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -162,6 +168,32 @@ describe('FolderWatcher', () => {
     expect(console.error).toHaveBeenCalled()
     expect(w.open.size).toBe(0)
   })
+
+  it.skipIf(process.getuid?.() === 0)(
+    'keeps watching past a file it cannot read',
+    () => {
+      const w = fakeWatch()
+      const watcher = new FolderWatcher(projects, sync, {
+        watch: w.watch,
+        quietMs: 10,
+      })
+      writeFileSync(join(dir, 'a.md'), 'alpha')
+      writeFileSync(join(dir, 'locked.md'), 'secret')
+      chmodSync(join(dir, 'locked.md'), 0o000)
+      try {
+        link()
+        watcher.update(project)
+        w.open.get(dir)!('a.md')
+        vi.advanceTimersByTime(100)
+        // The file that can't be read is reported by the sync; the watching goes on.
+        expect(syncs).toHaveBeenCalledOnce()
+        expect(w.open.size).toBe(1)
+        expect(projects.files(project).map((f) => f.name)).toEqual(['a.md'])
+      } finally {
+        chmodSync(join(dir, 'locked.md'), 0o644)
+      }
+    },
+  )
 
   it('carries on without watching where the system can’t', () => {
     const watcher = new FolderWatcher(projects, sync, {

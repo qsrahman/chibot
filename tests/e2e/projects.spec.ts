@@ -1,4 +1,5 @@
 import {
+  chmodSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -436,4 +437,42 @@ test('the folder browser says why it cannot open a path, and goes home', async (
     picker.getByRole('button', { name: 'Use this folder' }),
   ).toBeVisible()
   await expect(picker.getByRole('alert')).toBeHidden()
+})
+
+test('Sync now says what it left out, and carries on past a file it cannot read', async ({
+  page,
+}) => {
+  const folder = mkdtempSync(join(tmpdir(), 'chibot-left-out-'))
+  try {
+    writeFileSync(join(folder, 'a.md'), 'The first note.')
+    writeFileSync(join(folder, 'slides.pptx'), 'not readable by a project')
+    await newProject(page, 'Left out')
+    const files = page.getByRole('region', { name: 'Project files' })
+    await files.getByRole('button', { name: 'Mirror a folder' }).click()
+    await page.getByRole('textbox', { name: 'Folder path' }).fill(folder)
+    await page.getByRole('button', { name: 'Mirror folder' }).click()
+    // Said when the folder is linked: a file that was not taken, and why.
+    await expect(
+      files.getByText("Left out: slides.pptx (a type projects can't read)"),
+    ).toBeVisible()
+
+    // A file that can't be read doesn't stop the rest from coming in.
+    if (process.getuid?.() !== 0) {
+      writeFileSync(join(folder, 'locked.md'), 'secret')
+      chmodSync(join(folder, 'locked.md'), 0o000)
+      writeFileSync(join(folder, 'z.md'), 'The last note.')
+      try {
+        await files.getByRole('button', { name: 'Sync now' }).click()
+        await expect(files.getByText('z.md')).toBeVisible()
+        await expect(
+          files.getByText(/locked\.md \(can't be read \(EACCES\)\)/),
+        ).toBeVisible()
+        await expect(files.getByText(/Couldn't sync/)).toHaveCount(0)
+      } finally {
+        chmodSync(join(folder, 'locked.md'), 0o644)
+      }
+    }
+  } finally {
+    rmSync(folder, { recursive: true, force: true })
+  }
 })

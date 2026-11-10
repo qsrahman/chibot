@@ -20,12 +20,24 @@ export function keepFolderFiles(files: File[]): {
   return { kept: capped, skipped: files.length - capped.length }
 }
 
-/** What a sync did, in a line; `null` when it changed nothing. */
-export function syncNotice({ added, updated, removed }: FolderSync) {
-  const parts = [
+/**
+ * What a sync did, in a line, and what it left out with why (`details`: the
+ * page shows that when asked, not at every opening); `null` when it changed
+ * nothing and has nothing to say.
+ */
+export function syncNotice(
+  { added, updated, removed, skipped, left }: FolderSync,
+  { details = true } = {},
+) {
+  const changes = [
     added && `${added} added`,
     updated && `${updated} updated`,
     removed && `${removed} removed`,
   ].filter(Boolean)
-  return parts.length ? `Folder synced: ${parts.join(', ')}.` : null
+  const out =
+    details && skipped > 0
+      ? ` Left out: ${left.map(({ path, why }) => `${path} (${why})`).join(', ')}${skipped > left.length ? `, and ${skipped - left.length} more` : ''}.`
+      : ''
+  if (changes.length) return `Folder synced: ${changes.join(', ')}.${out}`
+  return out ? `The folder has not changed.${out}` : null
 }

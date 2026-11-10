@@ -73,7 +73,13 @@ describe('a project that mirrors a folder', () => {
     put('notes/plan.txt', 'Ship the giraffe')
     put('photo.png', 'not a document')
     put('node_modules/dep/readme.md', 'ignored')
-    expect(link()).toEqual({ added: 2, updated: 0, removed: 0, skipped: 1 })
+    expect(link()).toEqual({
+      added: 2,
+      updated: 0,
+      removed: 0,
+      skipped: 1,
+      left: [{ path: 'photo.png', why: "a type projects can't read" }],
+    })
     await settle()
     expect(names()).toEqual(['intro.md', 'notes/plan.txt'])
     expect(projects.files(project.id).map((f) => f.status)).toEqual([
@@ -98,6 +104,7 @@ describe('a project that mirrors a folder', () => {
       updated: 1,
       removed: 1,
       skipped: 0,
+      left: [],
     })
     await settle()
     expect(names()).toEqual(['a.md', 'c.md'])
@@ -117,6 +124,7 @@ describe('a project that mirrors a folder', () => {
       updated: 0,
       removed: 0,
       skipped: 0,
+      left: [],
     })
     utimesSync(join(dir, 'a.md'), 3000, 3000)
     expect(sync.sync(project.id).updated).toBe(0)
@@ -129,7 +137,13 @@ describe('a project that mirrors a folder', () => {
     projects.addFile(project.id, mine.id)
     put('a.md', 'from the folder')
     put('b.md', 'bravo')
-    expect(link()).toEqual({ added: 1, updated: 0, removed: 0, skipped: 1 })
+    expect(link()).toEqual({
+      added: 1,
+      updated: 0,
+      removed: 0,
+      skipped: 1,
+      left: [{ path: 'a.md', why: 'a file you added has that name' }],
+    })
     rmSync(join(dir, 'b.md'))
     sync.sync(project.id)
     expect(names()).toEqual(['a.md'])
@@ -258,4 +272,87 @@ describe('a project that mirrors a folder', () => {
       chmodSync(join(dir, 'locked'), 0o755)
     }
   })
+
+  // As the owner of the files these tests make can always read them; not so as root.
+  const asRoot = process.getuid?.() === 0
+
+  it.skipIf(asRoot)(
+    'carries on past a file it cannot read, and says which',
+    async () => {
+      put('a.md', 'alpha')
+      put('locked.md', 'secret')
+      put('z.md', 'zulu')
+      chmodSync(join(dir, 'locked.md'), 0o000)
+      try {
+        const result = link()
+        // The ones before it and after it are in; it is named, with why.
+        expect(result).toMatchObject({ added: 2, skipped: 1 })
+        expect(result.left).toEqual([
+          { path: 'locked.md', why: "can't be read (EACCES)" },
+        ])
+        expect(names()).toEqual(['a.md', 'z.md'])
+        // It is mended with the next change, nothing else needs it.
+        chmodSync(join(dir, 'locked.md'), 0o644)
+        expect(sync.sync(project.id)).toMatchObject({ added: 1, skipped: 0 })
+        expect(names()).toEqual(['a.md', 'locked.md', 'z.md'])
+      } finally {
+        chmodSync(join(dir, 'locked.md'), 0o644)
+      }
+    },
+  )
+
+  it.skipIf(asRoot)(
+    'keeps what a folder brought in while that folder will not open',
+    async () => {
+      put('keep.md', 'kept')
+      put('sub/inside.md', 'inside')
+      link()
+      expect(names()).toEqual(['keep.md', 'sub/inside.md'])
+      chmodSync(join(dir, 'sub'), 0o000)
+      try {
+        const result = sync.sync(project.id)
+        // Not taken for deleted: it could not be looked at.
+        expect(result.removed).toBe(0)
+        expect(result.left).toEqual([
+          { path: 'sub/', why: "can't be opened (EACCES)" },
+        ])
+        expect(names()).toEqual(['keep.md', 'sub/inside.md'])
+      } finally {
+        chmodSync(join(dir, 'sub'), 0o755)
+      }
+      rmSync(join(dir, 'sub'), { recursive: true })
+      expect(sync.sync(project.id).removed).toBe(1)
+    },
+  )
+
+  it('says why each kind of file was left out', () => {
+    put('slides.pptx', 'x')
+    put('big.pdf', 'x')
+    put('ok.md', 'fine')
+    // A file over 50 MB, without making one: only its size matters.
+    writeFileSync(join(dir, 'big.pdf'), Buffer.alloc(50 * 1024 * 1024 + 1))
+    const { left, added } = link()
+    expect(added).toBe(1)
+    expect(left).toEqual([
+      { path: 'big.pdf', why: 'larger than 50 MB' },
+      { path: 'slides.pptx', why: "a type projects can't read" },
+    ])
+  })
+
+  it('limits the files a folder brings in, not the ones it already has', () => {
+    for (let i = 0; i < 1000; i++)
+      put(`f${String(i).padStart(4, '0')}.md`, `n${i}`)
+    expect(link()).toMatchObject({ added: 1000, skipped: 0 })
+    // A file that sorts before all of them is new: left out, the rest kept.
+    put('a0.md', 'first in line')
+    const result = sync.sync(project.id)
+    expect(result).toMatchObject({ added: 0, removed: 0, skipped: 1 })
+    expect(result.left).toEqual([
+      { path: 'a0.md', why: 'over the limit of 1,000 files' },
+    ])
+    expect(projects.files(project.id)).toHaveLength(1000)
+    // Room made, it comes in.
+    rmSync(join(dir, 'f0999.md'))
+    expect(sync.sync(project.id)).toMatchObject({ added: 1, removed: 1 })
+  }, 30_000)
 })

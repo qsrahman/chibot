@@ -43,11 +43,32 @@ describe('keepFolderFiles', () => {
 })
 
 describe('syncNotice', () => {
+  const none = { added: 0, updated: 0, removed: 0, skipped: 0, left: [] }
+
   it('says what changed, and nothing when nothing did', () => {
-    const none = { added: 0, updated: 0, removed: 0, skipped: 3 }
     expect(syncNotice(none)).toBeNull()
     expect(syncNotice({ ...none, added: 2, removed: 1 })).toBe(
       'Folder synced: 2 added, 1 removed.',
     )
+  })
+
+  it('names what it left out and why, when asked', () => {
+    const left = [
+      { path: 'slides.pptx', why: "a type projects can't read" },
+      { path: 'locked.md', why: "can't be read (EACCES)" },
+    ]
+    expect(syncNotice({ ...none, skipped: 2, left })).toBe(
+      "The folder has not changed. Left out: slides.pptx (a type projects can't read), locked.md (can't be read (EACCES)).",
+    )
+    expect(syncNotice({ ...none, added: 1, skipped: 12, left })).toBe(
+      "Folder synced: 1 added. Left out: slides.pptx (a type projects can't read), locked.md (can't be read (EACCES)), and 10 more.",
+    )
+    // Not at every opening of the page: only what changed.
+    expect(
+      syncNotice({ ...none, skipped: 2, left }, { details: false }),
+    ).toBeNull()
+    expect(
+      syncNotice({ ...none, added: 1, skipped: 2, left }, { details: false }),
+    ).toBe('Folder synced: 1 added.')
   })
 })

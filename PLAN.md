@@ -718,7 +718,14 @@ Models differ in dimensions, so a model change means re-embedding.
   what changed is indexed. Files added by hand are left alone. Links are not
   followed, folders such as `node_modules` and types projects don't read are
   skipped (`shared/folder-files.ts`, also used by the web's folder picker).
-  It syncs when the link is made, when the project page opens and on **Sync
+  A sync never stops at one file: a file that can't be read (no permission, gone
+  since the scan) or a folder that won't open is skipped and reported, files
+  below a folder that won't open stay in the project (they could not be seen,
+  so they are not deleted), and the 1,000-file limit (`MAX_FOLDER_FILES`) only
+  keeps new files out. The result lists the first eight files left out with why
+  (`FolderSync.left`, reasons from `whyLeftOut` in `shared/folder-files.ts` and
+  the sync), which the page shows when the link is made and on **Sync now**, not
+  at every opening of the page. It syncs when the link is made, when the project page opens and on **Sync
   now** (`POST /api/projects/:id/sync`); `DELETE …/folder` stops mirroring and
   keeps the files. `FolderWatcher` follows the folder while chibot runs: it
   watches each mirrored project's folder with `fs.watch` (recursive; events in
