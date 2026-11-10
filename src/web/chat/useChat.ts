@@ -80,15 +80,34 @@ export function useChat(
   // Set by `send` when it creates a conversation, so the navigation to its
   // URL keeps the run going and doesn't reload over the streaming answer.
   const createdIdRef = useRef<string | null>(null)
-  // Async loads and version switches check these before updating the screen.
+  // Counts the times the user has opened another chat, so a request made for
+  // one chat can tell it has been left (`sameChat`).
   const loadGeneration = useRef(0)
+  // Of the version switches, only the newest shows its result.
   const versionRequest = useRef(0)
-  const conversationIdRef = useRef(conversationId)
-  conversationIdRef.current = conversationId
 
+  /** The number of turns now on screen. */
   const showItems = ({ items, compactions, usage }: ConversationWithItems) => {
-    setTurns(toTurns(items, compactions))
+    const shown = toTurns(items, compactions)
+    setTurns(shown)
     setUsage(usage)
+    return shown.length
+  }
+
+  /** Tells, later, whether the user is still on the chat they are on now. */
+  const sameChat = () => {
+    const generation = loadGeneration.current
+    return () => generation === loadGeneration.current
+  }
+
+  /**
+   * Loads chat `id` again and shows it if `wanted` still says so when it
+   * arrives (the caller made it before starting any request, see `sameChat`).
+   * Returns the number of turns shown, or `null` when it was not shown.
+   */
+  async function reload(id: string, wanted: () => boolean) {
+    const loaded = await getConversation(id)
+    return wanted() ? showItems(loaded) : null
   }
 
   useEffect(() => {
@@ -178,12 +197,7 @@ export function useChat(
     runRef.current = run
     const live = () => runRef.current === run
     /** Reloads the chat; the number of turns it now has, or `null` after a switch. */
-    const showHistory = async (id: string) => {
-      const loaded = await getConversation(id)
-      if (!live()) return null
-      showItems(loaded)
-      return toTurns(loaded.items, loaded.compactions).length
-    }
+    const showHistory = (id: string) => reload(id, live)
 
     let streamed = startAnswer(before)
     /** The turn as streamed so far. */
@@ -367,17 +381,13 @@ export function useChat(
     if (!conversationId) return
     const id = conversationId
     const request = ++versionRequest.current
-    const generation = loadGeneration.current
-    const current = () =>
-      request === versionRequest.current &&
-      generation === loadGeneration.current &&
-      conversationIdRef.current === id
+    const same = sameChat()
+    const wanted = () => same() && request === versionRequest.current
     try {
       await putVersion(id, itemId)
-      const loaded = await getConversation(id)
-      if (current()) showItems(loaded)
+      await reload(id, wanted)
     } catch (err) {
-      if (current()) setError(errorMessage(err))
+      if (wanted()) setError(errorMessage(err))
     }
   }
 
@@ -391,6 +401,7 @@ export function useChat(
   async function compact(focus: string) {
     if (!conversationId) return
     const id = conversationId
+    const same = sameChat()
     const controller = new AbortController()
     compacting.current = controller
     setError(null)
@@ -398,10 +409,9 @@ export function useChat(
     setSummarizing(true)
     try {
       await compactChat(id, focus, controller.signal)
-      const loaded = await getConversation(id)
-      if (conversationIdRef.current === id) showItems(loaded)
+      await reload(id, same)
     } catch (err) {
-      if (!controller.signal.aborted && conversationIdRef.current === id) {
+      if (!controller.signal.aborted && same()) {
         setError(errorMessage(err))
       }
     } finally {
@@ -416,12 +426,12 @@ export function useChat(
   async function undo(compaction: Compaction) {
     if (!conversationId) return
     const id = conversationId
+    const same = sameChat()
     try {
       await undoCompaction(id, compaction.id)
-      const loaded = await getConversation(id)
-      if (conversationIdRef.current === id) showItems(loaded)
+      await reload(id, same)
     } catch (err) {
-      setError(errorMessage(err))
+      if (same()) setError(errorMessage(err))
     }
   }
 
