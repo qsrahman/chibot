@@ -1,0 +1,400 @@
+/* A project's page: its heading and composer at the top, then its files,
+   instructions and chats, all scrolling together. */
+.chat.project-home {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: 24px;
+}
+
+.chat.project-home .greeting {
+  margin-top: 8dvh;
+}
+
+.chat.project-home .disclaimer {
+  display: none;
+}
+
+.project-heading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.project-heading h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 8px;
+}
+
+.project-details {
+  display: grid;
+  gap: 16px;
+  width: calc(100% - 32px);
+  max-width: calc(var(--column) - 32px);
+  margin: 24px auto 0;
+}
+
+.project-card {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.project-card.dragging {
+  border-color: var(--accent);
+}
+
+.project-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.card-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.card-toggle:disabled {
+  cursor: default;
+}
+
+.card-toggle:disabled svg {
+  display: none;
+}
+
+.card-toggle svg {
+  transition: transform 0.15s;
+}
+
+.card-toggle[aria-expanded='true'] svg {
+  transform: rotate(90deg);
+}
+
+.card-count {
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.project-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.project-card h2,
+.project-chats h2 {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.project-card .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.project-card textarea {
+  width: 100%;
+  min-height: 96px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-row);
+  background: var(--bg);
+  color: inherit;
+  font: inherit;
+  font-size: 0.875rem;
+  resize: vertical;
+}
+
+.project-description {
+  margin: 6px 0 0;
+  color: var(--fg-muted);
+  font-size: 0.875rem;
+}
+
+.instructions textarea {
+  min-height: 160px;
+}
+
+.instructions-text {
+  margin: 0;
+  font-size: 0.875rem;
+  white-space: pre-wrap;
+}
+
+.instructions-text.clamped {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+.instructions-toggle {
+  margin-top: 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.instructions-toggle:hover {
+  text-decoration: underline;
+}
+
+.instructions-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.instructions-actions .spacer {
+  flex: 1;
+}
+
+.project-hint {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 0.8125rem;
+}
+
+.project-folder {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.project-folder code {
+  overflow-wrap: anywhere;
+}
+
+/* One column that can be narrower than its longest line: a long status
+   (an embedding error, say) is cut with an ellipsis, not pushed past the card. */
+.project-files {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.project-files li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  border-top: 1px solid var(--border);
+  font-size: 0.875rem;
+}
+
+.project-files li:first-child {
+  border-top: none;
+}
+
+.project-file-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-file-name:hover {
+  text-decoration: underline;
+}
+
+.file-status {
+  flex: none;
+  max-width: 50%;
+  overflow: hidden;
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-status.failed {
+  color: var(--danger);
+}
+
+/* A folder in the list of files: a row that opens, with its files indented. */
+.project-files li.tree-folder {
+  display: block;
+}
+
+.tree-folder > details > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.tree-folder > details > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* `Summary` wraps its label in a span: that is the row. */
+.tree-folder > details > summary > span {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tree-folder-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tree-folder-meta {
+  flex: none;
+  margin-left: auto;
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+}
+
+.project-files.nested {
+  padding-left: 22px;
+}
+
+/* Above the list, at its right. */
+.tree-toggle {
+  display: block;
+  margin-left: auto;
+  padding: 2px 4px;
+  border: none;
+  background: none;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.tree-toggle:hover {
+  color: var(--fg);
+}
+
+.project-chats {
+  display: grid;
+  gap: 2px;
+}
+
+.project-chats h2 {
+  margin: 8px 10px 4px;
+}
+
+.project-choices {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The path of the folder to mirror, with the button that browses for it. */
+.folder-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.folder-input-row .dialog-input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The folders of this machine, in the dialog: a bar, a list that scrolls. */
+.folder-browser {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.folder-browser-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.folder-browser-path {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.folder-browser-list {
+  display: grid;
+  max-height: 240px;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-row);
+  list-style: none;
+}
+
+.folder-browser-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 8px;
+  border: none;
+  border-radius: var(--radius-row);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.folder-browser-row:hover {
+  background: var(--surface-muted);
+}
+
+.folder-browser-row span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folder-browser-empty {
+  padding: 8px;
+}
+
+.folder-browser .button {
+  justify-self: end;
+}
