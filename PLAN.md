@@ -715,9 +715,15 @@ Models differ in dimensions, so a model change means re-embedding.
   chibot runs on; `ProjectSync` makes the project's files match it, naming each
   by its path in the folder. A file is read again only when its size or
   modification time changed and replaced only when its bytes did, and only
-  what changed is indexed. Files added by hand are left alone. Links are not
-  followed, folders such as `node_modules` and types projects don't read are
-  skipped (`shared/folder-files.ts`, also used by the web's folder picker).
+  what changed is indexed. Files added by hand are left alone. What a folder holds
+  that nobody adds it for is passed over (`shared/folder-files.ts`, also used by
+  the web's folder upload and the watcher): hidden files and folders (a name
+  that starts with a dot: `.git`, `.obsidian`, `.env`, `.DS_Store`) and
+  dependency and build folders (`node_modules`, `vendor`, `dist`, `build`,
+  `target`, `Pods`, `site-packages`, …) are never listed, taken or named, and
+  the folder that is mirrored is itself allowed to be hidden; links are not
+  followed, and are named as left out, since one may lead anywhere. A file the
+  project already has from a place that is now skipped goes at the next sync.
   A sync never stops at one file: a file that can't be read (no permission, gone
   since the scan) or a folder that won't open is skipped and reported, files
   below a folder that won't open stay in the project (they could not be seen,

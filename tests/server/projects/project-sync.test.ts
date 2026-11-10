@@ -150,16 +150,61 @@ describe('a project that mirrors a folder', () => {
     expect(files.read(mine.id).toString()).toBe('mine')
   })
 
-  it('does not follow links out of the folder', () => {
+  it('does not follow links out of the folder, and names them', () => {
     const outside = mkdtempSync(join(tmpdir(), 'chibot-outside-'))
     try {
       writeFileSync(join(outside, 'secret.md'), 'secret')
       symlinkSync(outside, join(dir, 'linked'))
       symlinkSync(join(outside, 'secret.md'), join(dir, 'secret.md'))
-      expect(link().added).toBe(0)
+      put('real.md', 'a real file')
+      const result = link()
+      expect(result.added).toBe(1)
+      expect(names()).toEqual(['real.md'])
+      expect(result.left).toEqual([
+        { path: 'linked', why: 'a link (links are not followed)' },
+        { path: 'secret.md', why: 'a link (links are not followed)' },
+      ])
     } finally {
       rmSync(outside, { recursive: true, force: true })
     }
+  })
+
+  it('passes over hidden files and folders and dependency folders without a word', () => {
+    put('keep.md', 'kept')
+    put('.obsidian/workspace.json', '{}')
+    put('.git/notes.md', 'in git')
+    put('.notes.md', 'a hidden note')
+    put('.DS_Store', 'junk')
+    put('docs/.drafts/idea.md', 'a hidden folder inside')
+    put('vendor/lib/readme.md', 'dependencies')
+    put('node_modules/dep/readme.md', 'dependencies')
+    put('docs/guide.md', 'a guide')
+    const result = link()
+    // Not taken, and not reported either: they are not what a folder is for.
+    expect(names()).toEqual(['docs/guide.md', 'keep.md'])
+    expect(result).toMatchObject({ added: 2, skipped: 0, left: [] })
+  })
+
+  it('takes the files of a folder that is itself hidden', () => {
+    put('.notes/a.md', 'alpha')
+    put('.notes/.hidden.md', 'beta')
+    expect(link(join(dir, '.notes'))).toMatchObject({ added: 1 })
+    expect(names()).toEqual(['a.md'])
+  })
+
+  it('drops files that an older version mirrored from a hidden folder', () => {
+    put('.old/a.md', 'alpha')
+    put('b.md', 'bravo')
+    projects.setFolder(project.id, dir)
+    const old = files.save(
+      null,
+      '.old/a.md',
+      'text/markdown',
+      Buffer.from('alpha'),
+    )
+    projects.addFile(project.id, old.id, 1)
+    expect(sync.sync(project.id)).toMatchObject({ added: 1, removed: 1 })
+    expect(names()).toEqual(['b.md'])
   })
 
   it('keeps the files when the folder is unlinked, and stops tracking them', () => {

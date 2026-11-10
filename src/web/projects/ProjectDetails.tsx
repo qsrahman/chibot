@@ -124,7 +124,7 @@ export function ProjectDetails({
             }
             setNotice(
               skipped
-                ? `Skipped ${skipped} of ${files.length} files: types projects can't read, or folders such as node_modules.`
+                ? `Skipped ${skipped} of ${files.length} files: types projects can't read, hidden files and folders, or folders such as node_modules.`
                 : null,
             )
             if (refused.length) {

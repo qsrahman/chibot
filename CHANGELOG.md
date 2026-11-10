@@ -9,6 +9,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 - **A project's files are shown as a tree** when they come from folders (added, or mirrored): folders open and close, all closed to begin with, each saying how many files it holds and how many failed or are being indexed; **Expand all** / **Collapse all** does every folder at once. A folder that holds only another folder is joined with it (`src/server`).
 - **Browse in the Mirror a folder dialog** walks the folders of the machine chibot runs on, lists the files a project can read in each, and fills the path box with the one you choose.
 
+### Changed
+
+- **A mirrored folder skips hidden files and folders**, as a folder upload does: `.git`, `.obsidian`, `.env`, `.DS_Store` and anything else with a name that starts with a dot are no longer taken in or named as left out (the folder you mirror may itself be hidden). More dependency and build folders are skipped too (`vendor`, `bower_components`, `Pods`, `site-packages`, …) and the watcher ignores the same. Links were never followed; Sync now now names them as left out. Files already mirrored from a hidden folder are removed at the next sync.
+
 ### Fixed
 
 - **Sync now (and the folder watcher) no longer fail for the whole folder over one file that can't be read.** A file with no read permission, or one that vanished mid-sync, stopped the sync with a raw error at the top of the page, kept every file after it (by name) from being synced, and made the watcher stop watching. Now the file is skipped and named, and the rest comes in; files below a folder that won't open stay in the project, not taken for deleted.

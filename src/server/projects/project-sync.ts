@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { documentKind } from '../../shared/documents.ts'
 import {
   IGNORED_FOLDERS,
+  isHidden,
   MAX_FOLDER_FILES,
   whyLeftOut,
 } from '../../shared/folder-files.ts'
@@ -150,9 +151,15 @@ function scan(root: string): {
     }
     entries.sort((a, b) => (a.name < b.name ? -1 : 1))
     for (const entry of entries) {
+      // Hidden files and folders (.git, .obsidian, .env, .DS_Store) are never
+      // listed, taken or named: they are not what a person adds a folder for.
+      if (isHidden(entry.name)) continue
       const name = path ? `${path}/${entry.name}` : entry.name
       if (entry.isDirectory()) {
         if (!IGNORED_FOLDERS.has(entry.name)) walk(name)
+      } else if (entry.isSymbolicLink()) {
+        // A link may lead anywhere, so it is not followed (nor a folder's).
+        left.push({ path: name, why: 'a link (links are not followed)' })
       } else if (entry.isFile()) {
         let stat
         try {

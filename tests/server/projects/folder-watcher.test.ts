@@ -96,7 +96,14 @@ describe('FolderWatcher', () => {
     })
     link()
     watcher.update(project)
-    for (const name of ['node_modules/x/index.md', 'src/.git/HEAD', null]) {
+    for (const name of [
+      'node_modules/x/index.md',
+      'src/.git/HEAD',
+      '.obsidian/workspace.json',
+      '.DS_Store',
+      'vendor/lib/readme.md',
+      null,
+    ]) {
       w.open.get(dir)!(name)
     }
     vi.advanceTimersByTime(100)

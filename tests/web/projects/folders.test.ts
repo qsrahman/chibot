@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { skipsPath } from '../../../src/shared/folder-files.ts'
 import {
   keepFolderFiles,
   MAX_FOLDER_FILES,
@@ -39,6 +40,41 @@ describe('keepFolderFiles', () => {
     const { kept, skipped } = keepFolderFiles(many)
     expect(kept).toHaveLength(MAX_FOLDER_FILES)
     expect(skipped).toBe(5)
+  })
+})
+
+describe('skipping what a folder holds that no one added it for', () => {
+  it('skips hidden files and folders, and dependency folders, in an upload', () => {
+    const { kept, skipped } = keepFolderFiles([
+      file('app/readme.md'),
+      file('app/.env.md'),
+      file('app/.obsidian/workspace.json'),
+      file('app/docs/.drafts/idea.md'),
+      file('app/vendor/lib/readme.md'),
+      file('app/node_modules/dep/readme.md'),
+      file('app/docs/guide.md'),
+    ])
+    expect(kept.map((f) => f.name)).toEqual([
+      'app/readme.md',
+      'app/docs/guide.md',
+    ])
+    expect(skipped).toBe(5)
+  })
+
+  it('knows a path that is hidden or in a skipped folder, either way slashes lean', () => {
+    for (const path of [
+      '.git',
+      'a/.hidden/b.md',
+      'a\\.obsidian\\x.json',
+      'node_modules/x',
+      'src/vendor',
+      '.DS_Store',
+    ]) {
+      expect(skipsPath(path), path).toBe(true)
+    }
+    for (const path of ['a.md', 'docs/guide.md', 'my.notes/a.md', '']) {
+      expect(skipsPath(path), path).toBe(false)
+    }
   })
 })
 

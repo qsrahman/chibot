@@ -1,5 +1,5 @@
 import { watch as fsWatch, type FSWatcher } from 'node:fs'
-import { IGNORED_FOLDERS } from '../../shared/folder-files.ts'
+import { skipsPath } from '../../shared/folder-files.ts'
 import type { ProjectSync } from './project-sync.ts'
 import type { ProjectStore } from './project-store.ts'
 
@@ -73,7 +73,7 @@ export class FolderWatcher {
     if (!folder) return
     try {
       const watcher = this.#watch(folder, (filename) => {
-        if (!filename || isIgnored(filename)) return
+        if (!filename || skipsPath(filename)) return
         this.#later(projectId)
       })
       // The folder went away, or the system ran out of watches.
@@ -115,9 +115,4 @@ export class FolderWatcher {
       this.stop(projectId)
     }
   }
-}
-
-/** Whether a path from the folder is in one of the folders a sync skips. */
-function isIgnored(path: string): boolean {
-  return path.split(/[\\/]/).some((part) => IGNORED_FOLDERS.has(part))
 }
