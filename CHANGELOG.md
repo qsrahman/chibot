@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-11-10
+
 ### Added
 
 - **A project's files are shown as a tree** when they come from folders (added, or mirrored): folders open and close, all closed to begin with, each saying how many files it holds and how many failed or are being indexed; **Expand all** / **Collapse all** does every folder at once. A folder that holds only another folder is joined with it (`src/server`).
