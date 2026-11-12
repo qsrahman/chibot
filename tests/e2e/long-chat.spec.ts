@@ -38,7 +38,9 @@ test('still jumps back to the latest message after scrolling to the top', async 
   const turns = page.locator('.turn')
   await expect(turns).toHaveCount(TURNS)
   const messages = page.locator('.messages')
-  await messages.evaluate((el) => (el.scrollTop = 0))
+  // As a person does (the wheel): the page tells that from its own layout moving.
+  await messages.hover()
+  await page.mouse.wheel(0, -1_000_000)
   await expect(turns.first()).toBeInViewport()
   await expect(turns.last()).not.toBeInViewport()
 

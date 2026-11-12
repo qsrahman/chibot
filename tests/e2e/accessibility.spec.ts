@@ -219,6 +219,10 @@ test('jumps to the latest message at once under reduced motion, and glides other
       // until the button stays, and click it in the same breath.
       let jump: HTMLButtonElement | null = null
       for (let attempt = 0; attempt < 50 && !jump; attempt++) {
+        // The wheel first: the page tells a person's scroll from its own layout moving.
+        list.dispatchEvent(
+          new WheelEvent('wheel', { deltaY: -1, bubbles: true }),
+        )
         list.scrollTop = 0
         for (let i = 0; i < 10 && !jump; i++) {
           await new Promise((resolve) => setTimeout(resolve, 20))
