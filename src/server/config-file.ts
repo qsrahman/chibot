@@ -308,7 +308,7 @@ export function redacted(file: ConfigFile): Record<string, unknown> {
 
 /**
  * The tools switched off in `dir`'s config file, or `null` when the file has
- * none (or can't be read just now, e.g. mid-edit: the caller falls back).
+ * none (or can't be read just now, e.g. mid-edit).
  */
 export function readDisabledTools(dir: string): string[] | null {
   try {

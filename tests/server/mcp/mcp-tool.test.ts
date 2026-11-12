@@ -25,23 +25,18 @@ describe('MCP tools', () => {
   let servers: McpServers
   let files: FileStore
   let registry: ToolRegistry
-  const asking: string[] = []
   const dir = mkdtempSync(join(tmpdir(), 'chibot-mcp-'))
   /** Written by the fixture's slow tool when a call reaches it. */
   const started = join(dir, 'started')
   beforeAll(async () => {
-    servers = new McpServers(
-      {
-        fixture: {
-          type: 'local',
-          command: process.execPath,
-          args: [join(import.meta.dirname, '../../fixtures/mcp-server.ts')],
-          env: { CHIBOT_SLOW_MARKER: started },
-        },
+    servers = new McpServers({
+      fixture: {
+        type: 'local',
+        command: process.execPath,
+        args: [join(import.meta.dirname, '../../fixtures/mcp-server.ts')],
+        env: { CHIBOT_SLOW_MARKER: started },
       },
-      // The settings' older list; an entry's own `ask` wins over it.
-      { disabled: () => [], ask: () => asking },
-    )
+    })
     await servers.start()
     files = testFiles(openDatabase(':memory:'))
     registry = new ToolRegistry([new EchoTool()], mcpTools(servers, files))
@@ -53,18 +48,15 @@ describe('MCP tools', () => {
   const context = { conversationId: 'chat-1' }
 
   it('are not offered while switched off in the server’s entry', async () => {
-    const off = new McpServers(
-      {
-        fixture: {
-          type: 'local',
-          command: process.execPath,
-          args: [join(import.meta.dirname, '../../fixtures/mcp-server.ts')],
-          disabledTools: ['echo'],
-          ask: true,
-        },
+    const off = new McpServers({
+      fixture: {
+        type: 'local',
+        command: process.execPath,
+        args: [join(import.meta.dirname, '../../fixtures/mcp-server.ts')],
+        disabledTools: ['echo'],
+        ask: true,
       },
-      { disabled: () => [] },
-    )
+    })
     await off.start()
     try {
       const tools = new ToolRegistry([], mcpTools(off, files))
@@ -99,14 +91,23 @@ describe('MCP tools', () => {
     expect(echo.declaration.parameters).not.toHaveProperty('$schema')
   })
 
-  it('ask first only for servers set to', () => {
-    const echo = registry.get('fixture__echo')!
-    expect(echo.requiresApproval).toBe(false)
-    asking.push('fixture')
-    expect(registry.get('fixture__echo')!.requiresApproval).toBe(true)
-    expect(registry.get('fixture__echo')).toBe(registry.get('fixture__echo'))
-    asking.length = 0
+  it('ask first only for servers set to', async () => {
     expect(registry.get('fixture__echo')!.requiresApproval).toBe(false)
+    const asking = new McpServers({
+      fixture: {
+        type: 'local',
+        command: process.execPath,
+        args: [join(import.meta.dirname, '../../fixtures/mcp-server.ts')],
+        ask: true,
+      },
+    })
+    await asking.start()
+    try {
+      const tools = new ToolRegistry([], mcpTools(asking, files))
+      expect(tools.get('fixture__echo')!.requiresApproval).toBe(true)
+    } finally {
+      await asking.close()
+    }
   })
 
   it('run through the registry', async () => {

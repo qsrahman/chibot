@@ -16,11 +16,8 @@ describe('MCP servers', () => {
   let servers: McpServers
   afterEach(() => servers.close())
 
-  const start = async (
-    configs: Record<string, McpServerConfig>,
-    disabled: string[] = [],
-  ) => {
-    servers = new McpServers(configs, { disabled: () => disabled })
+  const start = async (configs: Record<string, McpServerConfig>) => {
+    servers = new McpServers(configs)
     await servers.start()
     return servers
   }
@@ -30,7 +27,6 @@ describe('MCP servers', () => {
   it('reloads mcp.json: new servers connect, removed ones stop, changed ones restart', async () => {
     let file: Record<string, McpServerConfig> = { fixture }
     servers = new McpServers(file, {
-      disabled: () => [],
       load: () => file,
     })
     await servers.start()
@@ -58,7 +54,6 @@ describe('MCP servers', () => {
     servers = new McpServers(
       { fixture },
       {
-        disabled: () => [],
         load: () => {
           if (broken) throw new Error('mcp.json: bad')
           return { fixture }
@@ -140,19 +135,22 @@ describe('MCP servers', () => {
     )
   })
 
-  it('leaves switched-off servers alone, and syncs with the switch', async () => {
-    const disabled = ['fixture']
-    await start({ fixture }, disabled)
+  it('leaves switched-off servers alone, and follows the switch on reload', async () => {
+    let current: Record<string, McpServerConfig> = {
+      fixture: { ...fixture, enabled: false },
+    }
+    servers = new McpServers(current, { load: () => current })
+    await servers.start()
     expect(status('fixture').state).toBe('disabled')
 
-    disabled.length = 0
-    await servers.sync()
+    current = { fixture }
+    await servers.reload()
     expect(status('fixture').state).toBe('connected')
     const pid = servers.pid('fixture')!
     expect(() => process.kill(pid, 0)).not.toThrow()
 
-    disabled.push('fixture')
-    await servers.sync()
+    current = { fixture: { ...fixture, enabled: false } }
+    await servers.reload()
     expect(status('fixture').state).toBe('disabled')
     // Its process stopped.
     await vi.waitFor(() => expect(() => process.kill(pid, 0)).toThrow())
@@ -165,7 +163,6 @@ describe('MCP servers', () => {
     it('keeps a server, and its place in the list, when it is switched off and on', async () => {
       let current: Record<string, McpServerConfig> = { fixture, other: fixture }
       servers = new McpServers(current, {
-        disabled: () => [],
         load: () => current,
       })
       await servers.start()
@@ -180,53 +177,39 @@ describe('MCP servers', () => {
       ])
     })
 
-    it('switch a server off, and win over the settings’ older list', async () => {
+    it('switch a server off', async () => {
       await start({ fixture: only({ enabled: false }) })
       expect(status('fixture').state).toBe('disabled')
       await servers.close()
-      // Explicitly on beats an old "off" in the settings.
-      servers = new McpServers(
-        { fixture: only({ enabled: true }) },
-        { disabled: () => ['fixture'] },
-      )
-      await servers.start()
+      // On unless `enabled` is false.
+      await start({ fixture: only({ enabled: true }), other: fixture })
       expect(status('fixture').state).toBe('connected')
+      expect(status('other').state).toBe('connected')
     })
 
-    it('say whether calls ask first, and win over the older list', async () => {
-      servers = new McpServers(
-        {
-          fixture: only({ ask: true }),
-          other: only({ ask: false }),
-          third: fixture,
-        },
-        {
-          disabled: () => ['fixture', 'other', 'third'],
-          ask: () => ['other', 'third'],
-        },
-      )
+    it('say whether calls ask first', async () => {
+      servers = new McpServers({
+        fixture: only({ ask: true }),
+        other: only({ ask: false }),
+        third: fixture,
+      })
       expect(servers.asks('fixture')).toBe(true)
       expect(servers.asks('other')).toBe(false)
-      // No `ask` of its own: the settings' list.
-      expect(servers.asks('third')).toBe(true)
+      expect(servers.asks('third')).toBe(false)
       expect(servers.asks('nobody')).toBe(false)
       expect(servers.statuses().find((s) => s.name === 'fixture')!.ask).toBe(
         true,
       )
     })
 
-    it('switch tools off, by the server’s name for them or the older list’s', async () => {
-      servers = new McpServers(
-        { fixture: only({ disabledTools: ['echo'] }) },
-        { disabled: () => [], toolsOff: () => ['fixture__slow'] },
-      )
-      await servers.start()
+    it('switch tools off, by the server’s name for them', async () => {
+      await start({ fixture: only({ disabledTools: ['echo'] }) })
       const enabled = Object.fromEntries(
         status('fixture').tools.map((t) => [t.name, t.enabled]),
       )
       expect(enabled).toMatchObject({
         fixture__echo: false,
-        fixture__slow: false,
+        fixture__slow: true,
         fixture__picture: true,
       })
       expect(servers.toolOff('fixture__echo')).toBe(true)
@@ -236,10 +219,7 @@ describe('MCP servers', () => {
 
     it('apply on reload without reconnecting what stays on', async () => {
       let current: Record<string, McpServerConfig> = { fixture }
-      servers = new McpServers(
-        { fixture },
-        { disabled: () => [], load: () => current },
-      )
+      servers = new McpServers({ fixture }, { load: () => current })
       await servers.start()
       const pid = servers.pid('fixture')!
 

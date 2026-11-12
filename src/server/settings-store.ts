@@ -34,26 +34,20 @@ export function settingsDefaults(
     compactReserve: 16_000,
     keepRecent: 15_000,
     disabledTools: [],
-    disabledMcpServers: [],
-    askMcpServers: [],
   }
 }
 
 /** Where chibot's own tools' switches are kept: the config file. */
 export interface ToolSwitches {
-  /** The tools switched off there, or `null` if it says nothing about them. */
+  /** The tools switched off there; `null` when it has no list or can't be read just now (mid-edit): none are off. */
   read: () => string[] | null
   write: (tools: string[]) => void
 }
 
-// An MCP server's tool is `<server>__<tool>`; chibot's own names have no `__`.
-const isMcp = (name: string) => name.includes('__')
-
 /**
  * User preferences in SQLite, over defaults that come from the environment;
- * except the switches of chibot's own tools, which live in the config file
- * beside the MCP servers' (SQLite still holds those of older versions, used
- * until the file has a list, and the MCP tools' older switches).
+ * except the switches of chibot's own tools and skills, which live in the
+ * config file beside the MCP servers'.
  */
 export class SettingsStore {
   readonly #db: DatabaseSync
@@ -92,10 +86,7 @@ export class SettingsStore {
       const parsed = settingsSchema.shape[key].safeParse(stored[key])
       if (parsed.success) Object.assign(settings, { [key]: parsed.data })
     }
-    const own = this.#tools?.read()
-    if (own) {
-      settings.disabledTools = [...own, ...settings.disabledTools.filter(isMcp)]
-    }
+    if (this.#tools) settings.disabledTools = this.#tools.read() ?? []
     return settings
   }
 
@@ -103,8 +94,9 @@ export class SettingsStore {
   update(patch: SettingsPatch): Settings {
     if (this.#tools && patch.disabledTools) {
       // The file first: if it can't be written, nothing has changed.
-      this.#tools.write(patch.disabledTools.filter((name) => !isMcp(name)))
-      patch = { ...patch, disabledTools: patch.disabledTools.filter(isMcp) }
+      this.#tools.write(patch.disabledTools)
+      const { disabledTools: _, ...rest } = patch
+      patch = rest
     }
     const upsert = this.#db.prepare(
       `INSERT INTO settings (key, value) VALUES (?, ?)

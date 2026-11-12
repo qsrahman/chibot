@@ -4,7 +4,7 @@ import {
   McpServers,
   parseMcpConfig,
 } from '../../../src/server/mcp/index.ts'
-import { testApp, testSettings } from '../fakes.ts'
+import { testApp } from '../fakes.ts'
 
 function setup(
   initial: Record<string, unknown> = {},
@@ -169,7 +169,7 @@ describe('McpServerFile switches', () => {
 describe('MCP routes for editing', () => {
   it('serves the definitions, saves a server and removes it', async () => {
     const { file, saved } = setup()
-    const mcp = new McpServers({}, { disabled: () => [], load: () => ({}) })
+    const mcp = new McpServers({}, { load: () => ({}) })
     const app = testApp({ mcp, mcpFile: file })
     const send = (method: string, path: string, body?: unknown) =>
       app.request(path, {
@@ -200,23 +200,15 @@ describe('MCP routes for editing', () => {
     expect((await send('DELETE', '/api/mcp/servers/files')).status).toBe(400)
   })
 
-  it('PATCH writes a switch to the file, applies it, and forgets the older setting', async () => {
+  it('PATCH writes a switch to the file and applies it', async () => {
     const { file, saved } = setup({
       files: { type: 'local', command: process.execPath, args: ['-e', ''] },
     })
-    const settings = testSettings('m', {
-      disabledMcpServers: ['files'],
-      askMcpServers: ['files', 'keep'],
-      disabledTools: ['files__echo', 'memory'],
-    })
     const mcp = new McpServers(
       {},
-      {
-        disabled: () => [],
-        load: () => parseMcpConfig({ mcpServers: saved() }, {}, 'test'),
-      },
+      { load: () => parseMcpConfig({ mcpServers: saved() }, {}, 'test') },
     )
-    const app = testApp({ mcp, mcpFile: file, settings })
+    const app = testApp({ mcp, mcpFile: file })
     const patch = (body: unknown) =>
       app.request('/api/mcp/servers/files', {
         method: 'PATCH',
@@ -231,13 +223,6 @@ describe('MCP routes for editing', () => {
     ).toBe(200)
     expect(saved().files).toMatchObject({ ask: true, disabledTools: ['echo'] })
     expect(saved().files).not.toHaveProperty('enabled')
-    // What the file now says is no longer in the settings; the rest stays.
-    expect(settings.get()).toMatchObject({
-      disabledMcpServers: [],
-      askMcpServers: ['keep'],
-      disabledTools: ['memory'],
-    })
-
     expect((await patch({ tool: { name: '', enabled: true } })).status).toBe(
       400,
     )

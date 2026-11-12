@@ -46,19 +46,10 @@ interface Server {
  */
 export class McpServers {
   readonly #servers = new Map<string, Server>()
-  readonly #disabled: () => readonly string[]
-  readonly #asking: () => readonly string[]
-  readonly #toolsOff: () => readonly string[]
   readonly #load: (() => Record<string, McpServerConfig>) | undefined
   readonly #auth: { store: McpAuthStore; redirectUrl: string } | undefined
 
   /**
-   * @param options.disabled the servers switched off, read on `start()` and
-   *   `sync()`; `ask` the servers whose calls wait for approval; `toolsOff`
-   *   the tools (as `<server>__<tool>`) switched off. These three are the
-   *   settings' lists from before the switches moved into each server's entry
-   *   in the config file; an entry's own `enabled`, `ask` and `disabledTools`
-   *   win over them.
    * @param options.auth where remote servers' sign-ins are kept, and the
    *   OAuth callback's URL; without it they can't sign in
    * @param options.load reads the servers again for `reload()`
@@ -66,22 +57,13 @@ export class McpServers {
   constructor(
     configs: Record<string, McpServerConfig>,
     {
-      disabled,
-      ask = () => [],
-      toolsOff = () => [],
       auth,
       load,
     }: {
-      disabled: () => readonly string[]
-      ask?: () => readonly string[]
-      toolsOff?: () => readonly string[]
       auth?: { store: McpAuthStore; redirectUrl: string }
       load?: () => Record<string, McpServerConfig>
-    },
+    } = {},
   ) {
-    this.#disabled = disabled
-    this.#asking = ask
-    this.#toolsOff = toolsOff
     this.#auth = auth
     this.#load = load
     for (const [name, config] of Object.entries(configs)) {
@@ -146,7 +128,7 @@ export class McpServers {
   async sync(): Promise<void> {
     await Promise.all(
       [...this.#servers].map(([name, server]) => {
-        if (this.#isOff(name, server)) {
+        if (isOff(server)) {
           return server.state === 'disabled' ? null : this.disconnect(name)
         }
         return server.state === 'disabled' ? this.connect(name) : null
@@ -263,7 +245,7 @@ export class McpServers {
     if (!server.signIn) throw new Error(`${name} doesn’t use sign-in`)
     server.signIn.signOut()
     await this.disconnect(name)
-    if (!this.#disabled().includes(name)) await this.connect(name)
+    if (!isOff(server)) await this.connect(name)
   }
 
   /** Disconnects `name` (a local server's process stops). */
@@ -299,7 +281,7 @@ export class McpServers {
 
   /** Whether calls to `name`'s tools wait for the user's approval. */
   asks(name: string): boolean {
-    return this.#servers.get(name)?.config.ask ?? this.#asking().includes(name)
+    return this.#servers.get(name)?.config.ask === true
   }
 
   /** Whether the tool the model knows as `toolName` is switched off. */
@@ -311,16 +293,8 @@ export class McpServers {
     return false
   }
 
-  #isOff(name: string, server: Server): boolean {
-    const { enabled } = server.config
-    return enabled === undefined ? this.#disabled().includes(name) : !enabled
-  }
-
   #toolOff(server: Server, tool: McpServerTool): boolean {
-    return (
-      (server.config.disabledTools ?? []).includes(tool.definition.name) ||
-      this.#toolsOff().includes(tool.name)
-    )
+    return (server.config.disabledTools ?? []).includes(tool.definition.name)
   }
 
   /** The connected servers' tools. */
@@ -370,6 +344,9 @@ export class McpServers {
 }
 
 /** Whether two entries reach the same server the same way (the switches aside). */
+/** Whether a server's entry switches it off (`enabled: false`). */
+const isOff = (server: Server): boolean => server.config.enabled === false
+
 function sameConnection(a: McpServerConfig, b: McpServerConfig): boolean {
   const { enabled: _e, ask: _a, disabledTools: _t, ...x } = a
   const { enabled: _e2, ask: _a2, disabledTools: _t2, ...y } = b

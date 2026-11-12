@@ -365,7 +365,7 @@ export function testApp(deps: Partial<AppDeps> = {}) {
     attachments: new Attachments(fakeClient([]), files),
     transcription: null,
     media: new MediaProxy(),
-    mcp: new McpServers({}, { disabled: () => [] }),
+    mcp: new McpServers({}),
     mcpFile: new McpServerFile({
       source: 'config.json',
       locked: null,

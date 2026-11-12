@@ -5,9 +5,7 @@ import {
   mcpServerName,
   mcpServerSchema,
   mcpSwitchSchema,
-  type McpSwitch,
 } from '../../shared/mcp.ts'
-import type { SettingsStore } from '../settings-store.ts'
 import type { McpServers } from './mcp-servers.ts'
 import type { McpServerFile } from './server-file.ts'
 import { json, notFound } from '../routes/helpers.ts'
@@ -16,11 +14,9 @@ import { errorMessage } from '../../shared/errors.ts'
 export function mcpRoutes({
   mcp,
   mcpFile,
-  settings,
 }: {
   mcp: McpServers
   mcpFile: McpServerFile
-  settings: SettingsStore
 }) {
   const app = new Hono()
 
@@ -48,7 +44,6 @@ export function mcpRoutes({
     const change = c.req.valid('json')
     try {
       mcpFile.setSwitch(name, change)
-      forgetOldSwitches(settings, name, change)
       await mcp.reload()
     } catch (err) {
       return c.json({ error: failure(err) }, 400)
@@ -111,33 +106,6 @@ export function mcpRoutes({
   })
 
   return app
-}
-
-/**
- * What the switch settled is in the config file now: the settings' older
- * lists no longer say anything about it (they would otherwise come back if
- * the entry's switch is removed).
- */
-function forgetOldSwitches(
-  settings: SettingsStore,
-  server: string,
-  change: McpSwitch,
-) {
-  const now = settings.get()
-  const without = (list: string[], name: string) =>
-    list.filter((entry) => entry !== name)
-  const patch: Partial<typeof now> = {}
-  if (change.enabled !== undefined && now.disabledMcpServers.includes(server)) {
-    patch.disabledMcpServers = without(now.disabledMcpServers, server)
-  }
-  if (change.ask !== undefined && now.askMcpServers.includes(server)) {
-    patch.askMcpServers = without(now.askMcpServers, server)
-  }
-  const prefixed = `${server}__${change.tool?.name}`
-  if (change.tool && now.disabledTools.includes(prefixed)) {
-    patch.disabledTools = without(now.disabledTools, prefixed)
-  }
-  if (Object.keys(patch).length > 0) settings.update(patch)
 }
 
 const failure = (err: unknown) =>

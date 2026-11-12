@@ -226,17 +226,12 @@ server gives it, without the `<server>__` prefix) to `"disabledTools"`. An
 entry holds only what differs from the default, so switching back removes the
 key, and you can set the same keys by hand, then **Reload**. Switches work
 whether or not Settings may add servers, since nothing there runs a command.
-(Older versions kept these in chibot's settings; one that is still there
-applies to a server whose entry has no value of its own, and goes away the
-first time you use that switch.)
 
 **chibot's own tools** (image creation, memory, search in chats and files) are
 switched the same way: the names of those that are off are the top-level
 `"disabledTools"` list in `config.json`, written by Settings → Tools and by
 Settings → Personalization's memory switch, and read again at each use, so a
-hand edit applies without a restart. (A list kept in chibot's settings by an
-older version applies until the file has its own, and goes away the first time
-you use a switch.) The rest of Settings (models, instructions, long chats) stays
+hand edit applies without a restart. The rest of Settings (models, instructions, long chats) stays
 in chibot's database, since it isn't about how chibot starts.
 
 Their tools are offered

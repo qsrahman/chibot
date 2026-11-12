@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Removed
+
+- The fallbacks for switches that older versions kept in chibot's database: the `disabledMcpServers` and `askMcpServers` settings, the MCP tools' `<server>__<tool>` entries in `disabledTools`, and the database copy of `disabledTools` that applied until `config.json` had a list. Switches are read from `config.json` only (a stale value left in the database is ignored), and Settings no longer clears the old lists when a switch is used.
+
 ### Changed
 
 - An MCP server's entry in `config.json` says `"enabled": false` to be off (on when it is missing or `true`), in place of `"disabled": true`. An entry that still says `disabled` is refused as an unknown key (the standalone `mcp.json` and `config.json` need the rename).

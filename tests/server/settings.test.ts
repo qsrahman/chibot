@@ -39,8 +39,6 @@ describe('SettingsStore', () => {
       compactReserve: 16_000,
       keepRecent: 15_000,
       disabledTools: [],
-      disabledMcpServers: [],
-      askMcpServers: [],
     })
   })
 
@@ -99,7 +97,7 @@ describe('SettingsStore', () => {
 
 describe('the switches of chibot’s own tools', () => {
   // A stand-in for the config file's list.
-  function make(file: string[] | null, legacy?: string[]) {
+  function make(file: string[] | null) {
     const db = openDatabase(':memory:')
     const state = { file, writes: 0 }
     const settings = new SettingsStore(db, settingsDefaults('m'), {
@@ -109,51 +107,41 @@ describe('the switches of chibot’s own tools', () => {
         state.file = tools.length > 0 ? tools : null
       },
     })
-    if (legacy) settings.update({ disabledTools: legacy })
     return { db, settings, state }
   }
   const stored = (db: DatabaseSync) =>
     db.prepare("SELECT value FROM settings WHERE key = 'disabledTools'").get()
 
-  it('come from the file, over those an older version kept in SQLite', () => {
+  it('come from the file, and nothing left in SQLite counts', () => {
     const { db, settings } = make(['memory'])
     db.prepare(
       'INSERT INTO settings VALUES (\'disabledTools\', \'["generate_image","srv__tool"]\')',
     ).run()
-    // The older built-in switch is ignored; an MCP tool's older switch still applies.
-    expect(settings.get().disabledTools).toEqual(['memory', 'srv__tool'])
+    expect(settings.get().disabledTools).toEqual(['memory'])
   })
 
-  it('come from SQLite until the file has a list', () => {
+  it('are none while the file has no list', () => {
     const { db, settings } = make(null)
     db.prepare(
       "INSERT INTO settings VALUES ('disabledTools', '[\"generate_image\"]')",
     ).run()
-    expect(settings.get().disabledTools).toEqual(['generate_image'])
+    expect(settings.get().disabledTools).toEqual([])
   })
 
-  it('are saved to the file, with the older ones left behind', () => {
+  it('are saved to the file only', () => {
     const { db, settings, state } = make(null)
-    db.prepare(
-      'INSERT INTO settings VALUES (\'disabledTools\', \'["generate_image","srv__tool"]\')',
-    ).run()
     const next = settings.update({
-      disabledTools: ['generate_image', 'memory', 'srv__tool'],
+      disabledTools: ['generate_image', 'memory', 'skill:pdf'],
     })
-    expect(state.file).toEqual(['generate_image', 'memory'])
-    // SQLite keeps only the MCP tool's older switch.
-    expect(JSON.parse((stored(db) as { value: string }).value)).toEqual([
-      'srv__tool',
-    ])
+    expect(state.file).toEqual(['generate_image', 'memory', 'skill:pdf'])
+    expect(stored(db)).toBeUndefined()
     expect(next.disabledTools).toEqual([
       'generate_image',
       'memory',
-      'srv__tool',
+      'skill:pdf',
     ])
-    // Turning the last one back on leaves nothing to fall back to.
-    expect(
-      settings.update({ disabledTools: ['srv__tool'] }).disabledTools,
-    ).toEqual(['srv__tool'])
+    // Turning the last one back on leaves no list.
+    expect(settings.update({ disabledTools: [] }).disabledTools).toEqual([])
     expect(state.file).toBeNull()
   })
 

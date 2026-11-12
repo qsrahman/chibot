@@ -197,10 +197,6 @@ export function start({
     apiKey: config.chat.apiKey,
   })
   const mcp = new McpServers(mcpServersAtStartup(config), {
-    // The settings' old lists: an entry's own switches win (see McpServers).
-    disabled: () => settings.get().disabledMcpServers,
-    ask: () => settings.get().askMcpServers,
-    toolsOff: () => settings.get().disabledTools,
     // Read again on each Reload, so a changed config.json is picked up.
     load: () => loadMcpServers(config),
     auth: {

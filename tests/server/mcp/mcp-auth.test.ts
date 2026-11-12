@@ -41,7 +41,6 @@ describe('MCP sign-in', () => {
 
   const start = async (configs: Record<string, McpServerConfig>) => {
     const servers = new McpServers(configs, {
-      disabled: () => [],
       auth: { store: new McpAuthStore(path), redirectUrl },
     })
     all.push(servers)

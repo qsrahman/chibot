@@ -531,9 +531,7 @@ on Ollama, images need `OPENAI_IMAGE_BASE_URL` / `_API_KEY`.
   tools aren't sent. chibot's own tools' switches are the top-level
   `disabledTools` list in `config.json` (`SettingsStore` reads it at each `get()`
   and writes it on `update()`, so the web and `chat-service` still see the
-  `disabledTools` setting; an unreadable file reads as no list); the
-  SQLite value of older versions applies until the file has a list, and holds
-  only MCP tools' older `<server>__<tool>` switches once the list is written. The composer's "+"
+  `disabledTools` setting; an unreadable file reads as no list). The composer's "+"
   menu (Web search, Create image) forces one tool for the next message with
   `tool_choice`; otherwise the model decides.
 - **Answers.** Generated images render in the answer (open full size,
@@ -897,10 +895,7 @@ runner (now Phase 11).
   `PATCH /api/mcp/servers/:name`; a disabled server is disconnected and a local
   one's process stopped), its status, Reconnect, Sign in / Sign out,
   "Ask before using its tools" (`ask` in the entry) and its tools with their
-  own switches (`disabledTools`, by the server's own names). The three used to
-  be the settings `disabledMcpServers`, `askMcpServers` and `disabledTools`;
-  those still apply to a server whose entry has no value of its own, and a
-  switch used in Settings clears them. A change that is only a switch is
+  own switches (`disabledTools`, by the server's own names). A change that is only a switch is
   applied on Reload without reconnecting; Reload re-reads `mcp.json` (new servers connect, removed ones
   stop, changed ones restart, an invalid file changes nothing). Routes:
   `GET /api/mcp`, `POST /api/mcp/reload`, `POST /api/mcp/:name/reconnect`,

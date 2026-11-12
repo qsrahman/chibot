@@ -45,7 +45,6 @@ describe('MCP routes', () => {
         tracker: { type: 'remote', url: provider.url },
       },
       {
-        disabled: () => settings.get().disabledMcpServers,
         auth: {
           store: new McpAuthStore(join(dir, `${crypto.randomUUID()}.json`)),
           redirectUrl: CALLBACK,
@@ -67,7 +66,7 @@ describe('MCP routes', () => {
     return Object.fromEntries(servers.map((s) => [s.name, s]))
   }
 
-  it('list the servers, and switch them off and on', async () => {
+  it('list the servers, and reconnect one', async () => {
     const app = await chibot()
     let servers = await statuses(app.request('/api/mcp'))
     expect(servers.fixture).toMatchObject({
@@ -84,11 +83,7 @@ describe('MCP routes', () => {
       state: 'needs-sign-in',
       signedIn: false,
     })
-    await app.request('/api/settings', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ disabledMcpServers: ['fixture'] }),
-    })
+    await mcp.disconnect('fixture')
     servers = await statuses(app.request('/api/mcp'))
     expect(servers.fixture!.state).toBe('disabled')
 
