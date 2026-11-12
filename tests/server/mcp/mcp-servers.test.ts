@@ -162,6 +162,24 @@ describe('MCP servers', () => {
     const only = (patch: Partial<McpServerConfig>) =>
       ({ ...fixture, ...patch }) as McpServerConfig
 
+    it('keeps a server, and its place in the list, when it is switched off and on', async () => {
+      let current: Record<string, McpServerConfig> = { fixture, other: fixture }
+      servers = new McpServers(current, {
+        disabled: () => [],
+        load: () => current,
+      })
+      await servers.start()
+      current = { fixture: only({ enabled: false }), other: fixture }
+      await servers.reload()
+      expect(status('fixture').state).toBe('disabled')
+      current = { fixture: only({ enabled: true }), other: fixture }
+      await servers.reload()
+      expect(servers.statuses().map((s) => s.name)).toEqual([
+        'fixture',
+        'other',
+      ])
+    })
+
     it('still reads the older `disabled`, which `enabled` wins over', async () => {
       await start({ fixture: only({ disabled: true }) })
       expect(status('fixture').state).toBe('disabled')

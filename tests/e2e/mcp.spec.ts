@@ -243,7 +243,7 @@ test('keeps the switches in the server’s entry in the file', async ({
     .click()
   await expect.poll(() => entry().ask).toBe(true)
   await page.getByRole('switch', { name: 'Use fixture' }).click()
-  await expect.poll(() => entry().disabled).toBe(true)
+  await expect.poll(() => entry().enabled).toBe(false)
   // The server's definition is as it was.
   expect(entry()).toMatchObject({ type: 'local' })
 
@@ -252,7 +252,7 @@ test('keeps the switches in the server’s entry in the file', async ({
   const again = await openTools(page)
   await expect(server(page, 'fixture')).toContainText('Off')
   await page.getByRole('switch', { name: 'Use fixture' }).click()
-  await expect.poll(() => entry().disabled).toBeUndefined()
+  await expect.poll(() => entry().enabled).toBeUndefined()
   await expect(again.getByRole('switch', { name: 'Echo' })).not.toBeChecked()
   await again.getByRole('switch', { name: 'Echo' }).click()
   await expect.poll(() => entry().disabledTools).toBeUndefined()
