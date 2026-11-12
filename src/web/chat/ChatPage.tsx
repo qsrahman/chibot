@@ -139,8 +139,16 @@ export function ChatPage({
   // The composer stays the third child either way, so it keeps its focus
   // and text when the first message moves it to the bottom.
   const empty = turns.length === 0 && !pending && !error && !chat.loading
-  const { endRef, threadRef, away, follow, following, onScroll, jumpToLatest } =
-    useScrollFollow(id, [turns, pending], empty)
+  const {
+    endRef,
+    threadRef,
+    away,
+    follow,
+    following,
+    inputProps,
+    onScroll,
+    jumpToLatest,
+  } = useScrollFollow(id, [turns, pending], empty)
   // A new chat starts as a normal one again.
   useEffect(() => {
     if (!id) setTemporaryMode(false)
@@ -258,7 +266,7 @@ export function ChatPage({
               }
             />
           ) : (
-            <div className="messages" onScroll={onScroll}>
+            <div className="messages" onScroll={onScroll} {...inputProps}>
               <div className="thread" ref={threadRef}>
                 {turns.map((turn, i) => (
                   <ErrorBoundary key={turn.key} fallback={turnFailed}>

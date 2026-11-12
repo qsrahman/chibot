@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState, type UIEvent } from 'react'
 import { REDUCED_MOTION } from '../ui/useMediaQuery.ts'
 
+/** How long after the thread got shorter a scroll up is taken for the browser's own. */
+const SHRINK_MS = 300
+
 /**
  * Keeps the newest message in view while an answer streams, but only while the
  * user is at the bottom, so scrolling up to read isn't undone by every new
@@ -16,6 +19,11 @@ export function useScrollFollow(
   const threadRef = useRef<HTMLDivElement>(null)
   const followRef = useRef(true)
   const scrollTopRef = useRef(0)
+  // When the thread last got shorter (see `onScroll`).
+  const threadHeightRef = useRef(0)
+  const shrunkAtRef = useRef(-Infinity)
+  // When the user last used the wheel, a touch, a key or the scrollbar on the list.
+  const inputAtRef = useRef(-Infinity)
   // Scrolled up: a button jumps back to the latest message.
   const [away, setAway] = useState(false)
 
@@ -25,6 +33,10 @@ export function useScrollFollow(
   }, [id])
 
   const follow = () => {
+    const height = threadRef.current?.offsetHeight ?? 0
+    if (height < threadHeightRef.current)
+      shrunkAtRef.current = performance.now()
+    threadHeightRef.current = height
     if (followRef.current) endRef.current?.scrollIntoView({ block: 'end' })
   }
   useEffect(follow, content)
@@ -49,18 +61,37 @@ export function useScrollFollow(
     }
   }
 
+  const markInput = () => {
+    inputAtRef.current = performance.now()
+  }
+
   return {
     endRef,
     threadRef,
     away,
     follow,
     following,
+    /** Spread on the scrolling list, with `onScroll`: they tell a scroll the user made from the layout's. */
+    inputProps: {
+      onWheel: markInput,
+      onTouchMove: markInput,
+      onKeyDown: markInput,
+      onPointerDown: markInput,
+    },
     onScroll(e: UIEvent<HTMLElement>) {
       const el = e.currentTarget
       const atEnd = el.scrollHeight - el.scrollTop - el.clientHeight < 40
       // Only scrolling up leaves the end: a scroll event measured after
-      // the content grew (while following) isn't the user's.
-      const up = el.scrollTop < scrollTopRef.current
+      // the content grew (while following) isn't the user's. Nor is one after
+      // it got shorter (the streamed answer is replaced by the saved one,
+      // which is briefly shorter): the browser pulls the position up with it,
+      // and the event, delivered after the content has grown again, looks like
+      // a scroll up that left the end short of it.
+      // (A scroll the user's own input just made always counts.)
+      const now = performance.now()
+      const shrunk = now - shrunkAtRef.current < SHRINK_MS
+      const byUser = now - inputAtRef.current < SHRINK_MS
+      const up = el.scrollTop < scrollTopRef.current && (!shrunk || byUser)
       scrollTopRef.current = el.scrollTop
       if (atEnd) followRef.current = true
       else if (up) followRef.current = false

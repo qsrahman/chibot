@@ -272,7 +272,9 @@ test('jumps back to the latest message after scrolling up', async ({
   await expect(jump).toHaveCount(0)
 
   const list = page.locator('.messages')
-  await list.evaluate((el) => el.scrollTo({ top: 0 }))
+  // As a person does: the wheel, not a script.
+  await list.hover()
+  await page.mouse.wheel(0, -5000)
   await expect(jump).toBeVisible()
   await jump.click()
   await expect(jump).toHaveCount(0)
