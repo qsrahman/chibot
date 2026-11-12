@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.17.3] - 2026-11-12
+
 ### Added
 
 - **`chibot` opens the default browser** at its address when it starts from a terminal. `--no-open` stops it; it also stays closed without a terminal (a service, CI, piped output), over SSH, and when a token is set. `pnpm dev` and the tests never open it.
