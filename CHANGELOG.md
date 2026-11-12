@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.17.5] - 2026-11-12
+
 ### Fixed
 
 - Right-to-left languages (Urdu, Arabic, Hebrew): the message box, your messages, each block of an answer, and chat, project and search titles take their direction from their own text, so such text runs right to left with its bullets and alignment, and English and code stay left to right.
