@@ -57,7 +57,7 @@ describe('Config', () => {
     expect(new Config({ ...base, HOST: 'localhost' }).exposure).toBeNull()
     const open = new Config({ ...base, HOST: '0.0.0.0' })
     expect(open.exposure).toContain('HOST=0.0.0.0 would expose chibot')
-    expect(open.exposure).toContain('CHIBOT_ALLOW_OPEN=1')
+    expect(open.exposure).toContain('server.allowOpen')
     const token = 'a'.repeat(16)
     expect(
       new Config({ ...base, HOST: '0.0.0.0', CHIBOT_TOKEN: token }).exposure,

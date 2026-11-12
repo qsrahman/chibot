@@ -7,7 +7,7 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs'
-import { join } from 'node:path'
+import { isAbsolute, join } from 'node:path'
 import { z } from 'zod'
 import { errorMessage } from '../shared/errors.ts'
 
@@ -42,9 +42,13 @@ export const configFileSchema = z
       .object({
         host: text.optional(),
         port: z.number().int().min(1).max(65535).optional(),
+        /** Listen beyond this machine without a token (see `Config.exposure`). */
+        allowOpen: z.boolean().optional(),
       })
       .strict()
       .optional(),
+    /** Where the database, stored files and MCP sign-ins are kept (a full path); the platform's data folder when absent. */
+    dataDir: text.refine(isAbsolute, 'must be a full path').optional(),
     /** Required to use chibot (once per browser). */
     token: z
       .string()
@@ -96,6 +100,8 @@ const SETTINGS: [path: string, variable: string][] = [
   ['transcription.model', 'OPENAI_TRANSCRIBE_MODEL'],
   ['server.host', 'HOST'],
   ['server.port', 'PORT'],
+  ['server.allowOpen', 'CHIBOT_ALLOW_OPEN'],
+  ['dataDir', 'CHIBOT_DATA_DIR'],
   ['token', 'CHIBOT_TOKEN'],
 ]
 
@@ -180,6 +186,16 @@ export function writeConfigFile(dir: string, file: ConfigFile): string {
   return path
 }
 
+/** A value typed on the command line, as the setting's type: a number, a yes or no, or text. */
+function typed(path: string, value: string): unknown {
+  if (path === 'server.port') return Number(value)
+  if (path === 'server.allowOpen') {
+    if (/^(true|1|yes)$/i.test(value)) return true
+    if (/^(false|0|no)$/i.test(value)) return false
+  }
+  return value
+}
+
 /**
  * `file` with the setting at `path` (`chat.model`) changed to `value`; an empty
  * value removes it. Unknown settings and invalid values throw.
@@ -223,7 +239,7 @@ export function withSetting(
   }
   const holder = parents.at(-1)!
   if (value === '') delete holder[last]
-  else holder[last] = path === 'server.port' ? Number(value) : value
+  else holder[last] = typed(path, value)
   // Sections left empty go.
   for (let i = keys.length - 1; i >= 0; i--) {
     if (Object.keys(parents[i + 1]!).length === 0) delete parents[i]![keys[i]!]

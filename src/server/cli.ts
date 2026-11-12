@@ -6,6 +6,7 @@ import {
   CONFIG_FILE,
   readConfigFile,
   redacted,
+  toEnv,
   withSetting,
   writeConfigFile,
 } from './config-file.ts'
@@ -33,7 +34,7 @@ Usage:
 
 Settings: chat.baseURL, chat.apiKey, chat.model, image.*, embedding.*,
 transcription.* (each baseURL, apiKey, model), server.host,
-server.port, token, mcpServers (MCP servers: edit config.json or use Settings → Tools), and env.<NAME>:\na variable for \${NAME} in them.
+server.port, server.allowOpen, dataDir, token, mcpServers (MCP servers: edit config.json or use Settings → Tools), and env.<NAME>:\na variable for \${NAME} in them.
 Environment variables such as OPENAI_API_KEY override the settings.`
 
 /** Runs the command line; resolves to the exit code (not returned while the server runs). */
@@ -62,6 +63,15 @@ export async function run(args: string[]): Promise<number | void> {
   }
 
   const where = locations(process.env)
+  // Where the data is: CHIBOT_DATA_DIR, else `dataDir` in config.json, else the platform's folder.
+  const dataDir = () => {
+    try {
+      const { file } = readConfigFile(where.configDir)
+      return locations({ ...toEnv(file), ...process.env }).dataDir
+    } catch {
+      return where.dataDir // a broken file is reported by what needs it
+    }
+  }
   switch (command) {
     case 'start':
       start({
@@ -102,7 +112,7 @@ export async function run(args: string[]): Promise<number | void> {
           // Reported by whatever reads it next.
         }
         console.log(`Settings:    ${path}`)
-        console.log(`Data:        ${where.dataDir}`)
+        console.log(`Data:        ${dataDir()}`)
         console.log(`MCP servers: ${inFile ? `in ${path}` : 'none yet'}`)
         return
       }
@@ -124,7 +134,7 @@ export async function run(args: string[]): Promise<number | void> {
       const target = resolve(
         rest[0] ?? `chibot-backup-${new Date().toISOString().slice(0, 10)}`,
       )
-      const { chats, files } = backup(where.dataDir, target, version)
+      const { chats, files } = backup(dataDir(), target, version)
       console.log(`Backed up ${chats} chats and ${files} files to ${target}.`)
       console.log(
         'Settings (config.json, with your keys) and MCP sign-ins are not included.',
@@ -136,15 +146,11 @@ export async function run(args: string[]): Promise<number | void> {
         console.error('Usage: chibot restore <folder> [--replace]')
         return 1
       }
-      const { chats, files, movedTo } = restore(
-        where.dataDir,
-        resolve(rest[0]),
-        {
-          replace: values.replace,
-        },
-      )
+      const { chats, files, movedTo } = restore(dataDir(), resolve(rest[0]), {
+        replace: values.replace,
+      })
       console.log(
-        `Restored ${chats} chats and ${files} files into ${where.dataDir}.`,
+        `Restored ${chats} chats and ${files} files into ${dataDir()}.`,
       )
       if (movedTo) console.log(`The chats that were there are in ${movedTo}.`)
       return

@@ -1145,7 +1145,7 @@ Configuration lives in three layers, split by who changes it and how often:
   Settings shows only whether a key is configured.
 - **Where things are:** the XDG folders (`~/.config/chibot`, `~/.local/share/chibot`, also on a Mac; `env-paths` for Windows): settings
   (`config.json`, with the MCP servers in it) in the config folder, the database,
-  files and MCP tokens in the data folder (`CHIBOT_CONFIG_DIR` / `CHIBOT_DATA_DIR` override).
+  files and MCP tokens in the data folder (`CHIBOT_CONFIG_DIR` / `CHIBOT_DATA_DIR` override; `dataDir` in `config.json` names it too).
 - **Lookup, highest first:** command-line flags, real environment variables,
   `config.json`, defaults. `config.json` has the same settings as the
   variables, grouped (`chat.model` is `OPENAI_MODEL`: `SETTINGS` in

@@ -196,8 +196,8 @@ export class Config {
     return (
       `HOST=${this.host} would expose chibot beyond this machine with no authentication: ` +
       'anyone who can reach it could spend your API key and, in Settings, add MCP servers that run commands. ' +
-      'Set a token (chibot config set token "$(openssl rand -hex 16)"), or set CHIBOT_ALLOW_OPEN=1 ' +
-      '(chibot --allow-open) if a firewall or proxy in front already restricts who can reach it.'
+      'Set a token (chibot config set token "$(openssl rand -hex 16)"), or allow it with ' +
+      '`chibot config set server.allowOpen true` (or `chibot --allow-open`) if a firewall or proxy in front already restricts who can reach it.'
     )
   }
 }

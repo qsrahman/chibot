@@ -56,6 +56,21 @@ describe('the chibot command', () => {
     ])
   })
 
+  it('uses the data folder config.json names, unless the environment names one', async () => {
+    mkdirSync(join(dir, 'config'), { recursive: true })
+    const named = join(dir, 'named-data')
+    writeFileSync(
+      join(dir, 'config', 'config.json'),
+      JSON.stringify({ dataDir: named }),
+    )
+    await run(['config', 'path'])
+    expect(out[1]).toContain(join(dir, 'data'))
+    out.length = 0
+    vi.stubEnv('CHIBOT_DATA_DIR', undefined)
+    await run(['config', 'path'])
+    expect(out[1]).toContain(named)
+  })
+
   it('still says where the settings are when the file is broken', async () => {
     mkdirSync(join(dir, 'config'), { recursive: true })
     writeFileSync(join(dir, 'config', 'config.json'), '{ nope')

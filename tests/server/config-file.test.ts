@@ -37,7 +37,8 @@ const full: ConfigFile = {
   embedding: { model: 'nomic-embed-text' },
   rerank: { baseURL: 'http://localhost:9000/v1', model: 'bge-reranker-v2-m3' },
   transcription: { model: 'gpt-transcribe' },
-  server: { host: '0.0.0.0', port: 8080 },
+  server: { host: '0.0.0.0', port: 8080, allowOpen: true },
+  dataDir: '/srv/chibot-data',
   token: 'a-token-of-16-chars',
 }
 
@@ -55,12 +56,30 @@ describe('config.json', () => {
       OPENAI_TRANSCRIBE_MODEL: 'gpt-transcribe',
       HOST: '0.0.0.0',
       PORT: '8080',
+      CHIBOT_ALLOW_OPEN: 'true',
+      CHIBOT_DATA_DIR: '/srv/chibot-data',
       CHIBOT_TOKEN: 'a-token-of-16-chars',
     })
     // And Config takes it as it is.
     const config = new Config(env)
+    expect(config.allowOpen).toBe(true)
+    expect(config.dataDir).toBe('/srv/chibot-data')
     expect(config.chat).toMatchObject({ model: 'gemma4', apiKey: 'sk-chat' })
     expect(config.port).toBe(8080)
+  })
+
+  it('takes a yes or no for server.allowOpen, and a full path for dataDir', () => {
+    expect(withSetting({}, 'server.allowOpen', 'yes').server).toEqual({
+      allowOpen: true,
+    })
+    expect(withSetting({}, 'server.allowOpen', 'false').server).toEqual({
+      allowOpen: false,
+    })
+    expect(() => withSetting({}, 'server.allowOpen', 'maybe')).toThrow(
+      /server\.allowOpen/,
+    )
+    expect(withSetting({}, 'dataDir', '/srv/d').dataDir).toBe('/srv/d')
+    expect(() => withSetting({}, 'dataDir', 'relative/d')).toThrow(/full path/)
   })
 
   it('refuses unknown settings, so a typo is not silently ignored', () => {

@@ -86,9 +86,9 @@ or a one-off run changes a value. A `.env` file is not read.
 | `rerank.baseURL` / `.apiKey` / `.model` | `OPENAI_RERANK_BASE_URL` / `_API_KEY` / `_MODEL` | none (the API key is the chat one) | Project search reordered by a reranking model, on a server with a `/rerank` route (llama.cpp's `llama-server`, vLLM, Jina, Cohere); `baseURL` is the address up to `/rerank`, e.g. `http://localhost:8080/v1`. Without it, or with the model emptied in Settings, passages keep the order keywords and meaning give |
 | `transcription.baseURL` / `.apiKey` / `.model` | `OPENAI_TRANSCRIBE_BASE_URL` / `_API_KEY` / `_MODEL` | the chat endpoint's | Voice input; the model defaults to `gpt-transcribe` on OpenAI, and must be named on other servers (without one, the mic is off). With chat on Ollama, point this at OpenAI |
 | `token` | `CHIBOT_TOKEN` | — | Requires a token (16+ characters) to use chibot; set it when `server.host` exposes chibot |
-| — | `CHIBOT_ALLOW_OPEN` | — | `1` (or `chibot --allow-open`) lets chibot listen beyond this machine without a token, e.g. behind a firewall or proxy that restricts who can reach it |
+| `server.allowOpen` | `CHIBOT_ALLOW_OPEN` | `false` | `true` (or `1` in the variable, or `chibot --allow-open`) lets chibot listen beyond this machine without a token, e.g. behind a firewall or proxy that restricts who can reach it |
 | — | `CHIBOT_CONFIG_DIR` | see above | Where `config.json` is |
-| — | `CHIBOT_DATA_DIR` | see above | Where the database, generated images and MCP sign-ins are kept |
+| `dataDir` | `CHIBOT_DATA_DIR` | see above | Where the database, generated images and MCP sign-ins are kept (a full path) |
 
 For example, to chat with a local Ollama model:
 
@@ -150,7 +150,8 @@ refuses to start when `server.host` is beyond this machine and there is no
 token, since anyone who could reach it would spend your API key and, in
 Settings, add MCP servers that run commands. If a firewall or proxy in front
 already restricts who can reach it, `chibot --allow-open` (or
-`CHIBOT_ALLOW_OPEN=1`) starts it anyway, with a warning.
+`chibot config set server.allowOpen true`, or `CHIBOT_ALLOW_OPEN=1`) starts it
+anyway, with a warning.
 
 Web pages you visit can't use chibot behind your back: it answers only to
 this machine's names (`localhost`, IP addresses, and `server.host` if it's a name),
