@@ -16,7 +16,7 @@ function scripted(answers: string[]) {
   }
   return { prompts, asked, said }
 }
-const nothing = { existing: {}, legacyEnv: {}, legacyPath: null }
+const nothing = { existing: {} }
 
 describe('chibot init', () => {
   it('sets up OpenAI: the key (secret), then the model', async () => {
@@ -58,39 +58,12 @@ describe('chibot init', () => {
       server: { port: 9000 },
     })
   })
-
-  it('offers to move an old .env, and then asks nothing more', async () => {
-    const legacy = {
-      legacyEnv: { OPENAI_API_KEY: 'sk-old', OPENAI_MODEL: 'm', PATH: '/bin' },
-      legacyPath: '/repo/.env',
-    }
-    const yes = scripted([''])
-    expect(await runInit(yes.prompts, { existing: {}, ...legacy })).toEqual({
-      chat: { apiKey: 'sk-old', model: 'm' },
-    })
-    expect(yes.asked[0]!.question).toContain('/repo/.env')
-    // Declined, it asks as usual. Not offered when a config exists already.
-    const no = scripted(['n', '1', 'sk-new', ''])
-    expect(
-      await runInit(no.prompts, { existing: {}, ...legacy }),
-    ).toMatchObject({
-      chat: { apiKey: 'sk-new' },
-    })
-    const has = scripted(['1', '', ''])
-    await runInit(has.prompts, {
-      existing: { chat: { apiKey: 'k' } },
-      ...legacy,
-    })
-    expect(has.asked[0]!.question).toContain('Choose')
-  })
 })
 
 describe('chibot init, the provider question', () => {
   it('asks again for anything but 1 or 2, instead of guessing', async () => {
     const { prompts, said } = scripted(['x', '3', '1', 'sk-abc', ''])
-    expect(
-      await runInit(prompts, { existing: {}, legacyEnv: {}, legacyPath: null }),
-    ).toEqual({
+    expect(await runInit(prompts, { existing: {} })).toEqual({
       chat: { apiKey: 'sk-abc' },
     })
     expect(said.filter((m) => m === 'Type 1 or 2.')).toHaveLength(2)

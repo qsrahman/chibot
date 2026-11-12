@@ -1,61 +1,23 @@
-import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { parseEnv } from 'node:util'
 import type { ChatModel } from 'openai/resources/shared'
 import { settingOf, toEnv, type ConfigFile } from './config-file.ts'
-import { locations, ROOT } from './locations.ts'
+import { locations } from './locations.ts'
 import { z } from 'zod'
 
 /**
- * The settings in the repo's `.env`, which older versions used for all of
- * them. They count for less than `config.json` (they are what `chibot init`
- * moves into it, and a leftover file must not override a later `chibot config
- * set`), and for less than the real environment. Read, not loaded into
- * `process.env`, so nothing else sees them as the real environment either.
- * The current folder's `.env` is not read: a global command would otherwise
- * take whatever keys the folder it runs in happens to hold, and a hostile
- * folder could point it at its own server.
- *
- * @returns the values, and the files they came from
- */
-export function readEnvFiles(paths = [join(ROOT, '.env')]): {
-  values: Record<string, string>
-  files: string[]
-} {
-  const values: Record<string, string> = {}
-  const files: string[] = []
-  // The first file wins, as with the real environment over a file.
-  for (const path of [...new Set(paths)].reverse()) {
-    let text: string
-    try {
-      text = readFileSync(path, 'utf8')
-    } catch (err) {
-      // A missing file is fine: variables may come from elsewhere.
-      if ((err as NodeJS.ErrnoException).code === 'ENOENT') continue
-      throw err
-    }
-    Object.assign(values, parseEnv(text))
-    files.unshift(path)
-  }
-  return { values, files }
-}
-
-/**
- * The settings from every place, lowest first: an old `.env`, `config.json`,
- * the real environment, then the command line (`flags`, as variables).
+ * The settings from every place, lowest first: `config.json`, the real
+ * environment, then the command line (`flags`, as variables).
  */
 export function layered({
-  legacy,
   file,
   env,
   flags,
 }: {
-  legacy: Record<string, string>
   file: ConfigFile
   env: NodeJS.ProcessEnv
   flags: Record<string, string>
 }): NodeJS.ProcessEnv {
-  return { ...legacy, ...toEnv(file), ...env, ...flags }
+  return { ...toEnv(file), ...env, ...flags }
 }
 
 /** Connection to an OpenAI or OpenAI-compatible (Responses API) server. */
@@ -163,12 +125,8 @@ export class Config {
   readonly token: string | null
   /** The owner accepted listening beyond this machine without a token. */
   readonly allowOpen: boolean
-  /** A standalone MCP servers file (`mcp.json`, older than `config.json`'s `mcpServers`); it may not exist. */
-  readonly mcpConfigPath: string
-  /** `CHIBOT_MCP_CONFIG` was given. */
-  readonly mcpConfigExplicit: boolean
-  /** Notes for the startup message: older locations still in use. */
-  readonly legacyNotes: string[]
+  /** The file `CHIBOT_MCP_CONFIG` names, read in place of `config.json`'s `mcpServers`, or `null`. */
+  readonly mcpConfigPath: string | null
 
   constructor(env: NodeJS.ProcessEnv) {
     const parsed = envSchema.safeParse(env)
@@ -218,8 +176,6 @@ export class Config {
     this.configDir = where.configDir
     this.dataDir = where.dataDir
     this.mcpConfigPath = where.mcpConfigPath
-    this.mcpConfigExplicit = where.mcpConfigExplicit
-    this.legacyNotes = where.legacy
     this.token = e.CHIBOT_TOKEN ?? null
     this.allowOpen = ['1', 'true', 'yes'].includes(
       (e.CHIBOT_ALLOW_OPEN ?? '').toLowerCase(),

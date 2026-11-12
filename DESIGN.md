@@ -244,7 +244,7 @@ web, Images, Your chats and files, then Other; the switch for skills heads the S
 one-line description that says what leaves the machine; a tool that isn't set
 up stays listed with its label in `--fg-muted`, its setup hint as the
 description and its switch disabled at 40 % opacity. Below them, an "MCP
-servers" section with one row, `mcp.json` and a **Reload** button, then a
+servers" section with one row, "Servers" with **Add** and **Reload** buttons, then a
 section per server ("MCP · files"): a first row for the server ("Local server"
 / "Remote server", its status or error as the description, then Sign in
 (primary), Sign out, Reconnect and its switch on the right), a row "Ask before

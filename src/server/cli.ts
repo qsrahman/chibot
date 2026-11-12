@@ -5,14 +5,12 @@ import { parseArgs } from 'node:util'
 import {
   CONFIG_FILE,
   readConfigFile,
-  readMcpServers,
   redacted,
   withSetting,
   writeConfigFile,
 } from './config-file.ts'
 import { backup, restore } from './backup.ts'
-import { readEnvFiles } from './config.ts'
-import { offerMcpImport, runInit, terminalPrompts } from './init.ts'
+import { runInit, terminalPrompts } from './init.ts'
 import { locations, ROOT } from './locations.ts'
 import { start } from './main.ts'
 import { wantsBrowser } from './open-browser.ts'
@@ -81,28 +79,11 @@ export async function run(args: string[]): Promise<number | void> {
       return
     case 'init': {
       const { file, path } = readConfigFile(where.configDir)
-      const legacy = readEnvFiles()
       const prompts = terminalPrompts()
       try {
-        let next = await runInit(prompts, {
-          existing: file,
-          legacyEnv: legacy.values,
-          legacyPath: legacy.files[0] ?? null,
-        })
-        // A named file (CHIBOT_MCP_CONFIG) is the user's choice: leave it.
-        if (!where.mcpConfigExplicit) {
-          next = await offerMcpImport(
-            prompts,
-            next,
-            where.mcpConfigPath,
-            readMcpServers(where.mcpConfigPath),
-          )
-        }
+        const next = await runInit(prompts, { existing: file })
         writeConfigFile(where.configDir, next)
         console.log(`Saved to ${path} (readable by you only).`)
-        if (legacy.files[0]) {
-          console.log(`You can delete ${legacy.files[0]} now.`)
-        }
         console.log('Start chibot with: chibot')
       } finally {
         prompts.close()
@@ -123,7 +104,7 @@ export async function run(args: string[]): Promise<number | void> {
         console.log(`Settings:    ${path}`)
         console.log(`Data:        ${where.dataDir}`)
         console.log(
-          `MCP servers: ${inFile && !where.mcpConfigExplicit ? `in ${path}` : where.mcpConfigPath}`,
+          `MCP servers: ${where.mcpConfigPath ?? (inFile ? `in ${path}` : 'none yet')}`,
         )
         return
       }

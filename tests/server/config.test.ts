@@ -1,8 +1,5 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { Config, layered, readEnvFiles } from '../../src/server/config.ts'
+import { describe, expect, it } from 'vitest'
+import { Config, layered } from '../../src/server/config.ts'
 
 describe('Config', () => {
   it('applies defaults', () => {
@@ -201,10 +198,8 @@ describe('Config', () => {
     })
   })
 
-  it('finds mcp.json in the chibot folder unless told otherwise', () => {
-    expect(new Config({ OPENAI_API_KEY: 'k' }).mcpConfigPath).toMatch(
-      /[/\\]mcp\.json$/,
-    )
+  it('reads MCP servers from config.json unless a file is named', () => {
+    expect(new Config({ OPENAI_API_KEY: 'k' }).mcpConfigPath).toBeNull()
     expect(
       new Config({ OPENAI_API_KEY: 'k', CHIBOT_MCP_CONFIG: '/etc/chibot.json' })
         .mcpConfigPath,
@@ -215,46 +210,6 @@ describe('Config', () => {
     expect(() => new Config({ OPENAI_API_KEY: 'k', PORT: port })).toThrow(
       /PORT/,
     )
-  })
-})
-
-describe('readEnvFiles', () => {
-  let dir: string
-  beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'chibot-env-'))
-  })
-  afterEach(() => rmSync(dir, { recursive: true }))
-
-  it('reads the values without putting them in the environment', () => {
-    const file = join(dir, '.env')
-    writeFileSync(file, 'CHIBOT_T_REPO=file\nOPENAI_MODEL="quoted model"\n')
-    expect(readEnvFiles([file])).toEqual({
-      values: { CHIBOT_T_REPO: 'file', OPENAI_MODEL: 'quoted model' },
-      files: [file],
-    })
-    expect(process.env.CHIBOT_T_REPO).toBeUndefined()
-  })
-
-  it('lets the first file win, skips a missing one and reads a duplicate once', () => {
-    const first = join(dir, 'first.env')
-    const second = join(dir, 'second.env')
-    writeFileSync(first, 'A=first\n')
-    writeFileSync(second, 'A=second\nB=second\n')
-    expect(readEnvFiles([join(dir, 'none.env'), first, second, first])).toEqual(
-      { values: { A: 'first', B: 'second' }, files: [first, second] },
-    )
-  })
-
-  it('does not read the current folder’s .env', () => {
-    // A global command runs in any folder; that folder's file is not its settings.
-    const before = process.cwd()
-    writeFileSync(join(dir, '.env'), 'CHIBOT_T_REPO=from-the-folder\n')
-    process.chdir(dir)
-    try {
-      expect(readEnvFiles().values.CHIBOT_T_REPO).not.toBe('from-the-folder')
-    } finally {
-      process.chdir(before)
-    }
   })
 })
 
@@ -273,44 +228,24 @@ describe('Config errors', () => {
 })
 
 describe('layered', () => {
-  const legacy = {
-    OPENAI_MODEL: 'legacy',
-    OPENAI_API_KEY: 'legacy',
-    PORT: '1111',
-    HOST: '10.0.0.1',
-  }
   const file = {
     chat: { model: 'file', apiKey: 'file' },
     server: { port: 2222 },
   }
   const env = { OPENAI_API_KEY: 'env', PORT: '3333' }
 
-  it('lets each place beat the ones below it: an old .env, config.json, the environment, a flag', () => {
-    const merged = layered({ legacy, file, env, flags: { PORT: '4444' } })
+  it('lets each place beat the ones below it: config.json, the environment, a flag', () => {
+    const merged = layered({ file, env, flags: { PORT: '4444' } })
     expect(merged).toMatchObject({
       PORT: '4444', // a flag
-      OPENAI_API_KEY: 'env', // the environment, over the file and .env
-      OPENAI_MODEL: 'file', // config.json, over a leftover .env
-      HOST: '10.0.0.1', // only the old .env has it
+      OPENAI_API_KEY: 'env', // the environment, over the file
+      OPENAI_MODEL: 'file', // config.json
     })
   })
 
-  it('does not let a leftover .env override a later `config set`', () => {
-    expect(
-      new Config(
-        layered({
-          legacy,
-          file: { chat: { model: 'new', apiKey: 'k' } },
-          env: {},
-          flags: {},
-        }),
-      ).chat.model,
-    ).toBe('new')
-  })
-
   it('ignores what the file does not set', () => {
-    expect(
-      layered({ legacy: {}, file: {}, env: { A: '1' }, flags: {} }),
-    ).toEqual({ A: '1' })
+    expect(layered({ file: {}, env: { A: '1' }, flags: {} })).toEqual({
+      A: '1',
+    })
   })
 })

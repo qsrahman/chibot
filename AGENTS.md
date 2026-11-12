@@ -61,10 +61,9 @@ tests/e2e/    Playwright specs (*.spec.ts), fake-openai.ts, and server.ts
               (starts chibot with a test-only tool that needs approval and the
               MCP fixtures as `fixture` and `tracker`)
 scripts/      release.ts (`pnpm release`)
-data/         a checkout's older local data (git-ignored); chibot now keeps the
-              SQLite database (with sqlite-vec loaded), files/ and
-              mcp-auth.json (MCP servers' OAuth tokens, mode 0600) in the
-              platform's data folder (`chibot config path`)
+(data)        chibot keeps the SQLite database (with sqlite-vec loaded),
+              files/ and mcp-auth.json (MCP servers' OAuth tokens, mode 0600)
+              in the platform's data folder (`chibot config path`), not here
 ```
 
 ## Commands
@@ -167,9 +166,9 @@ transpiles it.
   `config.json` (`config-file.ts`, mode 0600) under the environment (via
   `Config`; flags beat the environment, which beats the file), MCP servers in
   that file's `mcpServers` (`loadMcpServers`, checked when loaded so a mistake
-  never stops chibot starting; a server's own switches (`disabled`, `ask`,
+  never stops chibot starting; a server's own switches (`enabled`, `ask`,
   `disabledTools`) are in its entry, written by Settings; `${VAR}` from the environment, then its `env`;
-  a standalone `mcp.json` still works) and their OAuth tokens in
+  `CHIBOT_MCP_CONFIG` names a file to use instead) and their OAuth tokens in
   `mcp-auth.json` in the data folder (`McpAuthStore`); where
   these folders are comes from `locations()`, never from `ROOT` directly. User
   preferences in SQLite

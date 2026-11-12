@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Removed
 
+- What older versions needed to carry over, which nobody on this setup uses: reading the repo's `.env` (and `chibot init` offering to import it), the standalone `mcp.json` (read when `config.json` has no `mcpServers`, and `chibot init` offering to move it in), a checkout's `<repo>/data` and `<repo>/mcp.json` kept in use while the standard places are empty (with the startup note), and the start-up note about `braveApiKey` in `config.json`. Settings come from flags, the environment and `config.json` only; MCP servers from `config.json`, or the file `CHIBOT_MCP_CONFIG` names. A `config.json` that still has `braveApiKey` is now refused as an unknown key.
 - The fallbacks for switches that older versions kept in chibot's database: the `disabledMcpServers` and `askMcpServers` settings, the MCP tools' `<server>__<tool>` entries in `disabledTools`, and the database copy of `disabledTools` that applied until `config.json` had a list. Switches are read from `config.json` only (a stale value left in the database is ignored), and Settings no longer clears the old lists when a switch is used.
 
 ### Changed

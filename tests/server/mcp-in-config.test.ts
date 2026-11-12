@@ -11,7 +11,6 @@ import {
   withSetting,
   writeConfigFile,
 } from '../../src/server/config-file.ts'
-import { offerMcpImport, type Prompts } from '../../src/server/init.ts'
 import { loadMcpServers } from '../../src/server/mcp/index.ts'
 
 const local = { type: 'local', command: 'node', args: ['server.js'] }
@@ -52,28 +51,25 @@ describe('MCP servers in config.json', () => {
     }
   })
 
-  it('beat a standalone mcp.json, unless that file is named', () => {
-    const path = join(dir, 'config', 'mcp.json')
+  it('come from the file CHIBOT_MCP_CONFIG names, if given, in place of config.json’s', () => {
+    const path = join(dir, 'named.json')
     writeConfigFile(join(dir, 'config'), { mcpServers: { inline: local } })
     writeFileSync(path, JSON.stringify({ mcpServers: { filed: local } }))
     expect(Object.keys(loadMcpServers(config()))).toEqual(['inline'])
-    // Naming a file (CHIBOT_MCP_CONFIG) is a decision, so it is used.
     expect(
       Object.keys(loadMcpServers(config({ CHIBOT_MCP_CONFIG: path }))),
     ).toEqual(['filed'])
   })
 
-  it('fall back to the standalone file, and to none', () => {
-    // (Named, since an unnamed one would find a checkout's own mcp.json.)
-    expect(
-      loadMcpServers(config({ CHIBOT_MCP_CONFIG: join(dir, 'none.json') })),
-    ).toEqual({})
+  it('are none without config.json, a list in it or a named file', () => {
+    expect(loadMcpServers(config())).toEqual({})
     writeConfigFile(join(dir, 'config'), { chat: { model: 'm' } })
+    // A standalone mcp.json beside it is not looked for.
     writeFileSync(
       join(dir, 'config', 'mcp.json'),
       JSON.stringify({ mcpServers: { filed: local } }),
     )
-    expect(Object.keys(loadMcpServers(config()))).toEqual(['filed'])
+    expect(loadMcpServers(config())).toEqual({})
   })
 
   it('are checked when loaded, so a mistake never stops chibot starting', () => {
@@ -112,7 +108,7 @@ describe('MCP servers in config.json', () => {
     )
   })
 
-  it('can be read out of an old mcp.json', () => {
+  it('can be read out of a named file', () => {
     const path = join(dir, 'old.json')
     writeFileSync(path, JSON.stringify({ mcpServers: { a: local } }))
     expect(readMcpServers(path)).toEqual({ a: local })
@@ -121,46 +117,5 @@ describe('MCP servers in config.json', () => {
     expect(readMcpServers(path)).toBeNull()
     writeFileSync(path, JSON.stringify({ mcpServers: [] }))
     expect(readMcpServers(path)).toBeNull()
-  })
-})
-
-describe('chibot init and an old mcp.json', () => {
-  const prompts = (answer: string) => {
-    const asked: string[] = []
-    const said: string[] = []
-    const p: Prompts = {
-      async ask(question) {
-        asked.push(question)
-        return answer
-      },
-      say: (m) => void said.push(m),
-    }
-    return { p, asked, said }
-  }
-  const servers = { files: local, web: local }
-
-  it('offers to move the servers in, saying which, and what to do about ${NAME}', async () => {
-    const { p, asked, said } = prompts('')
-    const next = await offerMcpImport(
-      p,
-      { chat: { model: 'm' } },
-      '/x/mcp.json',
-      servers,
-    )
-    expect(next).toEqual({ chat: { model: 'm' }, mcpServers: servers })
-    expect(asked[0]).toContain('/x/mcp.json')
-    expect(asked[0]).toContain('files, web')
-    expect(said.join('')).toContain('config set env.NAME')
-  })
-
-  it('leaves everything alone when declined, empty, or already there', async () => {
-    const file = { chat: { model: 'm' } }
-    expect(await offerMcpImport(prompts('n').p, file, '/x', servers)).toBe(file)
-    const none = prompts('')
-    expect(await offerMcpImport(none.p, file, '/x', null)).toBe(file)
-    expect(await offerMcpImport(none.p, file, '/x', {})).toBe(file)
-    const has = { mcpServers: { other: local } }
-    expect(await offerMcpImport(none.p, has, '/x', servers)).toBe(has)
-    expect(none.asked).toEqual([])
   })
 })

@@ -14,7 +14,7 @@ import {
   ModelRequests,
   TitleWriter,
 } from './chat/index.ts'
-import { Config, layered, readEnvFiles } from './config.ts'
+import { Config, layered } from './config.ts'
 import {
   readConfigFile,
   readDisabledTools,
@@ -120,21 +120,13 @@ export function start({
   /** Open chibot in the default browser once it listens (the command line does; tests don't). */
   open?: boolean
 } = {}) {
-  const legacy = readEnvFiles()
-  // Where config.json is can itself come from an old .env, the environment or a flag.
-  const read = readConfigFile(
-    locations({ ...legacy.values, ...process.env, ...env }).configDir,
-  )
+  // Where config.json is can itself come from the environment or a flag.
+  const read = readConfigFile(locations({ ...process.env, ...env }).configDir)
   const config = new Config(
-    layered({
-      legacy: legacy.values,
-      file: read.file,
-      env: process.env,
-      flags: env,
-    }),
+    layered({ file: read.file, env: process.env, flags: env }),
   )
   if (config.exposure) throw new Error(config.exposure)
-  reportConfig(read, legacy, config)
+  reportConfig(read)
   // Chats and files: for the owner only (the config folder is 0700 too).
   mkdirSync(config.dataDir, { recursive: true, mode: 0o700 })
   for (const dir of openFolders([config.dataDir, config.configDir])) {

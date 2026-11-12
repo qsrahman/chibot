@@ -12,7 +12,6 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { Config } from '../../src/server/config.ts'
 import {
   configFileSchema,
-  fromEnv,
   mcpVariables,
   readConfigFile,
   readDisabledTools,
@@ -58,19 +57,10 @@ describe('config.json', () => {
       PORT: '8080',
       CHIBOT_TOKEN: 'a-token-of-16-chars',
     })
-    expect(fromEnv(env)).toEqual(full)
     // And Config takes it as it is.
     const config = new Config(env)
     expect(config.chat).toMatchObject({ model: 'gemma4', apiKey: 'sk-chat' })
     expect(config.port).toBe(8080)
-  })
-
-  it('ignores unset and blank variables when importing', () => {
-    expect(
-      fromEnv({ OPENAI_API_KEY: ' sk ', OPENAI_MODEL: '', HOME: '/x' }),
-    ).toEqual({
-      chat: { apiKey: 'sk' },
-    })
   })
 
   it('refuses unknown settings, so a typo is not silently ignored', () => {
@@ -226,32 +216,6 @@ describe('values refused when set', () => {
     expect(
       withSetting({}, 'chat.baseURL', 'http://localhost:11434/v1').chat,
     ).toEqual({ baseURL: 'http://localhost:11434/v1' })
-  })
-})
-
-describe('a setting that no longer does anything', () => {
-  let dir: string
-  beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'chibot-obsolete-'))
-  })
-  afterEach(() => rmSync(dir, { recursive: true }))
-
-  it('is read without it, named, and left out when the file is saved', () => {
-    writeFileSync(
-      join(dir, 'config.json'),
-      JSON.stringify({ chat: { model: 'm' }, braveApiKey: 'brave-secret' }),
-    )
-    const read = readConfigFile(dir)
-    expect(read.file).toEqual({ chat: { model: 'm' } })
-    expect(read.obsolete).toEqual(['braveApiKey'])
-    writeConfigFile(dir, withSetting(read.file, 'chat.model', 'n'))
-    expect(readFileSync(join(dir, 'config.json'), 'utf8')).not.toContain(
-      'brave',
-    )
-    expect(readConfigFile(dir).obsolete).toEqual([])
-    // Other unknown settings are still refused (typos).
-    writeFileSync(join(dir, 'config.json'), '{"brave":"x"}')
-    expect(() => readConfigFile(dir)).toThrow(/Unrecognized key/)
   })
 })
 

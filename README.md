@@ -62,9 +62,7 @@ chibot keeps its files in your system's usual folders:
 | Data (chats, files, sign-ins) | `~/.local/share/chibot` | `%LOCALAPPDATA%\chibot\Data` |
 
 (`XDG_CONFIG_HOME` and `XDG_DATA_HOME` move them, as for other command-line
-tools; a Mac uses these too, not `~/Library`.) Existing checkouts keep working:
-while `<chibot folder>/data` and `<chibot folder>/mcp.json` exist and the
-standard places are empty, chibot keeps using them and says so at startup.
+tools; a Mac uses these too, not `~/Library`.)
 
 When an update changes the database's layout, chibot first copies the old
 database to `chibot.db.before-upgrade` beside it (readable only by you, and
@@ -72,13 +70,9 @@ replaced by the next upgrade's copy), and says so at startup. To go back, stop
 chibot, run an older version, and put that file in place of `chibot.db`.
 
 **Precedence**, highest first: command-line flags (`--port`, `--host`), real
-environment variables, `config.json`, an old `.env`, defaults. So a variable such as
+environment variables, `config.json`, defaults. So a variable such as
 `OPENAI_API_KEY` always overrides the file, which is how a deployment, a test
-or a one-off run changes a value. The old `.env` in the chibot folder is still
-read, below everything else (it tells you to run `chibot init`, which offers to
-move it into `config.json`); a `.env` in the folder you run chibot from is
-**not** read, since a command you can run anywhere must not take settings from
-whatever folder it is in.
+or a one-off run changes a value. A `.env` file is not read.
 
 | Setting (`chibot config set …`) | Variable | Default | Purpose |
 |---|---|---|---|
@@ -95,7 +89,7 @@ whatever folder it is in.
 | — | `CHIBOT_ALLOW_OPEN` | — | `1` (or `chibot --allow-open`) lets chibot listen beyond this machine without a token, e.g. behind a firewall or proxy that restricts who can reach it |
 | — | `CHIBOT_CONFIG_DIR` | see above | Where `config.json` is |
 | — | `CHIBOT_DATA_DIR` | see above | Where the database, generated images and MCP sign-ins are kept |
-| — | `CHIBOT_MCP_CONFIG` | — | A standalone MCP servers file to use instead of `mcpServers` in `config.json` (see below) |
+| — | `CHIBOT_MCP_CONFIG` | — | An MCP servers file to use instead of `mcpServers` in `config.json` (see below) |
 
 For example, to chat with a local Ollama model:
 
@@ -187,10 +181,8 @@ you, so a server's token or header can sit in it directly:
 }
 ```
 
-In `config.json`, the `mcpServers` entry sits beside the other settings. An older
-standalone `mcp.json` of this shape is still read while `config.json` has no
-`mcpServers` (and always when `CHIBOT_MCP_CONFIG` names it); `chibot init`
-offers to move its servers in.
+In `config.json`, the `mcpServers` entry sits beside the other settings. A file
+of this shape named by `CHIBOT_MCP_CONFIG` is read in its place.
 
 - A **`local`** server is a command chibot runs (`command`, `args`, `env`,
   `cwd`, by default your home folder) with your rights. It gets only a safe
@@ -214,7 +206,7 @@ command or URL, and **Edit** or **Remove** a server later. Keys go in the
 *Environment variables* (local) or *Headers* (remote) rows: they are written to the
 file and never shown again, and a blank value keeps the saved one (so keep keys
 out of the arguments and URL, which are shown). A server's definition is saved
-to the file it came from (`config.json`, or the standalone file). This is on
+to the file it came from (`config.json`, or the file `CHIBOT_MCP_CONFIG` names). This is on
 only while chibot listens on this machine or `CHIBOT_TOKEN` is set, since a
 `local` server runs a command; otherwise Settings says why and the file is
 the only way.

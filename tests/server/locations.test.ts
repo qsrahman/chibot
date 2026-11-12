@@ -8,69 +8,29 @@ const paths = {
   config: '/home/u/.config/chibot',
   data: '/home/u/.local/share/chibot',
 }
-const root = '/repo'
-const where = (files: string[], env = {}) =>
-  locations(env, { paths, root, exists: (p) => files.includes(p) })
+const where = (env = {}) => locations(env, { paths })
 
 describe('locations', () => {
-  it('uses the platform’s folders on a fresh install', () => {
-    expect(where([])).toEqual({
+  it('uses the platform’s folders, and no MCP file, unless told otherwise', () => {
+    expect(where()).toEqual({
       configDir: paths.config,
       dataDir: paths.data,
-      mcpConfigPath: join(paths.config, 'mcp.json'),
-      mcpConfigExplicit: false,
-      legacy: [],
+      mcpConfigPath: null,
     })
   })
 
   it('lets each be set in the environment', () => {
     expect(
-      where([], {
+      where({
         CHIBOT_CONFIG_DIR: 'a',
         CHIBOT_DATA_DIR: 'b',
         CHIBOT_MCP_CONFIG: 'c/m.json',
       }),
-    ).toMatchObject({
+    ).toEqual({
       configDir: resolve('a'),
       dataDir: resolve('b'),
       mcpConfigPath: resolve('c/m.json'),
     })
-    // The MCP file follows the config folder unless named.
-    expect(where([], { CHIBOT_CONFIG_DIR: 'a' }).mcpConfigPath).toBe(
-      join(resolve('a'), 'mcp.json'),
-    )
-  })
-
-  it('keeps using a checkout’s data and mcp.json until the new places hold something', () => {
-    const found = where(['/repo/data/chibot.db', '/repo/mcp.json'])
-    expect(found.dataDir).toBe('/repo/data')
-    expect(found.mcpConfigPath).toBe('/repo/mcp.json')
-    // It says so, and where to move them.
-    // (The MCP file is mentioned at startup only if no config.json replaces it.)
-    expect(found.legacy).toHaveLength(1)
-    expect(found.legacy[0]).toContain(paths.data)
-  })
-
-  it('prefers the standard places once they have been used', () => {
-    const found = where([
-      '/repo/data/chibot.db',
-      '/repo/mcp.json',
-      join(paths.data, 'chibot.db'),
-      join(paths.config, 'mcp.json'),
-    ])
-    expect(found.dataDir).toBe(paths.data)
-    expect(found.mcpConfigPath).toBe(join(paths.config, 'mcp.json'))
-    expect(found.legacy).toEqual([])
-  })
-
-  it('never falls back when a place is named', () => {
-    const found = where(['/repo/data/chibot.db', '/repo/mcp.json'], {
-      CHIBOT_DATA_DIR: 'd',
-      CHIBOT_MCP_CONFIG: 'm.json',
-    })
-    expect(found.dataDir).toBe(resolve('d'))
-    expect(found.mcpConfigPath).toBe(resolve('m.json'))
-    expect(found.legacy).toEqual([])
   })
 })
 

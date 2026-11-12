@@ -53,7 +53,7 @@ describe('the chibot command', () => {
     expect(out).toEqual([
       expect.stringContaining(join(dir, 'config', 'config.json')),
       expect.stringContaining(join(dir, 'data')),
-      expect.stringContaining('mcp.json'),
+      expect.stringContaining('MCP servers: none yet'),
     ])
   })
 

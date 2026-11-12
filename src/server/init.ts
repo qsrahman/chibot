@@ -1,6 +1,6 @@
 import { createInterface } from 'node:readline/promises'
 import { Writable } from 'node:stream'
-import { fromEnv, type ConfigFile } from './config-file.ts'
+import type { ConfigFile } from './config-file.ts'
 
 /** Questions and answers, so the setup can be driven by a person or a test. */
 export interface Prompts {
@@ -12,33 +12,12 @@ const OLLAMA = 'http://localhost:11434/v1'
 
 /**
  * The setup conversation: where the models are, the key and the model. An empty answer keeps what `existing` has.
- * `legacyEnv` holds what an old `.env` set: offered as is, if there is no
- * config yet.
  */
 export async function runInit(
   prompts: Prompts,
-  {
-    existing,
-    legacyEnv,
-    legacyPath,
-  }: {
-    existing: ConfigFile
-    legacyEnv: Record<string, string | undefined>
-    legacyPath: string | null
-  },
+  { existing }: { existing: ConfigFile },
 ): Promise<ConfigFile> {
   const { ask, say } = prompts
-  const imported = fromEnv(legacyEnv)
-  if (
-    legacyPath &&
-    Object.keys(existing).length === 0 &&
-    Object.keys(imported).length > 0
-  ) {
-    const yes = await ask(
-      `Found settings in ${legacyPath}. Move them into chibot's config? [Y/n]`,
-    )
-    if (!/^n/i.test(yes)) return imported
-  }
 
   const chat = existing.chat ?? {}
   const compatible = chat.baseURL !== undefined
@@ -103,31 +82,6 @@ export async function runInit(
   }
 
   return { ...existing, chat: next }
-}
-
-/**
- * Offers to move the servers of a standalone `mcp.json` into the config, where
- * they sit with the rest of the settings (readable by you only). The file
- * itself is left for you to delete.
- */
-export async function offerMcpImport(
-  { ask, say }: Prompts,
-  file: ConfigFile,
-  mcpPath: string,
-  servers: Record<string, unknown> | null,
-): Promise<ConfigFile> {
-  if (file.mcpServers || !servers || Object.keys(servers).length === 0) {
-    return file
-  }
-  const names = Object.keys(servers).join(', ')
-  const yes = await ask(
-    `Found MCP servers in ${mcpPath} (${names}). Move them into chibot's config? [Y/n]`,
-  )
-  if (/^n/i.test(yes)) return file
-  say(
-    `Moved. You can delete ${mcpPath}. \${NAME} in them is still filled from your environment, or from \`chibot config set env.NAME <value>\`.`,
-  )
-  return { ...file, mcpServers: servers }
 }
 
 /** Prompts on the terminal; a secret is not echoed as it is typed. */

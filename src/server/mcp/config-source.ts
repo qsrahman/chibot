@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { basename } from 'node:path'
 import { errorMessage } from '../../shared/errors.ts'
 import type { Config } from '../config.ts'
@@ -22,23 +22,21 @@ import { McpServerFile } from './server-file.ts'
 
 /**
  * The MCP servers to use. `CHIBOT_MCP_CONFIG`, if given, names the file;
- * otherwise `mcpServers` in `config.json`, else the older standalone
- * `mcp.json`. `${VAR}` is filled from the environment, then `config.json`'s
+ * otherwise `mcpServers` in `config.json`. `${VAR}` is filled from the environment, then `config.json`'s
  * `env`. Throws, saying what is wrong, so Reload can show it.
  */
 export function loadMcpServers(
   config: Config,
 ): Record<string, McpServerConfig> {
-  const { file } = readConfigFile(config.configDir)
   const variables = mcpVariables(config.configDir)
-  if (file.mcpServers && !config.mcpConfigExplicit) {
-    return parseMcpConfig(
-      { mcpServers: file.mcpServers },
-      variables,
-      'config.json',
-    )
-  }
-  return loadMcpConfig(config.mcpConfigPath, variables)
+  if (config.mcpConfigPath)
+    return loadMcpConfig(config.mcpConfigPath, variables)
+  const { file } = readConfigFile(config.configDir)
+  return parseMcpConfig(
+    { mcpServers: file.mcpServers ?? {} },
+    variables,
+    'config.json',
+  )
 }
 
 /**
@@ -47,11 +45,8 @@ export function loadMcpServers(
  * server is a command chibot runs.
  */
 export function mcpServerFile(config: Config): McpServerFile {
-  const inConfig =
-    !config.mcpConfigExplicit &&
-    (!!readConfigFile(config.configDir).file.mcpServers ||
-      !existsSync(config.mcpConfigPath))
-  const source = inConfig ? 'config.json' : basename(config.mcpConfigPath)
+  const file = config.mcpConfigPath
+  const source = file ? basename(file) : 'config.json'
   return new McpServerFile({
     source,
     locked:
@@ -59,18 +54,18 @@ export function mcpServerFile(config: Config): McpServerFile {
         ? null
         : 'chibot is open to your network without a token, so anyone who can reach it could add a server that runs commands. Set CHIBOT_TOKEN, or edit the servers in the config file.',
     read: () =>
-      (inConfig
-        ? readConfigFile(config.configDir).file.mcpServers
-        : readMcpServers(config.mcpConfigPath)) ?? {},
+      (file
+        ? readMcpServers(file)
+        : readConfigFile(config.configDir).file.mcpServers) ?? {},
     write: (servers) => {
-      if (inConfig) {
-        const { file } = readConfigFile(config.configDir)
-        writeConfigFile(config.configDir, { ...file, mcpServers: servers })
+      if (!file) {
+        const { file: settings } = readConfigFile(config.configDir)
+        writeConfigFile(config.configDir, { ...settings, mcpServers: servers })
       } else {
         // Owner only, as config.json is: headers and env can hold keys.
-        const json = JSON.parse(readFileSync(config.mcpConfigPath, 'utf8'))
+        const json = JSON.parse(readFileSync(file, 'utf8'))
         writeFileSync(
-          config.mcpConfigPath,
+          file,
           `${JSON.stringify({ ...json, mcpServers: servers }, null, 2)}\n`,
           { mode: 0o600 },
         )

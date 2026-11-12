@@ -1,4 +1,4 @@
-import { existsSync, statSync } from 'node:fs'
+import { statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import envPaths from 'env-paths'
@@ -7,16 +7,12 @@ import envPaths from 'env-paths'
 export const ROOT = join(import.meta.dirname, '../..')
 
 export interface Locations {
-  /** Holds `config.json` (secrets) and `mcp.json`. */
+  /** Holds `config.json` (secrets). */
   configDir: string
   /** Holds the database, stored files and MCP sign-in tokens. */
   dataDir: string
-  /** A standalone MCP file, used when `config.json` has no `mcpServers`. */
-  mcpConfigPath: string
-  /** `CHIBOT_MCP_CONFIG` names it: it is then used even if `config.json` has servers. */
-  mcpConfigExplicit: boolean
-  /** Older places still in use (checkout folders), for a note at startup. */
-  legacy: string[]
+  /** The file `CHIBOT_MCP_CONFIG` names, used in place of `config.json`'s `mcpServers`; otherwise `null`. */
+  mcpConfigPath: string | null
 }
 
 /**
@@ -50,53 +46,22 @@ interface Overrides {
 
 /**
  * Where chibot keeps its files: the platform's own folders (see `env-paths`),
- * each overridable. A checkout used `<repo>/data` and `<repo>/mcp.json`; while
- * those exist and the new places hold nothing yet, they stay in use, so
- * upgrading never hides anyone's chats.
+ * each overridable.
  */
 export function locations(
   env: Overrides,
   {
     paths = platformPaths(),
-    root = ROOT,
-    exists = existsSync,
-  }: {
-    paths?: { config: string; data: string }
-    root?: string
-    exists?: (path: string) => boolean
-  } = {},
+  }: { paths?: { config: string; data: string } } = {},
 ): Locations {
-  const legacy: string[] = []
-  const configDir = env.CHIBOT_CONFIG_DIR
-    ? resolve(env.CHIBOT_CONFIG_DIR)
-    : paths.config
-
-  let dataDir = paths.data
-  if (env.CHIBOT_DATA_DIR) {
-    dataDir = resolve(env.CHIBOT_DATA_DIR)
-  } else if (
-    !exists(join(paths.data, 'chibot.db')) &&
-    exists(join(root, 'data', 'chibot.db'))
-  ) {
-    dataDir = join(root, 'data')
-    legacy.push(
-      `Your chats are still in ${dataDir}. To use the standard place, move its contents to ${paths.data} while chibot is stopped.`,
-    )
-  }
-
-  let mcpConfigPath = join(configDir, 'mcp.json')
-  if (env.CHIBOT_MCP_CONFIG) {
-    mcpConfigPath = resolve(env.CHIBOT_MCP_CONFIG)
-  } else if (!exists(mcpConfigPath) && exists(join(root, 'mcp.json'))) {
-    // main.ts says so when that file is really the one used: config.json may have the servers.
-    mcpConfigPath = join(root, 'mcp.json')
-  }
   return {
-    configDir,
-    dataDir,
-    mcpConfigPath,
-    mcpConfigExplicit: Boolean(env.CHIBOT_MCP_CONFIG),
-    legacy,
+    configDir: env.CHIBOT_CONFIG_DIR
+      ? resolve(env.CHIBOT_CONFIG_DIR)
+      : paths.config,
+    dataDir: env.CHIBOT_DATA_DIR ? resolve(env.CHIBOT_DATA_DIR) : paths.data,
+    mcpConfigPath: env.CHIBOT_MCP_CONFIG
+      ? resolve(env.CHIBOT_MCP_CONFIG)
+      : null,
   }
 }
 

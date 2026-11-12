@@ -77,13 +77,6 @@ export type ConfigFile = z.infer<typeof configFileSchema>
 
 export const CONFIG_FILE = 'config.json'
 
-/**
- * Settings that no longer do anything. A file that still has one is read
- * without it (and says so at startup) rather than refused, and the next save
- * leaves it out.
- */
-const OBSOLETE = ['braveApiKey']
-
 /** Each setting's place in the file, and the environment variable that overrides it. */
 const SETTINGS: [path: string, variable: string][] = [
   ['chat.baseURL', 'OPENAI_BASE_URL'],
@@ -133,17 +126,6 @@ export function toEnv(file: ConfigFile): Record<string, string> {
   return env
 }
 
-/** The environment variables set in `env`, as a file (to import a `.env`). */
-export function fromEnv(env: Record<string, string | undefined>): ConfigFile {
-  const file: Record<string, unknown> = {}
-  for (const [path, variable] of SETTINGS) {
-    const value = env[variable]?.trim()
-    if (!value) continue
-    setPath(file, path, path === 'server.port' ? Number(value) : value)
-  }
-  return configFileSchema.parse(file)
-}
-
 function setPath(
   object: Record<string, unknown>,
   path: string,
@@ -165,12 +147,10 @@ export function readConfigFile(dir: string): {
   exists: boolean
   /** Readable by others (POSIX), which it shouldn't be. */
   tooOpen: boolean
-  /** Settings in the file that are no longer used (and were left out). */
-  obsolete: string[]
 } {
   const path = join(dir, CONFIG_FILE)
   if (!existsSync(path)) {
-    return { file: {}, path, exists: false, tooOpen: false, obsolete: [] }
+    return { file: {}, path, exists: false, tooOpen: false }
   }
   let json: unknown
   try {
@@ -178,17 +158,13 @@ export function readConfigFile(dir: string): {
   } catch (err) {
     throw new Error(`${path} isn't valid JSON: ${errorMessage(err)}`)
   }
-  const obsolete = OBSOLETE.filter(
-    (name) => json !== null && typeof json === 'object' && name in json,
-  )
-  for (const name of obsolete) delete (json as Record<string, unknown>)[name]
   const parsed = configFileSchema.safeParse(json)
   if (!parsed.success) {
     throw new Error(`${path} has a problem:\n${z.prettifyError(parsed.error)}`)
   }
   const tooOpen =
     process.platform !== 'win32' && (statSync(path).mode & 0o077) !== 0
-  return { file: parsed.data, path, exists: true, tooOpen, obsolete }
+  return { file: parsed.data, path, exists: true, tooOpen }
 }
 
 /** Saves `file` to `dir` readable by the owner only, replacing it whole or not at all. */

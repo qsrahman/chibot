@@ -59,7 +59,7 @@ phases*). Next: Phase 11a (multiple providers, design agreed) and Phase 11
 | Tools | Our own function tools only, no OpenAI-hosted tools | Full control over behaviour, storage and what leaves the machine. Web search uses Brave; project files use local RAG. |
 | Tool approval | Per-tool `requiresApproval` flag (`true`, or `'after-untrusted'` from Phase 7); a call needing approval ends the turn, and Approve/Deny resumes it with a new request | Read-only tools run automatically; tools with side effects wait for Approve/Deny in the chat. `'after-untrusted'` asks only in chats whose history holds output of a tool marked `untrustedOutput` (web content), against prompt injection. A pending approval is stored state (the path ends in an unanswered call), so it survives a reload and needs no in-memory wait. |
 | Tool loop | chibot's own loop in `ChatService`; tools declared with the SDK's `zodResponsesFunction` | The SDK's `ResponsesToolRunner` was tested: it fails on Ollama `gpt-oss` (its stream accumulator, with the cause hidden), runs the whole loop in one call (no approval across requests) and doesn't let chibot persist each step before relaying `response.completed`. |
-| MCP | chibot's own client (`@modelcontextprotocol/client`); servers in `config.json` (or `mcp.json`), edited by hand or in Settings, and their tools become function tools | The tool loop, approvals and Settings switches apply unchanged. A server runs commands with the owner's rights, and chibot has no login, so the web app never adds one. |
+| MCP | chibot's own client (`@modelcontextprotocol/client`); servers in `config.json` (or the file `CHIBOT_MCP_CONFIG` names), edited by hand or in Settings, and their tools become function tools | The tool loop, approvals and Settings switches apply unchanged. A server runs commands with the owner's rights, and chibot has no login, so the web app never adds one. |
 | Attachments | Original kept in `data/files/`; stored messages reference it by chibot's own file id. Each request sends it by Files API `file_id` where the endpoint supports it (uploaded once, expiring after 30 days), otherwise inline as base64, or as its extracted text when the model rejects files | Requests stay small on OpenAI (stateless chats would otherwise re-send every attachment each turn), compatible servers without a Files API still work, and the local copy is the source of truth: a file the provider no longer has gets re-uploaded. |
 | Providers | One Responses-API endpoint for chat, set by `OPENAI_BASE_URL` / `OPENAI_API_KEY` / `OPENAI_MODEL` | The SDK's own env names, and the same code path for OpenAI, Ollama, LM Studio and other Open Responses servers. The key is optional when a base URL is set, since local servers ignore it. |
 | Feature endpoints | Transcription, images and embeddings each have an optional endpoint override, inheriting the chat endpoint | Lets chat run locally while, say, images use OpenAI. With a compatible endpoint and no model configured, the feature is off with a clear message. |
@@ -846,8 +846,7 @@ switch per server and per tool in Settings; tools only. Built before the code
 runner (now Phase 11).
 
 - **Config.** The `mcpServers` of `config.json` (`mcp.example.json` shows the
-  format; `CHIBOT_MCP_CONFIG` names a standalone file instead, and an older
-  `mcp.json` is read while `config.json` has none; `chibot init` moves it in),
+  format; `CHIBOT_MCP_CONFIG` names a file to use instead),
   in the common `mcpServers` shape with a `type` per server: `local` (`command`, `args`, `env`, `cwd`,
   by default the home folder) or `remote` (`url`, optional `headers`).
   `${VAR}` is filled from the environment, then `config.json`'s `env`.
@@ -896,7 +895,7 @@ runner (now Phase 11).
   one's process stopped), its status, Reconnect, Sign in / Sign out,
   "Ask before using its tools" (`ask` in the entry) and its tools with their
   own switches (`disabledTools`, by the server's own names). A change that is only a switch is
-  applied on Reload without reconnecting; Reload re-reads `mcp.json` (new servers connect, removed ones
+  applied on Reload without reconnecting; Reload re-reads the servers (new servers connect, removed ones
   stop, changed ones restart, an invalid file changes nothing). Routes:
   `GET /api/mcp`, `POST /api/mcp/reload`, `POST /api/mcp/:name/reconnect`,
   `POST /api/mcp/:name/sign-in`, `POST /api/mcp/:name/sign-out`,
@@ -1141,26 +1140,20 @@ Configuration lives in three layers, split by who changes it and how often:
 - **Precedence:** user setting → environment default. (Projects add
   instructions on top of the custom instructions, but no setting overrides.)
 - **Secrets never leave layer 1:** no keys in SQLite, exports or API
-  responses. (MCP servers live in `mcp.json`, with `${VAR}` from the
+  responses. (MCP servers live in `config.json`, with `${VAR}` from the
   environment, and their OAuth tokens in `data/mcp-auth.json`, mode 0600.)
   Settings shows only whether a key is configured.
 - **Where things are:** the XDG folders (`~/.config/chibot`, `~/.local/share/chibot`, also on a Mac; `env-paths` for Windows): settings
   (`config.json`, with the MCP servers in it) in the config folder, the database,
   files and MCP tokens in the data folder (`CHIBOT_CONFIG_DIR` / `CHIBOT_DATA_DIR` override).
-  A checkout's `<repo>/data` and `<repo>/mcp.json` stay in use while the
-  standard places are empty (`locations()`), so upgrading hides no chats.
 - **Lookup, highest first:** command-line flags, real environment variables,
   `config.json`, defaults. `config.json` has the same settings as the
   variables, grouped (`chat.model` is `OPENAI_MODEL`: `SETTINGS` in
   `config-file.ts` maps each both ways), and is validated strictly, so a typo
-  is an error. The old `<repo>/.env` is still read, below `config.json` (so a leftover one
-  never overrides a later `chibot config set`) and the environment, with a
-  note to run `chibot init`, which offers to import it. `config.json`'s `env`
-  block (`chibot config set env.NAME value`) feeds `${NAME}` in `mcp.json`
+  is an error. A `.env` is not read. `config.json`'s `env`
+  block (`chibot config set env.NAME value`) feeds `${NAME}` in the MCP servers
   below the real environment, and is read again on each Reload; it reaches
-  nothing else. The current folder's
-  `.env` is never read: a command that runs anywhere must not take another
-  project's keys, or a hostile folder's `OPENAI_BASE_URL`.
+  nothing else.
 - **Installing:** `pnpm add -g .` (a link; pnpm 12 rejects `pnpm link -g`) runs `src/server/cli.ts` from the checkout, so
   Node still strips the types (it refuses to under `node_modules`, which rules
   out a registry package without a build step); `pnpm build` first builds the
