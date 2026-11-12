@@ -106,29 +106,40 @@ describe('McpServerFile switches', () => {
 
   it('write off, asking and tools off into the entry, and leave out the defaults', () => {
     const { file, saved } = setup({ files: entry, other: entry })
-    file.setSwitch('files', { disabled: true })
+    file.setSwitch('files', { enabled: false })
     file.setSwitch('files', { ask: true })
     file.setSwitch('files', { tool: { name: 'write_file', enabled: false } })
     file.setSwitch('files', { tool: { name: 'edit_file', enabled: false } })
     expect(saved()).toEqual({
       files: {
         ...entry,
-        disabled: true,
+        enabled: false,
         ask: true,
         disabledTools: ['write_file', 'edit_file'],
       },
       other: entry,
     })
     // Back to the defaults: the keys go, so the file holds only what differs.
-    file.setSwitch('files', { disabled: false, ask: false })
+    file.setSwitch('files', { enabled: true, ask: false })
     file.setSwitch('files', { tool: { name: 'write_file', enabled: true } })
     file.setSwitch('files', { tool: { name: 'edit_file', enabled: true } })
     expect(saved()).toEqual({ files: entry, other: entry })
   })
 
+  it('turn the older `disabled` into `enabled` when a switch is written', () => {
+    const { file, saved } = setup({ files: { ...entry, disabled: true } })
+    file.setSwitch('files', { ask: true })
+    // Untouched until the on/off switch is used.
+    expect(saved()).toEqual({ files: { ...entry, disabled: true, ask: true } })
+    file.setSwitch('files', { enabled: false })
+    expect(saved()).toEqual({ files: { ...entry, enabled: false, ask: true } })
+    file.setSwitch('files', { enabled: true })
+    expect(saved()).toEqual({ files: { ...entry, ask: true } })
+  })
+
   it('refuse a server that is not there, without touching another’s trouble', () => {
     const { file, saved } = setup({ files: entry, odd: { nonsense: true } })
-    expect(() => file.setSwitch('nope', { disabled: true })).toThrow(
+    expect(() => file.setSwitch('nope', { enabled: false })).toThrow(
       'No MCP server named nope',
     )
     // The entry that is wrong stays as it was; this one can still be switched.
@@ -137,16 +148,16 @@ describe('McpServerFile switches', () => {
       files: { ...entry, ask: true },
       odd: { nonsense: true },
     })
-    expect(() => file.setSwitch('odd', { disabled: true })).toThrow()
+    expect(() => file.setSwitch('odd', { enabled: false })).toThrow()
   })
 
   it('work while adding servers is locked, and survive editing the server', () => {
     const { file, saved } = setup({ files: entry }, 'Set CHIBOT_TOKEN.')
-    file.setSwitch('files', { disabled: true })
-    expect(saved()).toEqual({ files: { ...entry, disabled: true } })
+    file.setSwitch('files', { enabled: false })
+    expect(saved()).toEqual({ files: { ...entry, enabled: false } })
 
     const open = setup({
-      files: { ...entry, disabled: true, ask: true, disabledTools: ['x'] },
+      files: { ...entry, enabled: false, ask: true, disabledTools: ['x'] },
     })
     open.file.put('files', { type: 'local', command: 'node' })
     // The form can't show the switches, so an edit keeps them.
@@ -154,13 +165,13 @@ describe('McpServerFile switches', () => {
       files: {
         type: 'local',
         command: 'node',
-        disabled: true,
+        enabled: false,
         ask: true,
         disabledTools: ['x'],
       },
     })
     expect(open.file.describe().servers.files).toMatchObject({
-      disabled: true,
+      enabled: false,
       ask: true,
     })
   })
@@ -225,12 +236,12 @@ describe('MCP routes for editing', () => {
       })
 
     expect((await patch({ ask: true })).status).toBe(200)
-    expect((await patch({ disabled: false })).status).toBe(200)
+    expect((await patch({ enabled: true })).status).toBe(200)
     expect(
       (await patch({ tool: { name: 'echo', enabled: false } })).status,
     ).toBe(200)
     expect(saved().files).toMatchObject({ ask: true, disabledTools: ['echo'] })
-    expect(saved().files).not.toHaveProperty('disabled')
+    expect(saved().files).not.toHaveProperty('enabled')
     // What the file now says is no longer in the settings; the rest stays.
     expect(settings.get()).toMatchObject({
       disabledMcpServers: [],

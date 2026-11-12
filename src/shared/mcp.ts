@@ -8,9 +8,12 @@ export const mcpServerName = z
   .string()
   .regex(/^[A-Za-z0-9_-]{1,32}$/, 'use letters, digits, - and _ (at most 32)')
 
-// What Settings → Tools switches, kept with the server: not connected, each
-// call asking first, and tools (by the names the server gives them) off.
+// What Settings → Tools switches, kept with the server: connected or not (on
+// unless `enabled` is false), each call asking first, and tools (by the names
+// the server gives them) off. `disabled` is the older spelling of
+// `enabled: false`, still read; `enabled` wins when both are there.
 const switches = {
+  enabled: z.boolean().optional(),
   disabled: z.boolean().optional(),
   ask: z.boolean().optional(),
   disabledTools: z.array(z.string()).optional(),
@@ -34,8 +37,8 @@ const remoteServer = z.strictObject({
 
 /** `PATCH /api/mcp/servers/:name`: a switch of Settings → Tools, written to the config file. */
 export const mcpSwitchSchema = z.object({
-  /** On (`false`) or off (`true`) altogether. */
-  disabled: z.boolean().optional(),
+  /** On or off altogether. */
+  enabled: z.boolean().optional(),
   /** Whether each call waits for Approve / Deny. */
   ask: z.boolean().optional(),
   /** One tool, by the name the server gives it (not `<server>__<tool>`). */

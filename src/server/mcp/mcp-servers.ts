@@ -57,7 +57,7 @@ export class McpServers {
    *   `sync()`; `ask` the servers whose calls wait for approval; `toolsOff`
    *   the tools (as `<server>__<tool>`) switched off. These three are the
    *   settings' lists from before the switches moved into each server's entry
-   *   in the config file; an entry's own `disabled`, `ask` and `disabledTools`
+   *   in the config file; an entry's own `enabled`, `ask` and `disabledTools`
    *   win over them.
    * @param options.auth where remote servers' sign-ins are kept, and the
    *   OAuth callback's URL; without it they can't sign in
@@ -312,7 +312,9 @@ export class McpServers {
   }
 
   #isOff(name: string, server: Server): boolean {
-    return server.config.disabled ?? this.#disabled().includes(name)
+    const { enabled, disabled } = server.config
+    if (enabled !== undefined) return !enabled
+    return disabled ?? this.#disabled().includes(name)
   }
 
   #toolOff(server: Server, tool: McpServerTool): boolean {

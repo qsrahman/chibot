@@ -234,7 +234,7 @@ in a way a transaction does not undo leaves a database to restore.
 | `POST /api/transcriptions` | 9 | Transcribe a recording (≤ 25 MB). Phase 9 adds `fileIds` to turns and `features` to health. |
 | `GET /api/mcp` · `POST /api/mcp/reload` · `POST /api/mcp/:name/{reconnect,sign-in,sign-out}` · `GET /api/mcp/oauth/callback` | 10 | MCP servers' status and tools; reconnect; OAuth sign-in and sign-out |
 | `GET /api/mcp/definitions` · `PUT/DELETE /api/mcp/servers/:name` | after 0.13 | Add, change and remove servers in the config file from Settings (only on loopback or with `CHIBOT_TOKEN`); `env` and `headers` values are write-only |
-| `PATCH /api/mcp/servers/:name` | after 0.13 | A switch of Settings → Tools (`disabled`, `ask`, or one `tool` on or off), written into the server's entry in the config file; not behind that gate |
+| `PATCH /api/mcp/servers/:name` | after 0.13 | A switch of Settings → Tools (`enabled`, `ask`, or one `tool` on or off), written into the server's entry in the config file; not behind that gate |
 | `POST /api/conversations/:id/compact` · `DELETE /api/conversations/:id/compactions/:compactionId` | 0.13 | Summarize the start of a chat now (optional focus); undo a summary. `GET /api/conversations/:id` also returns its `compactions`. |
 | `POST /api/conversations/:id/branch` | after 0.13 | `{ itemId }`: a new chat with this one up to the end of that turn (summaries kept, files copied), titled "Branch · …" |
 | `GET /api/models/window?model=` | 0.13 | The context window the server reports for a model, or `null` |
@@ -893,8 +893,8 @@ runner (now Phase 11).
   0600), refreshed by the SDK, and removed by Sign out. Sign-in is done on
   the machine running chibot (loopback redirect).
 - **Settings → Tools.** An "MCP servers" section: per server a switch
-  (`disabled` in the server's config entry, written by `PATCH
-  /api/mcp/servers/:name`; a disabled server is disconnected and a local
+  (`enabled`, on unless `false`, in the server's config entry, written by
+  `PATCH /api/mcp/servers/:name`; the older `disabled: true` is still read; a disabled server is disconnected and a local
   one's process stopped), its status, Reconnect, Sign in / Sign out,
   "Ask before using its tools" (`ask` in the entry) and its tools with their
   own switches (`disabledTools`, by the server's own names). The three used to

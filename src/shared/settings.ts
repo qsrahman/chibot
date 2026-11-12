@@ -43,7 +43,7 @@ export const settingsSchema = z.object({
    * here, as `<server>__<tool>`, still apply to those without a switch there.)
    */
   disabledTools: z.array(z.string().max(100)).max(500),
-  /** Older: MCP servers switched off. Now `disabled` in the server's config entry, which wins. */
+  /** Older: MCP servers switched off. Now `enabled: false` in the server's config entry, which wins. */
   disabledMcpServers: z.array(z.string().max(100)).max(100),
   /** Older: MCP servers whose tool calls wait for Approve / Deny. Now `ask` in the entry, which wins. */
   askMcpServers: z.array(z.string().max(100)).max(100),

@@ -127,10 +127,7 @@ function forgetOldSwitches(
   const without = (list: string[], name: string) =>
     list.filter((entry) => entry !== name)
   const patch: Partial<typeof now> = {}
-  if (
-    change.disabled !== undefined &&
-    now.disabledMcpServers.includes(server)
-  ) {
+  if (change.enabled !== undefined && now.disabledMcpServers.includes(server)) {
     patch.disabledMcpServers = without(now.disabledMcpServers, server)
   }
   if (change.ask !== undefined && now.askMcpServers.includes(server)) {

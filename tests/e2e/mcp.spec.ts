@@ -28,7 +28,7 @@ async function resetSwitches(page: Page) {
     }[]
   }
   for (const { name, tools } of servers) {
-    await patch(name, { disabled: false, ask: false })
+    await patch(name, { enabled: true, ask: false })
     for (const tool of tools.filter((t) => !t.enabled)) {
       await patch(name, {
         tool: { name: tool.name.slice(name.length + 2), enabled: true },

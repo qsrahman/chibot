@@ -64,7 +64,7 @@ export function McpServers({
 
   // These switches are kept in each server's entry in the config file.
   const switchServer = (name: string, on: boolean) =>
-    act(() => setMcpSwitch(name, { disabled: !on }))
+    act(() => setMcpSwitch(name, { enabled: on }))
   const signIn = (name: string) =>
     act(async () => {
       const { url } = await signInToMcpServer(name)

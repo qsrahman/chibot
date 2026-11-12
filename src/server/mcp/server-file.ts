@@ -79,12 +79,17 @@ export class McpServerFile {
       throw new Error(`No MCP server named ${name}`)
     }
     const entry: Record<string, unknown> = { ...current }
-    const set = (key: 'disabled' | 'ask', on: boolean) => {
-      if (on) entry[key] = true
-      else delete entry[key]
+    if (change.enabled !== undefined) {
+      // On is the default, so an entry holds only `enabled: false`; the older
+      // `disabled` is dropped, so the two never disagree.
+      delete entry.disabled
+      if (change.enabled) delete entry.enabled
+      else entry.enabled = false
     }
-    if (change.disabled !== undefined) set('disabled', change.disabled)
-    if (change.ask !== undefined) set('ask', change.ask)
+    if (change.ask !== undefined) {
+      if (change.ask) entry.ask = true
+      else delete entry.ask
+    }
     if (change.tool) {
       const off = new Set((entry.disabledTools as string[] | undefined) ?? [])
       if (change.tool.enabled) off.delete(change.tool.name)
@@ -115,8 +120,9 @@ export class McpServerFile {
 /** The switches of an entry (see `mcpServerSchema`), to carry over an edit. */
 function switchesOf(server: McpServerConfig | null) {
   if (!server) return {}
-  const { disabled, ask, disabledTools } = server
+  const { enabled, disabled, ask, disabledTools } = server
   return {
+    ...(enabled !== undefined && { enabled }),
     ...(disabled !== undefined && { disabled }),
     ...(ask !== undefined && { ask }),
     ...(disabledTools !== undefined && { disabledTools }),

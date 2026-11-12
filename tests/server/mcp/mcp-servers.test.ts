@@ -162,13 +162,21 @@ describe('MCP servers', () => {
     const only = (patch: Partial<McpServerConfig>) =>
       ({ ...fixture, ...patch }) as McpServerConfig
 
-    it('switch a server off, and win over the settings’ older list', async () => {
+    it('still reads the older `disabled`, which `enabled` wins over', async () => {
       await start({ fixture: only({ disabled: true }) })
+      expect(status('fixture').state).toBe('disabled')
+      await servers.close()
+      await start({ fixture: only({ disabled: true, enabled: true }) })
+      expect(status('fixture').state).toBe('connected')
+    })
+
+    it('switch a server off, and win over the settings’ older list', async () => {
+      await start({ fixture: only({ enabled: false }) })
       expect(status('fixture').state).toBe('disabled')
       await servers.close()
       // Explicitly on beats an old "off" in the settings.
       servers = new McpServers(
-        { fixture: only({ disabled: false }) },
+        { fixture: only({ enabled: true }) },
         { disabled: () => ['fixture'] },
       )
       await servers.start()
@@ -231,7 +239,7 @@ describe('MCP servers', () => {
       expect(servers.asks('fixture')).toBe(true)
       expect(servers.toolOff('fixture__echo')).toBe(true)
 
-      current = { fixture: only({ disabled: true }) }
+      current = { fixture: only({ enabled: false }) }
       await servers.reload()
       expect(status('fixture').state).toBe('disabled')
       await vi.waitFor(() => expect(() => process.kill(pid, 0)).toThrow())
