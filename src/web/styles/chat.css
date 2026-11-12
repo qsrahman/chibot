@@ -134,6 +134,16 @@
   contain-intrinsic-size: auto 600px;
 }
 
+/* Not the newest or the one streaming: it is on screen anyway, and a turn that
+   has just been added is skipped for its first frame, at the guessed size.
+   That showed as a blank answer for a frame when the streamed answer was
+   replaced by the saved one (a new element), and moved the scroll position
+   with the guess. */
+.turn.latest,
+.turn.pending {
+  content-visibility: visible;
+}
+
 .message {
   overflow-wrap: anywhere;
 }

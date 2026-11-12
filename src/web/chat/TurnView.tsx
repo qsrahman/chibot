@@ -79,7 +79,9 @@ export function TurnView({
   )
 
   return (
-    <div className={latest ? 'turn latest' : 'turn'}>
+    <div
+      className={`turn${latest ? ' latest' : ''}${pending ? ' pending' : ''}`}
+    >
       {compaction && (
         <CompactionNote
           compaction={compaction}

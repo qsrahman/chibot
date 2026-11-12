@@ -4,6 +4,12 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+
+### Fixed
+
+- **The answer no longer goes blank for a frame when it is saved.** The turn that replaces the streamed one is a new element, and `content-visibility: auto` (there so that long chats cost what is on screen) skipped it for its first frame, at a guessed height. The newest turn and the one streaming are now always drawn.
+- **The chat no longer stops following an answer** about one time in twenty, leaving the last lines just below the view: the brief shrink when the saved turn replaces the streamed one made the browser pull the scroll position up, which was read as the user scrolling up.
+
 ## [0.17.3] - 2026-11-12
 
 ### Added
