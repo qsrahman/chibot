@@ -14,7 +14,7 @@ import {
 // and `tracker`, a remote one behind a fake OAuth provider.
 
 // What tests/e2e/server.ts wrote; the Reload test edits and restores it.
-const MCP_JSON = '.e2e-data/mcp.json'
+const CONFIG_JSON = '.e2e-data/config/config.json'
 
 // Switches live in each server's entry in the file (not the settings): put
 // every server back on, asking nothing, with all its tools on.
@@ -85,8 +85,8 @@ test('lists the servers and their tools, with switches', async ({ page }) => {
   await expect(server(page, 'fixture')).toContainText('Connected · 6 tools')
 })
 
-test('reloads mcp.json after it was edited', async ({ page }) => {
-  const original = readFileSync(MCP_JSON, 'utf8')
+test('reloads the servers after config.json was edited', async ({ page }) => {
+  const original = readFileSync(CONFIG_JSON, 'utf8')
   try {
     await page.goto('/')
     const dialog = await openTools(page)
@@ -97,24 +97,24 @@ test('reloads mcp.json after it was edited', async ({ page }) => {
       mcpServers: Record<string, unknown>
     }
     config.mcpServers.broken = { type: 'local', command: 'chibot-no-such-cmd' }
-    writeFileSync(MCP_JSON, JSON.stringify(config))
+    writeFileSync(CONFIG_JSON, JSON.stringify(config))
     await dialog.getByRole('button', { name: 'Reload' }).click()
     // The new server shows why it failed; the others stay connected.
     await expect(server(page, 'broken')).toContainText('Failed')
     await expect(server(page, 'fixture')).toContainText('Connected · 6 tools')
 
     // A file with mistakes is reported, and nothing changes.
-    writeFileSync(MCP_JSON, '{ not json')
+    writeFileSync(CONFIG_JSON, '{ not json')
     await dialog.getByRole('button', { name: 'Reload' }).click()
-    await expect(dialog.getByRole('alert')).toContainText('mcp.json')
+    await expect(dialog.getByRole('alert')).toContainText('config.json')
     await expect(server(page, 'broken')).toContainText('Failed')
 
-    writeFileSync(MCP_JSON, original)
+    writeFileSync(CONFIG_JSON, original)
     await dialog.getByRole('button', { name: 'Reload' }).click()
     await expect(server(page, 'broken')).toHaveCount(0)
     await expect(server(page, 'fixture')).toContainText('Connected · 6 tools')
   } finally {
-    writeFileSync(MCP_JSON, original)
+    writeFileSync(CONFIG_JSON, original)
   }
 })
 
@@ -230,7 +230,7 @@ test('keeps the switches in the server’s entry in the file', async ({
   const dialog = await openTools(page)
   const entry = () =>
     (
-      JSON.parse(readFileSync(MCP_JSON, 'utf8')) as {
+      JSON.parse(readFileSync(CONFIG_JSON, 'utf8')) as {
         mcpServers: Record<string, Record<string, unknown>>
       }
     ).mcpServers.fixture!

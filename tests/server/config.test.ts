@@ -198,14 +198,6 @@ describe('Config', () => {
     })
   })
 
-  it('reads MCP servers from config.json unless a file is named', () => {
-    expect(new Config({ OPENAI_API_KEY: 'k' }).mcpConfigPath).toBeNull()
-    expect(
-      new Config({ OPENAI_API_KEY: 'k', CHIBOT_MCP_CONFIG: '/etc/chibot.json' })
-        .mcpConfigPath,
-    ).toBe('/etc/chibot.json')
-  })
-
   it.each(['abc', '0', '70000', '3.5'])('rejects PORT=%s', (port) => {
     expect(() => new Config({ OPENAI_API_KEY: 'k', PORT: port })).toThrow(
       /PORT/,

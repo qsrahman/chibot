@@ -59,7 +59,7 @@ phases*). Next: Phase 11a (multiple providers, design agreed) and Phase 11
 | Tools | Our own function tools only, no OpenAI-hosted tools | Full control over behaviour, storage and what leaves the machine. Web search uses Brave; project files use local RAG. |
 | Tool approval | Per-tool `requiresApproval` flag (`true`, or `'after-untrusted'` from Phase 7); a call needing approval ends the turn, and Approve/Deny resumes it with a new request | Read-only tools run automatically; tools with side effects wait for Approve/Deny in the chat. `'after-untrusted'` asks only in chats whose history holds output of a tool marked `untrustedOutput` (web content), against prompt injection. A pending approval is stored state (the path ends in an unanswered call), so it survives a reload and needs no in-memory wait. |
 | Tool loop | chibot's own loop in `ChatService`; tools declared with the SDK's `zodResponsesFunction` | The SDK's `ResponsesToolRunner` was tested: it fails on Ollama `gpt-oss` (its stream accumulator, with the cause hidden), runs the whole loop in one call (no approval across requests) and doesn't let chibot persist each step before relaying `response.completed`. |
-| MCP | chibot's own client (`@modelcontextprotocol/client`); servers in `config.json` (or the file `CHIBOT_MCP_CONFIG` names), edited by hand or in Settings, and their tools become function tools | The tool loop, approvals and Settings switches apply unchanged. A server runs commands with the owner's rights, and chibot has no login, so the web app never adds one. |
+| MCP | chibot's own client (`@modelcontextprotocol/client`); servers in `config.json`, edited by hand or in Settings, and their tools become function tools | The tool loop, approvals and Settings switches apply unchanged. A server runs commands with the owner's rights, and chibot has no login, so the web app never adds one. |
 | Attachments | Original kept in `data/files/`; stored messages reference it by chibot's own file id. Each request sends it by Files API `file_id` where the endpoint supports it (uploaded once, expiring after 30 days), otherwise inline as base64, or as its extracted text when the model rejects files | Requests stay small on OpenAI (stateless chats would otherwise re-send every attachment each turn), compatible servers without a Files API still work, and the local copy is the source of truth: a file the provider no longer has gets re-uploaded. |
 | Providers | One Responses-API endpoint for chat, set by `OPENAI_BASE_URL` / `OPENAI_API_KEY` / `OPENAI_MODEL` | The SDK's own env names, and the same code path for OpenAI, Ollama, LM Studio and other Open Responses servers. The key is optional when a base URL is set, since local servers ignore it. |
 | Feature endpoints | Transcription, images and embeddings each have an optional endpoint override, inheriting the chat endpoint | Lets chat run locally while, say, images use OpenAI. With a compatible endpoint and no model configured, the feature is off with a clear message. |
@@ -846,7 +846,7 @@ switch per server and per tool in Settings; tools only. Built before the code
 runner (now Phase 11).
 
 - **Config.** The `mcpServers` of `config.json` (`mcp.example.json` shows the
-  format; `CHIBOT_MCP_CONFIG` names a file to use instead),
+  format),
   in the common `mcpServers` shape with a `type` per server: `local` (`command`, `args`, `env`, `cwd`,
   by default the home folder) or `remote` (`url`, optional `headers`).
   `${VAR}` is filled from the environment, then `config.json`'s `env`.
@@ -1176,7 +1176,6 @@ Environment variables:
 | `HOST` | `127.0.0.1` | Interface to listen on; `0.0.0.0` exposes it on the LAN, so set `CHIBOT_TOKEN` too |
 | `PORT` | `3000` | API server port |
 | `CHIBOT_TOKEN` | — | Requires a token, remembered per browser in a cookie (v0.10.2) |
-| `CHIBOT_MCP_CONFIG` | — | A standalone MCP servers file, used instead of `mcpServers` in `config.json` (Phase 10) |
 | `CHIBOT_DATA_DIR` | `~/.local/share/chibot` | Holds `chibot.db` (Phase 1), `files/` (Phase 6) and `mcp-auth.json` (Phase 10). Also `CHIBOT_CONFIG_DIR` for `config.json` (default `~/.config/chibot`). A checkout's `<repo>/data` stays in use while the new place is empty. |
 
 ## 7. Risks & open items

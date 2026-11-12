@@ -11,11 +11,10 @@ const paths = {
 const where = (env = {}) => locations(env, { paths })
 
 describe('locations', () => {
-  it('uses the platform’s folders, and no MCP file, unless told otherwise', () => {
+  it('uses the platform’s folders unless told otherwise', () => {
     expect(where()).toEqual({
       configDir: paths.config,
       dataDir: paths.data,
-      mcpConfigPath: null,
     })
   })
 
@@ -24,12 +23,10 @@ describe('locations', () => {
       where({
         CHIBOT_CONFIG_DIR: 'a',
         CHIBOT_DATA_DIR: 'b',
-        CHIBOT_MCP_CONFIG: 'c/m.json',
       }),
     ).toEqual({
       configDir: resolve('a'),
       dataDir: resolve('b'),
-      mcpConfigPath: resolve('c/m.json'),
     })
   })
 })

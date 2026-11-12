@@ -167,8 +167,7 @@ transpiles it.
   `Config`; flags beat the environment, which beats the file), MCP servers in
   that file's `mcpServers` (`loadMcpServers`, checked when loaded so a mistake
   never stops chibot starting; a server's own switches (`enabled`, `ask`,
-  `disabledTools`) are in its entry, written by Settings; `${VAR}` from the environment, then its `env`;
-  `CHIBOT_MCP_CONFIG` names a file to use instead) and their OAuth tokens in
+  `disabledTools`) are in its entry, written by Settings; `${VAR}` from the environment, then its `env`) and their OAuth tokens in
   `mcp-auth.json` in the data folder (`McpAuthStore`); where
   these folders are comes from `locations()`, never from `ROOT` directly. User
   preferences in SQLite

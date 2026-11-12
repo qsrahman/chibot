@@ -75,7 +75,6 @@ const envSchema = z
     CHIBOT_CONFIG_DIR: optional,
     CHIBOT_DATA_DIR: optional,
     // Required to use chibot (once per browser), e.g. when HOST exposes it.
-    CHIBOT_MCP_CONFIG: optional,
     // Lets chibot listen beyond this machine without a token (see `exposure`).
     CHIBOT_ALLOW_OPEN: optional,
     CHIBOT_TOKEN: optional.refine(
@@ -125,8 +124,6 @@ export class Config {
   readonly token: string | null
   /** The owner accepted listening beyond this machine without a token. */
   readonly allowOpen: boolean
-  /** The file `CHIBOT_MCP_CONFIG` names, read in place of `config.json`'s `mcpServers`, or `null`. */
-  readonly mcpConfigPath: string | null
 
   constructor(env: NodeJS.ProcessEnv) {
     const parsed = envSchema.safeParse(env)
@@ -175,7 +172,6 @@ export class Config {
     const where = locations(e)
     this.configDir = where.configDir
     this.dataDir = where.dataDir
-    this.mcpConfigPath = where.mcpConfigPath
     this.token = e.CHIBOT_TOKEN ?? null
     this.allowOpen = ['1', 'true', 'yes'].includes(
       (e.CHIBOT_ALLOW_OPEN ?? '').toLowerCase(),

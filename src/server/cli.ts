@@ -103,9 +103,7 @@ export async function run(args: string[]): Promise<number | void> {
         }
         console.log(`Settings:    ${path}`)
         console.log(`Data:        ${where.dataDir}`)
-        console.log(
-          `MCP servers: ${where.mcpConfigPath ?? (inFile ? `in ${path}` : 'none yet')}`,
-        )
+        console.log(`MCP servers: ${inFile ? `in ${path}` : 'none yet'}`)
         return
       }
       const { file } = readConfigFile(where.configDir)

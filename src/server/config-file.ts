@@ -237,21 +237,6 @@ export function withSetting(
   return parsed.data
 }
 
-/** The `mcpServers` of a standalone `mcp.json`, or `null` if it has none (or isn't JSON). */
-export function readMcpServers(path: string): Record<string, unknown> | null {
-  try {
-    const json = JSON.parse(readFileSync(path, 'utf8')) as {
-      mcpServers?: unknown
-    } | null
-    const servers = json?.mcpServers
-    return servers && typeof servers === 'object' && !Array.isArray(servers)
-      ? (servers as Record<string, unknown>)
-      : null
-  } catch {
-    return null
-  }
-}
-
 /**
  * What `${NAME}` in the MCP servers is filled from: the real environment, over the
  * `env` of `config.json` (read afresh, so Reload sees a change).

@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -6,14 +6,11 @@ import { Config } from '../../src/server/config.ts'
 import {
   configFileSchema,
   readConfigFile,
-  readMcpServers,
   redacted,
   withSetting,
   writeConfigFile,
 } from '../../src/server/config-file.ts'
 import { loadMcpServers } from '../../src/server/mcp/index.ts'
-
-const local = { type: 'local', command: 'node', args: ['server.js'] }
 
 describe('MCP servers in config.json', () => {
   let dir: string
@@ -51,24 +48,9 @@ describe('MCP servers in config.json', () => {
     }
   })
 
-  it('come from the file CHIBOT_MCP_CONFIG names, if given, in place of config.json’s', () => {
-    const path = join(dir, 'named.json')
-    writeConfigFile(join(dir, 'config'), { mcpServers: { inline: local } })
-    writeFileSync(path, JSON.stringify({ mcpServers: { filed: local } }))
-    expect(Object.keys(loadMcpServers(config()))).toEqual(['inline'])
-    expect(
-      Object.keys(loadMcpServers(config({ CHIBOT_MCP_CONFIG: path }))),
-    ).toEqual(['filed'])
-  })
-
-  it('are none without config.json, a list in it or a named file', () => {
+  it('are none without a list in config.json', () => {
     expect(loadMcpServers(config())).toEqual({})
     writeConfigFile(join(dir, 'config'), { chat: { model: 'm' } })
-    // A standalone mcp.json beside it is not looked for.
-    writeFileSync(
-      join(dir, 'config', 'mcp.json'),
-      JSON.stringify({ mcpServers: { filed: local } }),
-    )
     expect(loadMcpServers(config())).toEqual({})
   })
 
@@ -106,16 +88,5 @@ describe('MCP servers in config.json', () => {
     expect(() => withSetting({}, 'mcpServers.files', '{}')).toThrow(
       /edited in config\.json itself/,
     )
-  })
-
-  it('can be read out of a named file', () => {
-    const path = join(dir, 'old.json')
-    writeFileSync(path, JSON.stringify({ mcpServers: { a: local } }))
-    expect(readMcpServers(path)).toEqual({ a: local })
-    expect(readMcpServers(join(dir, 'missing.json'))).toBeNull()
-    writeFileSync(path, '{ nope')
-    expect(readMcpServers(path)).toBeNull()
-    writeFileSync(path, JSON.stringify({ mcpServers: [] }))
-    expect(readMcpServers(path)).toBeNull()
   })
 })

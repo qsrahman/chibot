@@ -1,10 +1,6 @@
 // MCP servers: their config (`mcpServers`), connections, OAuth sign-in, routes and
 // the tools they offer. Code outside this folder imports from here only.
-export {
-  loadMcpConfig,
-  parseMcpConfig,
-  type McpServerConfig,
-} from './mcp-config.ts'
+export { parseMcpConfig, type McpServerConfig } from './mcp-config.ts'
 export {
   loadMcpServers,
   mcpServerFile,

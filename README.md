@@ -89,7 +89,6 @@ or a one-off run changes a value. A `.env` file is not read.
 | — | `CHIBOT_ALLOW_OPEN` | — | `1` (or `chibot --allow-open`) lets chibot listen beyond this machine without a token, e.g. behind a firewall or proxy that restricts who can reach it |
 | — | `CHIBOT_CONFIG_DIR` | see above | Where `config.json` is |
 | — | `CHIBOT_DATA_DIR` | see above | Where the database, generated images and MCP sign-ins are kept |
-| — | `CHIBOT_MCP_CONFIG` | — | An MCP servers file to use instead of `mcpServers` in `config.json` (see below) |
 
 For example, to chat with a local Ollama model:
 
@@ -181,8 +180,7 @@ you, so a server's token or header can sit in it directly:
 }
 ```
 
-In `config.json`, the `mcpServers` entry sits beside the other settings. A file
-of this shape named by `CHIBOT_MCP_CONFIG` is read in its place.
+In `config.json`, the `mcpServers` entry sits beside the other settings.
 
 - A **`local`** server is a command chibot runs (`command`, `args`, `env`,
   `cwd`, by default your home folder) with your rights. It gets only a safe
@@ -206,7 +204,7 @@ command or URL, and **Edit** or **Remove** a server later. Keys go in the
 *Environment variables* (local) or *Headers* (remote) rows: they are written to the
 file and never shown again, and a blank value keeps the saved one (so keep keys
 out of the arguments and URL, which are shown). A server's definition is saved
-to the file it came from (`config.json`, or the file `CHIBOT_MCP_CONFIG` names). This is on
+to `config.json`. This is on
 only while chibot listens on this machine or `CHIBOT_TOKEN` is set, since a
 `local` server runs a command; otherwise Settings says why and the file is
 the only way.

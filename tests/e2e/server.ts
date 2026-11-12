@@ -1,11 +1,11 @@
 // Starts chibot for the e2e tests with the shipped tools plus `e2e_note`, a
 // test-only tool that needs approval (no shipped tool does yet). MCP servers
-// (in .e2e-data/mcp.json):
+// (in .e2e-data/config/config.json):
 // `fixture`, the local fixture server, and `tracker`, the same tools behind
 // a fake OAuth provider on port 4012.
-import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { z } from 'zod'
+import { writeConfigFile } from '../../src/server/config-file.ts'
 import { defaultTools, start } from '../../src/server/main.ts'
 import { publicOnly } from '../../src/server/media-proxy.ts'
 import { Tool } from '../../src/server/tool.ts'
@@ -24,20 +24,16 @@ class NoteTool extends Tool {
 }
 
 const tracker = await startOAuthServer({ port: 4012 })
-mkdirSync('.e2e-data', { recursive: true })
-writeFileSync(
-  process.env.CHIBOT_MCP_CONFIG!,
-  JSON.stringify({
-    mcpServers: {
-      fixture: {
-        type: 'local',
-        command: process.execPath,
-        args: [join(import.meta.dirname, '../fixtures/mcp-server.ts')],
-      },
-      tracker: { type: 'remote', url: tracker.url },
+writeConfigFile(process.env.CHIBOT_CONFIG_DIR!, {
+  mcpServers: {
+    fixture: {
+      type: 'local',
+      command: process.execPath,
+      args: [join(import.meta.dirname, '../fixtures/mcp-server.ts')],
     },
-  }),
-)
+    tracker: { type: 'remote', url: tracker.url },
+  },
+})
 
 start({
   // The shipped tools, and one test-only tool that needs approval.

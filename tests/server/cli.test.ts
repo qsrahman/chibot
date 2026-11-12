@@ -20,7 +20,6 @@ describe('the chibot command', () => {
     dir = mkdtempSync(join(tmpdir(), 'chibot-cli-'))
     vi.stubEnv('CHIBOT_CONFIG_DIR', join(dir, 'config'))
     vi.stubEnv('CHIBOT_DATA_DIR', join(dir, 'data'))
-    vi.stubEnv('CHIBOT_MCP_CONFIG', '')
     out = []
     errors = []
     vi.spyOn(console, 'log').mockImplementation((m) => void out.push(String(m)))

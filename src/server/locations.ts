@@ -11,8 +11,6 @@ export interface Locations {
   configDir: string
   /** Holds the database, stored files and MCP sign-in tokens. */
   dataDir: string
-  /** The file `CHIBOT_MCP_CONFIG` names, used in place of `config.json`'s `mcpServers`; otherwise `null`. */
-  mcpConfigPath: string | null
 }
 
 /**
@@ -41,7 +39,6 @@ function platformPaths(): { config: string; data: string } {
 interface Overrides {
   CHIBOT_CONFIG_DIR?: string | undefined
   CHIBOT_DATA_DIR?: string | undefined
-  CHIBOT_MCP_CONFIG?: string | undefined
 }
 
 /**
@@ -59,9 +56,6 @@ export function locations(
       ? resolve(env.CHIBOT_CONFIG_DIR)
       : paths.config,
     dataDir: env.CHIBOT_DATA_DIR ? resolve(env.CHIBOT_DATA_DIR) : paths.data,
-    mcpConfigPath: env.CHIBOT_MCP_CONFIG
-      ? resolve(env.CHIBOT_MCP_CONFIG)
-      : null,
   }
 }
 

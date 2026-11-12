@@ -1,25 +1,12 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { loadMcpConfig } from '../../../src/server/mcp/mcp-config.ts'
+import { describe, expect, it } from 'vitest'
+import { parseMcpConfig } from '../../../src/server/mcp/mcp-config.ts'
 
-describe('mcp.json', () => {
-  let dir: string
-  let path: string
-  beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'chibot-mcp-'))
-    path = join(dir, 'mcp.json')
-  })
-  afterEach(() => rmSync(dir, { recursive: true, force: true }))
-  const write = (config: unknown) => writeFileSync(path, JSON.stringify(config))
+const loadMcpConfig = (config: unknown, env: NodeJS.ProcessEnv) =>
+  parseMcpConfig(config, env, 'config.json')
 
-  it('is optional', () => {
-    expect(loadMcpConfig(path, {})).toEqual({})
-  })
-
+describe('the MCP servers of config.json', () => {
   it('reads local and remote servers, filling ${VAR} from the environment', () => {
-    write({
+    const config = {
       mcpServers: {
         files: {
           type: 'local',
@@ -33,9 +20,9 @@ describe('mcp.json', () => {
           headers: { Authorization: 'Bearer ${TRACKER_TOKEN}' },
         },
       },
-    })
+    }
     const env = { NOTES: '/notes', FILES_TOKEN: 'f1', TRACKER_TOKEN: 't1' }
-    expect(loadMcpConfig(path, env)).toEqual({
+    expect(loadMcpConfig(config, env)).toEqual({
       files: {
         type: 'local',
         command: 'npx',
@@ -51,29 +38,45 @@ describe('mcp.json', () => {
   })
 
   it('says what is wrong, naming the server and field', () => {
-    write({ mcpServers: { files: { type: 'local' } } })
-    expect(() => loadMcpConfig(path, {})).toThrow(/files.*command/s)
+    expect(() =>
+      loadMcpConfig({ mcpServers: { files: { type: 'local' } } }, {}),
+    ).toThrow(/files.*command/s)
 
-    write({ mcpServers: { web: { type: 'remote', url: 'not a url' } } })
-    expect(() => loadMcpConfig(path, {})).toThrow(/web.*url/s)
+    expect(() =>
+      loadMcpConfig(
+        { mcpServers: { web: { type: 'remote', url: 'not a url' } } },
+        {},
+      ),
+    ).toThrow(/web.*url/s)
 
-    write({ mcpServers: { x: { type: 'cloud', url: 'http://a' } } })
-    expect(() => loadMcpConfig(path, {})).toThrow(/x.*type/s)
+    expect(() =>
+      loadMcpConfig(
+        { mcpServers: { x: { type: 'cloud', url: 'http://a' } } },
+        {},
+      ),
+    ).toThrow(/x.*type/s)
 
     // A typo isn't silently ignored.
-    write({ mcpServers: { files: { type: 'local', command: 'a', arg: [] } } })
-    expect(() => loadMcpConfig(path, {})).toThrow(/arg/)
+    expect(() =>
+      loadMcpConfig(
+        { mcpServers: { files: { type: 'local', command: 'a', arg: [] } } },
+        {},
+      ),
+    ).toThrow(/arg/)
 
     // Names become tool-name prefixes.
-    write({ mcpServers: { 'my files': { type: 'local', command: 'a' } } })
-    expect(() => loadMcpConfig(path, {})).toThrow(/my files/)
+    expect(() =>
+      loadMcpConfig(
+        { mcpServers: { 'my files': { type: 'local', command: 'a' } } },
+        {},
+      ),
+    ).toThrow(/my files/)
 
-    write({ mcpServers: { files: { type: 'local', command: '${NOPE}' } } })
-    expect(() => loadMcpConfig(path, {})).toThrow(
-      /NOPE.*isn’t set.*chibot config set env\.NOPE/,
-    )
-
-    writeFileSync(path, '{ not json')
-    expect(() => loadMcpConfig(path, {})).toThrow(/mcp\.json/)
+    expect(() =>
+      loadMcpConfig(
+        { mcpServers: { files: { type: 'local', command: '${NOPE}' } } },
+        {},
+      ),
+    ).toThrow(/NOPE.*isn’t set.*chibot config set env\.NOPE/)
   })
 })
