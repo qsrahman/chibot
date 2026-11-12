@@ -20,7 +20,9 @@ import {
   readDisabledTools,
   writeDisabledTools,
 } from './config-file.ts'
+import { localOrigin } from './local-origin.ts'
 import { MediaProxy, type AddressGuard } from './media-proxy.ts'
+import { openBrowser } from './open-browser.ts'
 import { locations, openFolders, ROOT } from './locations.ts'
 import { ConversationSearch, ConversationStore } from './conversations/index.ts'
 import { openDatabase } from './database.ts'
@@ -108,12 +110,15 @@ export function start({
   tools = defaultTools,
   env = {},
   mediaGuard,
+  open = false,
 }: {
   tools?: (deps: ToolDeps) => Tool[]
   /** Settings beating the environment and `config.json` (command-line flags). */
   env?: Record<string, string>
   /** Which addresses linked images and media may be fetched from (tests allow their own). */
   mediaGuard?: AddressGuard
+  /** Open chibot in the default browser once it listens (the command line does; tests don't). */
+  open?: boolean
 } = {}) {
   const legacy = readEnvFiles()
   // Where config.json is can itself come from an old .env, the environment or a flag.
@@ -277,6 +282,11 @@ export function start({
     { fetch: app.fetch, hostname: config.host, port: config.port },
     (info) => {
       console.log(`chibot listening on http://${config.host}:${info.port}`)
+      // With a token the address needs it once, and a secret doesn't belong
+      // in a command line or the browser's history, so that is left to the user.
+      if (open && !config.token) {
+        openBrowser(localOrigin({ host: config.host, port: info.port }))
+      }
       if (config.token) {
         console.log(
           'Open it once in each browser with ?token=<your token> (the token in config.json, or CHIBOT_TOKEN).',

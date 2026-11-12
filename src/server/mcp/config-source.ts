@@ -1,8 +1,8 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-import { isIP } from 'node:net'
 import { basename } from 'node:path'
 import { errorMessage } from '../../shared/errors.ts'
 import type { Config } from '../config.ts'
+import { localOrigin } from '../local-origin.ts'
 import {
   mcpVariables,
   readConfigFile,
@@ -102,8 +102,6 @@ export function mcpServersAtStartup(
  * chibot's own address (loopback for all interfaces), so the sign-in is done
  * on the machine running it.
  */
-export function oauthRedirectUrl({ host, port }: Config): string {
-  const name = ['0.0.0.0', '::'].includes(host) ? '127.0.0.1' : host
-  const origin = `http://${isIP(name) === 6 ? `[${name}]` : name}:${port}`
-  return origin + OAUTH_CALLBACK
+export function oauthRedirectUrl(config: Config): string {
+  return localOrigin(config) + OAUTH_CALLBACK
 }

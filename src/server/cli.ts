@@ -15,12 +15,14 @@ import { readEnvFiles } from './config.ts'
 import { offerMcpImport, runInit, terminalPrompts } from './init.ts'
 import { locations, ROOT } from './locations.ts'
 import { start } from './main.ts'
+import { wantsBrowser } from './open-browser.ts'
 import { errorMessage } from '../shared/errors.ts'
 
 const HELP = `chibot: a local chat app for the OpenAI Responses API and compatible servers
 
 Usage:
-  chibot [--port <n>] [--host <address>]   start it (default; a host beyond this machine
+  chibot [--port <n>] [--host <address>]   start it (default) and open it in your browser
+                                           (--no-open: don't; a host beyond this machine
                                            needs a token, or --allow-open)
   chibot init                              set up the models and keys
   chibot config path                       where its settings and data live
@@ -47,6 +49,7 @@ export async function run(args: string[]): Promise<number | void> {
       port: { type: 'string', short: 'p' },
       host: { type: 'string' },
       'allow-open': { type: 'boolean' },
+      'no-open': { type: 'boolean' },
       replace: { type: 'boolean' },
     },
   })
@@ -64,6 +67,11 @@ export async function run(args: string[]): Promise<number | void> {
   switch (command) {
     case 'start':
       start({
+        open: wantsBrowser({
+          noOpen: values['no-open'] === true,
+          tty: process.stdout.isTTY === true,
+          env: process.env,
+        }),
         env: {
           ...(values.port && { PORT: values.port }),
           ...(values.host && { HOST: values.host }),

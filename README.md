@@ -31,7 +31,7 @@ pnpm install
 pnpm build        # the web app, once (and again after pulling changes)
 pnpm add -g .     # puts the `chibot` command on your PATH (a link to this folder)
 chibot init       # asks where your models are, and for the key
-chibot            # then open http://127.0.0.1:3000
+chibot            # starts it and opens http://127.0.0.1:3000 in your browser
 ```
 
 `pnpm add -g .` links the command to this folder (pnpm 12 no longer accepts
@@ -268,9 +268,13 @@ pnpm build
 pnpm start
 ```
 
-Then open http://127.0.0.1:3000. With `chibot` linked (see [Setup](#setup)),
-`chibot` does the same from any folder, and `chibot --port 8080` picks another
-port.
+It opens http://127.0.0.1:3000 in your default browser. With `chibot` linked
+(see [Setup](#setup)), `chibot` does the same from any folder, and
+`chibot --port 8080` picks another port. `chibot --no-open` leaves the browser
+alone. It also stays closed when chibot isn't started from a terminal (a
+service, CI, output sent to a file), over SSH, and when a token is set (the
+address needs it, and a secret doesn't belong in a command line or the browser's
+history: open `?token=…` once yourself, as chibot says).
 
 **As an app:** chibot has a web manifest and icons, so a browser can install
 it (Chrome and Edge: the install button in the address bar; Safari: Share →

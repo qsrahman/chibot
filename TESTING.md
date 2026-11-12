@@ -84,7 +84,7 @@ How chibot is tested and how to add tests. Part of the developer guide ([AGENTS.
 Measure before optimizing. `pnpm seed:perf --data <folder>` fills a scratch data
 folder with 300 small chats and one long chat (500 turns, each with a tool
 result of 20,000 characters, by default; it refuses your real data folder).
-Start chibot on it (`CHIBOT_DATA_DIR=<folder> OPENAI_API_KEY=x chibot --port
+Start chibot on it (`CHIBOT_DATA_DIR=<folder> OPENAI_API_KEY=x chibot --no-open --port
 4177`), then `pnpm measure:chat --port 4177 --turns 500 [--throttle 6]` opens the
 chat in Chromium and prints the time to open it, DOM size, heap, how smooth
 scrolling is and what a keystroke costs. `--throttle 6` makes the CPU six times
