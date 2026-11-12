@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-11-13
+
 ### Added
 
 - Two settings in `config.json` for what only had a variable: `dataDir` (where the database, files and MCP sign-ins are kept; a full path; `CHIBOT_DATA_DIR` still overrides it) and `server.allowOpen` (listen beyond this machine without a token; `CHIBOT_ALLOW_OPEN` and `--allow-open` still work). `chibot config set`, `config path`, `backup` and `restore` know them.
