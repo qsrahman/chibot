@@ -4,6 +4,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.17.4] - 2026-11-12
 
 ### Fixed
 
