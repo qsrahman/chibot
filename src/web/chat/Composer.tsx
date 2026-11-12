@@ -334,6 +334,7 @@ export function Composer({
       <textarea
         ref={inputRef}
         aria-label="Message"
+        dir="auto"
         placeholder="Ask anything"
         rows={1}
         // Not on a touch screen: it would raise the keyboard over the page.

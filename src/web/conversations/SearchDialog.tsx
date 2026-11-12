@@ -92,6 +92,7 @@ export function SearchDialog({ open, onClose, recent }: Props) {
         aria-activedescendant={shown.length > 0 ? optionId(active) : undefined}
         placeholder="Search chats…"
         aria-label="Search chats"
+        dir="auto"
         autoFocus
         value={query}
         onChange={(e) => setQuery(e.target.value)}
@@ -140,9 +141,13 @@ export function SearchDialog({ open, onClose, recent }: Props) {
                 <MessageSquare />
               </span>
               <span className="search-text">
-                <span className="search-title">{item.title ?? UNTITLED}</span>
+                <span className="search-title" dir="auto">
+                  {item.title ?? UNTITLED}
+                </span>
                 {item.snippet && (
-                  <span className="search-snippet">{item.snippet}</span>
+                  <span className="search-snippet" dir="auto">
+                    {item.snippet}
+                  </span>
                 )}
               </span>
             </button>

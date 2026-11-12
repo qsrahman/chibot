@@ -58,6 +58,7 @@ export function ConversationRow({
       <input
         className="sidebar-rename"
         aria-label="Chat title"
+        dir="auto"
         defaultValue={title}
         autoFocus
         onFocus={(e) => e.currentTarget.select()}
@@ -78,7 +79,9 @@ export function ConversationRow({
   return (
     <div className="conversation-row">
       <NavLink to={`/c/${item.id}`} className="sidebar-row" title={title}>
-        <span className="row-label">{title}</span>
+        <span className="row-label" dir="auto">
+          {title}
+        </span>
       </NavLink>
       <button
         type="button"

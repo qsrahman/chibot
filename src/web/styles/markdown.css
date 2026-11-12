@@ -27,8 +27,8 @@
 /* The rule an opened Thoughts uses, so quoted text reads as set apart. */
 .markdown blockquote {
   margin: 16px 0;
-  padding-left: 12px;
-  border-left: 2px solid var(--border);
+  padding-inline-start: 12px;
+  border-inline-start: 2px solid var(--border);
 }
 
 .markdown blockquote > :first-child {
@@ -58,7 +58,7 @@
 }
 
 .cite-num {
-  margin-left: 2px;
+  margin-inline-start: 2px;
   color: var(--fg-muted);
   font-size: 0.6875rem;
   font-weight: 500;

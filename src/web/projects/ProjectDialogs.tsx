@@ -34,6 +34,7 @@ export function ProjectNameDialog({
         <input
           className="dialog-input"
           aria-label="Project name"
+          dir="auto"
           placeholder="e.g. Japan trip"
           maxLength={100}
           value={name}
@@ -84,6 +85,7 @@ export function ProjectDetailsDialog({
         <input
           className="dialog-input"
           aria-label="Project name"
+          dir="auto"
           maxLength={100}
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -92,6 +94,7 @@ export function ProjectDetailsDialog({
         <input
           className="dialog-input"
           aria-label="Description"
+          dir="auto"
           placeholder="A line that tells it apart, e.g. Two weeks in April"
           maxLength={200}
           value={description}
@@ -144,7 +147,9 @@ export function MoveToProjectDialog({
                 <span className="row-icon" aria-hidden>
                   <Folder />
                 </span>
-                <span className="row-label">{project.name}</span>
+                <span className="row-label" dir="auto">
+                  {project.name}
+                </span>
                 {project.description && (
                   <span className="row-detail">{project.description}</span>
                 )}
@@ -188,6 +193,7 @@ export function NoteDialog({
         <input
           className="dialog-input"
           aria-label="Note title"
+          dir="auto"
           placeholder="Title, e.g. Door codes"
           maxLength={100}
           value={title}
@@ -197,6 +203,7 @@ export function NoteDialog({
         <textarea
           className="dialog-input note-text"
           aria-label="Note"
+          dir="auto"
           placeholder="What chats in this project should know"
           value={text}
           onChange={(e) => setText(e.target.value)}

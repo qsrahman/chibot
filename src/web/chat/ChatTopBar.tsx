@@ -56,7 +56,7 @@ export function ChatTopBar({
         )}
         {/* Phones only: with the sidebar hidden, say which chat this is. */}
         {id && pageTitle && (
-          <span className="topbar-title" title={pageTitle}>
+          <span className="topbar-title" dir="auto" title={pageTitle}>
             {pageTitle}
           </span>
         )}

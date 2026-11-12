@@ -28,7 +28,7 @@ export function ProjectHeading({
   return (
     <div className="greeting">
       <div className="project-heading">
-        <h1>
+        <h1 dir="auto">
           <Folder size={26} strokeWidth={1.5} aria-hidden />
           {project.name}
         </h1>

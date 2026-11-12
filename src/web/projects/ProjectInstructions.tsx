@@ -62,6 +62,7 @@ export function ProjectInstructions({
         <>
           <textarea
             aria-label="Instructions"
+            dir="auto"
             placeholder="How chibot should work in this project, e.g. “Answer in British English. Prices in yen.”"
             maxLength={8000}
             value={draft}

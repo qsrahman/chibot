@@ -451,6 +451,9 @@ needs the server running: there is no offline mode, since the server is local.
   The **Compact now** icon under the latest answer summarizes at once, optionally
   keeping something in mind. The top right shows the chat's token total across
   all versions.
+- **Right to left:** Urdu, Arabic, Hebrew and other right-to-left text is
+  laid out right to left, per paragraph and per title, as you type and in
+  answers, with English and code beside it left to right.
 - **Keyboard shortcuts:** ⌘/Ctrl+/ (or **Keyboard shortcuts** in the sidebar)
   lists them: new chat, search, toggle sidebar, focus the message box, copy
   the last answer, ⌘/Ctrl+Shift+M to start and stop dictation, Esc to stop,

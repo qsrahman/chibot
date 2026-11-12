@@ -847,3 +847,30 @@ test('branches a chat into a new one, leaving the original alone', async ({
   await expect(turns(page)).toHaveCount(2)
   await expect(answer(page, 1)).toContainText('to: And then')
 })
+
+test('text in Urdu or Arabic runs right to left, English stays left to right', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  const box = page.getByRole('textbox', { name: 'Message' })
+  const direction = (locator: ReturnType<Page['locator']>) =>
+    locator.evaluate((el) => getComputedStyle(el).direction)
+
+  await box.fill('مجھے ایک فہرست دیں')
+  expect(await direction(box)).toBe('rtl')
+  await box.fill('Give me a list')
+  expect(await direction(box)).toBe('ltr')
+
+  await send(page, 'مرحبا بالعالم')
+  await answered(page)
+  expect(await direction(page.locator('.message.user p').last())).toBe('rtl')
+
+  // An answer chooses per block; code stays left to right.
+  await send(page, 'rtl-markdown')
+  await expect(page.locator('.markdown h1').last()).toHaveText('عنوان')
+  const markdown = page.locator('.markdown').last()
+  for (const tag of ['h1', 'p', 'ul'])
+    expect(await direction(markdown.locator(tag).first())).toBe('rtl')
+  expect(await direction(markdown.locator('pre'))).toBe('ltr')
+})

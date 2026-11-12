@@ -254,7 +254,9 @@ export function Sidebar({
                   <span className="row-icon" aria-hidden>
                     <Folder />
                   </span>
-                  <span className="row-label">{project.name}</span>
+                  <span className="row-label" dir="auto">
+                    {project.name}
+                  </span>
                 </NavLink>
               ))}
             </section>

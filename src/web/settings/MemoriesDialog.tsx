@@ -73,7 +73,9 @@ export function MemoriesDialog({ open, onClose }: Props) {
               </form>
             ) : (
               <>
-                <span className="memory-text">{memory.text}</span>
+                <span className="memory-text" dir="auto">
+                  {memory.text}
+                </span>
                 <button
                   type="button"
                   className="icon-button"

@@ -422,6 +422,15 @@ carries colour. In the sidebar it sits at 20 px beside `chibot` (system sans,
 
 ## 6. Interaction
 
+- **Right-to-left text.** Text people write or read takes its direction from
+  itself, not from the interface: `dir="auto"` on the message box, the edit
+  box, instruction and note fields, a message, each block of an answer
+  (paragraphs, headings, lists, quotes, tables) and the titles in the sidebar,
+  search and top bar. An Urdu or Arabic paragraph runs right to left, with its
+  bullets and alignment, beside an English one that doesn't; code blocks stay
+  left to right. The interface's own layout (sidebar, buttons) stays as it is.
+  Rules that sit on one side of text (a quote's bar) use logical properties
+  (`border-inline-start`), not `left` or `right`.
 - Focus is visible: a 2 px `--fg` outline with 2 px offset on keyboard focus
   (`:focus-visible`) only.
 - Motion is short and subtle (150 ms ease). The thinking dot pulses. Honour

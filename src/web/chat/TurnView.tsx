@@ -132,7 +132,7 @@ export function TurnView({
               ))}
             </ul>
           )}
-          {question.text && <p>{question.text}</p>}
+          {question.text && <p dir="auto">{question.text}</p>}
         </div>
       )}
       {!pending && !editing && (
@@ -385,6 +385,7 @@ function EditBox({
     <div className="edit-box">
       <textarea
         aria-label="Edit message"
+        dir="auto"
         enterKeyHint={touchOnly ? 'enter' : 'send'}
         autoFocus
         value={text}

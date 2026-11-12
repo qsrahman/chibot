@@ -30,6 +30,7 @@ export function Personalization({
         </label>
         <textarea
           id="setting-about"
+          dir="auto"
           maxLength={1500}
           value={aboutUser}
           onChange={(e) => setAboutUser(e.target.value)}
@@ -39,6 +40,7 @@ export function Personalization({
         <label htmlFor="setting-style">How should chibot respond?</label>
         <textarea
           id="setting-style"
+          dir="auto"
           maxLength={1500}
           value={responseStyle}
           onChange={(e) => setResponseStyle(e.target.value)}

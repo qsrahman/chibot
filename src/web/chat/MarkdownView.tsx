@@ -44,7 +44,42 @@ function useKatex(text: string): Katex | null {
   }, [needed, loaded])
   return loaded
 }
+/**
+ * A block that takes its direction from its own text, so a paragraph in Urdu
+ * or Arabic runs right to left (bullets, numbers and alignment follow) while
+ * the English one beside it doesn't. Code blocks stay left to right.
+ */
+const auto =
+  (
+    Tag:
+      | 'p'
+      | 'h1'
+      | 'h2'
+      | 'h3'
+      | 'h4'
+      | 'h5'
+      | 'h6'
+      | 'ul'
+      | 'ol'
+      | 'blockquote'
+      | 'table',
+  ) =>
+  ({ node: _, ...props }: ComponentProps<typeof Tag> & ExtraProps) => (
+    <Tag dir="auto" {...(props as object)} />
+  )
+
 const components: Components = {
+  p: auto('p'),
+  h1: auto('h1'),
+  h2: auto('h2'),
+  h3: auto('h3'),
+  h4: auto('h4'),
+  h5: auto('h5'),
+  h6: auto('h6'),
+  ul: auto('ul'),
+  ol: auto('ol'),
+  blockquote: auto('blockquote'),
+  table: auto('table'),
   pre: CodeBlock,
   a: Link,
   img: Image,

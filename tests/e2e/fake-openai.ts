@@ -30,6 +30,9 @@ const usage = {
 
 const MODELS = ['e2e-model', 'e2e-other']
 const THOUGHT = 'Considering the question carefully.'
+// What "rtl-markdown" answers with: Urdu, as a heading, a paragraph, a list and code.
+const RTL_MARKDOWN =
+  '# عنوان\n\nیہ ایک پیراگراف ہے۔\n\n- پہلا\n- دوسرا\n\n```js\nconst x = 1\n```'
 
 let answers = 0
 let lastRequest: unknown = null
@@ -270,7 +273,9 @@ app.post('/v1/responses', async (c) => {
   const holding = question.includes('hold')
   const text = slow
     ? Array.from({ length: 200 }, (_, i) => `word${i}`).join(' ')
-    : `Answer #${++answers} to: ${question}`
+    : question.includes('rtl-markdown')
+      ? RTL_MARKDOWN
+      : `Answer #${++answers} to: ${question}`
   const id = `resp_${crypto.randomUUID()}`
   const thinking = question.includes('think')
   const reasoning = {

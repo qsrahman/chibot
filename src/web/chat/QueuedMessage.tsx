@@ -14,7 +14,7 @@ export function QueuedMessage({
     <div className="composer-queued">
       <Clock size={15} strokeWidth={1.75} aria-hidden />
       <span className="composer-queued-label">Queued</span>
-      <span className="composer-queued-text" title={text}>
+      <span className="composer-queued-text" dir="auto" title={text}>
         {text}
       </span>
       <button
