@@ -14,6 +14,7 @@ import type { Prefixes } from '../../shared/embedding-prefixes.ts'
 import { documentText } from '../text.ts'
 import { fuse, type Hit } from './fusion.ts'
 import type { Reranker } from './reranker.ts'
+import { logFailure } from '../api-errors.ts'
 import { errorMessage } from '../../shared/errors.ts'
 
 // About 3,000 chunks: plenty for notes and documents, bounded for embedding.
@@ -321,7 +322,7 @@ export class ProjectIndex {
     } catch (err) {
       // A stop ends the call; any other failure still has the keyword hits.
       if (signal?.aborted) throw err
-      console.error('Embedding the search failed:', err)
+      logFailure('Embedding the search failed', err)
       return { keyword, meaning: null }
     }
   }

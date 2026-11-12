@@ -3,6 +3,7 @@ import { messageText } from '../../shared/messages.ts'
 import type { ConversationStore } from '../conversations/index.ts'
 import type { ModelRequests } from './model-requests.ts'
 import { cleanTitle, TITLE_INSTRUCTIONS } from './prompts.ts'
+import { logFailure } from '../api-errors.ts'
 import type { SettingsStore } from '../settings-store.ts'
 
 /** Names chats from their opening messages. */
@@ -76,7 +77,7 @@ export class TitleWriter {
       }
       return this.#store.setTitleIfEmpty(conversationId, title) ? title : null
     } catch (err) {
-      if (!signal?.aborted) console.error('Title generation failed:', err)
+      if (!signal?.aborted) logFailure('Title generation failed', err)
       return null
     }
   }

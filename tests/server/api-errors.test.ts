@@ -1,6 +1,6 @@
 import OpenAI from 'openai'
-import { describe, expect, it } from 'vitest'
-import { explainApiError } from '../../src/server/api-errors.ts'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { explainApiError, logFailure } from '../../src/server/api-errors.ts'
 
 const rateLimit = (message: string, headers: Record<string, string> = {}) =>
   new OpenAI.RateLimitError(429, { message }, message, new Headers(headers))
@@ -54,5 +54,59 @@ describe('explainApiError', () => {
       new Headers(),
     )
     expect(explainApiError(bad)).toBe(bad.message)
+  })
+})
+
+describe('logFailure', () => {
+  afterEach(() => vi.restoreAllMocks())
+  const logged = () => vi.spyOn(console, 'error').mockImplementation(() => {})
+
+  it('says a server that is down in one line, with why', () => {
+    const log = logged()
+    // As the SDK reports a refused connection: fetch failed, caused by ECONNREFUSED.
+    const refused = Object.assign(new AggregateError([], ''), {
+      code: 'ECONNREFUSED',
+    })
+    const err = new OpenAI.APIConnectionError({
+      cause: new TypeError('fetch failed', { cause: refused }),
+    })
+    logFailure('Listing models from http://localhost:11434/v1 failed', err)
+    expect(log).toHaveBeenCalledExactlyOnceWith(
+      "Listing models from http://localhost:11434/v1 failed: can't reach the server (ECONNREFUSED)",
+    )
+  })
+
+  it('says what the deepest cause says when there is no code', () => {
+    const log = logged()
+    const err = new OpenAI.APIConnectionError({
+      cause: new TypeError('fetch failed', { cause: new Error('bad port') }),
+    })
+    logFailure('Listing models failed', err)
+    expect(log).toHaveBeenCalledExactlyOnceWith(
+      "Listing models failed: can't reach the server (bad port)",
+    )
+  })
+
+  it('gives the server’s own message for an error it answered with', () => {
+    const log = logged()
+    logFailure(
+      'Transcription failed',
+      new OpenAI.NotFoundError(
+        404,
+        { message: 'no such model' },
+        'no such model',
+        new Headers(),
+      ),
+    )
+    expect(log).toHaveBeenCalledExactlyOnceWith(
+      'Transcription failed: 404 no such model',
+    )
+  })
+
+  it('keeps the stack of anything else, which may be a bug', () => {
+    const log = logged()
+    const err = new TypeError('x is not a function')
+    logFailure('Title generation failed', err)
+    expect(log).toHaveBeenCalledExactlyOnceWith('Title generation failed:', err)
   })
 })

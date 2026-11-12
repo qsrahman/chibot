@@ -1,4 +1,5 @@
 import OpenAI from 'openai'
+import { logFailure } from './api-errors.ts'
 import type { Endpoint } from './config.ts'
 
 /** Voice input: recordings to text, through the transcription endpoint. */
@@ -40,7 +41,7 @@ export class Transcription {
       return text
     } catch (err) {
       if (!(err instanceof OpenAI.APIError)) throw err
-      console.error('Transcription failed:', err)
+      logFailure('Transcription failed', err)
       const setup =
         err instanceof OpenAI.NotFoundError ||
         err instanceof OpenAI.APIConnectionError

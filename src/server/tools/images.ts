@@ -2,6 +2,7 @@ import OpenAI, { toFile } from 'openai'
 import type { ImagesResponse } from 'openai/resources/images'
 import { z } from 'zod'
 import type { FileStore } from '../file-store.ts'
+import { logFailure } from '../api-errors.ts'
 import { Tool, type ToolContext } from '../tool.ts'
 
 const SIZES = {
@@ -179,7 +180,7 @@ async function fromImageService<T>(
     return await call()
   } catch (err) {
     if (!(err instanceof OpenAI.APIError)) throw err
-    console.error('Image request failed:', err)
+    logFailure('Image request failed', err)
     const hint =
       err instanceof OpenAI.NotFoundError
         ? '. This server has no images endpoint (e.g. Ollama removed image ' +

@@ -8,6 +8,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 - **`chibot` opens the default browser** at its address when it starts from a terminal. `--no-open` stops it; it also stays closed without a terminal (a service, CI, piped output), over SSH, and when a token is set. `pnpm dev` and the tests never open it.
 
+### Fixed
+
+- A model server that is down (Ollama not running) is now one console line, such as `Listing models from http://localhost:11434/v1 failed: can't reach the server (ECONNREFUSED)`, instead of a stack trace. The same goes for the other calls to a model server (titles, voice input, images, search embeddings, deleting uploaded copies); other errors keep their stack.
+
 ## [0.17.2] - 2026-11-10
 
 ### Added

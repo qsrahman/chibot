@@ -10,6 +10,7 @@ import type {
 import type { Stream } from 'openai/streaming'
 import type { Attachments } from '../attachments.ts'
 import { chatModels } from './chat-models.ts'
+import { logFailure } from '../api-errors.ts'
 import { isContextOverflow } from './context.ts'
 
 /** Request features some models or servers reject (see `ModelRequests`). */
@@ -78,7 +79,7 @@ export class ModelRequests {
       for await (const model of this.#client.models.list()) ids.push(model.id)
       return (await chatModels(ids, this.#client.baseURL)).sort()
     } catch (err) {
-      console.error('Listing models failed:', err)
+      logFailure(`Listing models from ${this.#client.baseURL} failed`, err)
       return null
     }
   }

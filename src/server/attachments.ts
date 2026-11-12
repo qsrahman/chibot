@@ -7,6 +7,7 @@ import { documentKind, fileKind } from '../shared/documents.ts'
 import { fileParts } from '../shared/messages.ts'
 import type { StoredFile } from '../shared/types.ts'
 import type { FileStore } from './file-store.ts'
+import { logFailure } from './api-errors.ts'
 import { documentText } from './text.ts'
 
 // Provider copies expire on their own; a lost copy is uploaded again.
@@ -49,7 +50,7 @@ export class Attachments {
   deleteOrphans(): void {
     for (const id of this.#files.deleteOrphans()) {
       this.#client.files.delete(id).catch((err: unknown) => {
-        console.error(`Deleting the provider's copy ${id} failed:`, err)
+        logFailure(`Deleting the provider's copy ${id} failed`, err)
       })
     }
   }
