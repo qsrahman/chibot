@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- Right-to-left languages (Urdu, Arabic, Hebrew): the message box, your messages, each block of an answer, and chat, project and search titles take their direction from their own text, so such text runs right to left with its bullets and alignment, and English and code stay left to right.
+
 ## [0.17.4] - 2026-11-12
 
 ### Fixed
@@ -36,7 +40,6 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
-- Right-to-left languages (Urdu, Arabic, Hebrew): the message box, your messages, each block of an answer, and chat, project and search titles take their direction from their own text, so such text runs right to left with its bullets and alignment, and English and code stay left to right.
 - With "Use skills" off, each skill's row is dimmed and its switch can't be changed, since no skill is used then; the switches keep their state for when skills are on again.
 - Primary buttons, and the toast, are a softer light grey (`#e8e8e8`) in the dark theme instead of pure white, which glared against the dark cards.
 - The "Use skills" switch is the first row of Settings → Tools → Skills, with the skills it controls, instead of in "Your chats and files".
