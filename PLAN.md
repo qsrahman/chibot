@@ -894,7 +894,7 @@ runner (now Phase 11).
   the machine running chibot (loopback redirect).
 - **Settings → Tools.** An "MCP servers" section: per server a switch
   (`enabled`, on unless `false`, in the server's config entry, written by
-  `PATCH /api/mcp/servers/:name`; the older `disabled: true` is still read; a disabled server is disconnected and a local
+  `PATCH /api/mcp/servers/:name`; a disabled server is disconnected and a local
   one's process stopped), its status, Reconnect, Sign in / Sign out,
   "Ask before using its tools" (`ask` in the entry) and its tools with their
   own switches (`disabledTools`, by the server's own names). The three used to

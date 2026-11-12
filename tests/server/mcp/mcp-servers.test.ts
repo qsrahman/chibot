@@ -180,14 +180,6 @@ describe('MCP servers', () => {
       ])
     })
 
-    it('still reads the older `disabled`, which `enabled` wins over', async () => {
-      await start({ fixture: only({ disabled: true }) })
-      expect(status('fixture').state).toBe('disabled')
-      await servers.close()
-      await start({ fixture: only({ disabled: true, enabled: true }) })
-      expect(status('fixture').state).toBe('connected')
-    })
-
     it('switch a server off, and win over the settings’ older list', async () => {
       await start({ fixture: only({ enabled: false }) })
       expect(status('fixture').state).toBe('disabled')

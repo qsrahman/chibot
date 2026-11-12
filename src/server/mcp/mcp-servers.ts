@@ -312,9 +312,8 @@ export class McpServers {
   }
 
   #isOff(name: string, server: Server): boolean {
-    const { enabled, disabled } = server.config
-    if (enabled !== undefined) return !enabled
-    return disabled ?? this.#disabled().includes(name)
+    const { enabled } = server.config
+    return enabled === undefined ? this.#disabled().includes(name) : !enabled
   }
 
   #toolOff(server: Server, tool: McpServerTool): boolean {
@@ -372,8 +371,8 @@ export class McpServers {
 
 /** Whether two entries reach the same server the same way (the switches aside). */
 function sameConnection(a: McpServerConfig, b: McpServerConfig): boolean {
-  const { enabled: _e, disabled: _d, ask: _a, disabledTools: _t, ...x } = a
-  const { enabled: _e2, disabled: _d2, ask: _a2, disabledTools: _t2, ...y } = b
+  const { enabled: _e, ask: _a, disabledTools: _t, ...x } = a
+  const { enabled: _e2, ask: _a2, disabledTools: _t2, ...y } = b
   return JSON.stringify(x) === JSON.stringify(y)
 }
 

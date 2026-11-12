@@ -10,11 +10,9 @@ export const mcpServerName = z
 
 // What Settings → Tools switches, kept with the server: connected or not (on
 // unless `enabled` is false), each call asking first, and tools (by the names
-// the server gives them) off. `disabled` is the older spelling of
-// `enabled: false`, still read; `enabled` wins when both are there.
+// the server gives them) off.
 const switches = {
   enabled: z.boolean().optional(),
-  disabled: z.boolean().optional(),
   ask: z.boolean().optional(),
   disabledTools: z.array(z.string()).optional(),
 }

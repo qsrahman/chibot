@@ -126,17 +126,6 @@ describe('McpServerFile switches', () => {
     expect(saved()).toEqual({ files: entry, other: entry })
   })
 
-  it('turn the older `disabled` into `enabled` when a switch is written', () => {
-    const { file, saved } = setup({ files: { ...entry, disabled: true } })
-    file.setSwitch('files', { ask: true })
-    // Untouched until the on/off switch is used.
-    expect(saved()).toEqual({ files: { ...entry, disabled: true, ask: true } })
-    file.setSwitch('files', { enabled: false })
-    expect(saved()).toEqual({ files: { ...entry, enabled: false, ask: true } })
-    file.setSwitch('files', { enabled: true })
-    expect(saved()).toEqual({ files: { ...entry, ask: true } })
-  })
-
   it('refuse a server that is not there, without touching another’s trouble', () => {
     const { file, saved } = setup({ files: entry, odd: { nonsense: true } })
     expect(() => file.setSwitch('nope', { enabled: false })).toThrow(

@@ -80,9 +80,7 @@ export class McpServerFile {
     }
     const entry: Record<string, unknown> = { ...current }
     if (change.enabled !== undefined) {
-      // On is the default, so an entry holds only `enabled: false`; the older
-      // `disabled` is dropped, so the two never disagree.
-      delete entry.disabled
+      // On is the default, so an entry holds only `enabled: false`.
       if (change.enabled) delete entry.enabled
       else entry.enabled = false
     }
@@ -120,10 +118,9 @@ export class McpServerFile {
 /** The switches of an entry (see `mcpServerSchema`), to carry over an edit. */
 function switchesOf(server: McpServerConfig | null) {
   if (!server) return {}
-  const { enabled, disabled, ask, disabledTools } = server
+  const { enabled, ask, disabledTools } = server
   return {
     ...(enabled !== undefined && { enabled }),
-    ...(disabled !== undefined && { disabled }),
     ...(ask !== undefined && { ask }),
     ...(disabledTools !== undefined && { disabledTools }),
   }

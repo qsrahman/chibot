@@ -220,7 +220,7 @@ only while chibot listens on this machine or `CHIBOT_TOKEN` is set, since a
 the only way.
 
 **The switches in Settings → Tools are written to the server's entry in the
-file:** a server is on unless its entry says `"enabled": false`, which switching it off adds (the older `"disabled": true` is still read, and replaced by `enabled` when you use the switch); **Ask before using its
+file:** a server is on unless its entry says `"enabled": false`, which switching it off adds; **Ask before using its
 tools** adds `"ask": true`, and switching off a tool adds its name (as the
 server gives it, without the `<server>__` prefix) to `"disabledTools"`. An
 entry holds only what differs from the default, so switching back removes the

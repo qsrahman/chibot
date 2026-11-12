@@ -6,7 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
-- An MCP server's entry in `config.json` says `"enabled": false` to be off (on when it is missing or `true`), in place of `"disabled": true`. The older `disabled` is still read, and Settings replaces it with `enabled` when you use the switch.
+- An MCP server's entry in `config.json` says `"enabled": false` to be off (on when it is missing or `true`), in place of `"disabled": true`. An entry that still says `disabled` is refused as an unknown key (the standalone `mcp.json` and `config.json` need the rename).
 
 ## [0.17.5] - 2026-11-12
 
