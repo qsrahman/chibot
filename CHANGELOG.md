@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-11-13
+
 ### Added
 
 - MCP servers, after a look at how OpenCode, Codex, Claude Code and the SDK's own guide handle theirs (see PLAN.md, Phase 10):
