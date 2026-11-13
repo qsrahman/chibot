@@ -152,8 +152,15 @@ export class McpServers {
       client.setNotificationHandler(
         'notifications/tools/list_changed',
         async () => {
-          if (server.client === client)
+          if (server.client !== client) return
+          // A refresh that fails keeps the list the server gave before.
+          try {
             server.tools = await listTools(name, client)
+          } catch (err) {
+            console.warn(
+              `MCP server ${name}: could not refresh its tools: ${errorMessage(err)}`,
+            )
+          }
         },
       )
       server.tools = await listTools(name, client)
@@ -378,18 +385,17 @@ function transportFor(
   return transport
 }
 
-/** All of a server's tools (they may come in pages), named for the model. */
+/**
+ * All of a server's tools, named for the model. The SDK follows the pages
+ * itself (and stops at its page limit, which a server that never ends its
+ * list would otherwise outlast), and caches the list until the server says it
+ * changed.
+ */
 async function listTools(
   server: string,
   client: Client,
 ): Promise<McpServerTool[]> {
-  const definitions: McpToolDefinition[] = []
-  let cursor: string | undefined
-  do {
-    const page = await client.listTools(cursor ? { cursor } : undefined)
-    definitions.push(...page.tools)
-    cursor = page.nextCursor
-  } while (cursor)
+  const { tools: definitions } = await client.listTools()
   const taken = new Set<string>()
   return definitions.map((definition) => {
     let name = `${server}__${definition.name}`
