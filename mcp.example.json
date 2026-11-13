@@ -14,7 +14,10 @@
       "url": "http://localhost:8808/mcp",
       "headers": { "Authorization": "Bearer ${TRACKER_TOKEN}" },
       "ask": true,
-      "disabledTools": ["delete_issue"]
+      "disabledTools": ["delete_issue"],
+      "startupTimeoutSec": 20,
+      "toolTimeoutSec": 120,
+      "instructions": true
     }
   }
 }

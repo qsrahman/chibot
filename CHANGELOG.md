@@ -4,6 +4,18 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- MCP servers, after a look at how OpenCode, Codex, Claude Code and the SDK's own guide handle theirs (see PLAN.md, Phase 10):
+  - A server that stops (a crash, a dropped connection) is **started again** after 1, 2, 4, 8 and 16 seconds, with the status in Settings saying when, then given up on; **Reconnect** tries once more.
+  - **Timeouts per server**: `startupTimeoutSec` and `toolTimeoutSec` in its entry. A call that reports progress keeps going (up to 30 minutes), where it used to be cut at 60 seconds.
+  - **`instructions: true`** in an entry gives the model what the server says about using its tools, cut to 2,000 characters and shown once.
+  - **`${VAR:-default}`** fills a missing variable with a default.
+
+### Changed
+
+- The SDK lists a server's tools (following the pages up to its limit, where chibot's own loop had none), and a refresh after the server announced a change keeps the earlier list if it fails.
+
 ## [0.18.0] - 2026-11-13
 
 ### Added

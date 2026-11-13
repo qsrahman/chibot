@@ -840,7 +840,7 @@ models (`gemma4:cloud`, `gemma4:e4b`, `qwen3.5:9b`; `gpt-oss` answers 400
 ### Phase 10 — MCP client ✅
 Decisions: tools
 from MCP servers become chibot function tools; servers are set up in
-`config.json` (or `mcp.json`) or from Settings → Tools (add, edit, remove; only on loopback or with `CHIBOT_TOKEN`, because a `local` server is a command; secrets in `env`/`headers` are write-only); their calls don't ask first unless a server
+`config.json` or from Settings → Tools (add, edit, remove; only on loopback or with `CHIBOT_TOKEN`, because a `local` server is a command; secrets in `env`/`headers` are write-only); their calls don't ask first unless a server
 is set to; `local` and `remote` servers, the latter with OAuth sign-in; a
 switch per server and per tool in Settings; tools only. Built before the code
 runner (now Phase 11).
@@ -905,6 +905,32 @@ runner (now Phase 11).
 - **Out of scope:** resources, prompts, sampling, elicitation. (Approval
   prompts for MCP calls were left out at first and added later as the per-server
   "Ask before using its tools" switch.)
+- **What other clients do (looked at in Nov 2026: OpenCode, Codex CLI, Claude
+  Code, the SDK's v2 client guide, and the author's own `muagent`; Aider has no
+  MCP client, and Pi leaves MCP out on purpose, because tool definitions use
+  up context).** Taken: per-server startup and tool timeouts (all of them have
+  them), a progress report restarting the timeout (SDK `resetTimeoutOnProgress`
+  with a cap), starting a dropped server again with a short backoff and
+  saying so (Claude Code: five tries, doubling), the SDK listing tools with its
+  page cap, a failed refresh keeping the earlier list (Claude Code), and the
+  server's `instructions` given to the model (Codex, OpenCode, the SDK guide say
+  to), here opt-in and framed in a tag, as `muagent` does, since a server can
+  write anything there; `${VAR:-default}` (Claude Code). Already as they do:
+  startup that never holds up chibot, a safe environment for local servers,
+  `state` checked on the OAuth redirect and `finishAuth(params)` (`iss` checked),
+  names unique per server, `isError` as an error, output cut, Stop cancelling,
+  a changed tool list followed. **Not taken, and why:** letting a server's own
+  `readOnlyHint` skip approvals (Codex's `writes` mode; a server can claim
+  anything, so approval stays a per-server choice); tool search / deferred
+  tool definitions (Claude Code; worth it only with many tools, which the
+  per-tool switches handle for now); resources and prompts as tools (OpenCode,
+  Claude Code: `list_mcp_resources` / `read_mcp_resource`, prompts as commands);
+  elicitation (a form or URL to the user mid-call) and sampling and roots (both
+  deprecated in the 2026-07-28 spec); the 2026-07-28 protocol era
+  (`versionNegotiation: 'auto'`; the SDK advises keeping the default handshake
+  for now, since a probe can stall stdio servers); a header helper command
+  (Codex, Claude Code); a `required` server; and SSE-only servers (retrying
+  Streamable HTTP with SSE).
 
 ### Between phases ✅
 Shipped as patch releases (details in the CHANGELOG):

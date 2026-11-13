@@ -197,7 +197,19 @@ In `config.json`, the `mcpServers` entry sits beside the other settings.
   `chibot config show` lists the names, not the values). **Reload** re-reads
   `config.json`, so a changed block or server list applies; a variable
   exported in your shell needs a restart. Variable names use letters, digits and
-  `_`.
+  `_`. `${VAR:-default}` uses the default when `VAR` is missing (an empty value
+  counts as set).
+- **Timeouts**, per server, in seconds: `startupTimeoutSec` (how long it gets to
+  start: 60 for a local server, which may first have to download itself, 10 for
+  a remote one) and `toolTimeoutSec` (how long a call may go without an answer:
+  60). A tool that reports progress keeps its call alive, up to 30 minutes.
+- **If a server stops** (it crashes, or its connection drops), chibot starts it
+  again after 1, 2, 4, 8 and 16 seconds, and the status in Settings says
+  when; after the fifth it gives up, and **Reconnect** tries once more. A server
+  that never started is not retried: its error is shown.
+- **`"instructions": true`** gives the model what the server says about using
+  its tools (cut to 2,000 characters). It is the server's own text, so it is
+  off unless you ask.
 
 **Settings → Tools → Add server** does the same without editing the file: start
 from a preset (web pages, Brave web search, files in a folder) or fill in a

@@ -868,6 +868,8 @@ test('text in Urdu or Arabic runs right to left, English stays left to right', a
 
   // An answer chooses per block; code stays left to right.
   await send(page, 'rtl-markdown')
+  // Once it is saved: the streamed answer is replaced by the saved one.
+  await answered(page)
   await expect(page.locator('.markdown h1').last()).toHaveText('عنوان')
   const markdown = page.locator('.markdown').last()
   for (const tag of ['h1', 'p', 'ul'])
