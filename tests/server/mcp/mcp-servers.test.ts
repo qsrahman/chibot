@@ -126,6 +126,59 @@ describe('MCP servers', () => {
     expect(status('fixture').state).toBe('connected')
   })
 
+  describe('a server that stopped', () => {
+    it('is started again by itself, a little later', async () => {
+      servers = new McpServers({ fixture }, { retryDelays: [30] })
+      await servers.start()
+      await expect(servers.callTool('fixture__crash', {})).rejects.toThrow()
+      await vi.waitFor(() => expect(status('fixture').state).toBe('failed'))
+      expect(status('fixture').error).toContain('Starting it again')
+      await vi.waitFor(() => expect(status('fixture').state).toBe('connected'))
+      expect(status('fixture').tools.length).toBeGreaterThan(0)
+    })
+
+    it('is given up on after its tries, and Reconnect can still try', async () => {
+      const dir = mkdtempSync(join(tmpdir(), 'chibot-once-'))
+      try {
+        servers = new McpServers(
+          {
+            flaky: {
+              type: 'local',
+              command: process.execPath,
+              args: [
+                join(import.meta.dirname, '../../fixtures/mcp-server-once.ts'),
+                join(dir, 'started'),
+              ],
+            },
+          },
+          { retryDelays: [20, 20] },
+        )
+        await servers.start()
+        expect(status('flaky').state).toBe('connected')
+        await expect(servers.callTool('flaky__crash', {})).rejects.toThrow()
+        // Each start now exits at once: two tries, then it stays failed.
+        await vi.waitFor(() =>
+          expect(status('flaky').error).toContain('Gave up'),
+        )
+        expect(status('flaky').state).toBe('failed')
+        await new Promise((resolve) => setTimeout(resolve, 100))
+        expect(status('flaky').state).toBe('failed')
+      } finally {
+        rmSync(dir, { recursive: true, force: true })
+      }
+    })
+
+    it('is not started again once it is switched off', async () => {
+      servers = new McpServers({ fixture }, { retryDelays: [150] })
+      await servers.start()
+      await expect(servers.callTool('fixture__crash', {})).rejects.toThrow()
+      await vi.waitFor(() => expect(status('fixture').state).toBe('failed'))
+      await servers.disconnect('fixture')
+      await new Promise((resolve) => setTimeout(resolve, 400))
+      expect(status('fixture').state).toBe('disabled')
+    })
+  })
+
   it('follows a server’s changed tool list', async () => {
     await start({ fixture })
     await servers.callTool('fixture__grow', {})

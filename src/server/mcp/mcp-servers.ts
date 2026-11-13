@@ -22,6 +22,12 @@ const CONNECT_TIMEOUT = { local: 60_000, remote: 10_000 }
 const CALL_TIMEOUT = 60_000
 // A call that keeps reporting progress may outlast its timeout, but not this.
 const CALL_LIMIT = 30 * 60_000
+// A server that was connected and then stopped (a crash, a dropped
+// connection) is started again after each of these waits, and then given up on.
+const RETRY_DELAYS = [1000, 2000, 4000, 8000, 16_000]
+// A connection that lasted this long was a working one: the next drop starts
+// the counting again.
+const STABLE_FOR = 60_000
 // Function names: ^[A-Za-z0-9_-]{1,64}$.
 const MAX_TOOL_NAME = 64
 
@@ -41,6 +47,10 @@ interface Server {
   tools: McpServerTool[]
   /** A remote server's OAuth sign-in (none with its own Authorization). */
   signIn: McpSignIn | null
+  /** Starts again after a drop: how many so far, and the wait for the next. */
+  retries: number
+  retryTimer: ReturnType<typeof setTimeout> | null
+  connectedAt: number
 }
 
 /**
@@ -51,22 +61,28 @@ export class McpServers {
   readonly #servers = new Map<string, Server>()
   readonly #load: (() => Record<string, McpServerConfig>) | undefined
   readonly #auth: { store: McpAuthStore; redirectUrl: string } | undefined
+  readonly #retryDelays: readonly number[]
 
   /**
    * @param options.auth where remote servers' sign-ins are kept, and the
    *   OAuth callback's URL; without it they can't sign in
    * @param options.load reads the servers again for `reload()`
+   * @param options.retryDelays the waits before starting a dropped server
+   *   again (milliseconds; tests make them short)
    */
   constructor(
     configs: Record<string, McpServerConfig>,
     {
       auth,
       load,
+      retryDelays = RETRY_DELAYS,
     }: {
       auth?: { store: McpAuthStore; redirectUrl: string }
       load?: () => Record<string, McpServerConfig>
+      retryDelays?: readonly number[]
     } = {},
   ) {
+    this.#retryDelays = retryDelays
     this.#auth = auth
     this.#load = load
     for (const [name, config] of Object.entries(configs)) {
@@ -91,6 +107,9 @@ export class McpServers {
         this.#auth && config.type === 'remote' && !ownAuth
           ? new McpSignIn(name, this.#auth.store, this.#auth.redirectUrl)
           : null,
+      retries: 0,
+      retryTimer: null,
+      connectedAt: 0,
     }
   }
 
@@ -142,6 +161,16 @@ export class McpServers {
   /** (Re)connects `name`, e.g. after it failed. */
   async connect(name: string): Promise<void> {
     const server = this.#get(name)
+    server.retries = 0
+    await this.#connect(name, server)
+  }
+
+  /** `automatic`: started again after a drop, so a failure goes on to the next try. */
+  async #connect(
+    name: string,
+    server: Server,
+    automatic = false,
+  ): Promise<void> {
     await this.#close(server)
     Object.assign(server, { state: 'connecting', error: null, tools: [] })
     const client = new Client({ name: 'chibot', version: '1' })
@@ -170,6 +199,7 @@ export class McpServers {
       )
       server.tools = await listTools(name, client)
       server.state = 'connected'
+      server.connectedAt = Date.now()
       // Set after connecting: a crash or a dropped connection from now on.
       client.onclose = () => {
         if (server.client !== client) return
@@ -180,6 +210,8 @@ export class McpServers {
           transport: null,
           tools: [],
         })
+        if (Date.now() - server.connectedAt >= STABLE_FOR) server.retries = 0
+        this.#retry(name, server)
       }
     } catch (err) {
       if (server.client !== client) return
@@ -192,8 +224,29 @@ export class McpServers {
           state: 'failed',
           error: stderrOf(transport) ?? errorMessage(err),
         })
+        if (automatic) this.#retry(name, server)
       }
     }
+  }
+
+  /** Starts a server that stopped again after a wait, a few times, saying so in its status. */
+  #retry(name: string, server: Server): void {
+    if (isOff(server) || this.#servers.get(name) !== server) return
+    const delay = this.#retryDelays[server.retries]
+    const reason = server.error ?? 'The server stopped'
+    if (delay === undefined) {
+      server.error = `${reason}\n(Gave up starting it again; Reconnect tries once more.)`
+      return
+    }
+    server.retries++
+    server.error = `${reason}\n(Starting it again in ${delay / 1000} s, try ${server.retries} of ${this.#retryDelays.length}.)`
+    server.retryTimer = setTimeout(() => {
+      server.retryTimer = null
+      if (server.state === 'failed' && this.#servers.get(name) === server) {
+        void this.#connect(name, server, true)
+      }
+    }, delay)
+    server.retryTimer.unref()
   }
 
   /**
@@ -356,6 +409,8 @@ export class McpServers {
   }
 
   async #close(server: Server): Promise<void> {
+    if (server.retryTimer) clearTimeout(server.retryTimer)
+    server.retryTimer = null
     const { client } = server
     server.client = null
     server.transport = null
