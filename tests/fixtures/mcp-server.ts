@@ -1,5 +1,6 @@
 // An MCP server for tests, over stdio. Tools: echo, slow (waits until it's
-// cancelled), picture (a 1×1 PNG), fail (an isError result), crash (exits)
+// cancelled), progress (1.5 s, reporting progress), picture (a 1×1 PNG), fail
+// (an isError result), crash (exits)
 // and grow (adds an `extra` tool, so the server announces a changed list).
 import { McpServer } from '@modelcontextprotocol/server'
 import { StdioServerTransport } from '@modelcontextprotocol/server/stdio'
@@ -57,6 +58,26 @@ export function fixtureServer(): McpServer {
       isError: true,
       content: [{ type: 'text', text: 'it broke' }],
     }),
+  )
+  server.registerTool(
+    'progress',
+    {
+      description: 'Takes 1.5 s, reporting progress every 0.3 s',
+      inputSchema: z.object({}),
+    },
+    async (_args, ctx) => {
+      const progressToken = ctx.mcpReq._meta?.progressToken
+      for (let step = 1; step <= 5; step++) {
+        await new Promise((resolve) => setTimeout(resolve, 300))
+        if (progressToken !== undefined) {
+          await ctx.mcpReq.notify({
+            method: 'notifications/progress',
+            params: { progressToken, progress: step, total: 5 },
+          })
+        }
+      }
+      return { content: [{ type: 'text', text: 'finished' }] }
+    },
   )
   server.registerTool(
     'crash',

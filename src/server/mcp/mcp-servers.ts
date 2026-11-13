@@ -16,9 +16,12 @@ import { McpSignIn, type McpAuthStore } from './mcp-auth.ts'
 import type { McpServerConfig } from './mcp-config.ts'
 import { errorMessage } from '../../shared/errors.ts'
 
-// A local server may first have to download itself (`npx -y …`).
+// A local server may first have to download itself (`npx -y …`). Both can be
+// set per server (`startupTimeoutSec`, `toolTimeoutSec`).
 const CONNECT_TIMEOUT = { local: 60_000, remote: 10_000 }
 const CALL_TIMEOUT = 60_000
+// A call that keeps reporting progress may outlast its timeout, but not this.
+const CALL_LIMIT = 30 * 60_000
 // Function names: ^[A-Za-z0-9_-]{1,64}$.
 const MAX_TOOL_NAME = 64
 
@@ -147,7 +150,9 @@ export class McpServers {
     server.transport = transport
     try {
       await client.connect(transport, {
-        timeout: CONNECT_TIMEOUT[server.config.type],
+        timeout:
+          (server.config.startupTimeoutSec ?? 0) * 1000 ||
+          CONNECT_TIMEOUT[server.config.type],
       })
       client.setNotificationHandler(
         'notifications/tools/list_changed',
@@ -320,9 +325,17 @@ export class McpServers {
     const tool = this.tools().find((t) => t.name === name)
     const client = tool && this.#get(tool.server).client
     if (!tool || !client) throw new Error(`${name} isn’t available now`)
+    const { toolTimeoutSec } = this.#get(tool.server).config
     return client.callTool(
       { name: tool.definition.name, arguments: args },
-      { signal, timeout: CALL_TIMEOUT },
+      {
+        signal,
+        timeout: (toolTimeoutSec ?? 0) * 1000 || CALL_TIMEOUT,
+        // A tool that reports progress is working: the timeout starts again.
+        onprogress: () => {},
+        resetTimeoutOnProgress: true,
+        maxTotalTimeout: CALL_LIMIT,
+      },
     ) as Promise<CallToolResult>
   }
 
@@ -351,13 +364,25 @@ export class McpServers {
 }
 
 /** Whether two entries reach the same server the same way (the switches aside). */
+// What an entry holds beside how to reach the server: changing one needs no
+// new connection.
+const SWITCHES = [
+  'enabled',
+  'ask',
+  'disabledTools',
+  'startupTimeoutSec',
+  'toolTimeoutSec',
+]
+
 /** Whether a server's entry switches it off (`enabled: false`). */
 const isOff = (server: Server): boolean => server.config.enabled === false
 
 function sameConnection(a: McpServerConfig, b: McpServerConfig): boolean {
-  const { enabled: _e, ask: _a, disabledTools: _t, ...x } = a
-  const { enabled: _e2, ask: _a2, disabledTools: _t2, ...y } = b
-  return JSON.stringify(x) === JSON.stringify(y)
+  const connection = (config: McpServerConfig) =>
+    JSON.stringify(
+      Object.entries(config).filter(([key]) => !SWITCHES.includes(key)),
+    )
+  return connection(a) === connection(b)
 }
 
 function transportFor(

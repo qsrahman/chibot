@@ -58,7 +58,7 @@ test('lists the servers and their tools, with switches', async ({ page }) => {
   const dialog = await openTools(page)
   const fixture = server(page, 'fixture')
   await expect(fixture).toContainText('Local server')
-  await expect(fixture).toContainText('Connected · 6 tools')
+  await expect(fixture).toContainText('Connected · 7 tools')
   await expect(fixture.getByText('Repeats the text')).toBeVisible()
   await expect(server(page, 'tracker')).toContainText('Needs sign-in')
   // Not among chibot's own tools (Other holds the e2e test tool).
@@ -82,7 +82,7 @@ test('lists the servers and their tools, with switches', async ({ page }) => {
   await page.getByRole('switch', { name: 'Use fixture' }).click()
   await expect(server(page, 'fixture')).toContainText('Off')
   await page.getByRole('switch', { name: 'Use fixture' }).click()
-  await expect(server(page, 'fixture')).toContainText('Connected · 6 tools')
+  await expect(server(page, 'fixture')).toContainText('Connected · 7 tools')
 })
 
 test('reloads the servers after config.json was edited', async ({ page }) => {
@@ -101,7 +101,7 @@ test('reloads the servers after config.json was edited', async ({ page }) => {
     await dialog.getByRole('button', { name: 'Reload' }).click()
     // The new server shows why it failed; the others stay connected.
     await expect(server(page, 'broken')).toContainText('Failed')
-    await expect(server(page, 'fixture')).toContainText('Connected · 6 tools')
+    await expect(server(page, 'fixture')).toContainText('Connected · 7 tools')
 
     // A file with mistakes is reported, and nothing changes.
     writeFileSync(CONFIG_JSON, '{ not json')
@@ -112,7 +112,7 @@ test('reloads the servers after config.json was edited', async ({ page }) => {
     writeFileSync(CONFIG_JSON, original)
     await dialog.getByRole('button', { name: 'Reload' }).click()
     await expect(server(page, 'broken')).toHaveCount(0)
-    await expect(server(page, 'fixture')).toContainText('Connected · 6 tools')
+    await expect(server(page, 'fixture')).toContainText('Connected · 7 tools')
   } finally {
     writeFileSync(CONFIG_JSON, original)
   }
@@ -146,7 +146,7 @@ test('signs in to a remote server and back out', async ({ page }) => {
   await tracker.getByRole('button', { name: 'Sign in' }).click()
   // The provider signs in at once and sends the browser back to Settings.
   await expect(page).toHaveURL('/')
-  await expect(tracker).toContainText('Connected · 6 tools')
+  await expect(tracker).toContainText('Connected · 7 tools')
 
   await tracker.getByRole('button', { name: 'Sign out' }).click()
   await expect(tracker).toContainText('Needs sign-in')

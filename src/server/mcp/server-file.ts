@@ -118,9 +118,12 @@ export class McpServerFile {
 /** The switches of an entry (see `mcpServerSchema`), to carry over an edit. */
 function switchesOf(server: McpServerConfig | null) {
   if (!server) return {}
-  const { enabled, ask, disabledTools } = server
+  const { enabled, ask, disabledTools, startupTimeoutSec, toolTimeoutSec } =
+    server
   return {
     ...(enabled !== undefined && { enabled }),
+    ...(startupTimeoutSec !== undefined && { startupTimeoutSec }),
+    ...(toolTimeoutSec !== undefined && { toolTimeoutSec }),
     ...(ask !== undefined && { ask }),
     ...(disabledTools !== undefined && { disabledTools }),
   }

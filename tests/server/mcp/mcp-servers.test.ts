@@ -83,6 +83,7 @@ describe('MCP servers', () => {
       'fixture__slow',
       'fixture__picture',
       'fixture__fail',
+      'fixture__progress',
       'fixture__crash',
       'fixture__grow',
     ])
@@ -154,6 +155,50 @@ describe('MCP servers', () => {
     expect(status('fixture').state).toBe('disabled')
     // Its process stopped.
     await vi.waitFor(() => expect(() => process.kill(pid, 0)).toThrow())
+  })
+
+  describe('timeouts, per server', () => {
+    const only = (patch: Partial<McpServerConfig>) =>
+      ({ ...fixture, ...patch }) as McpServerConfig
+
+    it('give a call that says nothing for its tool timeout up', async () => {
+      await start({ fixture: only({ toolTimeoutSec: 1 }) })
+      const started = Date.now()
+      await expect(servers.callTool('fixture__slow', {})).rejects.toThrow(
+        /timed out/i,
+      )
+      expect(Date.now() - started).toBeLessThan(5000)
+    })
+
+    it('start the timeout again when a call reports progress', async () => {
+      // 1.5 s of work, with a report every 0.3 s: longer than the 1 s timeout.
+      await start({ fixture: only({ toolTimeoutSec: 1 }) })
+      const result = await servers.callTool('fixture__progress', {})
+      expect(result.content).toEqual([{ type: 'text', text: 'finished' }])
+    })
+
+    it('give a server that never answers its startup timeout', async () => {
+      await start({
+        silent: {
+          type: 'local',
+          command: process.execPath,
+          args: ['-e', 'setTimeout(() => {}, 60000)'],
+          startupTimeoutSec: 1,
+        },
+      })
+      expect(status('silent').state).toBe('failed')
+      expect(status('silent').error).toMatch(/timed out/i)
+    })
+
+    it('are not a change of connection', async () => {
+      let current: Record<string, McpServerConfig> = { fixture }
+      servers = new McpServers(current, { load: () => current })
+      await servers.start()
+      const pid = servers.pid('fixture')
+      current = { fixture: only({ toolTimeoutSec: 5, startupTimeoutSec: 5 }) }
+      await servers.reload()
+      expect(servers.pid('fixture')).toBe(pid)
+    })
   })
 
   describe('switches in the server’s own entry', () => {

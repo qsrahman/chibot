@@ -146,7 +146,14 @@ describe('McpServerFile switches', () => {
     expect(saved()).toEqual({ files: { ...entry, enabled: false } })
 
     const open = setup({
-      files: { ...entry, enabled: false, ask: true, disabledTools: ['x'] },
+      files: {
+        ...entry,
+        enabled: false,
+        ask: true,
+        disabledTools: ['x'],
+        toolTimeoutSec: 120,
+        startupTimeoutSec: 90,
+      },
     })
     open.file.put('files', { type: 'local', command: 'node' })
     // The form can't show the switches, so an edit keeps them.
@@ -157,6 +164,8 @@ describe('McpServerFile switches', () => {
         enabled: false,
         ask: true,
         disabledTools: ['x'],
+        toolTimeoutSec: 120,
+        startupTimeoutSec: 90,
       },
     })
     expect(open.file.describe().servers.files).toMatchObject({
