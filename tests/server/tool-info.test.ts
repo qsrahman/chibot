@@ -7,6 +7,7 @@ import { Config } from '../../src/server/config.ts'
 import { ConversationSearch } from '../../src/server/conversations/index.ts'
 import { openDatabase } from '../../src/server/database.ts'
 import { defaultTools } from '../../src/server/main.ts'
+import { McpServers } from '../../src/server/mcp/index.ts'
 import { MemoryStore } from '../../src/server/memory-store.ts'
 import { ProjectIndex } from '../../src/server/projects/index.ts'
 import { SkillStore } from '../../src/server/skills/index.ts'
@@ -53,6 +54,7 @@ function shipped(env: Record<string, string>) {
     projects,
     index: new ProjectIndex(db, projects, files, null),
     skills: new SkillStore(skillsDir),
+    mcp: new McpServers({}),
   })
 }
 
@@ -104,7 +106,9 @@ describe('shipped tools', () => {
     expect(all.map((tool) => tool.name).sort()).toEqual([
       'edit_image',
       'generate_image',
+      'list_mcp_resources',
       'memory',
+      'read_mcp_resource',
       'read_project_file',
       'read_skill',
       'search_chats',
@@ -117,7 +121,12 @@ describe('shipped tools', () => {
       expect(tool.summary, tool.name).not.toBe('')
       expect(tool.running, tool.name).not.toBe(`Running ${tool.label}…`)
       expect(tool.done, tool.name).not.toBe(`Used ${tool.label}`)
-      expect(tool.unavailable, tool.name).toBeNull()
+      // The MCP resource tools need a connected server that has some.
+      expect(tool.unavailable, tool.name).toBe(
+        tool.group === 'MCP resources'
+          ? 'No connected MCP server offers resources.'
+          : null,
+      )
     }
   })
 

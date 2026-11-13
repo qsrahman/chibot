@@ -1,8 +1,9 @@
-// An MCP server for tests, over stdio. Tools: echo, slow (waits until it's
+// An MCP server for tests, over stdio. Resources: notes://readme (text),
+// notes://logo (a PNG) and the template note://{id}. Tools: echo, slow (waits until it's
 // cancelled), progress (1.5 s, reporting progress), picture (a 1×1 PNG), fail
 // (an isError result), crash (exits)
 // and grow (adds an `extra` tool, so the server announces a changed list).
-import { McpServer } from '@modelcontextprotocol/server'
+import { McpServer, ResourceTemplate } from '@modelcontextprotocol/server'
 import { StdioServerTransport } from '@modelcontextprotocol/server/stdio'
 import { writeFileSync } from 'node:fs'
 import { z } from 'zod'
@@ -15,6 +16,34 @@ export function fixtureServer(): McpServer {
   const server = new McpServer(
     { name: 'fixture', version: '1.0.0' },
     { instructions: 'Use echo to repeat what the user says.' },
+  )
+  server.registerResource(
+    'readme',
+    'notes://readme',
+    {
+      title: 'Readme',
+      description: 'What the notes are for',
+      mimeType: 'text/plain',
+    },
+    async (uri) => ({
+      contents: [{ uri: uri.href, text: 'Notes live here.' }],
+    }),
+  )
+  server.registerResource(
+    'logo',
+    'notes://logo',
+    { description: 'A picture', mimeType: 'image/png' },
+    async (uri) => ({
+      contents: [{ uri: uri.href, mimeType: 'image/png', blob: PNG }],
+    }),
+  )
+  server.registerResource(
+    'note',
+    new ResourceTemplate('note://{id}', { list: undefined }),
+    { title: 'A note', description: 'One note, by its id' },
+    async (uri, { id }) => ({
+      contents: [{ uri: uri.href, text: `Note ${id}.` }],
+    }),
   )
   server.registerTool(
     'echo',

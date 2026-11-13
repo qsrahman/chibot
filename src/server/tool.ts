@@ -46,6 +46,15 @@ export abstract class Tool<Parameters extends z.ZodObject = z.ZodObject> {
    * to check, for a tool that asks (see `requiresApproval`); a general line if unset.
    */
   readonly approvalReason: string | undefined = undefined
+  /**
+   * Whether this call waits for Approve / Deny although the tool doesn't
+   * always: for one that works on what the arguments name (a server that is
+   * set to ask first).
+   */
+  asksFor(_args: z.output<Parameters>): boolean {
+    return false
+  }
+
   /** The output holds text from others (web pages, search results). */
   readonly untrustedOutput: boolean = false
   /**

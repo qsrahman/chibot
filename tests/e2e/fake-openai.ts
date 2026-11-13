@@ -5,7 +5,7 @@
 // can act mid-answer without racing a timer), "think"
 // first streams a reasoning summary, and "compact" returns a compaction item.
 // A question's words can call a tool ("approve", "draw", "remember <fact>",
-// "mcp echo <text>", …): `TRIGGERS` below lists
+// "mcp echo <text>", "mcp resource <uri>", …): `TRIGGERS` below lists
 // them. A forced tool_choice is followed. Once the tool's output arrives, the
 // answer quotes it. It also makes 1×1 images (/v1/images/…), embeds text as counts
 // of a few letters (/v1/embeddings) and transcribes any recording as
@@ -397,6 +397,16 @@ const TRIGGERS: {
     args: (found) => ({ text: found![1] }),
   },
   { tool: 'fixture__picture', when: /mcp picture/, args: () => ({}) },
+  {
+    tool: 'read_mcp_resource',
+    when: /mcp resource (\S+)/,
+    args: (found) => ({ server: 'fixture', uri: found![1] }),
+  },
+  {
+    tool: 'list_mcp_resources',
+    when: /mcp resources/,
+    args: () => ({ server: null }),
+  },
   {
     tool: 'search_project_files',
     when: /in my files (.+)/,

@@ -21,7 +21,9 @@ How to add a function tool to chibot. Part of the developer guide ([AGENTS.md](A
    Use `'after-untrusted'` to ask only in chats that hold untrusted content
    (like `memory`), and mark tools whose output carries others' text
    (pages, search results, your old chats) `untrustedOutput = true`; an
-   `'after-untrusted'` tool asks on every call once the chat holds such text. Tools that read or keep
+   `'after-untrusted'` tool asks on every call once the chat holds such text. A tool that
+   asks only for some calls (the MCP resource tools, for a server set to ask first)
+   overrides `asksFor(args)`. Tools that read or keep
    the user's history override `offeredIn(conversation)` to leave out
    temporary chats, and a tool can add to the chat's instructions while
    offered by overriding `instructions()`.

@@ -207,6 +207,13 @@ In `config.json`, the `mcpServers` entry sits beside the other settings.
   again after 1, 2, 4, 8 and 16 seconds, and the status in Settings says
   when; after the fifth it gives up, and **Reconnect** tries once more. A server
   that never started is not retried: its error is shown.
+- **Resources.** A server that offers resources (files, documents, records to
+  read) gets two tools, **List MCP resources** and **Read MCP resources**
+  (Settings → Tools, under "MCP resources"), which let the model see and read
+  them, text only and cut at 40,000 characters. They appear only while a
+  connected server has resources. What a resource holds is the server's own
+  text, so it is treated like a tool's output, and a call that names a server
+  set to **Ask before using its tools** asks first. Prompts are not used.
 - **`"instructions": true`** gives the model what the server says about using
   its tools (cut to 2,000 characters). It is the server's own text, so it is
   off unless you ask.

@@ -7,6 +7,7 @@ export const TOOL_GROUPS = [
   'Images',
   'Your chats and files',
   'Skills',
+  'MCP resources',
   'Other',
 ] as const
 export type ToolGroup = (typeof TOOL_GROUPS)[number]

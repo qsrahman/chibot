@@ -176,6 +176,28 @@ test('calls an MCP tool in a chat and shows its images', async ({ page }) => {
   })
 })
 
+test('lists and reads the resources a server offers', async ({ page }) => {
+  await page.goto('/')
+  // Offered because the fixture server has resources: a section of its own.
+  const dialog = await openTools(page)
+  const section = dialog.locator('.settings-section', {
+    has: page.getByRole('heading', { name: 'MCP resources' }),
+  })
+  await expect(
+    section.getByRole('switch', { name: 'Read MCP resources' }),
+  ).toBeEnabled()
+  await page.keyboard.press('Escape')
+
+  await send(page, 'Please list mcp resources')
+  await answered(page)
+  await expect(answer(page, 0)).toContainText('notes://readme')
+  await send(page, 'Please mcp resource note://7')
+  await answered(page)
+  await expect(answer(page, 1)).toHaveText('Tool said: Note 7.')
+  const tool = turns(page).nth(1).locator('.tool-call')
+  await expect(tool).toContainText('Read an MCP resource')
+})
+
 test('adds, edits and removes a server in Settings, keeping its key hidden', async ({
   page,
 }) => {

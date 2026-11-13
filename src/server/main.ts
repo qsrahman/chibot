@@ -28,6 +28,7 @@ import { ConversationSearch, ConversationStore } from './conversations/index.ts'
 import { openDatabase } from './database.ts'
 import { FileStore } from './file-store.ts'
 import {
+  ListMcpResourcesTool,
   loadMcpServers,
   McpAuthStore,
   McpServers,
@@ -35,6 +36,7 @@ import {
   mcpServersAtStartup,
   mcpTools,
   oauthRedirectUrl,
+  ReadMcpResourceTool,
 } from './mcp/index.ts'
 import { MemoryStore } from './memory-store.ts'
 import {
@@ -71,6 +73,7 @@ export interface ToolDeps {
   index: ProjectIndex
   settings: SettingsStore
   skills: SkillStore
+  mcp: McpServers
 }
 
 /** The shipped tools; web search and reading pages come from MCP servers. */
@@ -83,6 +86,7 @@ export function defaultTools({
   index,
   settings,
   skills,
+  mcp,
 }: ToolDeps): Tool[] {
   const image = config.image && {
     client: imageClient(config.image),
@@ -95,6 +99,9 @@ export function defaultTools({
     new SearchProjectFilesTool(projects, index),
     new ReadProjectFileTool(projects, index),
     new ReadSkillTool(skills, () => settings.get().disabledTools),
+    // Offered only while a connected MCP server has resources.
+    new ListMcpResourcesTool(mcp),
+    new ReadMcpResourceTool(mcp),
     // Listed in Settings even without their setup, saying what's missing.
     new GenerateImageTool(image),
     new EditImageTool(image),
@@ -209,6 +216,7 @@ export function start({
       index,
       settings,
       skills,
+      mcp,
     }),
     mcpTools(mcp, files),
   )

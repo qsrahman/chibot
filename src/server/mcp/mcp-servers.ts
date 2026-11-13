@@ -2,6 +2,9 @@ import {
   Client,
   StreamableHTTPClientTransport,
   type CallToolResult,
+  type ReadResourceResult,
+  type Resource,
+  type ResourceTemplateType,
   type Tool as McpToolDefinition,
   type Transport,
   UnauthorizedError,
@@ -31,6 +34,15 @@ const STABLE_FOR = 60_000
 // Function names: ^[A-Za-z0-9_-]{1,64}$.
 const MAX_TOOL_NAME = 64
 
+/** What one server offers to read, for `list_mcp_resources`. */
+export interface McpResources {
+  server: string
+  resources: Resource[]
+  templates: ResourceTemplateType[]
+  /** Why its list could not be had. */
+  error?: string
+}
+
 /** A tool a connected server offers, by the name the model calls it. */
 export interface McpServerTool {
   name: string
@@ -51,6 +63,8 @@ interface Server {
   retries: number
   /** What the server said about using its tools when it connected. */
   instructions: string | null
+  /** Whether it offers resources (files, documents, records to read). */
+  resources: boolean
   retryTimer: ReturnType<typeof setTimeout> | null
   connectedAt: number
 }
@@ -111,6 +125,7 @@ export class McpServers {
           : null,
       retries: 0,
       instructions: null,
+      resources: false,
       retryTimer: null,
       connectedAt: 0,
     }
@@ -202,6 +217,7 @@ export class McpServers {
       )
       server.tools = await listTools(name, client)
       server.instructions = client.getInstructions()?.trim() || null
+      server.resources = client.getServerCapabilities()?.resources !== undefined
       server.state = 'connected'
       server.connectedAt = Date.now()
       // Set after connecting: a crash or a dropped connection from now on.
@@ -394,18 +410,95 @@ export class McpServers {
     const tool = this.tools().find((t) => t.name === name)
     const client = tool && this.#get(tool.server).client
     if (!tool || !client) throw new Error(`${name} isn’t available now`)
-    const { toolTimeoutSec } = this.#get(tool.server).config
     return client.callTool(
       { name: tool.definition.name, arguments: args },
       {
         signal,
-        timeout: (toolTimeoutSec ?? 0) * 1000 || CALL_TIMEOUT,
+        timeout: callTimeout(this.#get(tool.server).config),
         // A tool that reports progress is working: the timeout starts again.
         onprogress: () => {},
         resetTimeoutOnProgress: true,
         maxTotalTimeout: CALL_LIMIT,
       },
     ) as Promise<CallToolResult>
+  }
+
+  /** The connected servers that offer resources. */
+  resourceServers(): string[] {
+    return [...this.#servers]
+      .filter(([, server]) => server.state === 'connected' && server.resources)
+      .map(([name]) => name)
+  }
+
+  /**
+   * The resources and resource templates of `only` (a server's name) or of
+   * every server that offers them; a server that fails to answer is reported
+   * in its `error` and leaves the others out of it.
+   *
+   * @throws Error if `only` offers no resources
+   */
+  async listResources(
+    only: string | null,
+    signal?: AbortSignal,
+  ): Promise<McpResources[]> {
+    const names = this.resourceServers().filter(
+      (name) => only === null || name === only,
+    )
+    if (only !== null && names.length === 0) throw this.#noResources(only)
+    return Promise.all(
+      names.map(async (name): Promise<McpResources> => {
+        const { client, config } = this.#get(name)
+        const options = { signal, timeout: callTimeout(config) }
+        try {
+          const [resources, templates] = await Promise.all([
+            client!.listResources(undefined, options),
+            // Some servers have resources but no templates.
+            client!.listResourceTemplates(undefined, options).catch(() => ({
+              resourceTemplates: [],
+            })),
+          ])
+          return {
+            server: name,
+            resources: resources.resources,
+            templates: templates.resourceTemplates,
+          }
+        } catch (err) {
+          return {
+            server: name,
+            resources: [],
+            templates: [],
+            error: errorMessage(err),
+          }
+        }
+      }),
+    )
+  }
+
+  /**
+   * What `uri` holds on `server`.
+   *
+   * @throws Error if the server offers no resources, or has no such one
+   */
+  async readResource(
+    name: string,
+    uri: string,
+    signal?: AbortSignal,
+  ): Promise<ReadResourceResult['contents']> {
+    if (!this.resourceServers().includes(name)) throw this.#noResources(name)
+    const { client, config } = this.#get(name)
+    const result = await client!.readResource(
+      { uri },
+      { signal, timeout: callTimeout(config) },
+    )
+    return result.contents
+  }
+
+  #noResources(name: string): Error {
+    const have = this.resourceServers()
+    return new Error(
+      `${name} offers no resources` +
+        (have.length ? `; the servers that do are ${have.join(', ')}` : ''),
+    )
   }
 
   /** The process of a connected local server (for tests). */
@@ -435,6 +528,9 @@ export class McpServers {
 }
 
 /** Whether two entries reach the same server the same way (the switches aside). */
+const callTimeout = (config: McpServerConfig): number =>
+  (config.toolTimeoutSec ?? 0) * 1000 || CALL_TIMEOUT
+
 // What an entry holds beside how to reach the server: changing one needs no
 // new connection.
 const SWITCHES = [

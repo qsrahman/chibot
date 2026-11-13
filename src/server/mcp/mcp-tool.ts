@@ -6,7 +6,7 @@ import type { McpServers, McpServerTool } from './mcp-servers.ts'
 import { section } from '../prompt-tags.ts'
 import { Tool, type ToolContext } from '../tool.ts'
 
-const MAX_CHARS = 40_000
+export const MAX_CHARS = 40_000
 // A server's notes on its tools are in every request: a server may write pages.
 const MAX_NOTES = 2000
 

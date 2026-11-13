@@ -56,11 +56,24 @@ export class ToolRegistry {
   ): boolean {
     const tool = this.get(call.name)
     const rule = tool?.requiresApproval
-    if (!tool || rule !== 'after-untrusted') return rule === true
+    if (!tool) return false
+    if (rule === true) return true
+    if (this.#asksFor(tool, call)) return true
+    if (rule !== 'after-untrusted') return false
     return history.some(
       (item) =>
         item.type === 'function_call' && this.get(item.name)?.untrustedOutput,
     )
+  }
+
+  /** Whether the tool asks about this call, given what its arguments name. */
+  #asksFor(tool: Tool, call: ResponseFunctionToolCall): boolean {
+    try {
+      const args = tool.parameters.safeParse(JSON.parse(call.arguments))
+      return args.success && tool.asksFor(args.data)
+    } catch {
+      return false // not JSON: running it reports that
+    }
   }
 
   /**

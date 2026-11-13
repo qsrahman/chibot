@@ -902,9 +902,21 @@ runner (now Phase 11).
   `GET /api/mcp/oauth/callback`.
 - **Answers.** MCP calls show like other tool calls ("Used read_file · files")
   with the plain summary (arguments and text result) and Raw.
-- **Out of scope:** resources, prompts, sampling, elicitation. (Approval
+- **Out of scope:** prompts, sampling, elicitation (resources came later: see below). (Approval
   prompts for MCP calls were left out at first and added later as the per-server
   "Ask before using its tools" switch.)
+- **Resources (after v0.19).** Two shipped tools, `list_mcp_resources` (`server` or
+  null for all) and `read_mcp_resource` (`server`, `uri`), as Codex, Claude Code
+  and OpenCode have, offered only while a connected server advertises the
+  `resources` capability (otherwise listed in Settings under "MCP resources",
+  greyed, with that hint). Text only (a blob is named, not shown), 40,000
+  characters, 100 entries of each kind per server; `untrustedOutput`. The SDK
+  lists with its page cap and caches. A call asks first when the server it names
+  is set to `ask` (`Tool.asksFor(args)`, which `ToolRegistry.needsApproval`
+  asks); listing every server asks while any is. Not done: `@` attachments in
+  the composer (resources are application-controlled in the spec), subscriptions
+  to changed resources, and prompts (a composer menu with a form for a prompt's
+  arguments, its messages put in the draft).
 - **What other clients do (looked at in Nov 2026: OpenCode, Codex CLI, Claude
   Code, the SDK's v2 client guide, and the author's own `muagent`; Aider has no
   MCP client, and Pi leaves MCP out on purpose, because tool definitions use
@@ -924,7 +936,7 @@ runner (now Phase 11).
   anything, so approval stays a per-server choice); tool search / deferred
   tool definitions (Claude Code; worth it only with many tools, which the
   per-tool switches handle for now); resources and prompts as tools (OpenCode,
-  Claude Code: `list_mcp_resources` / `read_mcp_resource`, prompts as commands);
+  Claude Code: prompts as commands; resources are in, below);
   elicitation (a form or URL to the user mid-call) and sampling and roots (both
   deprecated in the 2026-07-28 spec); the 2026-07-28 protocol era
   (`versionNegotiation: 'auto'`; the SDK advises keeping the default handshake
