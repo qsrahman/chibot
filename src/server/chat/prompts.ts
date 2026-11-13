@@ -89,7 +89,8 @@ export function chatInstructions(
     aboutUser.trim() && section('user_profile', aboutUser.trim()),
     responseStyle.trim() && section('response_style', responseStyle.trim()),
     project && projectSection(project),
-    ...toolInstructions,
+    // A server's tools each carry its notes: shown once.
+    ...new Set(toolInstructions),
     currentTime(now),
   ]
     .filter(Boolean)

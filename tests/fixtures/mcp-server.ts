@@ -12,7 +12,10 @@ export const PNG =
 
 /** The fixture's tools, on a server of its own (for any transport). */
 export function fixtureServer(): McpServer {
-  const server = new McpServer({ name: 'fixture', version: '1.0.0' })
+  const server = new McpServer(
+    { name: 'fixture', version: '1.0.0' },
+    { instructions: 'Use echo to repeat what the user says.' },
+  )
   server.registerTool(
     'echo',
     {

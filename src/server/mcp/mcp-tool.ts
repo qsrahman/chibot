@@ -3,9 +3,12 @@ import type { FunctionTool } from 'openai/resources/responses/responses'
 import { z } from 'zod'
 import type { FileStore } from '../file-store.ts'
 import type { McpServers, McpServerTool } from './mcp-servers.ts'
+import { section } from '../prompt-tags.ts'
 import { Tool, type ToolContext } from '../tool.ts'
 
 const MAX_CHARS = 40_000
+// A server's notes on its tools are in every request: a server may write pages.
+const MAX_NOTES = 2000
 
 // Served back from /api/files with this type, so never SVG (it can script).
 const SHOWN_IMAGES: Record<string, string> = {
@@ -50,6 +53,19 @@ export class McpTool extends Tool {
     this.#tool = tool
     this.#servers = servers
     this.#files = files
+  }
+
+  /**
+   * The server's own notes on using its tools, when its entry asks for them:
+   * the same text from each of its tools, which the chat's instructions show
+   * once. It is the server's words, so it sits in a tag naming the server.
+   */
+  override instructions(): string | null {
+    const notes = this.#servers.instructionsOf(this.#tool.server)
+    if (!notes) return null
+    const text =
+      notes.length > MAX_NOTES ? `${notes.slice(0, MAX_NOTES)}…` : notes
+    return section('mcp_server', text, ` name="${this.#tool.server}"`)
   }
 
   /** Not offered while switched off in Settings → Tools. */

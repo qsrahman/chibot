@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { ResponseFunctionToolCall } from 'openai/resources/responses/responses'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { chatInstructions } from '../../../src/server/chat/prompts.ts'
 import { openDatabase } from '../../../src/server/database.ts'
 import type { FileStore } from '../../../src/server/file-store.ts'
 import { McpServers } from '../../../src/server/mcp/mcp-servers.ts'
@@ -89,6 +90,37 @@ describe('MCP tools', () => {
       }),
     })
     expect(echo.declaration.parameters).not.toHaveProperty('$schema')
+  })
+
+  it('give the model what a server says about them only when asked to', async () => {
+    // Not asked for (the entry has no `instructions`): nothing.
+    expect(registry.get('fixture__echo')!.instructions({} as never)).toBeNull()
+    const asking = new McpServers({
+      fixture: {
+        type: 'local',
+        command: process.execPath,
+        args: [join(import.meta.dirname, '../../fixtures/mcp-server.ts')],
+        instructions: true,
+      },
+    })
+    await asking.start()
+    try {
+      const tools = new ToolRegistry([], mcpTools(asking, files))
+      const notes = tools.get('fixture__echo')!.instructions({} as never)
+      expect(notes).toBe(
+        '<mcp_server name="fixture">\nUse echo to repeat what the user says.\n</mcp_server>',
+      )
+      // Each of the server's tools says it; the chat's instructions show it once.
+      const same = tools.get('fixture__slow')!.instructions({} as never)
+      expect(same).toBe(notes)
+      const text = chatInstructions(
+        { aboutUser: '', responseStyle: '' },
+        { tools: true, toolInstructions: [notes, same, null] },
+      )
+      expect(text.split('Use echo to repeat').length).toBe(2)
+    } finally {
+      await asking.close()
+    }
   })
 
   it('ask first only for servers set to', async () => {

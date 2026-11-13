@@ -35,15 +35,20 @@ export function parseMcpConfig(
 /** Every string in `value` with `${VAR}` replaced from `env`. */
 function fill(value: unknown, env: NodeJS.ProcessEnv, source: string): unknown {
   if (typeof value === 'string') {
-    return value.replace(/\$\{(\w+)\}/g, (_, name: string) => {
-      const filled = env[name]
-      if (filled === undefined) {
-        throw new Error(
-          `${source} uses \${${name}}, which isn’t set: export it, or run chibot config set env.${name} <value>`,
-        )
-      }
-      return filled
-    })
+    // `${NAME}`, or `${NAME:-default}` for a variable that may be missing (an
+    // empty one counts as set).
+    return value.replace(
+      /\$\{(\w+)(?::-([^}]*))?\}/g,
+      (_, name: string, fallback?: string) => {
+        const filled = env[name] ?? fallback
+        if (filled === undefined) {
+          throw new Error(
+            `${source} uses \${${name}}, which isn’t set: export it, or run chibot config set env.${name} <value>`,
+          )
+        }
+        return filled
+      },
+    )
   }
   if (Array.isArray(value))
     return value.map((entry) => fill(entry, env, source))

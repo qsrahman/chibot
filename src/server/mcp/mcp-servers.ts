@@ -49,6 +49,8 @@ interface Server {
   signIn: McpSignIn | null
   /** Starts again after a drop: how many so far, and the wait for the next. */
   retries: number
+  /** What the server said about using its tools when it connected. */
+  instructions: string | null
   retryTimer: ReturnType<typeof setTimeout> | null
   connectedAt: number
 }
@@ -108,6 +110,7 @@ export class McpServers {
           ? new McpSignIn(name, this.#auth.store, this.#auth.redirectUrl)
           : null,
       retries: 0,
+      instructions: null,
       retryTimer: null,
       connectedAt: 0,
     }
@@ -198,6 +201,7 @@ export class McpServers {
         },
       )
       server.tools = await listTools(name, client)
+      server.instructions = client.getInstructions()?.trim() || null
       server.state = 'connected'
       server.connectedAt = Date.now()
       // Set after connecting: a crash or a dropped connection from now on.
@@ -349,6 +353,18 @@ export class McpServers {
     return this.#servers.get(name)?.config.ask === true
   }
 
+  /**
+   * What the connected server `name` says about using its tools, if its entry
+   * asks for it (`instructions: true`): a server can write anything there, and
+   * every request would carry it.
+   */
+  instructionsOf(name: string): string | null {
+    const server = this.#servers.get(name)
+    return server?.state === 'connected' && server.config.instructions
+      ? server.instructions
+      : null
+  }
+
   /** Whether the tool the model knows as `toolName` is switched off. */
   toolOff(toolName: string): boolean {
     for (const server of this.#servers.values()) {
@@ -423,6 +439,7 @@ export class McpServers {
 // new connection.
 const SWITCHES = [
   'enabled',
+  'instructions',
   'ask',
   'disabledTools',
   'startupTimeoutSec',

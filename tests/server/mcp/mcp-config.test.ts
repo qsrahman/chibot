@@ -37,6 +37,27 @@ describe('the MCP servers of config.json', () => {
     })
   })
 
+  it('fills ${NAME:-default} with the default when NAME is missing, not when it is empty', () => {
+    const servers = (env: NodeJS.ProcessEnv) =>
+      loadMcpConfig(
+        {
+          mcpServers: {
+            files: {
+              type: 'local',
+              command: 'npx',
+              args: ['${ROOT:-/srv/notes}', 'x${LEVEL:-}y'],
+            },
+          },
+        },
+        env,
+      ).files
+    expect(servers({})).toMatchObject({ args: ['/srv/notes', 'xy'] })
+    expect(servers({ ROOT: '/home/me', LEVEL: '2' })).toMatchObject({
+      args: ['/home/me', 'x2y'],
+    })
+    expect(servers({ ROOT: '' })).toMatchObject({ args: ['', 'xy'] })
+  })
+
   it('says what is wrong, naming the server and field', () => {
     expect(() =>
       loadMcpConfig({ mcpServers: { files: { type: 'local' } } }, {}),

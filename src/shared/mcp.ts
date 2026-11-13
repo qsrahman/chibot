@@ -15,6 +15,8 @@ const switches = {
   enabled: z.boolean().optional(),
   /** Seconds a server gets to start (a first `npx -y` may download); 60 by default for a local one, 10 for a remote one. */
   startupTimeoutSec: z.number().int().min(1).max(600).optional(),
+  /** Give the model what the server says about using its tools (its `instructions`), cut to 2,000 characters. */
+  instructions: z.boolean().optional(),
   /** Seconds a call may go without an answer or a progress report (60 by default). */
   toolTimeoutSec: z.number().int().min(1).max(3600).optional(),
   ask: z.boolean().optional(),
