@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-11-13
+
 ### Added
 
 - **MCP resources**: two tools, List MCP resources and Read MCP resources, let the model see and read what a connected MCP server offers (files, documents, records; text only). They appear only while a connected server has resources, under "MCP resources" in Settings → Tools, and a call to a server set to ask first asks.
