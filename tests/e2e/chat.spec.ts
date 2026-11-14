@@ -876,3 +876,35 @@ test('text in Urdu or Arabic runs right to left, English stays left to right', a
     expect(await direction(markdown.locator(tag).first())).toBe('rtl')
   expect(await direction(markdown.locator('pre'))).toBe('ltr')
 })
+
+test('a table keeps its words whole and turns <br> in a cell into a line break', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  await send(page, 'table-markdown')
+  await answered(page)
+  const table = page.locator('.markdown table').last()
+  await expect(table).toBeVisible()
+  await expect(table).not.toContainText('<br>')
+  // The cell's lines: "LLaMA 2-Chat", then the bullets under it.
+  await expect(table.locator('td br')).toHaveCount(2)
+
+  // No word is split over two lines (the column would be a letter wide): each has one box.
+  const split = await table.evaluate((el) => {
+    const broken: string[] = []
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const text = node.textContent ?? ''
+      // A hyphen is a place to break a line, so its parts are the words.
+      for (const word of text.matchAll(/[^\s-]+/g)) {
+        const range = document.createRange()
+        range.setStart(node, word.index!)
+        range.setEnd(node, word.index! + word[0].length)
+        if (range.getClientRects().length > 1) broken.push(word[0])
+      }
+    }
+    return broken
+  })
+  expect(split).toEqual([])
+})

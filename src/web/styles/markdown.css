@@ -259,7 +259,10 @@
 .markdown td {
   padding: 8px 12px;
   border-bottom: 1px solid var(--border);
-  text-align: left;
+  text-align: start;
+  /* A word keeps its width in the column (the `anywhere` a message sets would
+     let a narrow column shrink to one letter); only one too long for it breaks. */
+  overflow-wrap: break-word;
 }
 
 .markdown .katex-display {

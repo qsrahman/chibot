@@ -13,6 +13,7 @@ import rehypeHighlight from 'rehype-highlight'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import { dollarMath } from './math.ts'
+import { remarkHtmlBreaks } from './htmlBreaks.ts'
 import { WrapText } from 'lucide-react'
 import { CopyButton, IconAction } from './MessageActions.tsx'
 import { normalizedUrl } from '../../shared/media.ts'
@@ -21,7 +22,7 @@ import { playableKind, RemoteMedia } from './RemoteMedia.tsx'
 import { SourcesContext, sourceKey } from './sourcesContext.ts'
 import type { Source } from './turns.ts'
 
-const remarkPlugins = [remarkGfm, remarkMath]
+const remarkPlugins = [remarkGfm, remarkMath, remarkHtmlBreaks]
 type Katex = typeof import('./katex.ts').rehypeKatex
 
 // Math is written with $…$, $$…$$, \(…\) or \[…\].

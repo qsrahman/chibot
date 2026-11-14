@@ -31,6 +31,14 @@ const usage = {
 const MODELS = ['e2e-model', 'e2e-other']
 const THOUGHT = 'Considering the question carefully.'
 // What "rtl-markdown" answers with: Urdu, as a heading, a paragraph, a list and code.
+// What "table-markdown" answers with: a table whose first column holds long
+// words and whose last has `<br>` in its cells.
+const TABLE_MARKDOWN = [
+  '| Term | What it means | Examples |',
+  '|---|---|---|',
+  '| Uncensored / unrestricted | The model is not wrapped in a content filter and can produce any text it has learned. | LLaMA 2-Chat<br>• Falcon 180B<br>• Mistral-7B-Instruct |',
+  '| Open-source | The weights are freely redistributable. | Same models above |',
+].join('\n')
 const RTL_MARKDOWN =
   '# عنوان\n\nیہ ایک پیراگراف ہے۔\n\n- پہلا\n- دوسرا\n\n```js\nconst x = 1\n```'
 
@@ -273,9 +281,11 @@ app.post('/v1/responses', async (c) => {
   const holding = question.includes('hold')
   const text = slow
     ? Array.from({ length: 200 }, (_, i) => `word${i}`).join(' ')
-    : question.includes('rtl-markdown')
-      ? RTL_MARKDOWN
-      : `Answer #${++answers} to: ${question}`
+    : question.includes('table-markdown')
+      ? TABLE_MARKDOWN
+      : question.includes('rtl-markdown')
+        ? RTL_MARKDOWN
+        : `Answer #${++answers} to: ${question}`
   const id = `resp_${crypto.randomUUID()}`
   const thinking = question.includes('think')
   const reasoning = {
