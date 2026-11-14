@@ -134,13 +134,33 @@ export function start({
   )
   if (config.exposure) throw new Error(config.exposure)
   reportConfig(read)
-  // Chats and files: for the owner only (the config folder is 0700 too).
+  prepareFolders(config)
+  const app = buildApp(config, { tools, mediaGuard })
+  serveWebBuild(app)
+  listen(app, config, open)
+}
+
+/** Chats and files are for the owner only (the config folder is 0700 too). */
+function prepareFolders(config: Config): void {
   mkdirSync(config.dataDir, { recursive: true, mode: 0o700 })
   for (const dir of openFolders([config.dataDir, config.configDir])) {
     console.warn(
       `Warning: other users of this machine can open ${dir}, which holds your chats and keys. Run: chmod 700 "${dir}"`,
     )
   }
+}
+
+/** Opens the stores and puts every part together, ready to serve. */
+function buildApp(
+  config: Config,
+  {
+    tools,
+    mediaGuard,
+  }: {
+    tools: (deps: ToolDeps) => Tool[]
+    mediaGuard?: AddressGuard
+  },
+): Hono {
   const db = openDatabase(config.databasePath)
   const store = new ConversationStore(db)
   const search = new ConversationSearch(db)
@@ -230,7 +250,7 @@ export function start({
     projects,
     attachments,
   })
-  const app = createApp({
+  return createApp({
     config,
     store,
     search,
@@ -259,8 +279,10 @@ export function start({
         () => settings.get().transcribeModel,
       ),
   })
+}
 
-  // In dev, Vite serves the web app. The production build only exists after `pnpm build`.
+/** In dev, Vite serves the web app. The production build only exists after `pnpm build`. */
+function serveWebBuild(app: Hono): void {
   const webRoot = WEB_ROOT
   if (existsSync(webRoot)) {
     serveWebApp(app, webRoot)
@@ -273,7 +295,10 @@ export function start({
       ),
     )
   }
+}
 
+/** Starts listening, and says where. */
+function listen(app: Hono, config: Config, open: boolean): void {
   serve(
     { fetch: app.fetch, hostname: config.host, port: config.port },
     (info) => {
