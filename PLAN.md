@@ -945,38 +945,9 @@ runner (now Phase 11).
   Streamable HTTP with SSE).
 
 ### Between phases ✅
-Shipped as patch releases (details in the CHANGELOG):
-
-- **After Phase 9 (v0.10.x).** Host and cross-site checks and `CHIBOT_TOKEN`
-  for LAN use (0.10.2); math delimiter conversion and CSS anchor positioning
-  (0.10.3); reasoning effort in the model menu, as a sub-menu that opens on
-  hover (0.10.4, 0.10.12–15); a phone layout, "Jump to latest" and the
-  composer's mode switch (0.10.5); an image viewer (0.10.9); Enter on touch
-  screens and per-chat drafts that survive a reload (0.10.10–11).
-- **After Phase 10 (v0.11.x).** Local MCP servers start in the home folder
-  (0.11.2); queued messages, context usage per answer, memory editing and
-  de-duplication, and the logo (0.11.3); per-server "Ask before using its
-  tools" (0.11.4); MCP Reload and Regenerate title (0.11.5); `pnpm release`
-  (0.11.6); a chat's turns run one after another (0.11.7); chat instructions
-  laid out per OpenAI's and Anthropic's guidance (0.11.9); a clearer 429
-  message and plain arithmetic (0.11.10). Code only: `app.ts`, `styles.css`,
-  `SettingsDialog.tsx`, `TurnView.tsx` and `chat-service.ts` were split into
-  smaller files.
-
-- **v0.12.x.** `config.json`, the `chibot` command (`init`, `config`) and
-  platform folders for settings and data (0.12.0–0.12.10), details in the
-  CHANGELOG.
-- **v0.13.0.** Long chats work on any server: chibot's own summaries with
-  pruning, **Compact now**, Undo, a summary model and the window setting;
-  OpenAI's compaction and chibot's own web search and page reader removed (an
-  MCP server does those); images and media from other sites in answers.
-  Design in [CONTEXT.md](CONTEXT.md).
-- **Since v0.13.0 (unreleased).** Review fixes to the summaries; **Compact
-  now** as an icon; **Take a photo** (camera); MCP servers added, edited and
-  removed in Settings, with presets; **Quote** selected text; `chibot backup`
-  and `chibot restore` (released as v0.13.1). Then: Settings and Projects
-  actions as icon buttons, styled tooltips, toasts that show above dialogs,
-  and `ChatPage` and `ChatService` split into smaller files.
+Everything shipped between and after the phases above (patch and minor
+releases) is in the [CHANGELOG](CHANGELOG.md); the long-chat design is in
+[CONTEXT.md](CONTEXT.md).
 
 ### Phase 11a — Multiple providers (design agreed, not built)
 Decisions (agreed; the design was drawn up against Chatbox's provider code,
