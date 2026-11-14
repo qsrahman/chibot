@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import type { ToolInfo } from '../../shared/tools.ts'
 import { Tool, type ToolContext } from '../tool.ts'
 import { MAX_CHARS } from './mcp-tool.ts'
 import type { McpResources, McpServers } from './mcp-servers.ts'
@@ -66,6 +65,7 @@ export class ListMcpResourcesTool extends Tool {
       .describe('The MCP server to list, as the user named it; null for all'),
   })
   override readonly untrustedOutput = true
+  override readonly approvalReason = WHY_ASKS
   readonly #servers: McpServers
 
   constructor(servers: McpServers) {
@@ -75,10 +75,6 @@ export class ListMcpResourcesTool extends Tool {
 
   override unavailable() {
     return this.#servers.resourceServers().length > 0 ? null : UNAVAILABLE
-  }
-
-  override get info(): ToolInfo {
-    return { ...super.info, approval: WHY_ASKS }
   }
 
   override asksFor({ server }: z.output<typeof this.parameters>) {
@@ -113,6 +109,7 @@ export class ReadMcpResourceTool extends Tool {
     uri: z.string().describe('The resource’s URI'),
   })
   override readonly untrustedOutput = true
+  override readonly approvalReason = WHY_ASKS
   readonly #servers: McpServers
 
   constructor(servers: McpServers) {
@@ -122,10 +119,6 @@ export class ReadMcpResourceTool extends Tool {
 
   override unavailable() {
     return this.#servers.resourceServers().length > 0 ? null : UNAVAILABLE
-  }
-
-  override get info(): ToolInfo {
-    return { ...super.info, approval: WHY_ASKS }
   }
 
   override asksFor({ server }: z.output<typeof this.parameters>) {

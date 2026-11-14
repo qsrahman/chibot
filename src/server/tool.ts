@@ -43,7 +43,8 @@ export abstract class Tool<Parameters extends z.ZodObject = z.ZodObject> {
   readonly requiresApproval: boolean | 'after-untrusted' = false
   /**
    * What the approval card tells the user about why this tool asks and what
-   * to check, for a tool that asks (see `requiresApproval`); a general line if unset.
+   * to check, for a tool that asks (see `requiresApproval`; a tool that asks
+   * only for some calls, `asksFor`, sets it too); a general line if unset.
    */
   readonly approvalReason: string | undefined = undefined
   /**
@@ -85,10 +86,11 @@ export abstract class Tool<Parameters extends z.ZodObject = z.ZodObject> {
       done: this.done ?? `Used ${this.label}`,
       chip: this.chip,
       unavailable: this.unavailable(),
-      approval: this.requiresApproval
-        ? (this.approvalReason ??
-          'This tool can change things, so chibot asks before it runs.')
-        : null,
+      approval:
+        this.approvalReason ??
+        (this.requiresApproval
+          ? 'This tool can change things, so chibot asks before it runs.'
+          : null),
     }
   }
 
