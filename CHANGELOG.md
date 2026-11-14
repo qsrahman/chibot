@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- Inside: `useChat` is split into `useChatHistory`, `useAnswerRun` and `useCompaction`, and the message box's logic into `useDrafts`, `useSendMessage` and `useVoiceInput`, with its buttons in `ComposerActions`. Nothing changes on screen.
+
 ## [0.20.0] - 2026-11-13
 
 ### Added

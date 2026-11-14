@@ -47,7 +47,10 @@ src/shared/   used by both server and web: API record types, chibot's own SSE
 src/web/      Vite root: index.html, main.tsx, App.tsx and the shell
               (Sidebar, ShortcutsDialog), http.ts (fetch helpers, uploads),
               and feature folders, each with its components, hooks and its
-              own api.ts: chat/ (ChatPage, Composer, TurnView, useChat, turns),
+              own api.ts: chat/ (ChatPage, Composer, TurnView, turns; `useChat` is
+              `useChatHistory` + `useAnswerRun` + `useCompaction`, and the
+              Composer's logic is in `useDrafts`, `useSendMessage` and
+              `useVoiceInput`),
               conversations/ (the chat list, search, archive), projects/,
               settings/ (one component per Settings tab) and ui/ (dialogs,
               popovers, shared hooks). styles.css imports styles/*.css, one
