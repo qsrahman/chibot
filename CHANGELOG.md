@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.20.3] - 2026-11-15
+
 ### Fixed
 
 - Tables in answers: a column no longer shrinks to a letter or two wide and breaks words in the middle (the first column of a table with long cells), and `<br>` inside a table cell is a line break instead of the text "<br>". Other raw HTML is still shown as text.
