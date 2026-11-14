@@ -11,6 +11,7 @@ import {
   answerEvents,
   drain,
   memoryStore,
+  memoryToolSwitches,
   type FakeCall,
   testApp,
   testChat,
@@ -22,7 +23,11 @@ describe('SettingsStore', () => {
   let settings: SettingsStore
   beforeEach(() => {
     db = openDatabase(':memory:')
-    settings = new SettingsStore(db, settingsDefaults('env-model'))
+    settings = new SettingsStore(
+      db,
+      settingsDefaults('env-model'),
+      memoryToolSwitches(),
+    )
   })
 
   it('starts from the defaults', () => {
@@ -51,6 +56,7 @@ describe('SettingsStore', () => {
     const store = new SettingsStore(
       db,
       settingsDefaults('m', { imageModel: 'gpt-image-2' }),
+      memoryToolSwitches(),
     )
     expect(store.get().imageModel).toBe('gpt-image-2')
     // Changed, and turned off with an empty name.
@@ -73,9 +79,10 @@ describe('SettingsStore', () => {
       aboutUser: '',
     })
     // Survives a new store on the same database (i.e. a restart).
-    expect(new SettingsStore(db, settingsDefaults('x')).get().model).toBe(
-      'other',
-    )
+    expect(
+      new SettingsStore(db, settingsDefaults('x'), memoryToolSwitches()).get()
+        .model,
+    ).toBe('other')
   })
 
   it('ignores stored values that no longer validate', () => {
@@ -179,6 +186,7 @@ describe('settings routes and use', () => {
     settings = new SettingsStore(
       openDatabase(':memory:'),
       settingsDefaults('env-model'),
+      memoryToolSwitches(),
     )
     calls = []
     const store = memoryStore()

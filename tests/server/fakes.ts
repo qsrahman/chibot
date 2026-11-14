@@ -260,11 +260,23 @@ export function chatServices(
 export const chatOn = (...args: Parameters<typeof chatServices>) =>
   chatServices(...args).chat
 
+/** Tool switches kept in memory, where chibot keeps them in config.json. */
+export function memoryToolSwitches(initial: string[] | null = null) {
+  let off = initial
+  return {
+    read: () => off,
+    write: (tools: string[]) => {
+      off = tools.length > 0 ? tools : null
+    },
+  }
+}
+
 /** Settings with `model` (and any overrides), on their own in-memory database. */
 export function testSettings(model = 'm', overrides: Partial<Settings> = {}) {
   const settings = new SettingsStore(
     openDatabase(':memory:'),
     settingsDefaults(model),
+    memoryToolSwitches(),
   )
   settings.update(overrides)
   return settings

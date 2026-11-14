@@ -21,7 +21,7 @@ import {
   SettingsStore,
 } from '../../src/server/settings-store.ts'
 import { MemoryTool } from '../../src/server/tools/memory.ts'
-import { EchoTool, testFiles } from './fakes.ts'
+import { EchoTool, memoryToolSwitches, testFiles } from './fakes.ts'
 
 const context = { conversationId: 'c' }
 
@@ -47,6 +47,7 @@ function shipped(env: Record<string, string>) {
       settingsDefaults(config.chat.model, {
         imageModel: config.image?.model,
       }),
+      memoryToolSwitches(),
     ),
     search: new ConversationSearch(db),
     files,

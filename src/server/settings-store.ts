@@ -52,13 +52,13 @@ export interface ToolSwitches {
 export class SettingsStore {
   readonly #db: DatabaseSync
   readonly #defaults: Settings
-  readonly #tools: ToolSwitches | null
+  readonly #tools: ToolSwitches
 
   /** @param db from `openDatabase()` */
-  constructor(db: DatabaseSync, defaults: Settings, tools?: ToolSwitches) {
+  constructor(db: DatabaseSync, defaults: Settings, tools: ToolSwitches) {
     this.#db = db
     this.#defaults = defaults
-    this.#tools = tools ?? null
+    this.#tools = tools
   }
 
   get defaults(): Settings {
@@ -86,13 +86,13 @@ export class SettingsStore {
       const parsed = settingsSchema.shape[key].safeParse(stored[key])
       if (parsed.success) Object.assign(settings, { [key]: parsed.data })
     }
-    if (this.#tools) settings.disabledTools = this.#tools.read() ?? []
+    settings.disabledTools = this.#tools.read() ?? []
     return settings
   }
 
   /** Saves a validated patch and returns the resulting settings. */
   update(patch: SettingsPatch): Settings {
-    if (this.#tools && patch.disabledTools) {
+    if (patch.disabledTools) {
       // The file first: if it can't be written, nothing has changed.
       this.#tools.write(patch.disabledTools)
       const { disabledTools: _, ...rest } = patch

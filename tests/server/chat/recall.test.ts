@@ -10,6 +10,7 @@ import {
   settingsDefaults,
 } from '../../../src/server/settings-store.ts'
 import { ConversationStore } from '../../../src/server/conversations/index.ts'
+import { memoryToolSwitches } from '../fakes.ts'
 
 // Does a summary keep what a chat needs? Opt-in, with a real model: facts are
 // planted in the first turns of a long chat, the start of the chat is
@@ -57,7 +58,11 @@ const FILLER =
 async function recalled(client: OpenAI, model: string) {
   const db = openDatabase(':memory:')
   const store = new ConversationStore(db)
-  const settings = new SettingsStore(db, settingsDefaults(model))
+  const settings = new SettingsStore(
+    db,
+    settingsDefaults(model),
+    memoryToolSwitches(),
+  )
   settings.update({
     contextWindow: 4000,
     compactAt: 75,
