@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 import type { ResponseInputItem } from 'openai/resources/responses/responses'
 import type { Compaction, StoredItem } from '../../../src/shared/types.ts'
 import {
+  fileIds,
   imageInfo,
   imagesOf,
+  newQuestion,
   toolPreview,
   sourcesOf,
   summarizeTool,
@@ -645,5 +647,26 @@ describe('summarizeTool', () => {
         call('files__shot', {}, '{"result":"[An image]","image_ids":["i"]}'),
       ),
     ).toEqual({ input: null, result: '[An image]', links: [] })
+  })
+})
+
+describe('newQuestion and fileIds', () => {
+  const photo = { fileId: 'f1', name: 'a.png', image: true }
+
+  it('makes a question that is not saved yet, keeping its attachments', () => {
+    expect(newQuestion('Hi', 4, [photo])).toEqual({
+      itemId: null,
+      parentId: 4,
+      text: 'Hi',
+      attachments: [photo],
+      versions: null,
+    })
+  })
+
+  it('names the files of a request, and leaves the key out without any', () => {
+    expect(fileIds([photo, { ...photo, fileId: 'f2' }])).toEqual({
+      fileIds: ['f1', 'f2'],
+    })
+    expect(fileIds([])).toEqual({})
   })
 })

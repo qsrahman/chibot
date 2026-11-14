@@ -172,6 +172,17 @@ function isCutOff(data: ResponseInputItem): boolean {
   )
 }
 
+/** A question about to be sent, not yet saved (no item id, no versions). */
+export const newQuestion = (
+  text: string,
+  parentId: number | null,
+  attachments: Attachment[],
+): Question => ({ itemId: null, parentId, text, attachments, versions: null })
+
+/** The request's `fileIds` for `attachments`: nothing when there are none. */
+export const fileIds = (attachments: Attachment[]) =>
+  attachments.length > 0 ? { fileIds: attachments.map((a) => a.fileId) } : {}
+
 /**
  * The tool calls waiting for the user's approval: those without an output
  * at the end of the conversation (chibot answers all others).
