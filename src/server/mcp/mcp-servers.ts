@@ -5,18 +5,20 @@ import {
   type ReadResourceResult,
   type Resource,
   type ResourceTemplateType,
-  type Tool as McpToolDefinition,
   type Transport,
   UnauthorizedError,
 } from '@modelcontextprotocol/client'
-import {
-  getDefaultEnvironment,
-  StdioClientTransport,
-} from '@modelcontextprotocol/client/stdio'
-import { homedir } from 'node:os'
+import { StdioClientTransport } from '@modelcontextprotocol/client/stdio'
 import type { McpServerStatus } from '../../shared/types.ts'
 import { McpSignIn, type McpAuthStore } from './mcp-auth.ts'
 import type { McpServerConfig } from './mcp-config.ts'
+import {
+  listTools,
+  sameConnection,
+  stderrOf,
+  transportFor,
+  type McpServerTool,
+} from './mcp-connection.ts'
 import { errorMessage } from '../../shared/errors.ts'
 
 // A local server may first have to download itself (`npx -y …`). Both can be
@@ -31,8 +33,6 @@ const RETRY_DELAYS = [1000, 2000, 4000, 8000, 16_000]
 // A connection that lasted this long was a working one: the next drop starts
 // the counting again.
 const STABLE_FOR = 60_000
-// Function names: ^[A-Za-z0-9_-]{1,64}$.
-const MAX_TOOL_NAME = 64
 
 /** What one server offers to read, for `list_mcp_resources`. */
 export interface McpResources {
@@ -43,12 +43,7 @@ export interface McpResources {
   error?: string
 }
 
-/** A tool a connected server offers, by the name the model calls it. */
-export interface McpServerTool {
-  name: string
-  server: string
-  definition: McpToolDefinition
-}
+export type { McpServerTool }
 
 interface Server {
   config: McpServerConfig
@@ -527,94 +522,8 @@ export class McpServers {
   }
 }
 
-/** Whether two entries reach the same server the same way (the switches aside). */
 const callTimeout = (config: McpServerConfig): number =>
   (config.toolTimeoutSec ?? 0) * 1000 || CALL_TIMEOUT
 
-// What an entry holds beside how to reach the server: changing one needs no
-// new connection.
-const SWITCHES = [
-  'enabled',
-  'instructions',
-  'ask',
-  'disabledTools',
-  'startupTimeoutSec',
-  'toolTimeoutSec',
-]
-
 /** Whether a server's entry switches it off (`enabled: false`). */
 const isOff = (server: Server): boolean => server.config.enabled === false
-
-function sameConnection(a: McpServerConfig, b: McpServerConfig): boolean {
-  const connection = (config: McpServerConfig) =>
-    JSON.stringify(
-      Object.entries(config).filter(([key]) => !SWITCHES.includes(key)),
-    )
-  return connection(a) === connection(b)
-}
-
-function transportFor(
-  config: McpServerConfig,
-  signIn: McpSignIn | null,
-): Transport {
-  if (config.type === 'remote') {
-    return new StreamableHTTPClientTransport(new URL(config.url), {
-      requestInit: { headers: config.headers },
-      authProvider: signIn ?? undefined,
-    })
-  }
-  const transport = new StdioClientTransport({
-    command: config.command,
-    args: config.args,
-    // Only the safe defaults (PATH, HOME, …): never chibot's own keys.
-    env: { ...getDefaultEnvironment(), ...config.env },
-    // Not chibot's folder: npx and npm read its package.json there, whose
-    // devEngines (pnpm) makes them refuse to run.
-    cwd: config.cwd ?? homedir(),
-    // Kept for error messages instead of mixing into chibot's output.
-    stderr: 'pipe',
-  })
-  keepStderr(transport)
-  return transport
-}
-
-/**
- * All of a server's tools, named for the model. The SDK follows the pages
- * itself (and stops at its page limit, which a server that never ends its
- * list would otherwise outlast), and caches the list until the server says it
- * changed.
- */
-async function listTools(
-  server: string,
-  client: Client,
-): Promise<McpServerTool[]> {
-  const { tools: definitions } = await client.listTools()
-  const taken = new Set<string>()
-  return definitions.map((definition) => {
-    let name = `${server}__${definition.name}`
-      .replace(/[^A-Za-z0-9_-]/g, '_')
-      .slice(0, MAX_TOOL_NAME)
-    // Cutting long names can make two alike.
-    for (let n = 2; taken.has(name); n++) {
-      name = `${name.slice(0, MAX_TOOL_NAME - String(n).length - 1)}_${n}`
-    }
-    taken.add(name)
-    return { name, server, definition }
-  })
-}
-
-// A local server's last stderr lines usually say why it failed.
-const stderrLog = new WeakMap<Transport, string>()
-
-function stderrOf(transport: Transport): string | null {
-  if (!(transport instanceof StdioClientTransport)) return null
-  const text = stderrLog.get(transport)?.trim()
-  return text ? text.split('\n').slice(-3).join('\n') : null
-}
-
-function keepStderr(transport: StdioClientTransport): void {
-  transport.stderr?.on('data', (chunk: Buffer) => {
-    const text = (stderrLog.get(transport) ?? '') + chunk.toString()
-    stderrLog.set(transport, text.slice(-2000))
-  })
-}
