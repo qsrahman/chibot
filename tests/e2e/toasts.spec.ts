@@ -43,6 +43,8 @@ test('a toast goes away by itself, but not under the pointer', async ({
   page,
 }) => {
   await chatTitled(page, 'Toast timing')
+  // Time that can be jumped, so the waits below cost nothing.
+  await page.clock.install()
   await page.goto('/')
   await appReady(page)
   await optionsOf(page, 'Toast timing')
@@ -52,11 +54,12 @@ test('a toast goes away by itself, but not under the pointer', async ({
 
   // Held while hovered…
   await toast.hover()
-  await page.waitForTimeout(6500)
+  await page.clock.fastForward(6500)
   await expect(toast).toBeVisible()
   // …and gone a few seconds after the pointer leaves.
   await page.mouse.move(5, 5)
-  await expect(toast).toHaveCount(0, { timeout: 10_000 })
+  await page.clock.fastForward(6500)
+  await expect(toast).toHaveCount(0)
   // Put the chat back for the other specs.
   await page.getByRole('button', { name: 'Settings' }).click()
   await page

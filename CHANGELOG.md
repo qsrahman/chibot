@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- Inside, a round of simplifying (nothing changes on screen): the settings store always keeps the tool switches in `config.json`, a tool that asks for only some calls sets its reason as the others do, `McpServers` hands how to reach a server and what it lists to `mcp-connection.ts`, the conversation routes are three files (chats, transfer, turns) and a project's folder routes their own, `start()` is four functions, and PLAN's list of what shipped between phases points to this file. The toast test jumps time instead of waiting 14 seconds.
+
 ## [0.20.1] - 2026-11-14
 
 ### Changed

@@ -76,7 +76,8 @@ How chibot is tested and how to add tests. Part of the developer guide ([AGENTS.
   colour belongs in it. To test a request that is still running when something
   else happens (leaving the chat), hold it with `page.route` until the test
   lets it through, as `chat-switch.spec.ts` does, rather than waiting a set
-  time. First run:
+  time, and to test something that happens after a delay (a toast going away),
+  `page.clock.install()` and `fastForward` instead of `waitForTimeout`. First run:
   `pnpm exec playwright install chromium`.
 
 ## Performance
