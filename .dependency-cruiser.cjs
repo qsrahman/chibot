@@ -68,11 +68,11 @@ module.exports = {
     {
       name: 'server-wiring-only-in-main-and-app',
       comment:
-        'Only main.ts and app.ts put routes together (route files share routes/helpers.ts).',
+        'Only main.ts and app.ts put routes together (route files, `routes.ts` or `<part>-routes.ts` in a feature folder, share routes/helpers.ts).',
       severity: 'error',
       from: {
         pathNot:
-          '^src/server/(main|app)\\.ts$|^src/server/(routes/|[a-z]+/routes\\.ts$)',
+          '^src/server/(main|app)\\.ts$|^src/server/(routes/|[a-z]+/[a-z-]*routes\\.ts$)',
       },
       to: { path: '^src/server/routes/' },
     },
