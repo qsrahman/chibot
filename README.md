@@ -293,8 +293,8 @@ needs the server running: there is no offline mode, since the server is local.
   An unsent message stays with its chat, so switching chats doesn't carry it
   along; its text is also kept in this browser across reloads (attached files
   only while the page is open).
-- Answers stream in as Markdown, with tables, syntax-highlighted code and
-  math (`$…$` / `$$…$$`, or LaTeX's `\(…\)` / `\[…\]`).
+- Answers stream in as Markdown, with tables (copy one, or save it as CSV),
+  syntax-highlighted code and math (`$…$` / `$$…$$`, or LaTeX's `\(…\)` / `\[…\]`).
 - **Stop** (■) ends an answer early. What arrived so far is kept, and the same
   happens if you close the tab mid-answer.
 - While an answer streams, type the next message and press **Enter** to

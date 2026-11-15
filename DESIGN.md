@@ -199,6 +199,11 @@ sticks 12 px above the list's bottom, centred over the composer.
     its tooltip. At 80 % of the compaction threshold it turns `--danger` at
     500 weight — the one place besides errors that colour is used — because
     older messages will be summarized next.
+- *Failed answer:* under the turn, a 12 px-radius `--surface-muted` banner
+  with a `--danger` alert icon, "The answer stopped unexpectedly." in body
+  colour, the provider's message under it in 12 px `--fg-muted`, and a
+  **Retry** button (the same request as Regenerate). It is a `role="alert"`
+  region, and the composer takes focus back.
 - *Thinking:* a pulsing dot before the first token arrives.
 
 **Code blocks.** No box: no background, border or radius, just like the text
@@ -207,6 +212,14 @@ around them.
 - Code is 16/26 px monospace.
 - **Copy code** sits at the right of the label row (ChatGPT floats it at the
   block's top right).
+
+**Tables.** A `--border` box with the 16 px card radius that scrolls sideways
+and (past 28 rem) up and down on its own, never the page. A bar on top has a
+12 px muted "Table" label and two 32 px icon buttons at the right: **Copy
+table** (tab-separated, so it pastes into spreadsheet cells) and **Download
+CSV**. The header row sticks under it on `--surface-muted`, in 12 px 600
+`--fg-muted` labels; body rows are 14 px with hairline `--border` dividers and
+`--row-stripe` on every second row. Cells keep `dir="auto"`.
 
 **Quotes.** A 2 px `--border` rule on the left with 12 px padding (the same
 rule as an opened Thoughts), body colour, 16 px block spacing.

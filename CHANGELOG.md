@@ -4,6 +4,11 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- Tables in answers sit in a rounded box that scrolls sideways on its own (the page never does), with a sticky header row, striped rows and **Copy table** (tab-separated, for pasting into a spreadsheet) and **Download CSV** buttons.
+- An answer that fails shows "The answer stopped unexpectedly." with the reason and a **Retry** button in its turn, instead of red text under the chat. Retry answers the same message again as a new version, so nothing is sent twice.
+
 ## [0.20.3] - 2026-11-15
 
 ### Fixed

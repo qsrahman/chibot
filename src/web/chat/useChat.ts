@@ -46,6 +46,8 @@ export function useChat(
     pending,
     usage: history.usage,
     error,
+    /** What the last answer failed with (`error` while it is still shown). */
+    failure: answers.failure,
     summarizing: compaction.summarizing,
     notice: compaction.notice,
     isTemporary:

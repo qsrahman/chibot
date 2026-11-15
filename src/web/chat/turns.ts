@@ -63,6 +63,10 @@ export interface Answer {
   incomplete: boolean
 }
 
+/** The answer stopped early or never came, and the question was saved: it can be answered again. */
+export const interrupted = ({ question, answer }: Turn) =>
+  answer ? answer.incomplete : question.itemId !== null
+
 /** A user message and the answer to it, as the chat shows them. */
 export interface Turn {
   key: string
