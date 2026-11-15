@@ -238,6 +238,11 @@
 .code-body pre {
   flex: 1;
   min-width: 0;
+  /* The same font as its `code`: with the browser's smaller monospace default
+     on the `pre`, each line box grows a little past 1.625rem and the line
+     numbers drift out of step with the code. */
+  font-family: var(--font-mono);
+  font-size: 1rem;
 }
 
 .code-body[data-wrap] pre {
@@ -305,6 +310,37 @@
   font-family: var(--font-mono);
   font-size: 1rem;
   line-height: 1.625rem;
+}
+
+/* A task list's checkboxes (disabled by the renderer, so the browser would draw
+   them grey): drawn here, filled with the accent when ticked. */
+.markdown input[type='checkbox'] {
+  appearance: none;
+  position: relative;
+  width: 1rem;
+  height: 1rem;
+  margin: 0 0.5rem 0 0;
+  border: 1.5px solid var(--border-control);
+  border-radius: 4px;
+  background: transparent;
+  vertical-align: -0.125rem;
+}
+
+.markdown input[type='checkbox']:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.markdown input[type='checkbox']:checked::after {
+  content: '';
+  position: absolute;
+  left: 0.25rem;
+  top: 0.0625rem;
+  width: 0.25rem;
+  height: 0.5rem;
+  border: solid var(--accent-fg);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 
 /* highlight.js token classes */

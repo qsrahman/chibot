@@ -4,6 +4,12 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- A code block's line numbers stay level with its lines: the `pre` used a smaller default monospace font than its `code`, so each line box grew past 26 px and the numbers drifted further out of step down a long block.
+- On a phone, the find bar's field takes a row of its own instead of being squeezed to about 90 px beside the count and three buttons.
+- A task list's checkboxes follow the accent colour (they were the browser's grey).
+
 ## [0.23.0] - 2026-11-15
 
 ### Added

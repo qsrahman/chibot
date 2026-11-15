@@ -78,6 +78,26 @@
   }
 }
 
+/* The find bar's input, on a phone, takes a row of its own: beside the count and
+   three 44 px buttons it was left about 90 px wide. */
+@media (max-width: 767px) {
+  .find-bar {
+    left: 16px;
+    flex-wrap: wrap;
+  }
+
+  .find-input {
+    flex: 1 1 100%;
+    width: auto;
+  }
+
+  .find-count {
+    flex: 1;
+    text-align: start;
+    padding-inline: 8px;
+  }
+}
+
 /* Touch-only devices have no keyboard for shortcuts. (A touchscreen laptop
    still has a fine pointer, so it keeps the entry.) */
 @media (hover: none) and (pointer: coarse) {

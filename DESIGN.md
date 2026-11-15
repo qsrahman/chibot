@@ -213,7 +213,8 @@ sticks 12 px above the list's bottom, centred over the composer.
 `ListTree` (only from four messages on). The find bar floats 56 px from the
 top, right-aligned (`--surface-raised`, `--border`, dialog shadow): a 36 px
 search field, a muted tabular "3 of 12" (`role="status"`), `ChevronUp`,
-`ChevronDown` and `X`. Matches use `::highlight(find)` and
+`ChevronDown` and `X`. Below 768 px the bar spans the width and the field takes
+a row of its own, so it keeps a usable width beside the 44 px buttons. Matches use `::highlight(find)` and
 `::highlight(find-current)` with `--find-bg`, `--find-current-bg` and
 `--find-fg` (4.5:1, both schemes); jumps are instant. The outline is a
 `.menu.outline` (max 360 px wide, 420 px tall, scrolling): 36 px rows with a
@@ -252,7 +253,8 @@ focused on it.
 **Code blocks.** No box: no background, border or radius, just like the text
 around them.
 - The language name sits above the code in a 12 px muted label.
-- Code is 16/26 px monospace.
+- Code is 16/26 px monospace. The `pre` takes the same font as its `code`, so
+  every line box is exactly 26 px and the line numbers stay level with the lines.
 - **Wrap lines**, **Download as file** and **Copy code** are 32 px icon buttons
   (18 px, 1.5 stroke: `WrapText`, `Download`, `Copy`) at the right of the label
   row (ChatGPT floats Copy at the block's top right). Wrap is a toggle
@@ -269,6 +271,11 @@ table** (tab-separated, so it pastes into spreadsheet cells) and **Download
 CSV**. The header row sticks under it on `--surface-muted`, in 12 px 600
 `--fg-muted` labels; body rows are 14 px with hairline `--border` dividers and
 `--row-stripe` on every second row. Cells keep `dir="auto"`.
+
+**Task lists.** A `- [x]` item's checkbox is drawn in CSS (the renderer's is
+disabled, which the browser draws grey): a 16 px box with a `--border-control`
+edge, filled with `--accent` and a `--accent-fg` tick when done, so it follows
+the user's accent.
 
 **Quotes.** A 2 px `--border` rule on the left with 12 px padding (the same
 rule as an opened Thoughts), body colour, 16 px block spacing.

@@ -1155,3 +1155,71 @@ test('a failed answer says so with Retry, which answers it normally', async ({
   ).toHaveCount(0)
   await expect(page.getByRole('textbox', { name: 'Message' })).toBeFocused()
 })
+
+test('a code block’s line numbers stay level with its lines', async ({
+  page,
+}) => {
+  const code = Array.from(
+    { length: 45 },
+    (_, i) => `const value${i} = compute(${i})`,
+  ).join('\n')
+  const id = await savedChat(page, {
+    question: 'Show code',
+    answerText: `\`\`\`ts\n${code}\n\`\`\``,
+  })
+  await page.goto(`/c/${id}`)
+  await appReady(page)
+  const heights = await page.locator('.code-body').evaluate((el) => ({
+    numbers: el.querySelector('.code-lines')!.getBoundingClientRect().height,
+    code: el.querySelector('pre')!.getBoundingClientRect().height,
+  }))
+  // Each line box is exactly one line tall, so the two columns end together
+  // (a trailing newline in the `pre` adds nothing visible).
+  expect(Math.abs(heights.code - heights.numbers)).toBeLessThan(1)
+})
+
+test('task-list checkboxes take the accent colour', async ({ page }) => {
+  const id = await savedChat(page, {
+    question: 'A list',
+    answerText: '- [x] done\n- [ ] not yet',
+  })
+  await page.goto(`/c/${id}`)
+  await appReady(page)
+  const boxes = page.locator('.markdown input[type=checkbox]')
+  await expect(boxes).toHaveCount(2)
+  const [done, open] = await boxes.evaluateAll((boxes) =>
+    boxes.map((box) => getComputedStyle(box).backgroundColor),
+  )
+  const accent = await page.evaluate(() => {
+    const probe = document.createElement('span')
+    probe.style.color = 'var(--accent)'
+    document.body.append(probe)
+    const colour = getComputedStyle(probe).color
+    probe.remove()
+    return colour
+  })
+  expect(done).toBe(accent)
+  expect(open).not.toBe(accent)
+})
+
+test('the find bar’s input keeps a usable width on a phone', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 800 })
+  const id = await savedChat(page, {
+    question: 'Find me',
+    answerText: 'Some text to find',
+  })
+  await page.goto(`/c/${id}`)
+  await appReady(page)
+  await page.getByRole('button', { name: 'Find in chat' }).click()
+  const box = page.getByRole('searchbox', { name: 'Find in chat' })
+  await expect(box).toBeVisible()
+  const { input, bar } = await page.evaluate(() => ({
+    input: document.querySelector('.find-input')!.getBoundingClientRect().width,
+    bar: document.querySelector('.find-bar')!.getBoundingClientRect().width,
+  }))
+  // The input fills its row; it used to be left about 90 px beside the buttons.
+  expect(input).toBeGreaterThan(bar * 0.8)
+  expect(bar).toBeLessThanOrEqual(375)
+})
