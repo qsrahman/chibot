@@ -97,6 +97,10 @@ export function useScrollFollow(
       else if (up) followRef.current = false
       setAway(!atEnd)
     },
+    /** The view is about to be moved elsewhere on purpose: stop following the newest message. */
+    leaveEnd() {
+      followRef.current = false
+    },
     jumpToLatest() {
       followRef.current = true
       endRef.current?.scrollIntoView({

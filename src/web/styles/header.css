@@ -127,6 +127,11 @@
   background: var(--surface-muted);
 }
 
+.icon-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .icon-button.danger {
   color: var(--danger);
 }
