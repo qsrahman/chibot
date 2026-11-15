@@ -175,8 +175,12 @@ type ("PDF") in `--fg-muted`, or the error in `--danger` with a `--danger`
 outline. A spinning `LoaderCircle` covers a chip while it uploads (dimmed), and
 a 20 px round `--button` × sits on its top-right corner. In a sent message the
 same thumbnails (up to 240 px, 16 px radius) and cards sit right-aligned above
-the bubble. Dragging files over the chat outlines it with a 2 px dashed
-`--accent` border.
+the bubble. Dragging files over the chat (not text or links) covers it with a
+2 px dashed `--accent` outline inset 8 px and a centred 16 px-radius
+`--surface-raised` card (`--border`, `--dialog-shadow`): an `Upload` icon in
+`--accent`, "Add anything", and what's accepted in `--fg-muted`. It fades in
+over 150 ms (not under reduced motion), ignores the pointer and is `aria-hidden`.
+It clears on drop, leave and Escape.
 
 **Effort switch.** Left of the mic: a 36 px pill showing the reasoning effort
 ("Auto", "Minimal" … "Max") in `--fg-muted` 14 px text with a chevron,

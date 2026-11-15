@@ -17,6 +17,9 @@ All notable changes to the codebase are documented in this file. Format follows 
 - An optional **Catppuccin Macchiato** theme: Settings → General → Theme. It is a dark scheme (page `#181926`, blue accent `#8aadf4`, text `#cad3f5`) that replaces the colour tokens only. Its colours pass the same contrast checks as Light and Dark, in the tokens test and in the axe run over every screen.
 - An answer with a next-step card no longer also gets "Ask next" suggestions (and no longer costs the extra request): the card is the offer.
 - On a phone, the model name and the context figure under an answer no longer break inside their words ("e2e-" over "model"); the row wraps between items and a long model name is cut with an ellipsis.
+### Changed
+
+- Dragging files over the chat shows an "Add anything" card naming what is accepted (images, PDF, Word, text and code), instead of only a dashed outline. It appears for files only (not dragged text or links) and clears on drop, leave or Escape.
 
 ## [0.21.0] - 2026-11-15
 

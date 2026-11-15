@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { Camera, Paperclip, Plus } from 'lucide-react'
-import { ATTACHMENT_ACCEPT } from '../../shared/documents.ts'
+import { ACCEPTED_LABEL, ATTACHMENT_ACCEPT } from '../../shared/documents.ts'
 import { useAnchoredPopover } from '../ui/popover.ts'
 import { CameraDialog } from './CameraDialog.tsx'
 
@@ -79,7 +79,7 @@ export function AddMenu({
           <Paperclip size={18} strokeWidth={1.5} aria-hidden />
           <span className="menu-item-text">
             Add photos & files
-            <span className="menu-hint">Images, PDF, Word, text and code</span>
+            <span className="menu-hint">{ACCEPTED_LABEL}</span>
           </span>
         </button>
         {canUseCamera && (
