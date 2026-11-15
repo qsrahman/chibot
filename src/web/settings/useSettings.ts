@@ -34,17 +34,21 @@ export function useSettings() {
     [],
   )
 
-  useEffect(() => {
+  /** Loads the settings and tools (again, after chibot was unreachable). */
+  const reload = useCallback(() => {
     getSettings().then(
       (res) => {
         setSettings(res.settings)
         setDefaults(res.defaults)
         setEndpoints(res.endpoints)
+        setError(null)
       },
       (err: Error) => setError(err.message),
     )
-    reloadTools()
+    void reloadTools()
   }, [reloadTools])
+
+  useEffect(reload, [reload])
 
   /** Saves `patch`; resolves to whether it worked (errors land in `error`). */
   const update = useCallback(
@@ -64,7 +68,16 @@ export function useSettings() {
     [reloadTools],
   )
 
-  return { settings, defaults, endpoints, tools, error, update, reloadTools }
+  return {
+    settings,
+    defaults,
+    endpoints,
+    tools,
+    error,
+    update,
+    reload,
+    reloadTools,
+  }
 }
 
 export type SettingsApi = ReturnType<typeof useSettings>

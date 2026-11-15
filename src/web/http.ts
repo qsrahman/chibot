@@ -1,4 +1,5 @@
 import type { StoredFile } from '../shared/types.ts'
+import { isGatewayFailure, reportReachable } from './ui/connection.ts'
 
 export const JSON_HEADERS = { 'Content-Type': 'application/json' }
 
@@ -20,11 +21,23 @@ export function asNetworkError(err: unknown): Error {
     : (err as Error)
 }
 
-/** `fetch`, with a failed connection reported as `OFFLINE`. */
+/**
+ * `fetch`, with a failed connection reported as `OFFLINE`; whether chibot
+ * answered is told to `useUnreachable` (the banner and the reconnecting).
+ */
 export const apiFetch: typeof fetch = (input, init) =>
-  fetch(input, init).catch((err: unknown) => {
-    throw asNetworkError(err)
-  })
+  fetch(input, init).then(
+    (res) => {
+      reportReachable(
+        !isGatewayFailure(res.status, res.headers.get('content-type')),
+      )
+      return res
+    },
+    (err: unknown) => {
+      if (err instanceof TypeError) reportReachable(false)
+      throw asNetworkError(err)
+    },
+  )
 
 /** The JSON response, or nothing for an empty one (204). */
 export async function request<T>(url: string, init?: RequestInit): Promise<T> {

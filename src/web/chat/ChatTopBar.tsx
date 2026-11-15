@@ -71,10 +71,8 @@ export function ChatTopBar({
             {pageTitle}
           </span>
         )}
-        {!health ? (
-          <span className="model">Server unreachable</span>
-        ) : settings.settings && settings.defaults ? (
-          <span title={health.baseURL ?? 'OpenAI'}>
+        {settings.settings && settings.defaults ? (
+          <span title={health ? (health.baseURL ?? 'OpenAI') : undefined}>
             <ModelPicker
               model={settings.settings.model}
               defaultModel={settings.defaults.model}
