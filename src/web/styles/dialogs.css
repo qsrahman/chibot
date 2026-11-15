@@ -194,6 +194,8 @@
   height: 56px;
   padding: 0 20px;
   border: none;
+  /* The dialog's top corners (`.dialog`), so the focus ring follows them. */
+  border-radius: 20px 20px 0 0;
   border-bottom: 1px solid var(--border);
   background: transparent;
   color: inherit;
