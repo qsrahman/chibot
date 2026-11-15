@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- Code blocks in answers have three actions beside Copy code: **Wrap lines** (now one preference for every block, kept per browser, also a switch in Settings → General → Appearance; it used to be per block and forgotten), **Download as file** (`code.ts`, `code.py`, `code.sh`, … from the language, `code.txt` when it is not known) and, for blocks over 30 lines, a **Show all N lines** / **Show less** button under a block folded to 18 lines with a fade. The folded text stays in the page, and find in chat opens a folded block when its current match is inside. A block that appears while the answer streams stays open, so nothing moves under the reader.
+
 ## [0.22.1] - 2026-11-15
 
 ### Fixed

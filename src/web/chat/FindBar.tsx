@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import { ChevronDown, ChevronUp, X } from 'lucide-react'
-import { findRanges, jumpTo, matchLabel, stepMatch } from './find.ts'
+import {
+  expandCodeBlock,
+  findRanges,
+  jumpTo,
+  matchLabel,
+  stepMatch,
+} from './find.ts'
 
 /**
  * Find in this chat: highlights matches in the messages and answers on screen
@@ -46,6 +52,7 @@ export function FindBar({
     // Stays set through the render before the new matches arrive (found is empty then).
     if (range && reveals.current) {
       onJump()
+      expandCodeBlock(range.startContainer.parentElement)
       jumpTo(range.startContainer.parentElement, 'center')
       reveals.current = false
     }

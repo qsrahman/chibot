@@ -11,6 +11,7 @@ export function IconAction({
   onClick,
   disabled,
   pressed,
+  title,
   children,
 }: {
   label: string
@@ -18,6 +19,8 @@ export function IconAction({
   disabled?: boolean
   /** For a toggle: whether it is on. */
   pressed?: boolean
+  /** The tooltip, when it should say more than the name (a toggle's name stays put). */
+  title?: string
   children: ReactNode
 }) {
   return (
@@ -26,7 +29,7 @@ export function IconAction({
       className="action"
       aria-label={label}
       aria-pressed={pressed}
-      title={label}
+      title={title ?? label}
       disabled={disabled}
       onClick={onClick}
     >

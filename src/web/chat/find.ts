@@ -76,3 +76,10 @@ export function jumpTo(
   el?.scrollIntoView({ block })
   requestAnimationFrame(() => el?.scrollIntoView({ block }))
 }
+
+/** Opens the collapsed code block that holds `el`, so a match in it can be seen. */
+export function expandCodeBlock(el: Element | null | undefined) {
+  const more = el?.closest('.code-block')?.querySelector('.code-more')
+  if (more?.getAttribute('aria-expanded') === 'false')
+    (more as HTMLElement).click()
+}

@@ -610,6 +610,112 @@ test('code blocks: lines wrap on request, long ones are numbered, copying says s
   expect(copied).not.toMatch(/^1\n2\n/)
 })
 
+// 84 lines, the last one distinctive.
+const LONG_CODE =
+  '```py\n' +
+  Array.from({ length: 83 }, (_, i) => `x${i + 1} = ${i + 1}`).join('\n') +
+  '\nneedle_at_the_end = True\n```'
+
+test('code blocks: wrapping is one preference for all blocks, and is kept', async ({
+  page,
+}) => {
+  const wide = "```ts\nconst wide = '" + 'x'.repeat(300) + "'\n```"
+  const id = await chatAnswering(page, [wide, wide].join('\n\n'))
+  await page.goto(`/c/${id}`)
+  const [first, second] = [0, 1].map((n) => page.locator('.code-block').nth(n))
+  const whiteSpace = (block: typeof first) =>
+    block.locator('pre').evaluate((el) => getComputedStyle(el).whiteSpace)
+  expect(await whiteSpace(first)).toBe('pre')
+
+  const wrap = first.getByRole('button', { name: 'Wrap lines' })
+  await expect(wrap).toHaveAttribute('title', 'Wrap lines')
+  await wrap.click()
+  await expect(wrap).toHaveAttribute('title', "Don't wrap")
+  expect(await whiteSpace(first)).toBe('pre-wrap')
+  expect(await whiteSpace(second)).toBe('pre-wrap')
+
+  await page.reload()
+  await expect(
+    page
+      .locator('.code-block')
+      .first()
+      .getByRole('button', { name: 'Wrap lines' }),
+  ).toHaveAttribute('aria-pressed', 'true')
+
+  // Settings has the same switch.
+  await page.getByRole('button', { name: 'Settings' }).click()
+  const setting = page.getByRole('switch', { name: 'Wrap long lines in code' })
+  await expect(setting).toBeChecked()
+  await setting.uncheck()
+  await page.keyboard.press('Escape')
+  expect(await whiteSpace(page.locator('.code-block').first())).toBe('pre')
+})
+
+test('code blocks: download as a file named from the language', async ({
+  page,
+}) => {
+  const id = await chatAnswering(
+    page,
+    '```py\nprint(1)\n```\n\n```klingon\nqapla\n```',
+  )
+  await page.goto(`/c/${id}`)
+  const save = async (n: number) => {
+    const download = page.waitForEvent('download')
+    await page
+      .locator('.code-block')
+      .nth(n)
+      .getByRole('button', { name: 'Download as file' })
+      .click()
+    const file = await download
+    return [
+      file.suggestedFilename(),
+      await readFile((await file.path())!, 'utf8'),
+    ]
+  }
+  expect(await save(0)).toEqual(['code.py', 'print(1)\n'])
+  expect(await save(1)).toEqual(['code.txt', 'qapla\n'])
+})
+
+test('code blocks: a long one collapses, opens on request and when find reaches it', async ({
+  page,
+}) => {
+  const id = await chatAnswering(
+    page,
+    ['```ts\nconst a = 1\n```', LONG_CODE].join('\n\n'),
+  )
+  await page.goto(`/c/${id}`)
+  const [short, long] = [0, 1].map((n) => page.locator('.code-block').nth(n))
+  await expect(short.locator('.code-more')).toHaveCount(0)
+
+  const more = long.getByRole('button', { name: 'Show all 84 lines' })
+  await expect(more).toHaveAttribute('aria-expanded', 'false')
+  const body = long.locator('.code-body')
+  expect((await body.boundingBox())!.height).toBeCloseTo(18 * 26, 0)
+  // The fade sits over the bottom edge, and the text is still in the page.
+  expect(
+    await body.evaluate(
+      (el) => getComputedStyle(el, '::after').backgroundImage,
+    ),
+  ).toContain('linear-gradient')
+  await expect(long.locator('pre')).toContainText('needle_at_the_end')
+
+  await more.click()
+  const less = long.getByRole('button', { name: 'Show less' })
+  await expect(less).toHaveAttribute('aria-expanded', 'true')
+  expect((await body.boundingBox())!.height).toBeGreaterThan(18 * 26 * 3)
+  await less.click()
+  await expect(more).toHaveAttribute('aria-expanded', 'false')
+
+  // Finding a line in the folded part opens the block.
+  await page.getByRole('button', { name: 'Find in chat' }).click()
+  await page
+    .getByRole('searchbox', { name: 'Find in chat' })
+    .fill('needle_at_the_end')
+  await expect(page.locator('.find-count')).toHaveText('1 of 1')
+  await expect(less).toHaveAttribute('aria-expanded', 'true')
+  await expect(long.getByText('needle_at_the_end')).toBeInViewport()
+})
+
 // While an answer streams the view follows its end, until the user scrolls
 // up to read: then it stays put and offers a way back.
 for (const motion of ['no-preference', 'reduce'] as const) {

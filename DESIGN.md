@@ -253,8 +253,14 @@ focused on it.
 around them.
 - The language name sits above the code in a 12 px muted label.
 - Code is 16/26 px monospace.
-- **Copy code** sits at the right of the label row (ChatGPT floats it at the
-  block's top right).
+- **Wrap lines**, **Download as file** and **Copy code** are 32 px icon buttons
+  (18 px, 1.5 stroke: `WrapText`, `Download`, `Copy`) at the right of the label
+  row (ChatGPT floats Copy at the block's top right). Wrap is a toggle
+  (`aria-pressed`) and one preference for all blocks, off by default.
+- A block over 30 lines is folded to 18 lines, with a 4.5 rem fade to `--bg`
+  over its bottom edge and a muted 14 px "Show all 84 lines" button below it
+  (`ChevronDown`; "Show less" with `ChevronUp` when open). No animation. A block
+  that appeared while the answer streamed stays open.
 
 **Tables.** A `--border` box with the 16 px card radius that scrolls sideways
 and (past 28 rem) up and down on its own, never the page. A bar on top has a

@@ -18,6 +18,12 @@ const RICH = [
   '```json\n{ "a": [1, true, null], "b": "text" }\n```',
   '```diff\n- removed line\n+ added line\n  same\n```',
   '```bash\n$ echo "hi" | grep -i h # note\n```',
+  // Long enough to be folded: the fade and the Show all button.
+  '```js\n' +
+    Array.from({ length: 40 }, (_, i) => `const n${i} = ${i} // line`).join(
+      '\n',
+    ) +
+    '\n```',
 ].join('\n\n')
 
 async function richChat(page: Page) {

@@ -4,6 +4,7 @@ import {
   useAccent,
   useReducedTransparency,
   useTextSize,
+  useWrapCode,
 } from '../ui/appearance.ts'
 import { useNotifyPreference } from '../ui/notifications.ts'
 import { useColorScheme, type ColorScheme } from '../ui/theme.ts'
@@ -14,6 +15,7 @@ export function General() {
   const [accent, chooseAccent] = useAccent()
   const [textSize, chooseTextSize] = useTextSize()
   const [reduced, setReduced] = useReducedTransparency()
+  const [wrapCode, setWrapCode] = useWrapCode()
   const notifications = useNotifyPreference()
   const options: { value: ColorScheme; label: string }[] = [
     { value: null, label: `System (currently ${systemScheme})` },
@@ -78,6 +80,20 @@ export function General() {
               </option>
             ))}
           </select>
+        </Row>
+        <Row
+          label="Wrap long lines in code"
+          description="Code blocks break long lines instead of scrolling sideways. Each block also has its own button for this."
+          htmlFor="setting-wrap-code"
+        >
+          <input
+            id="setting-wrap-code"
+            type="checkbox"
+            role="switch"
+            className="switch"
+            checked={wrapCode}
+            onChange={(e) => setWrapCode(e.target.checked)}
+          />
         </Row>
         <Row
           label="Reduce transparency"
