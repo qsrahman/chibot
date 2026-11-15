@@ -143,7 +143,12 @@ test('an answer written with memories has a chip that opens them', async ({
 
   // It is part of the saved chat, so it stays after a reload and after the
   // memory is edited.
-  await page.request.patch('/api/memories/1', { data: { text: 'I like tea.' } })
+  const { id } = (
+    (await (await page.request.get('/api/memories')).json()) as { id: number }[]
+  )[0]!
+  await page.request.patch(`/api/memories/${id}`, {
+    data: { text: 'I like tea.' },
+  })
   await page.reload()
   await expect(chip).toBeVisible()
   await chip.click()
