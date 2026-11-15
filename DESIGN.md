@@ -385,6 +385,12 @@ and "n of N"), the title (14 px, 500), up to four lines of the snippet in
 Esc, a click elsewhere or the pointer leaving closes it (Esc is not also "stop
 the answer"). No favicons: loading one would tell its site that the chat was read.
 
+**Memory chip.** Above an answer written with saved memories: a 28 px pill
+(`--chip` background, 13 px `--fg-muted` text, `Lightbulb` 15 px, 12 px right
+padding) reading "Memory · n", a real button that opens the Memories dialog.
+Shown like the answer's actions: always on the latest answer, on hover or focus
+for older ones, always where there is no hover.
+
 **Memories dialog.** Like Archived chats: a short explanation, then the count
 ("12 of 100 memories") in 12 px muted text, and one row per memory (14 px
 text, `Pencil` edit and `Trash2` delete icon buttons). Editing swaps the row

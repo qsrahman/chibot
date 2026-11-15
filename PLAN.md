@@ -171,6 +171,7 @@ items(id INTEGER PK AUTOINCREMENT,
       data TEXT,                          -- JSON ResponseInputItem
       usage TEXT NULL,                    -- JSON ResponseUsage, last item of a response
       model TEXT NULL,                    -- Phase 4: model that wrote it, set like usage
+      memories TEXT NULL,                 -- JSON [{id, text}]: the memories in the instructions, set like usage
       created_at INTEGER)
 settings(key TEXT PK, value TEXT)     -- Phase 4: JSON values over env defaults
 items_fts USING fts5(text, conversation_id UNINDEXED)  -- Phase 2: message text for search
@@ -567,7 +568,9 @@ The sidebar search (every word must match) doesn't suit model queries.
   memories with their ids inside `<memories>`, as facts about the user rather
   than instructions, and say how to use the tool: save lasting facts and
   preferences, update what changed, forget on request, no secrets or one-off
-  details, and merge related entries when close to the limit.
+  details, and merge related entries when close to the limit. Each response
+  stores the list it was written with (`items.memories`), and the chat shows
+  a "Memory · n" chip over such an answer that opens the Memories dialog.
 - **Temporary chats** get no memories, no `memory` and no `search_chats` (a
   tool flag).
 - **One switch.** The memory tool's Settings → Tools switch turns memory off

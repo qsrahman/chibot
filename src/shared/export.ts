@@ -20,6 +20,10 @@ const exportedItemSchema = z.object({
     .nullable()
     .transform((u) => u as ResponseUsage | null),
   model: z.string().nullable(),
+  memories: z
+    .array(z.object({ id: z.number().int(), text: z.string() }))
+    .nullable()
+    .optional(),
   createdAt: z.number(),
 })
 

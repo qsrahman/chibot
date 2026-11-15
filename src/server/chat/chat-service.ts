@@ -12,10 +12,12 @@ import type {
   TurnRequest,
   TurnTitleEvent,
   TurnToolOutputEvent,
+  UsedMemory,
 } from '../../shared/types.ts'
 import type { Attachments } from '../attachments.ts'
 import type { ConversationStore } from '../conversations/index.ts'
 import type { ProjectStore } from '../projects/index.ts'
+import type { MemoryStore } from '../memory-store.ts'
 import type { SettingsStore } from '../settings-store.ts'
 import type { Compactor } from './compactor.ts'
 import { fitContext, type FitPlan } from './context-fit.ts'
@@ -47,6 +49,8 @@ interface TurnPlan extends FitPlan {
   disabled: string[]
   /** The tool the user picked for this message, if any. */
   forced: FunctionTool | undefined
+  /** The memories the instructions list, saved with each response. */
+  memories: UsedMemory[]
 }
 
 // How long a turn waits for the previous turn of its chat to unwind.
@@ -66,6 +70,7 @@ export class ChatService {
   readonly #tools: ToolRegistry
   readonly #projects: ProjectStore | null
   readonly #attachments: Attachments | null
+  readonly #memories: MemoryStore | null
   // Each chat's latest turn, until it has finished unwinding.
   readonly #turns = new Map<string, Promise<void>>()
 
@@ -74,6 +79,7 @@ export class ChatService {
    * @param options.projects for project chats' instructions
    * @param options.attachments to put files attached to messages in them
    *   (`model` sends them)
+   * @param options.memories what the memory tool lists, to record per answer
    */
   constructor(
     model: ModelRequests,
@@ -85,10 +91,12 @@ export class ChatService {
       tools = new ToolRegistry([]),
       projects = null,
       attachments = null,
+      memories = null,
     }: {
       tools?: ToolRegistry
       projects?: ProjectStore | null
       attachments?: Attachments | null
+      memories?: MemoryStore | null
     } = {},
   ) {
     this.#model = model
@@ -99,6 +107,7 @@ export class ChatService {
     this.#tools = tools
     this.#projects = projects
     this.#attachments = attachments
+    this.#memories = memories
   }
 
   /**
@@ -270,6 +279,10 @@ export class ChatService {
     const project = conversation.projectId
       ? this.#projects?.get(conversation.projectId)
       : null
+    // Read together with the memory tool's instructions, which list them.
+    const memories = offered.some((t) => t.name === 'memory')
+      ? (this.#memories?.list() ?? []).map(({ id, text }) => ({ id, text }))
+      : []
     return {
       conversation,
       model: settings.model,
@@ -289,6 +302,7 @@ export class ChatService {
       // A tool the user picked is forced on the first request only; after
       // that the model decides (or it would call it forever).
       forced: tools.find((t) => t.name === tool),
+      memories,
     }
   }
 
@@ -338,7 +352,7 @@ export class ChatService {
     ResponseStreamEvent | TurnCompactionEvent,
     { leafId: number; output: ResponseInputItem[] | null; answered: boolean }
   > {
-    const { model, instructions, tools, forced } = plan
+    const { model, instructions, tools, forced, memories } = plan
     let input = (yield* fitContext(
       this.#context,
       plan,
@@ -405,6 +419,7 @@ export class ChatService {
                 event.response.usage ?? null,
                 // The server may name a dated snapshot of the model requested.
                 event.response.model || model,
+                memories.length > 0 ? memories : null,
               )
               leafId = items.at(-1)?.id ?? leafId
               answered = true
@@ -445,6 +460,7 @@ export class ChatService {
           [{ role: 'assistant', content: partial }],
           null,
           model,
+          memories.length > 0 ? memories : null,
         )
       }
     }

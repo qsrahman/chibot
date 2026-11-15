@@ -178,6 +178,38 @@
   opacity: 1;
 }
 
+/* Over an answer written with saved memories: what was provided, opening the
+   Memories dialog. Quiet like the actions: always on the latest answer, on
+   hover or focus for the rest (and always without hover). */
+.memory-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  height: 28px;
+  margin-top: 8px;
+  padding: 0 12px 0 8px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.turn:hover .memory-chip,
+.turn.latest .memory-chip,
+.memory-chip:focus-visible {
+  opacity: 1;
+}
+
+.memory-chip:hover {
+  color: var(--fg);
+}
+
 /* A message with other versions always shows `< 2/3 >`, so they can be found
    without hovering; the other actions still wait for it. */
 .actions:has(.versions) {

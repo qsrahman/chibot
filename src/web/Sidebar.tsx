@@ -19,7 +19,6 @@ import {
 import type { ConversationListItem } from '../shared/types.ts'
 import { ArchivedDialog } from './conversations/ArchivedDialog.tsx'
 import { ConversationRow } from './conversations/ConversationRow.tsx'
-import { MemoriesDialog } from './settings/MemoriesDialog.tsx'
 import { groupConversations } from './conversations/dates.ts'
 import { DeleteChatDialog } from './conversations/DeleteChatDialog.tsx'
 import {
@@ -45,6 +44,8 @@ interface Props {
   conversations: ConversationsApi
   projects: ProjectsApi
   settings: SettingsApi
+  /** Opens the Memories dialog (kept by the App, which the chat also opens it from). */
+  onShowMemories: () => void
 }
 
 export function Sidebar({
@@ -55,6 +56,7 @@ export function Sidebar({
   conversations,
   projects,
   settings,
+  onShowMemories,
 }: Props) {
   const navigate = useNavigate()
   const nav = useRef<HTMLElement>(null)
@@ -85,7 +87,6 @@ export function Sidebar({
   }, [pathname])
   const [searchOpen, setSearchOpen] = useState(false)
   const [archivedOpen, setArchivedOpen] = useState(false)
-  const [memoriesOpen, setMemoriesOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsTab, setSettingsTab] = useState<SettingsTab>()
   // Back from an MCP server's sign-in (`/?settings=tools`).
@@ -337,15 +338,11 @@ export function Sidebar({
           settings={settings}
           onImported={conversations.refresh}
           onShowArchived={() => setArchivedOpen(true)}
-          onShowMemories={() => setMemoriesOpen(true)}
+          onShowMemories={onShowMemories}
         />
         <ShortcutsDialog
           open={shortcutsOpen}
           onClose={() => setShortcutsOpen(false)}
-        />
-        <MemoriesDialog
-          open={memoriesOpen}
-          onClose={() => setMemoriesOpen(false)}
         />
         <ArchivedDialog
           open={archivedOpen}

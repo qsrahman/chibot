@@ -255,6 +255,7 @@ function buildApp(
     tools: registry,
     projects,
     attachments,
+    memories,
   })
   return createApp({
     config,

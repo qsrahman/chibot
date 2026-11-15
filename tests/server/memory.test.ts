@@ -139,3 +139,47 @@ describe('memory in chats', () => {
     expect(params).not.toHaveProperty('tools')
   })
 })
+
+describe('memories recorded with an answer', () => {
+  async function answered({
+    temporary = false,
+    disabledTools = [] as string[],
+    saved = ['Prefers Rust.', 'Is vegetarian.'],
+  } = {}) {
+    const store = memoryStore()
+    const memories = testMemories()
+    for (const text of saved) memories.save(text)
+    const chat = testChat(answerEvents('ok'), {
+      store,
+      settings: testSettings('m', { disabledTools }),
+      tools: new ToolRegistry([new MemoryTool(memories)]),
+      memories,
+    })
+    const { id } = store.createConversation({ temporary })
+    await drain(chat.runTurn(id, { text: 'Hi' }))
+    return { store, memories, id }
+  }
+
+  it('keeps what the instructions listed, as it was then', async () => {
+    const { store, memories, id } = await answered()
+    memories.update(1, 'Prefers Go.')
+    memories.delete(2)
+    expect(store.getPath(id)[1]!.memories).toEqual([
+      { id: 1, text: 'Prefers Rust.' },
+      { id: 2, text: 'Is vegetarian.' },
+    ])
+    // Only the answer carries it, and it survives an export and an import.
+    expect(store.getPath(id)[0]!.memories).toBeNull()
+    const copy = store.importConversation(store.exportConversation(id)!)
+    expect(store.getPath(copy.id)[1]!.memories).toHaveLength(2)
+  })
+
+  it.each([
+    ['memory is switched off', { disabledTools: ['memory'] }],
+    ['the chat is temporary', { temporary: true }],
+    ['nothing is remembered', { saved: [] }],
+  ])('records nothing when %s', async (_, options) => {
+    const { store, id } = await answered(options)
+    expect(store.getPath(id)[1]!.memories).toBeNull()
+  })
+})

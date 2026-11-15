@@ -4,6 +4,7 @@ import type { Health } from '../shared/types.ts'
 import { getHealth } from './settings/api.ts'
 import { ChatPage } from './chat/ChatPage.tsx'
 import { Sidebar } from './Sidebar.tsx'
+import { MemoriesDialog } from './settings/MemoriesDialog.tsx'
 import { useConversations } from './conversations/useConversations.ts'
 import { NARROW, useMediaQuery } from './ui/useMediaQuery.ts'
 import { useProjects } from './projects/useProjects.ts'
@@ -23,6 +24,8 @@ export function App() {
   const narrow = useMediaQuery(NARROW)
   // Not remembered: a phone starts on the chat.
   const [drawerOpen, setDrawerOpen] = useState(false)
+  // Opened from Settings and from the chip over an answer.
+  const [memoriesOpen, setMemoriesOpen] = useState(false)
   const conversations = useConversations()
   const settings = useSettings()
   const projects = useProjects()
@@ -60,6 +63,7 @@ export function App() {
       // somewhere to return to.
       onOpenSidebar={narrow ? () => setDrawerOpen(true) : undefined}
       inert={narrow && drawerOpen}
+      onShowMemories={() => setMemoriesOpen(true)}
     />
   )
 
@@ -74,6 +78,7 @@ export function App() {
           conversations={conversations}
           projects={projects}
           settings={settings}
+          onShowMemories={() => setMemoriesOpen(true)}
         />
         {/* All routes render ChatPage at the same tree position, so moving
             from / (or a project) to /c/:id after the first message keeps
@@ -83,6 +88,10 @@ export function App() {
           <Route path="/c/:id" element={page} />
           <Route path="/projects/:projectId" element={page} />
         </Routes>
+        <MemoriesDialog
+          open={memoriesOpen}
+          onClose={() => setMemoriesOpen(false)}
+        />
       </div>
     </BrowserRouter>
   )

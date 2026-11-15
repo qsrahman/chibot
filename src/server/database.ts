@@ -93,6 +93,17 @@ export const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
   // A chat's items are read by conversation: its path, usage and branches.
   `CREATE INDEX IF NOT EXISTS items_conversation ON items(conversation_id, id);`,
   PROJECT_MIGRATIONS.fileLookup,
+  // The memories a response was written with (JSON: [{id, text}]), stored
+  // like its usage so the chip survives later edits and deletions. Skips a
+  // column that is already there, as the upgrade tests rerun the last steps.
+  (db) => {
+    const columns = db.prepare('PRAGMA table_info(items)').all() as {
+      name: string
+    }[]
+    if (!columns.some(({ name }) => name === 'memories')) {
+      db.exec('ALTER TABLE items ADD COLUMN memories TEXT')
+    }
+  },
 ]
 
 /** How many migrations this version of chibot knows: the newest schema it can open. */

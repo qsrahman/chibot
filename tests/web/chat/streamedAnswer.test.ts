@@ -53,6 +53,7 @@ describe('applyEvent', () => {
       tools: [{ callId: 'a', name: 'echo', arguments: '{}', output: null }],
       usage: null,
       lastUsage: null,
+      memories: [],
       model: null,
       versions: null,
       incomplete: false,

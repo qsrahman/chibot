@@ -3,7 +3,7 @@ import type {
   ResponseUsage,
 } from 'openai/resources/responses/responses'
 import { fileParts, messageText } from '../../shared/messages.ts'
-import type { Compaction, StoredItem } from '../../shared/types.ts'
+import type { Compaction, StoredItem, UsedMemory } from '../../shared/types.ts'
 import { mcpToolName } from '../settings/mcp.ts'
 import { addUsage } from './usage.ts'
 
@@ -57,6 +57,8 @@ export interface Answer {
   lastUsage: ResponseUsage | null
   /** The model that wrote it, if known. */
   model: string | null
+  /** The saved memories that were in its instructions, as they were then. */
+  memories: UsedMemory[]
   /** Regenerations of this answer, or `null` if there are none. */
   versions: Versions | null
   /** It stopped before it was finished (stopped by the user, or cut off by the model's limit). */
@@ -125,6 +127,7 @@ export function toTurns(
       usage: null,
       lastUsage: null,
       model: null,
+      memories: [],
       versions: versionsOf(item),
       incomplete: false,
     }
@@ -159,6 +162,7 @@ export function toTurns(
       turn.answer.lastUsage = item.usage
     }
     if (item.model) turn.answer.model = item.model
+    if (item.memories) turn.answer.memories = item.memories
   }
   return turns
 }

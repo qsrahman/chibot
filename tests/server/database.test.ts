@@ -136,7 +136,7 @@ describe('openDatabase', () => {
       old.exec(
         `DROP INDEX items_conversation;
          DROP INDEX project_files_file;
-         PRAGMA user_version = ${MIGRATIONS.length - 2}`,
+         PRAGMA user_version = ${MIGRATIONS.length - 3}`,
       )
       old.close()
       const db = openDatabase(file)

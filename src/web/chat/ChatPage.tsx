@@ -45,6 +45,8 @@ interface Props {
   onOpenSidebar?: () => void
   /** Shut out while the phone drawer covers the page (nothing here can be reached). */
   inert?: boolean
+  /** Opens the Memories dialog. */
+  onShowMemories: () => void
 }
 
 /** What "Continue" sends after a stopped answer. */
@@ -68,6 +70,7 @@ export function ChatPage({
   conversations,
   onOpenSidebar,
   inert,
+  onShowMemories,
 }: Props) {
   // `projectId`: a project's page, where a new chat starts in the project.
   const { id, projectId: projectHome } = useParams()
@@ -331,6 +334,7 @@ export function ChatPage({
                         chat.canCompact ? following(chat.compact) : undefined
                       }
                       onUndoCompaction={(c) => void chat.undo(c)}
+                      onShowMemories={onShowMemories}
                     />
                   </ErrorBoundary>
                 ))}
