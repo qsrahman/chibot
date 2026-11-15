@@ -25,6 +25,9 @@
   --border-control: #8a8a8a;
   --accent: #3566f0;
   --accent-fg: #ffffff;
+  /* A citation chip: 6:1 text on its tint, and on the raised surface it opens. */
+  --cite-bg: light-dark(#eef2ff, #1f2b52);
+  --cite-fg: light-dark(#2c52c8, #b4c6ff);
   --button: light-dark(#0d0d0d, #e8e8e8);
   --button-fg: light-dark(#ffffff, #0d0d0d);
   --bubble-bg: light-dark(#f4f4f4, #303030);

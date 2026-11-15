@@ -47,6 +47,7 @@ follows; changing `--bg` switches to a dark-grey page.
 | `--fg-muted` | `#5d5d5d` | `#cdcdcd` | Descriptions, captions, footer, action icons, code labels |
 | `--border` | `rgb(0 0 0 / 10%)` | `rgb(255 255 255 / 15%)` | Hairlines, composer outline |
 | `--accent` / `--accent-fg` | `#3566f0` / `#fff` | `#3566f0` / `#fff` | Send button, switches (measured `oklch(0.56 0.21 265)`) |
+| `--cite-bg` / `--cite-fg` | `#eef2ff` / `#2c52c8` | `#1f2b52` / `#b4c6ff` | Citation chips (text 6:1 or more on the tint and on `--surface-raised`) |
 | `--button` / `--button-fg` | `#0d0d0d` / `#fff` | `#e8e8e8` / `#0d0d0d` | Primary buttons in dialogs |
 | `--danger` | `#d93025` | `#ff6b6b` | Errors, destructive buttons |
 | `--scrim` | `rgb(0 0 0 / 50%)` | same | Behind dialogs and the phone sidebar |
@@ -353,8 +354,23 @@ fitted to the window (16 px radius). Esc or a click outside closes it;
 ⌘/Ctrl/Shift/middle clicks still open the image in a new tab.
 
 **Sources.** Below the answer, a `<details>` in 14 px muted text, "Sources ·
-n", listing each page as its title (`--fg`, one line, ellipsis) and a 12 px
-host name.
+n", listing each page as a card (`--surface`, 1 px `--border`, 16 px radius, in
+a grid of at least 192 px columns): its number in `--cite-fg`, its title
+(`--fg`, two lines, ellipsis) and a 12 px host name. It is collapsed, except
+when the answer cites with chips: then it starts open, as the list the numbers
+refer to.
+
+**Citations.** A link whose text is only a number to one of the answer's
+sources is a chip: a 20 px pill, `--cite-bg` with `--cite-fg` text (12 px, 500,
+about 6:1), `--accent` with `--accent-fg` while its card is open; it is a
+real button. Hover (mouse), focus or a tap opens a native `popover="auto"`
+card placed by anchor positioning above the chip (flipping), 300 px wide:
+`--surface-raised`, 16 px radius, dialog shadow and 14 px padding. A 12 px
+muted row (an icon for the kind, the host or "Your chats" / "Project file",
+and "n of N"), the title (14 px, 500), up to four lines of the snippet in
+`--fg-muted` (both `dir="auto"`, text only), and "Open page ↗" in `--cite-fg`.
+Esc, a click elsewhere or the pointer leaving closes it (Esc is not also "stop
+the answer"). No favicons: loading one would tell its site that the chat was read.
 
 **Memories dialog.** Like Archived chats: a short explanation, then the count
 ("12 of 100 memories") in 12 px muted text, and one row per memory (14 px
