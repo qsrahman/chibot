@@ -4,6 +4,7 @@
 // streams its first word and waits there until POST /debug/release (so a test
 // can act mid-answer without racing a timer), "think"
 // first streams a reasoning summary, and "compact" returns a compaction item.
+// "offer-next-step" ends the answer with a next-step card.
 // A question's words can call a tool ("approve", "draw", "remember <fact>",
 // "mcp echo <text>", "mcp resource <uri>", …): `TRIGGERS` below lists
 // them. A forced tool_choice is followed. Once the tool's output arrives, the
@@ -311,9 +312,34 @@ app.post('/v1/responses', async (c) => {
     call_id: `call_${crypto.randomUUID()}`,
     ...tool,
   }
+  // "offer-next-step" ends the answer with a suggest_next_step call (as a
+  // model that follows chibot's instructions does): the card's prompt carries
+  // no magic word, so answering it makes no second card.
+  const offer =
+    !call &&
+    last?.type !== 'function_call_output' &&
+    question.includes('offer-next-step')
+      ? {
+          id: `fc_${crypto.randomUUID()}`,
+          type: 'function_call',
+          status: 'completed',
+          call_id: `call_${crypto.randomUUID()}`,
+          name: 'suggest_next_step',
+          arguments: JSON.stringify({
+            title: 'Weekly learning plan',
+            description: 'turn these into a 16-week plan with milestones',
+            button: 'Create plan',
+            prompt: 'Turn these into a 16-week plan with milestones',
+          }),
+        }
+      : null
   const reply =
     last?.type === 'function_call_output' ? `Tool said: ${last.output}` : text
-  const output = [...(thinking ? [reasoning] : []), call ?? message(reply)]
+  const output = [
+    ...(thinking ? [reasoning] : []),
+    call ?? message(reply),
+    ...(offer ? [offer] : []),
+  ]
 
   return streamSSE(c, async (stream) => {
     const send = (event: Record<string, unknown> & { type: string }) =>
@@ -355,6 +381,13 @@ app.post('/v1/responses', async (c) => {
       })
       if (holding && i === 0) await hold()
       await stream.sleep(slow ? 100 : 5)
+    }
+    if (offer) {
+      await send({
+        type: 'response.output_item.done',
+        output_index: 1,
+        item: offer,
+      })
     }
     await send({
       type: 'response.completed',

@@ -5,6 +5,7 @@ import {
   fileIds,
   imageInfo,
   imagesOf,
+  nextStepOf,
   newQuestion,
   toolPreview,
   sourcesOf,
@@ -668,5 +669,70 @@ describe('newQuestion and fileIds', () => {
       fileIds: ['f1', 'f2'],
     })
     expect(fileIds([])).toEqual({})
+  })
+})
+
+describe('nextStepOf', () => {
+  const card = {
+    title: 'Weekly learning plan',
+    description: 'turn these into a 16-week plan',
+    button: 'Create plan',
+    prompt: 'Make a 16-week plan',
+  }
+  const answerWith = (args: unknown, output: string | null = 'shown') => {
+    const turns = toTurns([
+      item(1, { role: 'user', content: 'q' }),
+      item(2, {
+        type: 'function_call',
+        call_id: 'c',
+        name: 'suggest_next_step',
+        arguments: typeof args === 'string' ? args : JSON.stringify(args),
+      }),
+      ...(output === null
+        ? []
+        : [item(3, { type: 'function_call_output', call_id: 'c', output })]),
+    ])
+    return turns[0]!.answer!
+  }
+
+  it('reads the card from the call', () => {
+    expect(nextStepOf(answerWith(card))).toEqual(card)
+  })
+
+  it('trims and cuts the model’s text to fit', () => {
+    const step = nextStepOf(
+      answerWith({ ...card, title: `  ${'x'.repeat(200)} `, button: ' Go ' }),
+    )
+    expect(step?.title).toHaveLength(80)
+    expect(step?.button).toBe('Go')
+  })
+
+  it('shows no card for a failed, unanswered, malformed or incomplete call', () => {
+    expect(nextStepOf(answerWith(card, 'Error: invalid arguments'))).toBeNull()
+    expect(nextStepOf(answerWith(card, null))).toBeNull()
+    expect(nextStepOf(answerWith('{not json'))).toBeNull()
+    expect(nextStepOf(answerWith({ ...card, prompt: '  ' }))).toBeNull()
+    expect(nextStepOf(answerWith({ title: 'Only a title' }))).toBeNull()
+    expect(nextStepOf(answerWith({ ...card, button: 7 }))).toBeNull()
+  })
+
+  it('uses the last call', () => {
+    const turns = toTurns([
+      item(1, { role: 'user', content: 'q' }),
+      ...[1, 2].flatMap((n) => [
+        item(n * 2, {
+          type: 'function_call',
+          call_id: `c${n}`,
+          name: 'suggest_next_step',
+          arguments: JSON.stringify({ ...card, title: `T${n}` }),
+        }),
+        item(n * 2 + 1, {
+          type: 'function_call_output',
+          call_id: `c${n}`,
+          output: 'shown',
+        }),
+      ]),
+    ])
+    expect(nextStepOf(turns[0]!.answer!)?.title).toBe('T2')
   })
 })

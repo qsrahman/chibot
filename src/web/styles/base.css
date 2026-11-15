@@ -25,6 +25,9 @@
   --border-control: #8a8a8a;
   --accent: #3566f0;
   --accent-fg: #ffffff;
+  /* An icon on a soft blue tile (3:1 for the icon, in both themes). */
+  --accent-tile: light-dark(#e8f0fe, #1d2a4f);
+  --accent-tile-fg: light-dark(#2c52c8, #9db4ff);
   --button: light-dark(#0d0d0d, #e8e8e8);
   --button-fg: light-dark(#ffffff, #0d0d0d);
   --bubble-bg: light-dark(#f4f4f4, #303030);

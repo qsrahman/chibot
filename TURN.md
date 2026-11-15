@@ -73,7 +73,11 @@ turn is about to save. Then `#runTurn`:
      `approvals` says yes; otherwise its output is `TOOL_DENIED`.
    - **`#respond`** makes one streamed request (below), saves the response,
      and returns its output.
-   - If the output has no tool calls, the turn is over. If some need approval
+   - If the output has no tool calls, the turn is over. So is a response that
+     has its answer text and only calls to tools that end the turn
+     (`Tool.endsTurn`, e.g. `suggest_next_step`): they run, their outputs are
+     saved, and no request follows.
+   - If some need approval
      (`ToolRegistry.needsApproval`), the turn ends with `chibot.approval`; the
      browser asks, and the answer comes back as a new `{ approvals }` turn.
      The pending approval is just the history ending in unanswered calls, so

@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- A "Next step" card under the latest answer when it ends by offering one concrete follow-up (for example "turn these into a 16-week plan"): a title, a one-line note and a button that sends the offer as your next message. The model asks for it with a new tool, `suggest_next_step` (Settings → Tools → Answers; off, there is no card), after it has written the answer, and the turn then ends without a closing remark. An answer without an offer looks as before. The card is saved with the answer, so it comes back after a reload, is dropped when you branch or send anything else, and an export of the chat as Markdown keeps it as a "Next step" line.
+
 ## [0.20.3] - 2026-11-15
 
 ### Fixed
