@@ -14,7 +14,8 @@ import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import { dollarMath } from './math.ts'
 import { remarkHtmlBreaks } from './htmlBreaks.ts'
-import { WrapText } from 'lucide-react'
+import { delimited, tableRows } from './tableData.ts'
+import { Download, WrapText } from 'lucide-react'
 import { CopyButton, IconAction } from './MessageActions.tsx'
 import { normalizedUrl } from '../../shared/media.ts'
 import { MediaContext } from './mediaContext.ts'
@@ -62,8 +63,7 @@ const auto =
       | 'h6'
       | 'ul'
       | 'ol'
-      | 'blockquote'
-      | 'table',
+      | 'blockquote',
   ) =>
   ({ node: _, ...props }: ComponentProps<typeof Tag> & ExtraProps) => (
     <Tag dir="auto" {...(props as object)} />
@@ -80,7 +80,7 @@ const components: Components = {
   ul: auto('ul'),
   ol: auto('ol'),
   blockquote: auto('blockquote'),
-  table: auto('table'),
+  table: Table,
   pre: CodeBlock,
   a: Link,
   img: Image,
@@ -119,6 +119,41 @@ function TaskBox({
 }: ComponentProps<'input'> & ExtraProps) {
   if (props.type !== 'checkbox') return <input {...props} />
   return <input {...props} aria-label={props.checked ? 'Done' : 'Not done'} />
+}
+
+/**
+ * A table in a box that scrolls sideways on its own (never the page), with a
+ * bar to copy it (tab-separated, which pastes into cells) or save it as CSV.
+ */
+function Table({ node, ...props }: ComponentProps<'table'> & ExtraProps) {
+  const rows = node ? tableRows(node) : []
+  const saveCsv = () => {
+    // A byte order mark, so Excel reads the UTF-8 (Urdu, accents) correctly.
+    const file = new Blob(['\uFEFF', delimited(rows, ','), '\n'], {
+      type: 'text/csv',
+    })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(file)
+    link.download = 'table.csv'
+    link.click()
+    URL.revokeObjectURL(link.href)
+  }
+  return (
+    <div className="table-block">
+      <div className="table-header">
+        <span className="code-label">Table</span>
+        <span className="code-actions">
+          <CopyButton text={delimited(rows, '\t')} label="Copy table" />
+          <IconAction label="Download CSV" onClick={saveCsv}>
+            <Download />
+          </IconAction>
+        </span>
+      </div>
+      <div className="table-scroll">
+        <table dir="auto" {...props} />
+      </div>
+    </div>
+  )
 }
 
 /** Blocks this long get line numbers (short ones read better without). */
