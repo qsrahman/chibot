@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.22.1] - 2026-11-15
+
 ### Fixed
 
 - The focus ring on the search dialog's box now follows the dialog's rounded top corners; before, its square corners poked out past the curve.
