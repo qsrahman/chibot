@@ -538,7 +538,7 @@ on Ollama, images need `OPENAI_IMAGE_BASE_URL` / `_API_KEY`.
   download), with a shimmering "Creating image…" placeholder while running.
   A Sources row under the answer lists the searched and read sites as links
   with their domain, built from the tool outputs, so sources show even if the
-  model doesn't cite them.
+  model doesn't cite them. Later (v0.21): inline citations, below.
 - **Dependencies:** `undici`, `@mozilla/readability`, `linkedom`.
 
 ### Phase 7 — Memory ✅
@@ -1220,6 +1220,19 @@ Environment variables:
   shell/filesystem tools (too costly when mis-approved on an unauthenticated
   server) and narrow APIs like weather, which a web search MCP server plus a
   page-reading one cover.
+- **Inline citations** (v0.21): the instructions ask the model to end a sentence
+  that rests on a source with a link whose text is only a number,
+  `[1](address)`, using the address its tool returned. The web app turns such a
+  link into a chip (`CitationChip`) only when the address is one of the answer's
+  sources (`sourcesOf`, from the stored tool outputs), and shows the source's place
+  in that list as its number, so numbering is the same after a reload and nothing
+  is persisted beside the history. Why not `[1]` plus a mapping: the model can't
+  know the numbers (tool outputs aren't numbered, and an MCP server's are free
+  text), but it knows the address, and matching by address can't name a source
+  that wasn't found. The address is also what exports keep. The static rule sits
+  in the tool rules of the instructions, so it doesn't disturb the prompt cache;
+  summaries and pruned tool results change only what the model sees, not the stored
+  outputs the numbers come from. Sources carry a `snippet` where the tool gave one.
 - **Citations from web search** depend on the model following the
   instructions, since there are no hosted `url_citation` annotations. The UI's
   sources list comes from the tool result, which it understands only for chibot's

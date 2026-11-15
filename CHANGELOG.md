@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- Inline citations. When a claim rests on a page, past chat or project file a tool returned, the model ends the sentence with a link whose text is only a number (`[1](https://example.com/page)`); the answer shows it as a numbered chip. Hovering, focusing or tapping the chip opens a card with where the source is from, its title and snippet, and "Open page"; Esc closes it. The number is the source's place in the Sources list (a link to an address that isn't one of the answer's sources stays a plain link), the list is open and shown as cards when the answer has chips, and answers without them look as before. Exports keep the links, so they read as `[1](url)`.
+
 ## [0.20.3] - 2026-11-15
 
 ### Fixed

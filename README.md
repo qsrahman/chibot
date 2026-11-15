@@ -368,6 +368,10 @@ needs the server running: there is no offline mode, since the server is local.
   - **Past chats:** ask about something you discussed before ("what did we
     decide about…?"). chibot searches your other chats (on this machine) and
     links the ones it used under **Sources**.
+  - **Citations:** when a claim rests on a page, past chat or project file,
+    the answer marks it with a numbered chip; hover, focus or tap it for the
+    source's title, snippet and a link to open it. The numbers match the
+    cards under **Sources**.
   - **MCP servers' tools** (see [MCP servers](#mcp-servers)): shown as
     "Used read_file · files", with the arguments and result. Images they
     return appear in the answer and are kept with the chat. **Stop** cancels
