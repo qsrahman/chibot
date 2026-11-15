@@ -457,6 +457,7 @@ describe('sources carry a snippet for the card a citation opens', () => {
     model: null,
     versions: null,
     incomplete: false,
+    memories: [],
     tools: [
       { callId: 'c', name, arguments: '{}', output: JSON.stringify(output) },
     ],
@@ -505,6 +506,7 @@ describe('sourcesOf with MCP web tools', () => {
     model: null,
     versions: null,
     incomplete: false,
+    memories: [],
     tools: [{ callId: 'c', name, arguments: JSON.stringify(args), output }],
   })
 

@@ -1,7 +1,14 @@
 // One turn of a chat: the question, then the answer with its thoughts, tool
 // activity, images, sources and actions.
 import { useContext, useState, type KeyboardEvent, type ReactNode } from 'react'
-import { CircleAlert, GitBranch, Lightbulb, Pencil, RefreshCw, Wrench } from 'lucide-react'
+import {
+  CircleAlert,
+  GitBranch,
+  Lightbulb,
+  Pencil,
+  RefreshCw,
+  Wrench,
+} from 'lucide-react'
 import { FileCard } from '../ui/FileCard.tsx'
 import { ImageViewer, opensViewer, type ViewedImage } from './ImageViewer.tsx'
 import { Markdown } from './Markdown.tsx'
