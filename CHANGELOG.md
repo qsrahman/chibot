@@ -4,6 +4,11 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- A page left open and in front now notices chibot going away by itself: it checks the server every 30 s (while visible) as well as when it comes back to the front, so the "Can’t reach chibot" banner shows without a click.
+- Sending just as chibot went away no longer shows the same message twice (the banner, and a red note under the thread); the note stays when the banner is not up.
+
 ## [0.23.1] - 2026-11-15
 
 ### Fixed

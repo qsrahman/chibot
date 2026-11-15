@@ -11,6 +11,7 @@ import { useProjects } from './projects/useProjects.ts'
 import { readStored, writeStored } from './ui/storage.ts'
 import { useUpdateNotice } from './ui/updates.ts'
 import { useSettings } from './settings/useSettings.ts'
+import { HEALTH_CHECK_MS } from './ui/connection.ts'
 import { useReconnect } from './ui/useReconnect.ts'
 
 const COLLAPSED_KEY = 'chibot.sidebarCollapsed'
@@ -41,9 +42,16 @@ export function App() {
     const onShow = () => document.visibilityState === 'visible' && look()
     document.addEventListener('visibilitychange', onShow)
     window.addEventListener('focus', look)
+    // A page left open and in front makes no requests of its own, so chibot
+    // going away would go unnoticed until the next click.
+    const timer = setInterval(
+      () => document.visibilityState === 'visible' && look(),
+      HEALTH_CHECK_MS,
+    )
     return () => {
       document.removeEventListener('visibilitychange', onShow)
       window.removeEventListener('focus', look)
+      clearInterval(timer)
     }
   }, [])
   useUpdateNotice(health)

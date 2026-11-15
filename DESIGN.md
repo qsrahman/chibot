@@ -386,7 +386,11 @@ reach chibot" in medium weight, a muted line on what to try, and a **Retry**
 (2 s growing to 15 s, paused in a hidden tab), so it is announced once; on
 phones the button wraps under the text. When chibot answers it goes, a
 "Reconnected" toast shows and what failed to load loads again. Sending is
-refused with a toast and the draft stays. The header keeps the model name.
+refused with a toast and the draft stays; a send that fails before the page has
+noticed does not also leave the "Can’t reach chibot" note under the thread
+while the banner is up. The header keeps the model name. A page that stays open
+and in front checks the server every 30 s, and when it comes to the front, so
+the banner shows without anyone clicking.
 
 **Tooltips.** Any element with a `title` gets one (`ui/Tooltips.tsx`): a small
 inverted bubble (`--button` / `--button-fg`, 8 px radius, 12 px text, up to 280 px

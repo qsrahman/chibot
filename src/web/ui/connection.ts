@@ -28,6 +28,9 @@ export const useUnreachable = () =>
     return () => void listeners.delete(listener)
   }, isUnreachable)
 
+/** How often a visible page checks that chibot is still there. */
+export const HEALTH_CHECK_MS = 30_000
+
 /** When to look again after `attempt` failed looks: 2 s, growing to 15 s. */
 export const reconnectDelay = (attempt: number) =>
   Math.min(2000 * 1.5 ** attempt, 15_000)

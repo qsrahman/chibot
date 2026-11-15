@@ -77,7 +77,37 @@ test('a send that fails before the server is known to be down gives the draft ba
     route.abort('connectionreset'),
   )
   await send(page, 'Second question')
+  // Only that path failed, so chibot is still there and no banner stays: the
+  // thread says why the send did not go.
   await expect(page.locator('.thread > .error')).toHaveCount(1)
   await expect(message(page)).toHaveValue('Second question')
   await expect(page.locator('.turn')).toHaveCount(1)
+})
+
+test('a page left open and in front notices chibot going away by itself', async ({
+  page,
+}) => {
+  await page.clock.install()
+  await page.goto('/')
+  await appReady(page)
+  await expect(banner(page)).toHaveCount(0)
+
+  // No focus event, no click: only time passing.
+  await page.route('**/api/**', (route) => route.abort('connectionrefused'))
+  await page.clock.fastForward(31_000)
+  await expect(banner(page)).toBeVisible()
+})
+
+test('a first send while chibot is gone shows the banner once, not the banner and a note', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  // Gone, and the page has not looked yet (no focus event, no wait).
+  await page.route('**/api/**', (route) => route.abort('connectionrefused'))
+  await send(page, 'Is anyone there')
+
+  await expect(banner(page)).toBeVisible()
+  await expect(page.locator('.thread > .error')).toHaveCount(0)
+  await expect(message(page)).toHaveValue('Is anyone there')
 })

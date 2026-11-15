@@ -40,6 +40,7 @@ import { UNTITLED } from '../conversations/useConversations.ts'
 import type { ProjectsApi } from '../projects/useProjects.ts'
 import type { SettingsApi } from '../settings/useSettings.ts'
 import { errorMessage } from '../../shared/errors.ts'
+import { OFFLINE } from '../http.ts'
 
 interface Props {
   health: Health | undefined
@@ -451,11 +452,14 @@ export function ChatPage({
                     {chat.notice}
                   </p>
                 )}
-                {error && !failure && (
-                  <p className="error" role="alert">
-                    {error}
-                  </p>
-                )}
+                {/* While the banner says chibot cannot be reached, this would say it again. */}
+                {error &&
+                  !failure &&
+                  !(error === OFFLINE && connection.unreachable) && (
+                    <p className="error" role="alert">
+                      {error}
+                    </p>
+                  )}
                 {chat.problem && <SetupCard problem={chat.problem} />}
                 <div ref={endRef} />
               </div>
