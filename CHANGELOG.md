@@ -20,6 +20,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 ### Changed
 
 - Dragging files over the chat shows an "Add anything" card naming what is accepted (images, PDF, Word, text and code), instead of only a dashed outline. It appears for files only (not dragged text or links) and clears on drop, leave or Escape.
+### Added
+
+- Find in chat: a **Find in chat** button in the chat's header opens a small bar (input, "3 of 12", previous / next, close). It highlights every match in the messages and answers (not in closed Thoughts or tool details) with the CSS Custom Highlight API, marks the current one in a stronger colour and scrolls to it; Enter and Shift+Enter step, Esc closes and returns focus to the button. The browser's own Ctrl/Cmd+F is left alone, and nothing leaves the page.
+- Message outline: from four messages on, a **Message outline** button in the header opens a menu of your messages, each as one line with its number and the one in view marked. Choosing one scrolls to it.
 
 ## [0.21.0] - 2026-11-15
 

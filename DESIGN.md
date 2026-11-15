@@ -192,6 +192,19 @@ The model menu has no effort.
 `ArrowDown` button (`--surface-raised`, `--border` outline, `--composer-shadow`)
 sticks 12 px above the list's bottom, centred over the composer.
 
+**Find in chat and the message outline** sit in the header's right group as
+36 px `icon-button`s: `Search` (`aria-pressed` while its bar is open) and
+`ListTree` (only from four messages on). The find bar floats 56 px from the
+top, right-aligned (`--surface-raised`, `--border`, dialog shadow): a 36 px
+search field, a muted tabular "3 of 12" (`role="status"`), `ChevronUp`,
+`ChevronDown` and `X`. Matches use `::highlight(find)` and
+`::highlight(find-current)` with `--find-bg`, `--find-current-bg` and
+`--find-fg` (4.5:1, both schemes); jumps are instant. The outline is a
+`.menu.outline` (max 360 px wide, 420 px tall, scrolling): 36 px rows with a
+muted number and the message's first line, ellipsised, `dir="auto"`; the row
+in view has `aria-current` and a `--chip` background, and the menu opens
+focused on it.
+
 **Messages.**
 - *User:* right-aligned bubble with `--bubble-bg` and `--bubble-fg` text,
   22 px radius, 10×16 px padding, max 70 % width, `white-space: pre-wrap`.
@@ -522,6 +535,7 @@ equivalents use a 1.5 px stroke:
 | Temporary chat / shortcuts | `MessageCircleDashed` / `Keyboard` |
 | Tool approval / Settings → Tools | `Wrench` |
 | Next-step card | `Sparkles` |
+| Find in chat / message outline | `Search`, `ChevronUp`, `ChevronDown`, `X` / `ListTree` |
 | Project / new project / move in / remove / add files | `Folder` / `FolderPlus` / `FolderInput` / `FolderMinus` / `Upload` |
 | Create an image / download | `ImagePlus` / `Download` |
 | Sync now / stop mirroring / use this folder | `RefreshCw` / `Unlink` / `Check` |

@@ -1,5 +1,6 @@
+import type { ReactNode, RefObject } from 'react'
 import { Link } from 'react-router'
-import { MessageCircleDashed, PanelLeft } from 'lucide-react'
+import { MessageCircleDashed, PanelLeft, Search } from 'lucide-react'
 import type { Health, Project } from '../../shared/types.ts'
 import type { SettingsApi } from '../settings/useSettings.ts'
 import { ModelPicker } from './ModelPicker.tsx'
@@ -18,6 +19,8 @@ export function ChatTopBar({
   temporaryMode,
   onToggleTemporary,
   onOpenSidebar,
+  find,
+  outline,
 }: {
   /** The open chat, if any. */
   id: string | undefined
@@ -34,6 +37,14 @@ export function ChatTopBar({
   onToggleTemporary: () => void
   /** On phones while the sidebar is hidden: a header button opens it. */
   onOpenSidebar?: () => void
+  /** Find in chat: its button (a chat with messages), and whether the bar is open. */
+  find?: {
+    open: boolean
+    onToggle: () => void
+    buttonRef: RefObject<HTMLButtonElement | null>
+  }
+  /** The message outline's button and menu. */
+  outline?: ReactNode
 }) {
   return (
     <header className="topbar">
@@ -74,6 +85,20 @@ export function ChatTopBar({
       </span>
       {projectHome ? null : id ? (
         <span className="topbar-info">
+          {outline}
+          {find && (
+            <button
+              type="button"
+              ref={find.buttonRef}
+              className={find.open ? 'icon-button active' : 'icon-button'}
+              aria-label="Find in chat"
+              aria-pressed={find.open}
+              title="Find in chat"
+              onClick={find.onToggle}
+            >
+              <Search size={20} strokeWidth={1.5} />
+            </button>
+          )}
           {usage && (
             <span
               className="usage"

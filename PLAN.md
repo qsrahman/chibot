@@ -287,6 +287,7 @@ bumps the minor version. Work stops after each phase for review.
 - Pin to top; archive with an archived view to restore from.
 - Search over titles and message text (FTS5).
 - Temporary chat: a toggle on a new chat; see §3.
+- Getting around a long chat: Find in chat (matches highlighted in the page, searched locally) and a message outline from four messages on.
 - Automatic title after the first exchange from the chat model, in the
   background, using low reasoning effort if the model supports it.
 

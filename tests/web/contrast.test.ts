@@ -102,6 +102,9 @@ const TEXT: [string, string][] = [
   ...CODE.flatMap((fg) =>
     ['bg', 'surface', 'surface-muted'].map((bg): [string, string] => [fg, bg]),
   ),
+  // Find in chat: the matches and the current one.
+  ['find-fg', 'find-bg'],
+  ['find-fg', 'find-current-bg'],
   ['code-added', 'code-added-bg'],
   ['code-removed', 'code-removed-bg'],
 ]

@@ -4,6 +4,8 @@ import { ArrowDown } from 'lucide-react'
 import type { ConversationListItem, Health } from '../../shared/types.ts'
 import { ErrorBoundary } from '../ui/ErrorBoundary.tsx'
 import { ChatTopBar } from './ChatTopBar.tsx'
+import { FindBar } from './FindBar.tsx'
+import { OutlineMenu } from './OutlineMenu.tsx'
 import { Composer } from './Composer.tsx'
 import { FollowUps } from './FollowUps.tsx'
 import { shownSuggestions } from './followUps.ts'
@@ -176,7 +178,12 @@ export function ChatPage({
     inputProps,
     onScroll,
     jumpToLatest,
+    leaveEnd,
   } = useScrollFollow(id, [turns, pending], empty)
+  // Find in chat: its bar, which closes with the chat.
+  const [finding, setFinding] = useState(false)
+  const findButtonRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => setFinding(false), [id])
   // A new chat starts as a normal one again.
   useEffect(() => {
     if (!id) setTemporaryMode(false)
@@ -270,7 +277,30 @@ export function ChatPage({
             temporaryMode={temporaryMode}
             onToggleTemporary={() => setTemporaryMode((on) => !on)}
             onOpenSidebar={onOpenSidebar}
+            find={
+              turns.length > 0
+                ? {
+                    open: finding,
+                    onToggle: () => setFinding((on) => !on),
+                    buttonRef: findButtonRef,
+                  }
+                : undefined
+            }
+            outline={
+              <OutlineMenu turns={turns} thread={threadRef} onJump={leaveEnd} />
+            }
           />
+          {finding && !empty && (
+            <FindBar
+              root={threadRef}
+              content={[turns, pending]}
+              onJump={leaveEnd}
+              onClose={() => {
+                setFinding(false)
+                findButtonRef.current?.focus()
+              }}
+            />
+          )}
           {empty && projectHome ? (
             project ? (
               <ProjectHeading

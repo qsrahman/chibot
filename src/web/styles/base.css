@@ -52,6 +52,10 @@
     0 4px 80px 8px light-dark(rgb(0 0 0 / 2.4%), transparent),
     inset 0 0 1px light-dark(transparent, rgb(255 255 255 / 20%));
   --dialog-shadow: 0 24px 64px rgb(0 0 0 / 22%), 0 4px 16px rgb(0 0 0 / 12%);
+  /* Find in chat: the matches, and the one stepped to (text on each is --find-fg). */
+  --find-bg: light-dark(#ffe58a, #5e4b00);
+  --find-current-bg: light-dark(#ff9f43, #b36200);
+  --find-fg: light-dark(#1a1a1a, #ffffff);
   /* Behind dialogs and the phone sidebar. */
   --scrim: rgb(0 0 0 / 50%);
 
