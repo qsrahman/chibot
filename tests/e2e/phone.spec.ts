@@ -196,6 +196,24 @@ test.describe('on a touch screen', () => {
     expect(await small(page), 'in the drawer').toEqual([])
   })
 
+  test('keeps each answer-action label on one line, wrapping between items', async ({
+    page,
+  }) => {
+    await page.goto('/')
+    await appReady(page)
+    await sendByTap(page, 'hello')
+    await answered(page)
+    // Four 44 px buttons leave too little room for the model name and the
+    // context figure beside them, so they used to break inside their words.
+    const labels = page.locator('.turn.latest .answer-actions .usage')
+    await expect(labels.first()).toBeVisible()
+    const heights = await labels.evaluateAll((els) =>
+      els.map((el) => el.getBoundingClientRect().height),
+    )
+    expect(heights.length).toBeGreaterThan(0)
+    for (const height of heights) expect(height).toBeLessThan(30)
+  })
+
   test('shows controls that wait for a hover elsewhere', async ({ page }) => {
     await page.goto('/')
     await appReady(page)

@@ -160,7 +160,7 @@ right, which fills the path box and closes it.
 wrapping 40 px pills (`--surface`, `--border` outline, `--surface-muted` on
 hover, a 15 px muted `CornerDownRight`, text `dir="auto"`, one line with an
 ellipsis). They show only after the newest answer finishes and nothing is
-streaming or queued.
+streaming or queued, and not for an answer that has a next-step card.
 
 **Queued message.** A row above the text, like attachments: a 15 px muted
 `Clock`, the label **Queued** (500 weight), the text in `--fg` on one
@@ -201,7 +201,9 @@ sticks 12 px above the list's bottom, centred over the composer.
   answer (ChatGPT uses a 44 px hit area and 20 px icons; chibot is a little
   denser):
   - Assistant: **Copy**, then **Regenerate**, **Branch in new chat** (`GitBranch`), version switcher `< 2/3 >` and
-    context usage. These show on hover and always on the latest answer.
+    context usage. These show on hover and always on the latest answer. On a
+    narrow screen (44 px touch buttons) the row wraps between items; a label
+    never breaks inside its words, and a long model name is cut with an ellipsis.
     Context usage is 12 px tabular muted text (`12.4K / 64K context`, or
     `12.4K context` with compaction off), with the full input/output count in
     its tooltip. At 80 % of the compaction threshold it turns `--danger` at

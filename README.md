@@ -304,7 +304,8 @@ needs the server running: there is no offline mode, since the server is local.
 - **Follow-ups** (off by default; **Settings → Model → Follow-ups**): once an
   answer is done, two or three suggested next prompts appear under **Ask next**
   above the message box, and a click sends one. It costs one more short
-  request per answer, to the chat model or one you name.
+  request per answer, to the chat model or one you name. An answer that offers
+  a next-step card gets the card instead, and no request.
 - Scroll up to read while an answer streams and the view stays put; the ↓
   button above the message box jumps back to the latest message.
 - The first message gives the chat its own URL (`/c/…`). Reloading reopens it.

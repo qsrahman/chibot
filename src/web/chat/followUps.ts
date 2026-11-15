@@ -1,8 +1,10 @@
-import type { Turn } from './turns.ts'
+import { nextStepOf, type Turn } from './turns.ts'
 
 /**
  * The saved answer to suggest follow-ups for: the newest turn's, when it
  * finished (not stopped or cut off) and nothing waits for approval. Else `null`.
+ * An answer with a next-step card gets none: the card is the model's own offer,
+ * so a second row of suggestions would compete with it (and cost a request).
  */
 export function suggestionTarget(
   turns: Turn[],
@@ -10,6 +12,7 @@ export function suggestionTarget(
 ): number | null {
   const answer = turns.at(-1)?.answer
   if (!answer || answer.incomplete || waiting > 0) return null
+  if (nextStepOf(answer)) return null
   return answer.itemId
 }
 
