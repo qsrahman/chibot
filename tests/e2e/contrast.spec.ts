@@ -117,6 +117,15 @@ for (const scheme of ['light', 'dark', 'macchiato', 'latte'] as const) {
       expect(await violations(page), 'setup card').toEqual([])
     })
 
+    test('the banner for a server that cannot be reached', async ({ page }) => {
+      await page.goto('/')
+      await appReady(page)
+      await page.route('**/api/**', (route) => route.abort())
+      await page.evaluate(() => window.dispatchEvent(new Event('focus')))
+      await expect(page.getByRole('alert')).toContainText('Can’t reach chibot')
+      expect(await violations(page)).toEqual([])
+    })
+
     test('an answer with code, maths, a table and a link', async ({ page }) => {
       const id = await richChat(page)
       await page.goto(`/c/${id}`)
