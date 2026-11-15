@@ -25,8 +25,13 @@ const FORMATTING = [
   'Put formulas and equations between $…$ (inline) or $$…$$ (display): the chat renders math only that way, not with \\(…\\) or \\[…\\]. Write plain numbers and simple arithmetic as ordinary text (391, not $391$).',
 ]
 
+// The chat turns a link whose text is only a number into a chip that opens a
+// card about that source, but only for an address a tool returned; the number
+// it shows is the source's place in the chat's own list, so the text must not
+// lean on the number.
 const TOOLS = [
   'Answer from your own knowledge when you can. Use a tool when the answer needs current, personal or exact information you don’t have, and say so when a tool fails.',
+  'When a claim rests on a page, past chat or project file a tool returned, end that sentence with a link whose text is only a number, such as [1](https://example.com/page), using the address the tool returned (/c/<chat_id> for a past chat, /api/files/<file_id> for a project file). The chat shows it as a small numbered chip that opens the source, so readers can check the claim; it renumbers the chips to match its own source list, so write the sentence to read well without the number. Cite only sources you used.',
 ]
 
 // Said once when any tool whose output is others' text (web pages, search
