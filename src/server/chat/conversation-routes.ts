@@ -17,6 +17,7 @@ import type {
 } from '../conversations/index.ts'
 import type { FileStore } from '../file-store.ts'
 import type { ProjectStore } from '../projects/index.ts'
+import type { FollowUpWriter } from './follow-up-writer.ts'
 import type { TitleWriter } from './title-writer.ts'
 import { json, notFound } from '../routes/helpers.ts'
 
@@ -27,6 +28,7 @@ export function conversationCrudRoutes({
   chat,
   compactor,
   titles,
+  followUps,
   files,
   projects,
   attachments,
@@ -36,6 +38,7 @@ export function conversationCrudRoutes({
   chat: ChatService
   compactor: Compactor
   titles: TitleWriter
+  followUps: FollowUpWriter
   files: FileStore
   projects: ProjectStore
   attachments: Attachments
@@ -88,6 +91,16 @@ export function conversationCrudRoutes({
       return c.json({ error: 'The model gave no title; try again' }, 502)
     }
     return c.json({ title })
+  })
+
+  // Asked by the browser once an answer is saved, not sent with the turn's
+  // events: the turn ends when the answer does, and a failure here is just no chips.
+  app.post('/api/conversations/:id/suggestions', async (c) => {
+    const id = c.req.param('id')
+    if (!store.getConversation(id)) return notFound(c)
+    return c.json({
+      suggestions: await followUps.suggest(id, c.req.raw.signal),
+    })
   })
 
   app.delete('/api/conversations/:id', (c) => {

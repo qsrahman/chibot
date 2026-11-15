@@ -27,6 +27,7 @@ export function settingsDefaults(
     aboutUser: '',
     responseStyle: '',
     summaryModel: '',
+    suggestionModel: '',
     autoCompact: true,
     // Small enough for local models; the user raises it for larger ones.
     contextWindow: 32_000,

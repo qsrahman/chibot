@@ -8,6 +8,7 @@ import type {
 } from '../conversations/index.ts'
 import type { FileStore } from '../file-store.ts'
 import type { ProjectStore } from '../projects/index.ts'
+import type { FollowUpWriter } from './follow-up-writer.ts'
 import type { TitleWriter } from './title-writer.ts'
 import { conversationCrudRoutes } from './conversation-routes.ts'
 import { conversationTransferRoutes } from './transfer-routes.ts'
@@ -20,6 +21,7 @@ export function conversationRoutes(deps: {
   chat: ChatService
   compactor: Compactor
   titles: TitleWriter
+  followUps: FollowUpWriter
   files: FileStore
   projects: ProjectStore
   attachments: Attachments

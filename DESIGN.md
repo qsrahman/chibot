@@ -154,6 +154,12 @@ there (36 px rows, `--surface-muted` on hover, scrolling past 240 px), a muted
 line naming the readable files in it, and a primary **Use this folder** at the
 right, which fills the path box and closes it.
 
+**Follow-ups.** Above the composer, a 12 px `--fg-muted` "Ask next" label over
+wrapping 40 px pills (`--surface`, `--border` outline, `--surface-muted` on
+hover, a 15 px muted `CornerDownRight`, text `dir="auto"`, one line with an
+ellipsis). They show only after the newest answer finishes and nothing is
+streaming or queued.
+
 **Queued message.** A row above the text, like attachments: a 15 px muted
 `Clock`, the label **Queued** (500 weight), the text in `--fg` on one
 ellipsized line, then 24 px muted **Edit** (`Pencil`) and **Cancel** (`X`)
