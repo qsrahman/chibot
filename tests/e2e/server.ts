@@ -23,7 +23,7 @@ class NoteTool extends Tool {
   }
 }
 
-const tracker = await startOAuthServer({ port: 4112 })
+const tracker = await startOAuthServer({ port: 4012 })
 writeConfigFile(process.env.CHIBOT_CONFIG_DIR!, {
   mcpServers: {
     fixture: {
