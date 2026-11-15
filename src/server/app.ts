@@ -13,7 +13,7 @@ import type { ConversationStore } from './conversations/index.ts'
 import type { FileStore } from './file-store.ts'
 import type { InstructionWriter } from './projects/index.ts'
 import type { ModelRequests } from './chat/index.ts'
-import type { TitleWriter } from './chat/index.ts'
+import type { FollowUpWriter, TitleWriter } from './chat/index.ts'
 import type { ToolRegistry } from './tool-registry.ts'
 import {
   OAUTH_CALLBACK,
@@ -48,6 +48,7 @@ export interface AppDeps {
   chat: ChatService
   compactor: Compactor
   titles: TitleWriter
+  followUps: FollowUpWriter
   model: ModelRequests
   registry: ToolRegistry
   files: FileStore

@@ -7,7 +7,8 @@ import { createApp, type AppDeps } from '../../src/server/app.ts'
 import { Attachments } from '../../src/server/attachments.ts'
 import { ChatService } from '../../src/server/chat/index.ts'
 import { ModelRequests } from '../../src/server/chat/index.ts'
-import { TitleWriter } from '../../src/server/chat/index.ts'
+import { SUGGESTION_INSTRUCTIONS } from '../../src/server/chat/prompts.ts'
+import { FollowUpWriter, TitleWriter } from '../../src/server/chat/index.ts'
 import { Compactor } from '../../src/server/chat/index.ts'
 import { ToolRegistry } from '../../src/server/tool-registry.ts'
 import { Config } from '../../src/server/config.ts'
@@ -85,6 +86,9 @@ export interface FakeOptions {
         params: ResponseCreateParams,
       ) => string | Error | Promise<string | Error>)
   titleCalls?: ResponseCreateParams[]
+  /** What the follow-up suggestion request returns as `output_text`, or throws. */
+  suggestions?: string | Error
+  suggestionCalls?: ResponseCreateParams[]
   /** What `models.list()` yields, or the error it throws. */
   models?: string[] | Error
   /** Streaming calls with `reasoning` fail with 400, like non-reasoning models. */
@@ -110,6 +114,8 @@ export function fakeClient(
   {
     title = 'Test Title',
     titleCalls = [],
+    suggestions = '',
+    suggestionCalls = [],
     models = ['m-2', 'm-1'],
     rejectReasoning = false,
     reject,
@@ -121,6 +127,11 @@ export function fakeClient(
     params: ResponseCreateParams,
     options?: { signal?: AbortSignal },
   ) => {
+    if (!params.stream && params.instructions === SUGGESTION_INSTRUCTIONS) {
+      suggestionCalls.push(structuredClone(params))
+      if (suggestions instanceof Error) throw suggestions
+      return { output_text: suggestions }
+    }
     if (!params.stream) {
       titleCalls.push(structuredClone(params))
       const result = await (typeof title === 'function' ? title(params) : title)
@@ -244,6 +255,11 @@ export function chatServices(
 ) {
   const model = new ModelRequests(client, options.attachments)
   const titles = new TitleWriter(model, store, settings)
+  const followUps = new FollowUpWriter(
+    model,
+    store,
+    () => settings.get().suggestionModel,
+  )
   const compactor = new Compactor(model, store, settings)
   const chat = new ChatService(
     model,
@@ -253,7 +269,7 @@ export function chatServices(
     settings,
     options,
   )
-  return { chat, titles, model, compactor }
+  return { chat, titles, followUps, model, compactor }
 }
 
 /** A `ChatService` on `client`. */
@@ -350,7 +366,7 @@ export function testApp(deps: Partial<AppDeps> = {}) {
   const projects = deps.projects ?? new ProjectStore(db, files)
   const index = new ProjectIndex(db, projects, files, null)
   const sync = new ProjectSync(projects, files, index)
-  const { chat, compactor, titles, model } = chatServices(
+  const { chat, compactor, titles, followUps, model } = chatServices(
     fakeClient([]),
     store,
     settings,
@@ -361,6 +377,7 @@ export function testApp(deps: Partial<AppDeps> = {}) {
     chat,
     compactor,
     titles,
+    followUps,
     model,
     registry: new ToolRegistry([]),
     memories: new MemoryStore(db),

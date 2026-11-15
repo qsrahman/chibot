@@ -47,6 +47,12 @@ export const TITLE_INSTRUCTIONS =
   'Write a short title (3 to 6 words) for the conversation below, in its ' +
   'language. Reply with the title only: no quotes, no trailing punctuation.'
 
+export const SUGGESTION_INSTRUCTIONS =
+  'Suggest three short follow-up prompts the user might send next, based on ' +
+  'the exchange in <exchange>. Write each as the user would, in the language ' +
+  'they write in, under 60 characters, one per line, with no numbering, ' +
+  'quotes or other text.'
+
 /** What goes into a chat's instructions besides the user's own settings. */
 export interface ChatContext {
   /** The chat's project, if it's in one. */
@@ -129,6 +135,20 @@ export function cleanTitle(raw: string): string | null {
     .slice(0, 80)
     .trim()
   return title || null
+}
+
+/** The suggestions in a reply: one per line, cleaned, at most three. */
+export function cleanSuggestions(raw: string): string[] {
+  const lines = raw
+    .split('\n')
+    .map((line) =>
+      line
+        .replace(/^[\s\-*•\d.)]+|[\s"'“”‘’]+$/g, '')
+        .replace(/^["'“”‘’]+/, '')
+        .trim(),
+    )
+    .filter((line) => line && line.length <= 80)
+  return [...new Set(lines)].slice(0, 3)
 }
 
 // Instructions for the model that summarizes earlier messages. The summary
