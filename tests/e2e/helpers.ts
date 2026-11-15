@@ -119,7 +119,16 @@ export async function longChat(page: Page, turns: number) {
  */
 export async function savedChat(
   page: Page,
-  { question, answerText }: { question: string; answerText: string },
+  {
+    question,
+    answerText,
+    searchResults,
+  }: {
+    question: string
+    answerText: string
+    /** Pages a `web_search` call found before the answer (its sources). */
+    searchResults?: { title: string; url: string; snippet: string }[]
+  },
 ) {
   const item = (id: number, parentId: number | null, data: unknown) => ({
     id,
@@ -134,10 +143,25 @@ export async function savedChat(
       version: 2,
       exportedAt: 0,
       conversation: { title: 'Saved chat', createdAt: 1, updatedAt: 2 },
-      currentLeafId: 2,
+      currentLeafId: searchResults ? 4 : 2,
       items: [
         item(1, null, { role: 'user', content: question }),
-        item(2, 1, {
+        ...(searchResults
+          ? [
+              item(2, 1, {
+                type: 'function_call',
+                call_id: 'c1',
+                name: 'web_search',
+                arguments: '{"query":"q","freshness":null}',
+              }),
+              item(3, 2, {
+                type: 'function_call_output',
+                call_id: 'c1',
+                output: JSON.stringify({ results: searchResults }),
+              }),
+            ]
+          : []),
+        item(searchResults ? 4 : 2, searchResults ? 3 : 1, {
           type: 'message',
           role: 'assistant',
           status: 'completed',

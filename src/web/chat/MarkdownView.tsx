@@ -19,6 +19,8 @@ import { CopyButton, IconAction } from './MessageActions.tsx'
 import { normalizedUrl } from '../../shared/media.ts'
 import { MediaContext } from './mediaContext.ts'
 import { playableKind, RemoteMedia } from './RemoteMedia.tsx'
+import { CitationChip } from './CitationChip.tsx'
+import { isCitationLabel } from './citations.ts'
 import { SourcesContext, sourceKey } from './sourcesContext.ts'
 import type { Source } from './turns.ts'
 
@@ -211,7 +213,11 @@ function Link(props: ComponentProps<'a'> & ExtraProps) {
   )
 }
 
-/** Opens links in a new tab, so following one doesn't leave (and stop) the chat. */
+/**
+ * Opens links in a new tab, so following one doesn't leave (and stop) the chat.
+ * A link to one of the answer's sources is numbered: a chip when its text is
+ * only a number (a citation), else the text with its number after it.
+ */
 function SourceLink({
   node: _node,
   href,
@@ -230,6 +236,15 @@ function SourceLink({
   const index = href
     ? sources.findIndex((s) => sourceKey(s.url) === sourceKey(href))
     : -1
+  if (index >= 0 && typeof children === 'string' && isCitationLabel(children)) {
+    return (
+      <CitationChip
+        source={sources[index]!}
+        number={index + 1}
+        total={sources.length}
+      />
+    )
+  }
   if (index >= 0) {
     return (
       <Citation

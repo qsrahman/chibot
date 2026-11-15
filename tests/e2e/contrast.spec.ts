@@ -98,6 +98,28 @@ for (const scheme of ['light', 'dark'] as const) {
       expect(await violations(page)).toEqual([])
     })
 
+    test('a cited answer, with a citation open and the source cards', async ({
+      page,
+    }) => {
+      const id = await savedChat(page, {
+        question: 'Robots?',
+        answerText: 'Robots move things [1](https://example.com/robots).',
+        searchResults: [
+          {
+            title: 'Robots guide',
+            url: 'https://example.com/robots',
+            snippet: 'Robots move things.',
+          },
+        ],
+      })
+      await page.goto(`/c/${id}`)
+      await expect(page.locator('.sources .source-list')).toBeVisible()
+      expect(await violations(page), 'chip and cards').toEqual([])
+      await page.locator('.cite-chip').focus()
+      await expect(page.locator('.cite-pop')).toBeVisible()
+      expect(await violations(page), 'open card').toEqual([])
+    })
+
     test('menus, dialogs, the image viewer and a toast', async ({ page }) => {
       await page.goto('/')
       await appReady(page)

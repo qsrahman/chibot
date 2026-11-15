@@ -6,6 +6,7 @@ import {
   clipboard,
   newChat,
   openChat,
+  savedChat,
   send,
   turns,
 } from './helpers.ts'
@@ -795,6 +796,69 @@ test('links to an answer’s sources are numbered, and say which page they are',
   // The list under the answer is numbered the same way.
   await page.getByText('Sources · 2').click()
   await expect(page.locator('.sources .source-num').first()).toHaveText('1')
+})
+
+test('numbered citations are chips that open a card about their source', async ({
+  page,
+}) => {
+  const id = await savedChat(page, {
+    question: 'Robots?',
+    answerText:
+      'Robots move things [1](https://history.test/r) and are old [[2]](https://nowhere.test/x), see [1](https://example.com/robots).',
+    searchResults: [
+      {
+        title: 'Robots guide',
+        url: 'https://example.com/robots',
+        snippet: 'Robots <b>move</b> things.',
+      },
+      {
+        title: 'History of robots',
+        url: 'https://history.test/r',
+        snippet: 's',
+      },
+    ],
+  })
+  await page.goto(`/c/${id}`)
+  const message = page.locator('.message.assistant')
+  // The number is the source's place in the list; a number whose address is
+  // not a source stays the plain link it was.
+  const chips = message.locator('.cite-chip')
+  await expect(chips).toHaveText(['2', '1'])
+  await expect(message.getByRole('link', { name: '[2]' })).toHaveAttribute(
+    'href',
+    'https://nowhere.test/x',
+  )
+  // The cards under the answer are open, as the chips refer to them.
+  await expect(page.locator('.sources .source-num').first()).toBeVisible()
+
+  const chip = chips.nth(1)
+  const card = message.locator('.cite-pop').nth(1)
+  await expect(card).toBeHidden()
+  await chip.hover()
+  await expect(card).toBeVisible()
+  await expect(card).toContainText('example.com')
+  await expect(card).toContainText('Robots guide')
+  // Text from a page is shown as text, not as markup.
+  await expect(card).toContainText('Robots <b>move</b> things.')
+  await expect(card).toContainText('1 of 2')
+  await page.waitForTimeout(500)
+  // (An open popover is in the top layer, so found from the page.)
+  const open = page.getByRole('link', { name: 'Open page' })
+  await expect(open).toHaveAttribute('href', 'https://example.com/robots')
+  await expect(open).toHaveAttribute('rel', 'noopener noreferrer')
+
+  // Esc closes it and leaves focus where it was; focusing opens it again.
+  await page.mouse.move(5, 5)
+  await expect(card).toBeHidden()
+  await chip.focus()
+  await expect(card).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(card).toBeHidden()
+  await expect(chip).toBeFocused()
+
+  // A tap opens it too.
+  await chip.tap().catch(() => chip.click())
+  await expect(card).toBeVisible()
 })
 
 test('quotes selected text from an answer into the message box', async ({
