@@ -77,7 +77,7 @@ or a one-off run changes a value. A `.env` file is not read.
 | Setting (`chibot config set …`) | Variable | Default | Purpose |
 |---|---|---|---|
 | `chat.baseURL` | `OPENAI_BASE_URL` | OpenAI | Any server with a Responses API |
-| `chat.apiKey` | `OPENAI_API_KEY` | — | Required for OpenAI; optional with `chat.baseURL` |
+| `chat.apiKey` | `OPENAI_API_KEY` | — | Needed for OpenAI; optional with `chat.baseURL`. Without either, chibot still starts: the new-chat page shows `chibot init` and `chibot config set chat.apiKey <key>` to copy, and sending is held until you set one and restart |
 | `chat.model` | `OPENAI_MODEL` | `gpt-6-astra` | Chat model; required with `chat.baseURL` |
 | `server.host` | `HOST` | `127.0.0.1` | Interface to listen on (see below) |
 | `server.port` | `PORT` | `3000` | API server port |

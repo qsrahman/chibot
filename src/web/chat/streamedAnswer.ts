@@ -19,7 +19,12 @@ export type StreamEffect =
   | { type: 'answered' }
   /** The turn ended to wait for the user's Approve / Deny. */
   | { type: 'approval' }
-  | { type: 'error'; message: string }
+  | {
+      type: 'error'
+      message: string
+      status?: number
+      unreachable?: boolean
+    }
 
 /** The answer a turn starts from: empty, or (after approval) what it had. */
 export const startAnswer = (before?: Answer | null): StreamedAnswer => ({
@@ -127,6 +132,8 @@ export function applyEvent(
           ]
             .filter(Boolean)
             .join(' '),
+          status: event.status,
+          unreachable: event.unreachable,
         },
       }
 

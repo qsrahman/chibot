@@ -59,6 +59,7 @@ export function App() {
       projects={projects}
       onListChanged={conversations.refresh}
       conversations={conversations.conversations}
+      conversationsLoaded={conversations.loaded}
       // Stays while the drawer is open (behind it, inert), so focus has
       // somewhere to return to.
       onOpenSidebar={narrow ? () => setDrawerOpen(true) : undefined}
