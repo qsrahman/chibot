@@ -151,8 +151,17 @@ test('switches and remembers the theme', async ({ page }) => {
   expect(await background()).toBe('rgb(0, 0, 0)')
 
   const again = await openSettings(page, 'General')
-  await again.getByLabel('Theme').selectOption('system')
+  await again.getByLabel('Theme').selectOption('macchiato')
+  expect(await background()).toBe('rgb(24, 25, 38)')
+  await page.reload()
+  expect(await background()).toBe('rgb(24, 25, 38)')
+
+  const last = await openSettings(page, 'General')
+  await last.getByLabel('Theme').selectOption('system')
   expect(await background()).toBe('rgb(252, 252, 252)')
+  expect(
+    await page.evaluate(() => document.documentElement.dataset.theme),
+  ).toBeUndefined()
   expect(
     await page.evaluate(() => localStorage.getItem('chibot.colorScheme')),
   ).toBeNull()

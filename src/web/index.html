@@ -33,10 +33,17 @@
       try {
         const saved = localStorage.getItem('chibot.colorScheme')
         document.querySelector('meta[name="color-scheme"]').content =
-          saved ?? 'light dark'
+          saved === 'macchiato' ? 'dark' : (saved ?? 'light dark')
+        if (saved === 'macchiato')
+          document.documentElement.dataset.theme = 'macchiato'
         if (saved)
           for (const m of document.querySelectorAll('meta[name="theme-color"]'))
-            m.content = saved === 'dark' ? '#000000' : '#fcfcfc'
+            m.content =
+              saved === 'dark'
+                ? '#000000'
+                : saved === 'macchiato'
+                  ? '#181926'
+                  : '#fcfcfc'
       } catch {}
     </script>
     <title>chibot</title>

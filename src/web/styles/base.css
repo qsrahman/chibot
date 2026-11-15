@@ -25,6 +25,9 @@
   --border-control: #8a8a8a;
   --accent: #3566f0;
   --accent-fg: #ffffff;
+  /* A switch's thumb, off (on the chip track) and on (on the accent track). */
+  --switch-thumb: #ffffff;
+  --switch-thumb-on: #ffffff;
   /* A citation chip: 6:1 text on its tint, and on the raised surface it opens. */
   --cite-bg: light-dark(#eef2ff, #1f2b52);
   --cite-fg: light-dark(#2c52c8, #b4c6ff);
@@ -91,6 +94,49 @@
      everything: sizes below are in rem, not px. */
   font-size: 100%;
   line-height: 1.5rem;
+}
+
+/* Catppuccin Macchiato (an optional theme, DESIGN.md §2): a dark scheme, so
+   `color-scheme` is dark (theme.ts also writes data-theme before first paint)
+   and only the colours change. The steps match the default dark theme: page
+   (crust), card (base), raised and hover (surface0), chip (surface1). */
+:root[data-theme='macchiato'] {
+  --bg: #181926;
+  --surface: #24273a;
+  --surface-raised: #363a4f;
+  --surface-muted: #363a4f;
+  --chip: #494d64;
+  --fg: #cad3f5;
+  --fg-muted: #b8c0e0;
+  --border: rgb(202 211 245 / 14%);
+  --border-control: #939ab7;
+  --accent: #8aadf4;
+  --accent-fg: #181926;
+  --switch-thumb: #cad3f5;
+  --switch-thumb-on: #181926;
+  --cite-bg: #2f3652;
+  --cite-fg: #b7bdf8;
+  --accent-tile: #2f3652;
+  --accent-tile-fg: #8aadf4;
+  --button: #cad3f5;
+  --button-fg: #181926;
+  --bubble-bg: #363a4f;
+  --bubble-fg: #cad3f5;
+  --code-chip: rgb(54 58 79 / 82%);
+  --row-stripe: rgb(202 211 245 / 3%);
+  --danger: #ed8796;
+  --danger-fg: #181926;
+  --code-keyword: #c6a0f6;
+  --code-title: #8aadf4;
+  --code-number: #f5a97f;
+  --code-string: #a6da95;
+  --code-builtin: #eed49f;
+  --code-comment: #a5adcb;
+  --code-name: #8bd5ca;
+  --code-added: #a6da95;
+  --code-added-bg: #243a35;
+  --code-removed: #f5bde6;
+  --code-removed-bg: #4a2a3d;
 }
 
 * {

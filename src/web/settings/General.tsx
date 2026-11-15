@@ -9,6 +9,7 @@ export function General() {
     { value: null, label: `System (currently ${systemScheme})` },
     { value: 'light', label: 'Light' },
     { value: 'dark', label: 'Dark' },
+    { value: 'macchiato', label: 'Catppuccin Macchiato' },
   ]
   return (
     <>
@@ -21,7 +22,7 @@ export function General() {
               choose(
                 e.target.value === 'system'
                   ? null
-                  : (e.target.value as 'light' | 'dark'),
+                  : (e.target.value as NonNullable<ColorScheme>),
               )
             }
           >

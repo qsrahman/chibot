@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// The colour tokens (src/web/styles/base.css) in both colour schemes, against
+// The colour tokens (src/web/styles/base.css) in each theme, against
 // WCAG 2: 4.5:1 for text, 3:1 for the edge of a control and other parts of
 // the interface. Tokens with transparency are left out.
 const css = readFileSync(
@@ -11,8 +11,17 @@ const css = readFileSync(
 )
 const HEX = '#[0-9a-fA-F]{6}'
 
-function token(name: string, scheme: 'light' | 'dark'): string {
+type Scheme = 'light' | 'dark' | 'macchiato'
+
+// The Catppuccin Macchiato block overrides the dark tokens it names.
+const MACCHIATO = css.slice(css.indexOf(":root[data-theme='macchiato']"))
+
+function token(name: string, scheme: Scheme): string {
   if (name.startsWith('#')) return name // a colour written in the CSS itself
+  if (scheme === 'macchiato') {
+    const own = new RegExp(`--${name}:\\s*(${HEX})\\s*;`).exec(MACCHIATO)
+    if (own) return own[1]!
+  }
   const pair = new RegExp(
     `--${name}:\\s*light-dark\\(\\s*(${HEX})\\s*,\\s*(${HEX})\\s*\\)`,
   ).exec(css)
@@ -70,20 +79,23 @@ const INTERFACE: [string, string][] = [
   ['border-control', 'surface'],
   ['accent', 'bg'],
   ['accent', 'surface'],
-  // A switch's thumb is white (settings.css), on its track on and off.
-  ['#ffffff', 'accent'],
+  // A switch's thumb on its track when it is on (settings.css).
+  ['switch-thumb-on', 'accent'],
 ]
 
-describe.each(['light', 'dark'] as const)('colour tokens, %s', (scheme) => {
-  it.each(TEXT)('%s on %s is readable (4.5:1)', (fg, bg) => {
-    expect(
-      contrast(token(fg, scheme), token(bg, scheme)),
-    ).toBeGreaterThanOrEqual(4.5)
-  })
+describe.each(['light', 'dark', 'macchiato'] as const)(
+  'colour tokens, %s',
+  (scheme) => {
+    it.each(TEXT)('%s on %s is readable (4.5:1)', (fg, bg) => {
+      expect(
+        contrast(token(fg, scheme), token(bg, scheme)),
+      ).toBeGreaterThanOrEqual(4.5)
+    })
 
-  it.each(INTERFACE)('%s on %s shows (3:1)', (fg, bg) => {
-    expect(
-      contrast(token(fg, scheme), token(bg, scheme)),
-    ).toBeGreaterThanOrEqual(3)
-  })
-})
+    it.each(INTERFACE)('%s on %s shows (3:1)', (fg, bg) => {
+      expect(
+        contrast(token(fg, scheme), token(bg, scheme)),
+      ).toBeGreaterThanOrEqual(3)
+    })
+  },
+)

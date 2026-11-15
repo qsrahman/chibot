@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- An optional **Catppuccin Macchiato** theme: Settings → General → Theme. It is a dark scheme (page `#181926`, blue accent `#8aadf4`, text `#cad3f5`) that replaces the colour tokens only. Its colours pass the same contrast checks as Light and Dark, in the tokens test and in the axe run over every screen.
+
 ## [0.21.0] - 2026-11-15
 
 ### Added

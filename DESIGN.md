@@ -429,6 +429,18 @@ follows the system unless `<meta name="color-scheme">` is set to `light` or
 `dark` (the Theme setting, applied before first paint). Code highlighting
 uses `--code-*` tokens with GitHub's light and dark palettes.
 
+**Catppuccin Macchiato** is an optional fourth choice in Settings → General →
+Theme (it never follows the system). It is a dark scheme, so `color-scheme` is
+`dark` and `<html data-theme="macchiato">` (set with the saved choice before
+first paint) makes `:root[data-theme='macchiato']` in `base.css` replace the
+colour tokens, with no second set of component styles. It keeps the default
+dark theme's steps: page `#181926` (crust), cards `#24273a` (base), raised
+surfaces and hover rows `#363a4f` (surface0), chips `#494d64` (surface1); text
+`#cad3f5`, muted text `#b8c0e0`, the blue accent `#8aadf4` (with crust `#181926`
+on it, since white would be 2.3:1), danger `#ed8796`. Code uses the palette's
+mauve, blue, peach, green, yellow and teal. The same contrast checks as the
+other themes cover it (`tests/web/contrast.test.ts`, `tests/e2e/contrast.spec.ts`).
+
 **Footer.** 12 px muted line under the composer: "chibot can make mistakes.
 Check important info."
 
