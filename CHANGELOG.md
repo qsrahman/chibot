@@ -7,6 +7,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 ### Added
 
 - A banner when chibot's server can't be reached, with **Retry**. The page looks again by itself (every 2 s, slowing to 15 s, not while the tab is hidden); when chibot answers, the banner goes, a "Reconnected" toast shows, and the chat list, projects, settings and the open chat load again. Sending while it is down says so and keeps the message.
+- Code blocks in answers have three actions beside Copy code: **Wrap lines** (now one preference for every block, kept per browser, also a switch in Settings → General → Appearance; it used to be per block and forgotten), **Download as file** (`code.ts`, `code.py`, `code.sh`, … from the language, `code.txt` when it is not known) and, for blocks over 30 lines, a **Show all N lines** / **Show less** button under a block folded to 18 lines with a fade. The folded text stays in the page, and find in chat opens a folded block when its current match is inside. A block that appears while the answer streams stays open, so nothing moves under the reader.
 
 ### Changed
 

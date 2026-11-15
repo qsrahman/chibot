@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { readStored, writeStored } from './storage.ts'
 
 /**
@@ -89,4 +89,35 @@ export function useAccent() {
       else delete document.documentElement.dataset.accent
     },
   )
+}
+
+// Shared by every code block (and Settings), in this tab and the others.
+const WRAP_KEY = 'chibot.wrapCode'
+let wrapCode = readStored(WRAP_KEY) === 'on'
+const wrapListeners = new Set<() => void>()
+
+function setWrapCode(on: boolean) {
+  wrapCode = on
+  writeStored(WRAP_KEY, on ? 'on' : null)
+  wrapListeners.forEach((listener) => listener())
+}
+
+function watchWrapCode(listener: () => void) {
+  wrapListeners.add(listener)
+  const onStorage = (e: StorageEvent) => {
+    if (e.key !== WRAP_KEY) return
+    wrapCode = readStored(WRAP_KEY) === 'on'
+    listener()
+  }
+  window.addEventListener('storage', onStorage)
+  return () => {
+    wrapListeners.delete(listener)
+    window.removeEventListener('storage', onStorage)
+  }
+}
+
+/** Whether code blocks wrap long lines (off: they scroll sideways). */
+export function useWrapCode() {
+  const wrap = useSyncExternalStore(watchWrapCode, () => wrapCode)
+  return [wrap, setWrapCode] as const
 }

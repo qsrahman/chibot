@@ -14,7 +14,7 @@ import { ImageViewer, opensViewer, type ViewedImage } from './ImageViewer.tsx'
 import { Markdown } from './Markdown.tsx'
 import { TOUCH_ONLY, useMediaQuery } from '../ui/useMediaQuery.ts'
 import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
-import { SourcesContext } from './sourcesContext.ts'
+import { LiveContext, SourcesContext } from './sourcesContext.ts'
 import {
   interrupted,
   nextStepOf,
@@ -227,7 +227,9 @@ export function TurnView({
       {answer?.text ? (
         <div className="message assistant">
           <SourcesContext value={sources}>
-            <Markdown text={answer.text} />
+            <LiveContext value={Boolean(pending)}>
+              <Markdown text={answer.text} />
+            </LiveContext>
           </SourcesContext>
         </div>
       ) : (

@@ -7,3 +7,6 @@ export const SourcesContext = createContext<Source[]>([])
 /** An address without its fragment, to compare a link with a source. */
 export const sourceKey = (url: string) =>
   URL.parse(url, location.origin)?.href.replace(/#.*$/, '') ?? url
+
+/** Whether the answer being shown is still streaming (its code blocks don't collapse until it is done). */
+export const LiveContext = createContext(false)

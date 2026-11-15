@@ -15,14 +15,16 @@ import remarkMath from 'remark-math'
 import { dollarMath } from './math.ts'
 import { remarkHtmlBreaks } from './htmlBreaks.ts'
 import { delimited, tableRows } from './tableData.ts'
-import { Download, WrapText } from 'lucide-react'
+import { ChevronDown, ChevronUp, Download, WrapText } from 'lucide-react'
 import { CopyButton, IconAction } from './MessageActions.tsx'
 import { normalizedUrl } from '../../shared/media.ts'
 import { MediaContext } from './mediaContext.ts'
 import { playableKind, RemoteMedia } from './RemoteMedia.tsx'
 import { CitationChip } from './CitationChip.tsx'
 import { isCitationLabel } from './citations.ts'
-import { SourcesContext, sourceKey } from './sourcesContext.ts'
+import { LiveContext, SourcesContext, sourceKey } from './sourcesContext.ts'
+import { useWrapCode } from '../ui/appearance.ts'
+import { countLines, fileName, isCollapsible, saveText } from './codeBlock.ts'
 import type { Source } from './turns.ts'
 
 const remarkPlugins = [remarkGfm, remarkMath, remarkHtmlBreaks]
@@ -171,10 +173,15 @@ function CodeBlock({ node, ...props }: ComponentProps<'pre'> & ExtraProps) {
         .find((c) => c.startsWith('language-'))
         ?.slice('language-'.length)
     : undefined
-  const [wrap, setWrap] = useState(false)
-  const lineCount = node
-    ? toText(node).replace(/\n$/, '').split('\n').length
-    : 0
+  const [wrap, setWrap] = useWrapCode()
+  // A block that was streaming when it appeared stays open: collapsing it
+  // when the answer ends would move the text under the reader.
+  const live = useContext(LiveContext)
+  const [open, setOpen] = useState(live)
+  const source = node ? toText(node) : ''
+  const lineCount = node ? countLines(source) : 0
+  const collapsible = !live && isCollapsible(lineCount)
+  const collapsed = collapsible && !open
   // Numbers line up with the code only while lines aren't wrapped.
   const numbered = lineCount >= NUMBERED_FROM && !wrap
   return (
@@ -184,15 +191,28 @@ function CodeBlock({ node, ...props }: ComponentProps<'pre'> & ExtraProps) {
         <span className="code-actions">
           <IconAction
             label="Wrap lines"
+            title={wrap ? "Don't wrap" : 'Wrap lines'}
             pressed={wrap}
-            onClick={() => setWrap((on) => !on)}
+            onClick={() => setWrap(!wrap)}
           >
             <WrapText />
           </IconAction>
-          {node && <CopyButton text={toText(node)} label="Copy code" />}
+          {node && (
+            <IconAction
+              label="Download as file"
+              onClick={() => saveText(source, fileName(language))}
+            >
+              <Download />
+            </IconAction>
+          )}
+          {node && <CopyButton text={source} label="Copy code" />}
         </span>
       </div>
-      <div className="code-body" data-wrap={wrap || undefined}>
+      <div
+        className="code-body"
+        data-wrap={wrap || undefined}
+        data-collapsed={collapsed || undefined}
+      >
         {numbered && (
           <span className="code-lines" aria-hidden>
             {Array.from({ length: lineCount }, (_, i) => i + 1).join('\n')}
@@ -200,6 +220,17 @@ function CodeBlock({ node, ...props }: ComponentProps<'pre'> & ExtraProps) {
         )}
         <pre {...props} />
       </div>
+      {collapsible && (
+        <button
+          type="button"
+          className="code-more"
+          aria-expanded={open}
+          onClick={() => setOpen(!open)}
+        >
+          {open ? <ChevronUp /> : <ChevronDown />}
+          {open ? 'Show less' : `Show all ${lineCount} lines`}
+        </button>
+      )}
     </div>
   )
 }
