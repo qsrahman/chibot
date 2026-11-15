@@ -1,4 +1,9 @@
-import { ACCENTS, useAccent } from '../ui/appearance.ts'
+import {
+  ACCENTS,
+  TEXT_SIZES,
+  useAccent,
+  useTextSize,
+} from '../ui/appearance.ts'
 import { useNotifyPreference } from '../ui/notifications.ts'
 import { useColorScheme, type ColorScheme } from '../ui/theme.ts'
 import { Row, Section } from './parts.tsx'
@@ -6,6 +11,7 @@ import { Row, Section } from './parts.tsx'
 export function General() {
   const { scheme, systemScheme, choose } = useColorScheme()
   const [accent, chooseAccent] = useAccent()
+  const [textSize, chooseTextSize] = useTextSize()
   const notifications = useNotifyPreference()
   const options: { value: ColorScheme; label: string }[] = [
     { value: null, label: `System (currently ${systemScheme})` },
@@ -50,6 +56,21 @@ export function General() {
           >
             <option value="default">Blue (default)</option>
             {ACCENTS.map(({ value, label }) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </Row>
+        <Row label="Text size" htmlFor="setting-text-size">
+          <select
+            id="setting-text-size"
+            value={textSize ?? '100%'}
+            onChange={(e) =>
+              chooseTextSize(e.target.value as NonNullable<typeof textSize>)
+            }
+          >
+            {TEXT_SIZES.map(({ value, label }) => (
               <option key={value} value={value}>
                 {label}
               </option>

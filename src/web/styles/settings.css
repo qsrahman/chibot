@@ -1,14 +1,14 @@
 /* Settings (DESIGN.md §4) */
 
 .dialog.settings {
-  width: min(100% - 32px, 760px);
+  width: min(100% - 32px, 47.5rem);
   /* Anchored near the top, so it opens in the same place at any window height. */
   margin-top: max(16px, 10dvh);
 }
 
 .settings-layout {
   display: grid;
-  grid-template-columns: 180px 1fr;
+  grid-template-columns: 11.25rem 1fr;
   gap: 16px;
   align-items: start;
 }

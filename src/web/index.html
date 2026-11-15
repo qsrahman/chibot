@@ -42,6 +42,9 @@
               { dark: '#000000', macchiato: '#181926', latte: '#e6e9ef' }[
                 saved
               ] ?? '#fcfcfc'
+        const size = localStorage.getItem('chibot.textSize')
+        if (size && /^[\d.]+%$/.test(size))
+          document.documentElement.style.fontSize = size
         const accent = localStorage.getItem('chibot.accent')
         if (accent) document.documentElement.dataset.accent = accent
       } catch {}

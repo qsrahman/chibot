@@ -34,6 +34,25 @@ function useStoredChoice<T extends string>(
   return [value, choose] as const
 }
 
+/** The root font size, which scales every rem length. */
+export const TEXT_SIZES = [
+  { value: '87.5%', label: 'Small' },
+  { value: '100%', label: 'Default' },
+  { value: '112.5%', label: 'Large' },
+  { value: '125%', label: 'Extra large' },
+] as const
+type TextSize = (typeof TEXT_SIZES)[number]['value']
+
+export function useTextSize() {
+  return useStoredChoice<TextSize>(
+    'chibot.textSize',
+    TEXT_SIZES.map((s) => s.value),
+    (size) => {
+      document.documentElement.style.fontSize = size ?? ''
+    },
+  )
+}
+
 /** The accent presets (the colours are in base.css); the default is blue. */
 export const ACCENTS = [
   { value: 'violet', label: 'Violet' },

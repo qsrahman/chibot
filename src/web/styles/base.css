@@ -70,7 +70,7 @@
   --code-removed: light-dark(#b31d28, #ffdcd7);
   --code-removed-bg: light-dark(#ffeef0, #67060c);
 
-  --sidebar-width: 260px;
+  --sidebar-width: 16.25rem;
   --rail-width: 56px;
 
   --column: 48rem;

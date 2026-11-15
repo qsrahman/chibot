@@ -208,6 +208,92 @@ test('switches and remembers the accent colour', async ({ page }) => {
   await again.getByLabel('Theme').selectOption('system')
 })
 
+test('switches and remembers the text size', async ({ page }) => {
+  const size = () =>
+    page.evaluate(() => getComputedStyle(document.documentElement).fontSize)
+  await page.goto('/')
+  expect(await size()).toBe('16px')
+
+  const dialog = await openSettings(page, 'General')
+  await dialog.getByLabel('Text size').selectOption('Extra large')
+  expect(await size()).toBe('20px')
+
+  // Applied before the app loads.
+  await page.reload()
+  expect(await size()).toBe('20px')
+  const again = await openSettings(page, 'General')
+  await again.getByLabel('Text size').selectOption('Default')
+  expect(await size()).toBe('16px')
+})
+
+// At the largest size the layout still fits: the page never scrolls sideways,
+// and the composer, sidebar and Settings dialog stay inside the window.
+for (const [name, viewport] of [
+  ['desktop', { width: 1280, height: 800 }],
+  ['phone', { width: 375, height: 812 }],
+] as const) {
+  test(`fits at the largest text size, ${name}`, async ({ page }) => {
+    await page.setViewportSize(viewport)
+    await page.addInitScript(() => {
+      try {
+        localStorage.setItem('chibot.textSize', '125%')
+      } catch {}
+    })
+    await page.goto('/')
+    await appReady(page)
+    expect(
+      await page.evaluate(
+        () => getComputedStyle(document.documentElement).fontSize,
+      ),
+    ).toBe('20px')
+
+    const inside = async (
+      selector: string,
+      within: { width: number; height: number },
+    ) => {
+      const box = await page.locator(selector).first().boundingBox()
+      expect(box, selector).not.toBeNull()
+      expect(box!.x, selector).toBeGreaterThanOrEqual(0)
+      expect(box!.x + box!.width, selector).toBeLessThanOrEqual(within.width)
+    }
+    const noScroll = () =>
+      page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <=
+          document.documentElement.clientWidth,
+      )
+
+    // Everything in the composer sits inside its box.
+    await inside('.composer', viewport)
+    const box = (await page.locator('.composer').boundingBox())!
+    for (const child of await page.locator('.composer button').all()) {
+      const b = await child.boundingBox()
+      if (!b) continue
+      expect(b.x).toBeGreaterThanOrEqual(box.x)
+      expect(b.x + b.width).toBeLessThanOrEqual(box.x + box.width + 1)
+    }
+    expect(await noScroll()).toBe(true)
+
+    if (name === 'phone')
+      await page.getByRole('button', { name: 'Open sidebar' }).click()
+    await inside('nav.sidebar', viewport)
+    expect(await noScroll()).toBe(true)
+    if (name === 'phone') await page.keyboard.press('Escape')
+
+    await page.keyboard.press('ControlOrMeta+,')
+    const dialog = page.getByRole('dialog', { name: 'Settings' })
+    for (const tab of ['General', 'Model', 'Tools', 'Data']) {
+      await dialog.getByRole('button', { name: tab, exact: true }).click()
+      await inside('dialog.settings', viewport)
+      expect(
+        await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth),
+        tab,
+      ).toBe(true)
+      expect(await noScroll(), tab).toBe(true)
+    }
+  })
+}
+
 test('exports a chat and imports it back', async ({ page }) => {
   await page.goto('/')
   await send(page, 'Keep this for later')

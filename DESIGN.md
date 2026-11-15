@@ -468,6 +468,16 @@ for every accent in every theme (`tests/web/contrast.test.ts`; axe covers all
 of them in `tests/e2e/contrast.spec.ts`). The favicon and app icons keep the
 blue.
 
+**Text size** is a browser preference in Settings → General → Appearance:
+Small (87.5 %), Default (100 %), Large (112.5 %) or Extra large (125 %), set as
+the root `font-size` before first paint, so every `rem` length scales (all type
+is in `rem`). Lengths that hold text are `rem` too: the sidebar (`--sidebar-width`),
+dialogs and the Settings tabs column. Controls with a fixed pixel height
+(36 px buttons, the 52 px composer, which grows with its text) keep it; the type
+inside them is sized to fit at 125 %. `tests/e2e/settings.spec.ts` checks that
+the composer, sidebar and Settings dialog fit with no sideways page scroll at
+Extra large, on a desktop and a phone.
+
 **Footer.** 12 px muted line under the composer: "chibot can make mistakes.
 Check important info."
 
