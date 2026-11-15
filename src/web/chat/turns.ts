@@ -197,6 +197,29 @@ export interface Source {
   title: string
   /** A chat in chibot (`/c/:id`) or a project file, not a web page. */
   kind?: 'chat' | 'file'
+  /** What the search found there, for the card a citation opens. */
+  snippet?: string
+}
+
+/** Where a source is from, in a few words: a site's host, or what kind of thing it is. */
+export function sourceHost({ url, kind }: Source): string {
+  if (kind) return kind === 'chat' ? 'Your chats' : 'Project file'
+  return URL.parse(url)?.hostname ?? url
+}
+
+const SNIPPET_LENGTH = 200
+
+/** `value` as a one-line snippet of at most 200 characters, or nothing. */
+function snippetOf(value: unknown): { snippet: string } | null {
+  if (typeof value !== 'string') return null
+  const text = value.replace(/\s+/g, ' ').trim()
+  if (!text) return null
+  return {
+    snippet:
+      text.length > SNIPPET_LENGTH
+        ? `${text.slice(0, SNIPPET_LENGTH - 1)}…`
+        : text,
+  }
 }
 
 /**
@@ -231,6 +254,7 @@ function toolSources(tool: ToolActivity): Source[] {
       found.set(url.href, {
         url: url.href,
         title: sourceTitle(row.title, url.href),
+        ...snippetOf(row.snippet ?? row.description),
       })
     }
   } else if (tool.name === 'search_chats') {
@@ -242,6 +266,10 @@ function toolSources(tool: ToolActivity): Source[] {
         url,
         title: sourceTitle(row.title, 'Chat'),
         kind: 'chat',
+        ...snippetOf(
+          rows(row.messages).find((m) => typeof m.excerpt === 'string')
+            ?.excerpt,
+        ),
       })
     }
   } else if (tool.name === 'search_project_files') {
@@ -256,6 +284,7 @@ function toolSources(tool: ToolActivity): Source[] {
         url,
         title: page ? `${name} · p. ${page}` : name,
         kind: 'file',
+        ...snippetOf(row.text),
       })
     }
   } else if (tool.name === 'read_project_file') {

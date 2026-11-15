@@ -443,6 +443,54 @@ describe('sourcesOf and imagesOf', () => {
   })
 })
 
+describe('sources carry a snippet for the card a citation opens', () => {
+  const answerWith = (name: string, output: object) => ({
+    itemId: 1,
+    text: '',
+    thinking: '',
+    usage: null,
+    lastUsage: null,
+    model: null,
+    versions: null,
+    incomplete: false,
+    tools: [
+      { callId: 'c', name, arguments: '{}', output: JSON.stringify(output) },
+    ],
+  })
+
+  it('takes a search result’s snippet or description, tidied and cut', () => {
+    const long = `${'word '.repeat(100)}end`
+    const [a, b, c] = sourcesOf(
+      answerWith('web_search', {
+        results: [
+          { title: 'A', url: 'https://a.test/', snippet: ' one\n two ' },
+          { title: 'B', url: 'https://b.test/', description: long },
+          { title: 'C', url: 'https://c.test/', snippet: '  ' },
+        ],
+      }),
+    )
+    expect(a!.snippet).toBe('one two')
+    expect(b!.snippet).toHaveLength(200)
+    expect(b!.snippet!.endsWith('…')).toBe(true)
+    expect(c).not.toHaveProperty('snippet')
+  })
+
+  it('takes a past chat’s first excerpt', () => {
+    const [source] = sourcesOf(
+      answerWith('search_chats', {
+        results: [
+          {
+            chat_id: 'abc',
+            title: 'T',
+            messages: [{ role: 'user', excerpt: 'we chose SQLite' }],
+          },
+        ],
+      }),
+    )
+    expect(source!.snippet).toBe('we chose SQLite')
+  })
+})
+
 describe('sourcesOf with past chats', () => {
   it('links chats found by search_chats inside chibot', () => {
     const output = JSON.stringify({
@@ -493,7 +541,9 @@ describe('sourcesOf with project files', () => {
           },
         ],
       }),
-    ).toEqual([{ url: '/api/files/f1', title: 'plan.md', kind: 'file' }])
+    ).toEqual([
+      { url: '/api/files/f1', title: 'plan.md', kind: 'file', snippet: 'b' },
+    ])
   })
 
   it('opens a PDF at the page of each passage', () => {
@@ -521,8 +571,18 @@ describe('sourcesOf with project files', () => {
         }),
       ),
     ).toEqual([
-      { url: '/api/files/f1#page=12', title: 'a.pdf · p. 12', kind: 'file' },
-      { url: '/api/files/f1#page=3', title: 'a.pdf · p. 3', kind: 'file' },
+      {
+        url: '/api/files/f1#page=12',
+        title: 'a.pdf · p. 12',
+        kind: 'file',
+        snippet: 'z',
+      },
+      {
+        url: '/api/files/f1#page=3',
+        title: 'a.pdf · p. 3',
+        kind: 'file',
+        snippet: 'y',
+      },
     ])
   })
 
