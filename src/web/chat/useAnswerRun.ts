@@ -55,6 +55,9 @@ export function useAnswerRun(
   setError: (message: string | null) => void,
 ) {
   const [pending, setPending] = useState<Pending | null>(null)
+  // The message the last run failed with (the page's `error` is the same text
+  // while it is still on screen), so Retry is offered for it and not for, say, a failed summary.
+  const [failure, setFailure] = useState<string | null>(null)
   // A message typed while an answer streams goes once that answer is saved.
   const queue = useQueue()
   // The run whose updates belong on screen. Cleared when the user switches
@@ -132,6 +135,11 @@ export function useAnswerRun(
     }
 
     setError(null)
+    setFailure(null)
+    const fail = (message: string) => {
+      setError(message)
+      setFailure(message)
+    }
     show()
     let id = chatId
     // Whether the question reached the server (so the composer may drop the
@@ -173,7 +181,7 @@ export function useAnswerRun(
         const { effect } = applied
         if (effect?.type === 'answered') await finish(id)
         else if (effect?.type === 'approval') await finish(id, false)
-        else if (effect?.type === 'error') setError(effect.message)
+        else if (effect?.type === 'error') fail(effect.message)
       }
       accepted = true
       if (live() && !run.answered) await finish(id)
@@ -192,7 +200,7 @@ export function useAnswerRun(
         // follow it (the server saves it as the aborted request unwinds).
         if (id) drain(id, display.keep + 1)
       } else {
-        setError(errorMessage(err))
+        fail(errorMessage(err))
         if (id) await showHistory(id).catch(() => {})
       }
     } finally {
@@ -269,6 +277,7 @@ export function useAnswerRun(
 
   return {
     pending,
+    failure,
     /** The message waiting for the current answer, if any. */
     queued: queue.queued?.text ?? null,
     createdId,

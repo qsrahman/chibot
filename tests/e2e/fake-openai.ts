@@ -43,6 +43,15 @@ const TABLE_MARKDOWN = [
 const RTL_MARKDOWN =
   '# عنوان\n\nیہ ایک پیراگراف ہے۔\n\n- پہلا\n- دوسرا\n\n```js\nconst x = 1\n```'
 
+// What "wide-table" answers with: more columns of long words than a phone's width.
+const WIDE_TABLE = [
+  `| ${Array.from({ length: 8 }, (_, i) => `Column${i}`).join(' | ')} |`,
+  `|${'---|'.repeat(8)}`,
+  `| ${Array.from({ length: 8 }, (_, i) => `unbreakable${i}word`).join(' | ')} |`,
+].join('\n')
+
+// Questions with "fail-midway" whose first answer has failed: the second one works.
+const failedMidway = new Set<string>()
 let answers = 0
 let lastRequest: unknown = null
 // Chat requests, newest last, for checks on earlier steps of a turn.
@@ -286,13 +295,18 @@ app.post('/v1/responses', async (c) => {
       : textOf(body.input.findLast((i) => i.role === 'user')?.content)
   const slow = question.includes('slow')
   const holding = question.includes('hold')
+  const failing =
+    question.includes('fail-midway') && !failedMidway.has(question)
+  failedMidway.add(question)
   const text = slow
     ? Array.from({ length: 200 }, (_, i) => `word${i}`).join(' ')
     : question.includes('table-markdown')
       ? TABLE_MARKDOWN
-      : question.includes('rtl-markdown')
-        ? RTL_MARKDOWN
-        : `Answer #${++answers} to: ${question}`
+      : question.includes('wide-table')
+        ? WIDE_TABLE
+        : question.includes('rtl-markdown')
+          ? RTL_MARKDOWN
+          : `Answer #${++answers} to: ${question}`
   const id = `resp_${crypto.randomUUID()}`
   const thinking = question.includes('think')
   const reasoning = {
@@ -361,6 +375,21 @@ app.post('/v1/responses', async (c) => {
         delta: i === 0 ? word : ` ${word}`,
       })
       if (holding && i === 0) await hold()
+      if (failing && i === 2) {
+        await send({
+          type: 'response.failed',
+          response: {
+            id,
+            status: 'failed',
+            output: [],
+            error: {
+              code: 'server_error',
+              message: 'The model server lost its connection.',
+            },
+          },
+        })
+        return
+      }
       await stream.sleep(slow ? 100 : 5)
     }
     await send({

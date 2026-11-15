@@ -758,3 +758,34 @@ details[open] > summary > .disclosure-chevron {
 .quote-button:hover {
   background: var(--surface-muted);
 }
+
+/* A failed answer: what happened, and Retry. Only the icon is danger-coloured. */
+.recovery.failed {
+  align-items: flex-start;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-muted);
+  color: var(--fg);
+}
+
+.recovery.failed > svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--danger);
+}
+
+.recovery.failed > div {
+  flex: 1;
+  min-width: 12rem;
+}
+
+.recovery.failed p {
+  margin: 0;
+}
+
+.recovery.failed .reason {
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}

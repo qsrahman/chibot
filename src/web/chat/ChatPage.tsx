@@ -20,7 +20,7 @@ import { triggerAt } from '../../shared/context.ts'
 import { knownUrls } from '../../shared/media.ts'
 import { MediaContext } from './mediaContext.ts'
 import { ToolInfoContext } from './toolInfo.ts'
-import { waitingCalls, type Turn } from './turns.ts'
+import { interrupted, waitingCalls, type Turn } from './turns.ts'
 import { ApprovalCard, TurnView } from './TurnView.tsx'
 import { describeUsage } from './usage.ts'
 import { useAttachments } from './useAttachments.ts'
@@ -81,6 +81,13 @@ export function ChatPage({
     projectId: projectHome,
   })
   const { turns, pending, error, isTemporary, busy } = chat
+  // An answer that failed is told about in its own turn, with Retry; any
+  // other error (or a failure that left no turn to retry) shows under the thread.
+  const last = turns.at(-1)
+  const failure =
+    error !== null && error === chat.failure && last && interrupted(last)
+      ? error
+      : null
   const { toast } = useToast()
 
   /** A new chat with this one up to the end of `turn`, opened at once. */
@@ -306,6 +313,11 @@ export function ChatPage({
                       }
                       onEdit={following((text: string) => chat.edit(i, text))}
                       onRegenerate={following(() => chat.regenerate(i))}
+                      failure={failure}
+                      onRetry={following(() => {
+                        void chat.regenerate(i)
+                        composerRef.current?.focus()
+                      })}
                       onBranch={
                         id && !temporary && turn.question.itemId !== null
                           ? () => void branch(id, turn)
@@ -342,7 +354,7 @@ export function ChatPage({
                     {chat.notice}
                   </p>
                 )}
-                {error && (
+                {error && !failure && (
                   <p className="error" role="alert">
                     {error}
                   </p>
