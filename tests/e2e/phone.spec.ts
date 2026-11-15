@@ -258,3 +258,39 @@ test.describe('on a touch screen', () => {
     expect(inView).toBe(true)
   })
 })
+
+test('the follow-up chips wrap above the composer without overflowing', async ({
+  page,
+}) => {
+  await page.request.patch('/api/settings', {
+    data: { suggestionModel: 'e2e-model' },
+  })
+  try {
+    await page.goto('/')
+    await appReady(page)
+    await send(page, 'Hello from a phone')
+    await answered(page)
+    const chips = page
+      .getByRole('group', { name: 'Ask next' })
+      .getByRole('button')
+    await expect(chips).toHaveCount(3)
+    const group = (await page
+      .getByRole('group', { name: 'Ask next' })
+      .boundingBox())!
+    const composer = (await page.locator('.composer').boundingBox())!
+    expect(group.y + group.height).toBeLessThanOrEqual(composer.y)
+    for (const chip of await chips.all()) {
+      const box = (await chip.boundingBox())!
+      expect(box.height).toBeGreaterThanOrEqual(40)
+      expect(box.x).toBeGreaterThanOrEqual(0)
+      expect(box.x + box.width).toBeLessThanOrEqual(375)
+    }
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true)
+  } finally {
+    await page.request.patch('/api/settings', { data: { suggestionModel: '' } })
+  }
+})
