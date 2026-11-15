@@ -405,7 +405,7 @@ needs the server running: there is no offline mode, since the server is local.
   cursor to check before sending. It needs a transcription model (see
   `OPENAI_TRANSCRIBE_*`); without one the mic is greyed out and says so.
 - **Attachments:** **+** → **Add photos & files**, or paste or drop them onto
-  the chat: images (PNG, JPEG, WebP, GIF) and the document types projects
+  the chat (an "Add anything" card shows while you drag): images (PNG, JPEG, WebP, GIF) and the document types projects
   take. **+** → **Take a photo** opens the device's camera in a preview;
   nothing is captured until you click **Take photo**, and the picture is
   attached like any other image (the browser allows cameras on localhost and

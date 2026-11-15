@@ -27,6 +27,7 @@ import { useAttachments } from './useAttachments.ts'
 import { toolOptions as toolOptionsOf } from './toolOptions.tsx'
 import { useAnswerAlert } from './useAnswerAlert.ts'
 import { useChat } from './useChat.ts'
+import { DropOverlay } from './DropOverlay.tsx'
 import { useFileDrop } from './useFileDrop.ts'
 import { useScrollFollow } from './useScrollFollow.ts'
 import { UNTITLED } from '../conversations/useConversations.ts'
@@ -256,6 +257,7 @@ export function ChatPage({
           inert={inert}
           {...dragHandlers}
         >
+          {dragging && <DropOverlay />}
           <ChatTopBar
             id={id}
             projectHome={projectHome}

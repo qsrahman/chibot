@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- Dragging files over the chat shows an "Add anything" card naming what is accepted (images, PDF, Word, text and code), instead of only a dashed outline. It appears for files only (not dragged text or links) and clears on drop, leave or Escape.
+
 ## [0.21.0] - 2026-11-15
 
 ### Added
