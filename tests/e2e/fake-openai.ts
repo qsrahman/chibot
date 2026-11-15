@@ -13,7 +13,8 @@
 // (/v1/files) keeps uploads until POST /debug/forget-files; a request naming
 // an unknown file gets a 404, as on OpenAI, and e2e-other rejects
 // `input_file` parts with a 400, as Ollama does.
-// Non-streaming requests are title requests. GET /debug/last-request shows
+// Non-streaming requests are title requests (or, with chibot's follow-up
+// instructions, three suggested prompts). GET /debug/last-request shows
 // the last chat request, so tests can check what chibot sent.
 import { serve } from '@hono/node-server'
 import { Hono, type Context } from 'hono'
@@ -236,11 +237,17 @@ app.post('/v1/responses', async (c) => {
         usage,
       })
     }
+    // A follow-up suggestion request (chibot's own instructions).
+    const suggesting = JSON.stringify(body).includes('follow-up prompts')
     return c.json({
       id: `resp_${crypto.randomUUID()}`,
       object: 'response',
       status: 'completed',
-      output: [message('E2E Title')],
+      output: [
+        message(
+          suggesting ? 'Tell me more\nGive an example\nSum it up' : 'E2E Title',
+        ),
+      ],
       usage,
     })
   }

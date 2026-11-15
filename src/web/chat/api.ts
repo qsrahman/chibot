@@ -44,6 +44,13 @@ export async function transcribe(audio: Blob, signal?: AbortSignal) {
   ).text
 }
 
+/** Up to three prompts that could follow the chat's latest answer (none when off). */
+export const fetchSuggestions = (conversationId: string, signal: AbortSignal) =>
+  request<{ suggestions: string[] }>(
+    `/api/conversations/${conversationId}/suggestions`,
+    { ...send('POST', {}), signal },
+  ).then((r) => r.suggestions)
+
 /** Shows another version of a message or answer (see `Versions`). */
 export const switchVersion = (conversationId: string, itemId: number) =>
   request<void>(

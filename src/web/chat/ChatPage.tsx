@@ -5,6 +5,9 @@ import type { ConversationListItem, Health } from '../../shared/types.ts'
 import { ErrorBoundary } from '../ui/ErrorBoundary.tsx'
 import { ChatTopBar } from './ChatTopBar.tsx'
 import { Composer } from './Composer.tsx'
+import { FollowUps } from './FollowUps.tsx'
+import { shownSuggestions } from './followUps.ts'
+import { useFollowUps } from './useFollowUps.ts'
 import { Greeting } from './Greeting.tsx'
 import { quoteText } from './quote.ts'
 import { QuoteSelection } from './QuoteSelection.tsx'
@@ -101,6 +104,20 @@ export function ChatPage({
     append?: boolean
   } | null>(null)
   const waiting = pending ? [] : waitingCalls(turns)
+  const followUps = useFollowUps({
+    chatId: id,
+    turns,
+    waiting: waiting.length,
+    busy,
+    queued: chat.queued !== null,
+    enabled: !!settings.settings?.suggestionModel,
+  })
+  const suggestions = shownSuggestions(
+    followUps.found,
+    id,
+    followUps.target,
+    !busy && chat.queued === null && !!settings.settings?.suggestionModel,
+  )
   const toolOptions = toolOptionsOf(settings.tools, settings.settings)
   const chatUsage = describeUsage(chat.usage)
   // Each answer shows the context it sent against the window.
@@ -355,6 +372,7 @@ export function ChatPage({
               }))
             }
           />
+          <FollowUps suggestions={suggestions} onPick={following(chat.send)} />
           <Composer
             busy={busy}
             onSend={following(chat.send)}
