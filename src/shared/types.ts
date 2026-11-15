@@ -31,6 +31,12 @@ export interface ConversationListItem extends Conversation {
 /** Fields `PATCH /api/conversations/:id` accepts. */
 export type ConversationPatch = z.output<typeof conversationPatchSchema>
 
+/** A memory as it was when an answer was written (`StoredItem.memories`). */
+export interface UsedMemory {
+  id: number
+  text: string
+}
+
 /** One node of a conversation's history tree. */
 export interface StoredItem {
   id: number
@@ -40,6 +46,11 @@ export interface StoredItem {
   usage: ResponseUsage | null
   /** The model that wrote the response; set like `usage`. */
   model: string | null
+  /**
+   * The memories that were in the model's instructions for that response;
+   * set like `usage`. `null` or missing when none were.
+   */
+  memories?: UsedMemory[] | null
   /**
    * This item and its alternative versions (same parent: edits of a message,
    * or regenerated answers), oldest first. Just `[id]` when there are none.

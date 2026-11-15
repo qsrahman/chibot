@@ -12,6 +12,7 @@ import type {
   ConversationListItem,
   ConversationPatch,
   StoredItem,
+  UsedMemory,
 } from '../../shared/types.ts'
 
 export interface ConversationRow {
@@ -33,6 +34,7 @@ interface ItemRow {
   data: string
   usage: string | null
   model: string | null
+  memories: string | null
   sibling_ids: string
   created_at: number
 }
@@ -196,7 +198,7 @@ export class ConversationStore {
   /**
    * Appends `items` as a chain below `parentId` (each item the parent of the
    * next) and makes the last one the conversation's current leaf.
-   * `usage` and `model` (of the response) are stored on the last item.
+   * `usage`, `model` and `memories` (of the response) are stored on the last item.
    */
   appendItems(
     conversationId: string,
@@ -204,6 +206,7 @@ export class ConversationStore {
     items: ResponseInputItem[],
     usage: ResponseUsage | null = null,
     model: string | null = null,
+    memories: UsedMemory[] | null = null,
   ): StoredItem[] {
     if (items.length === 0) return []
     const insert = this.#inserter(conversationId)
@@ -215,13 +218,22 @@ export class ConversationStore {
         const last = i === items.length - 1
         const itemUsage = last ? usage : null
         const itemModel = last ? model : null
-        parent = insert(parent, data, itemUsage, itemModel, now)
+        const itemMemories = last ? memories : null
+        parent = insert(
+          parent,
+          data,
+          itemUsage,
+          itemModel,
+          itemMemories,
+          now,
+        )
         stored.push({
           id: parent,
           parentId: stored.at(-1)?.id ?? parentId,
           data,
           usage: itemUsage,
           model: itemModel,
+          memories: itemMemories,
           siblingIds: [parent],
           createdAt: now,
         })
@@ -376,7 +388,14 @@ export class ConversationStore {
           item.parentId === null ? null : newIds.get(item.parentId)!
         newIds.set(
           item.id,
-          insert(parent, item.data, item.usage, item.model, item.createdAt),
+          insert(
+            parent,
+            item.data,
+            item.usage,
+            item.model,
+            item.memories ?? null,
+            item.createdAt,
+          ),
         )
       }
       const leaf =
@@ -402,8 +421,8 @@ export class ConversationStore {
   #inserter(conversationId: string) {
     const searchable = !this.getConversation(conversationId)?.temporary
     const insert = this.#db.prepare(
-      `INSERT INTO items (conversation_id, parent_id, data, usage, model, created_at)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO items (conversation_id, parent_id, data, usage, model, memories, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
     )
     const index = this.#db.prepare(
       'INSERT INTO items_fts (rowid, text, conversation_id) VALUES (?, ?, ?)',
@@ -413,6 +432,7 @@ export class ConversationStore {
       data: ResponseInputItem,
       usage: ResponseUsage | null,
       model: string | null,
+      memories: UsedMemory[] | null,
       createdAt: number,
     ): number => {
       const id = Number(
@@ -422,6 +442,7 @@ export class ConversationStore {
           JSON.stringify(data),
           usage && JSON.stringify(usage),
           model,
+          memories && JSON.stringify(memories),
           createdAt,
         ).lastInsertRowid,
       )
@@ -464,6 +485,7 @@ function toStoredItem(row: ItemRow): StoredItem {
     data: JSON.parse(row.data),
     usage: row.usage && JSON.parse(row.usage),
     model: row.model,
+    memories: row.memories && JSON.parse(row.memories),
     siblingIds: JSON.parse(row.sibling_ids),
     createdAt: row.created_at,
   }
