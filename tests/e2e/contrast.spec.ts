@@ -74,11 +74,12 @@ async function violations(page: Page) {
   )
 }
 
-for (const scheme of ['light', 'dark', 'macchiato'] as const) {
+for (const scheme of ['light', 'dark', 'macchiato', 'latte'] as const) {
   test.describe(`${scheme} theme`, () => {
     test.beforeEach(async ({ page }) => {
       await page.emulateMedia({
-        colorScheme: scheme === 'light' ? 'light' : 'dark',
+        colorScheme:
+          scheme === 'light' || scheme === 'latte' ? 'light' : 'dark',
         reducedMotion: 'reduce',
       })
       await page.addInitScript((s) => {
@@ -254,11 +255,12 @@ for (const scheme of ['light', 'dark', 'macchiato'] as const) {
 
 // Each accent's own colours (base.css) on what uses them: the citation chip
 // and card, the send button and a switch that is on.
-for (const scheme of ['light', 'dark', 'macchiato'] as const) {
+for (const scheme of ['light', 'dark', 'macchiato', 'latte'] as const) {
   for (const accent of ['violet', 'teal', 'green', 'orange', 'pink']) {
     test(`${accent} accent, ${scheme} theme`, async ({ page }) => {
       await page.emulateMedia({
-        colorScheme: scheme === 'light' ? 'light' : 'dark',
+        colorScheme:
+          scheme === 'light' || scheme === 'latte' ? 'light' : 'dark',
         reducedMotion: 'reduce',
       })
       await page.addInitScript(

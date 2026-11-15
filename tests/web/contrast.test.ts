@@ -11,8 +11,8 @@ const css = readFileSync(
 )
 const HEX = '#[0-9a-fA-F]{6}'
 
-type Scheme = 'light' | 'dark' | 'macchiato'
-const SCHEMES: Scheme[] = ['light', 'dark', 'macchiato']
+type Scheme = 'light' | 'dark' | 'macchiato' | 'latte'
+const SCHEMES: Scheme[] = ['light', 'dark', 'macchiato', 'latte']
 /** `null` is the default blue; the others have blocks in base.css. */
 const ACCENTS = [null, 'violet', 'teal', 'green', 'orange', 'pink']
 
@@ -23,10 +23,11 @@ function block(selector: string): string {
   return css.slice(start, css.indexOf('\n}', start))
 }
 
-// The default tokens are light-dark() pairs in :root; the Macchiato block
-// overrides the dark ones it names; an accent's blocks override the accent's.
+// The default tokens are light-dark() pairs in :root; the Macchiato and Latte
+// blocks override the ones they name (as plain colours); an accent's blocks
+// override the accent's.
 const ROOT = block(':root')
-const MACCHIATO = block(":root[data-theme='macchiato']")
+const OWN = (scheme: Scheme) => block(`:root[data-theme='${scheme}']`)
 
 function value(
   source: string,
@@ -36,7 +37,7 @@ function value(
   const pair = new RegExp(
     `--${name}:\\s*light-dark\\(\\s*(${HEX})\\s*,\\s*(${HEX})\\s*\\)`,
   ).exec(source)
-  if (pair) return pair[scheme === 'light' ? 1 : 2]
+  if (pair) return pair[scheme === 'light' || scheme === 'latte' ? 1 : 2]
   return new RegExp(`--${name}:\\s*(${HEX})\\s*;`).exec(source)?.[1]
 }
 
@@ -48,14 +49,15 @@ function token(
   if (name.startsWith('#')) return name // a colour written in the CSS itself
   if (accent) {
     const selector =
-      scheme === 'macchiato'
-        ? `:root[data-theme='macchiato'][data-accent='${accent}']`
+      scheme === 'macchiato' || scheme === 'latte'
+        ? `:root[data-theme='${scheme}'][data-accent='${accent}']`
         : `:root[data-accent='${accent}']`
     const own = value(block(selector), name, scheme)
     if (own) return own
   }
   const found =
-    (scheme === 'macchiato' && value(MACCHIATO, name, scheme)) ||
+    ((scheme === 'macchiato' || scheme === 'latte') &&
+      value(OWN(scheme), name, scheme)) ||
     value(ROOT, name, scheme)
   if (found) return found
   throw new Error(`no opaque colour token --${name}`)

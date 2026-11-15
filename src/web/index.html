@@ -32,18 +32,16 @@
       // Apply a saved theme and accent before first paint (see theme.ts).
       try {
         const saved = localStorage.getItem('chibot.colorScheme')
+        const base = { macchiato: 'dark', latte: 'light' }[saved]
         document.querySelector('meta[name="color-scheme"]').content =
-          saved === 'macchiato' ? 'dark' : (saved ?? 'light dark')
-        if (saved === 'macchiato')
-          document.documentElement.dataset.theme = 'macchiato'
+          base ?? saved ?? 'light dark'
+        if (base) document.documentElement.dataset.theme = saved
         if (saved)
           for (const m of document.querySelectorAll('meta[name="theme-color"]'))
             m.content =
-              saved === 'dark'
-                ? '#000000'
-                : saved === 'macchiato'
-                  ? '#181926'
-                  : '#fcfcfc'
+              { dark: '#000000', macchiato: '#181926', latte: '#e6e9ef' }[
+                saved
+              ] ?? '#fcfcfc'
         const accent = localStorage.getItem('chibot.accent')
         if (accent) document.documentElement.dataset.accent = accent
       } catch {}

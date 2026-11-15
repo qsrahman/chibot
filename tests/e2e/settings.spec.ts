@@ -156,6 +156,17 @@ test('switches and remembers the theme', async ({ page }) => {
   await page.reload()
   expect(await background()).toBe('rgb(24, 25, 38)')
 
+  const third = await openSettings(page, 'General')
+  await third.getByLabel('Theme').selectOption('latte')
+  expect(await background()).toBe('rgb(230, 233, 239)')
+  await page.reload()
+  expect(await background()).toBe('rgb(230, 233, 239)')
+
+  // Latte stays light when the system is dark.
+  await page.emulateMedia({ colorScheme: 'dark' })
+  expect(await background()).toBe('rgb(230, 233, 239)')
+  await page.emulateMedia({ colorScheme: 'light' })
+
   const last = await openSettings(page, 'General')
   await last.getByLabel('Theme').selectOption('system')
   expect(await background()).toBe('rgb(252, 252, 252)')

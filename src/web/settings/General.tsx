@@ -12,6 +12,7 @@ export function General() {
     { value: 'light', label: 'Light' },
     { value: 'dark', label: 'Dark' },
     { value: 'macchiato', label: 'Catppuccin Macchiato' },
+    { value: 'latte', label: 'Catppuccin Latte' },
   ]
   return (
     <>

@@ -381,7 +381,7 @@ summarizing of long chats on for a 32k window; math formatting via a built-in in
   JSON file from Settings → Data: validated, new ids, current version kept,
   arrives unpinned and unarchived.
 - **Theme.** Light / Dark / System, and the optional Catppuccin Macchiato (a
-  dark scheme with its own tokens, `data-theme` on `<html>`), in Settings →
+  dark scheme) and Latte (a light one), each with its own tokens (`data-theme` on `<html>`), in Settings →
   General, remembered in
   `localStorage`. The accent colour (blue or five presets, `data-accent`) is
   chosen there too. Tokens move to `color-scheme` + `light-dark()` so each colour

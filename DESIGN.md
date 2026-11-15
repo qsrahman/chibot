@@ -442,6 +442,18 @@ on it, since white would be 2.3:1), danger `#ed8796`. Code uses the palette's
 mauve, blue, peach, green, yellow and teal. The same contrast checks as the
 other themes cover it (`tests/web/contrast.test.ts`, `tests/e2e/contrast.spec.ts`).
 
+**Catppuccin Latte** is an optional fifth choice (it never follows the system
+either). It is a light scheme: `color-scheme` is `light`, `data-theme="latte"`
+and `:root[data-theme='latte']` replaces the tokens. Steps: page `#e6e9ef`
+(mantle), cards and raised surfaces `#eff1f5` (base), hover rows and the user
+bubble `#dce0e8` (crust), chips `#ccd0da` (surface0); text `#4c4f69`, field
+edges and the off switch `#7c7f93` (overlay2), the blue accent `#1e66f5` with
+white on it. The palette's own muted text, red, code colours and the green,
+teal, peach and pink accents fell under the contrast checks on these surfaces,
+so they are darkened until they pass (muted text `#55586e`, danger `#d00f38`,
+code, and the accents' latte blocks); the thresholds are the same as for every
+theme.
+
 **Accent colour** is a browser preference in Settings → General → Appearance:
 Blue (the default, no attribute), Violet, Teal, Green, Orange or Pink.
 `<html data-accent="…">` (set before first paint, like the theme) makes the

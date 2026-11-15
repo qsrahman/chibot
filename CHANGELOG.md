@@ -10,6 +10,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Added
 
+- An optional **Catppuccin Latte** theme (Settings → General → Theme), a light counterpart of Macchiato that never follows the system. Colours of the palette that fail the contrast checks on its surfaces (muted text, red, code, some accents) are darkened until they pass.
 - **Accent colour**: Settings → General → Appearance offers Blue (the default), Violet, Teal, Green, Orange and Pink, kept per browser and applied before first paint. It replaces the send button, switches, citation chips and icon tiles in every theme; each accent's colours are chosen per theme and pass the contrast checks (tokens test for all combinations, axe for all of them).
 - An optional **Catppuccin Macchiato** theme: Settings → General → Theme. It is a dark scheme (page `#181926`, blue accent `#8aadf4`, text `#cad3f5`) that replaces the colour tokens only. Its colours pass the same contrast checks as Light and Dark, in the tokens test and in the axe run over every screen.
 
