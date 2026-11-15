@@ -4,10 +4,6 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
-### Fixed
-
-- A switch that is off is easier to see: its white thumb sat on a track at 1.18:1 in the light theme. The off track is now a mid grey (`--switch-track`, 3.45:1 against the thumb), and the tokens test checks the pair in every theme.
-
 ### Added
 
 - **Reduce transparency**: a switch in Settings → General → Appearance, starting from the system's `prefers-reduced-transparency`. Inline code and table stripes become solid colours; the dialog scrim stays translucent.
@@ -15,19 +11,20 @@ All notable changes to the codebase are documented in this file. Format follows 
 - An optional **Catppuccin Latte** theme (Settings → General → Theme), a light counterpart of Macchiato that never follows the system. Colours of the palette that fail the contrast checks on its surfaces (muted text, red, code, some accents) are darkened until they pass.
 - **Accent colour**: Settings → General → Appearance offers Blue (the default), Violet, Teal, Green, Orange and Pink, kept per browser and applied before first paint. It replaces the send button, switches, citation chips and icon tiles in every theme; each accent's colours are chosen per theme and pass the contrast checks (tokens test for all combinations, axe for all of them).
 - An optional **Catppuccin Macchiato** theme: Settings → General → Theme. It is a dark scheme (page `#181926`, blue accent `#8aadf4`, text `#cad3f5`) that replaces the colour tokens only. Its colours pass the same contrast checks as Light and Dark, in the tokens test and in the axe run over every screen.
-- An answer with a next-step card no longer also gets "Ask next" suggestions (and no longer costs the extra request): the card is the offer.
-- On a phone, the model name and the context figure under an answer no longer break inside their words ("e2e-" over "model"); the row wraps between items and a long model name is cut with an ellipsis.
+- Find in chat: a **Find in chat** button in the chat's header opens a small bar (input, "3 of 12", previous / next, close). It highlights every match in the messages and answers (not in closed Thoughts or tool details) with the CSS Custom Highlight API, marks the current one in a stronger colour and scrolls to it; Enter and Shift+Enter step, Esc closes and returns focus to the button. The browser's own Ctrl/Cmd+F is left alone, and nothing leaves the page.
+- Message outline: from four messages on, a **Message outline** button in the header opens a menu of your messages, each as one line with its number and the one in view marked. Choosing one scrolls to it.
+- A first-run setup card. chibot now starts without an API key or model server (it used to exit with an error), and its new-chat page says what is missing in plain words with `chibot init` and `chibot config set chat.apiKey <key>` to copy, in place of the starter pills. Sending is explained rather than failing (the server also refuses turns, `409`, until a key or server is set), and `GET /api/health` has `configured`. The same card appears under a failed answer when the server said 401 or 403 (the key is refused) or could not be reached (`chibot.error` events now carry `unreachable`); other errors are shown as before.
+- A new chat with history shows "Pick up where you left off" under the message box: the three latest chats (with how long ago) and the two latest projects, each a link. The starter pills ("Summarize a page", …) now show only when there is nothing to go back to. Archived, temporary and empty chats are not listed, and the list uses what the sidebar already loaded.
+
 ### Changed
 
 - Dragging files over the chat shows an "Add anything" card naming what is accepted (images, PDF, Word, text and code), instead of only a dashed outline. It appears for files only (not dragged text or links) and clears on drop, leave or Escape.
-### Added
 
-- Find in chat: a **Find in chat** button in the chat's header opens a small bar (input, "3 of 12", previous / next, close). It highlights every match in the messages and answers (not in closed Thoughts or tool details) with the CSS Custom Highlight API, marks the current one in a stronger colour and scrolls to it; Enter and Shift+Enter step, Esc closes and returns focus to the button. The browser's own Ctrl/Cmd+F is left alone, and nothing leaves the page.
-- Message outline: from four messages on, a **Message outline** button in the header opens a menu of your messages, each as one line with its number and the one in view marked. Choosing one scrolls to it.
-### Added
+### Fixed
 
-- A first-run setup card. chibot now starts without an API key or model server (it used to exit with an error), and its new-chat page says what is missing in plain words with `chibot init` and `chibot config set chat.apiKey <key>` to copy, in place of the starter pills. Sending is explained rather than failing (the server also refuses turns, `409`, until a key or server is set), and `GET /api/health` has `configured`. The same card appears under a failed answer when the server said 401 or 403 (the key is refused) or could not be reached (`chibot.error` events now carry `unreachable`); other errors are shown as before.
-- A new chat with history shows "Pick up where you left off" under the message box: the three latest chats (with how long ago) and the two latest projects, each a link. The starter pills ("Summarize a page", …) now show only when there is nothing to go back to. Archived, temporary and empty chats are not listed, and the list uses what the sidebar already loaded.
+- A switch that is off is easier to see: its white thumb sat on a track at 1.18:1 in the light theme. The off track is now a mid grey (`--switch-track`, 3.45:1 against the thumb), and the tokens test checks the pair in every theme.
+- An answer with a next-step card no longer also gets "Ask next" suggestions (and no longer costs the extra request): the card is the offer.
+- On a phone, the model name and the context figure under an answer no longer break inside their words ("e2e-" over "model"); the row wraps between items and a long model name is cut with an ellipsis.
 
 ## [0.21.0] - 2026-11-15
 
