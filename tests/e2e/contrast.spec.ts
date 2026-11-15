@@ -74,11 +74,12 @@ async function violations(page: Page) {
   )
 }
 
-for (const scheme of ['light', 'dark', 'macchiato'] as const) {
+for (const scheme of ['light', 'dark', 'macchiato', 'latte'] as const) {
   test.describe(`${scheme} theme`, () => {
     test.beforeEach(async ({ page }) => {
       await page.emulateMedia({
-        colorScheme: scheme === 'light' ? 'light' : 'dark',
+        colorScheme:
+          scheme === 'light' || scheme === 'latte' ? 'light' : 'dark',
         reducedMotion: 'reduce',
       })
       await page.addInitScript((s) => {
@@ -250,4 +251,50 @@ for (const scheme of ['light', 'dark', 'macchiato'] as const) {
       expect(await violations(page), 'Add an MCP server').toEqual([])
     })
   })
+}
+
+// Each accent's own colours (base.css) on what uses them: the citation chip
+// and card, the send button and a switch that is on.
+for (const scheme of ['light', 'dark', 'macchiato', 'latte'] as const) {
+  for (const accent of ['violet', 'teal', 'green', 'orange', 'pink']) {
+    test(`${accent} accent, ${scheme} theme`, async ({ page }) => {
+      await page.emulateMedia({
+        colorScheme:
+          scheme === 'light' || scheme === 'latte' ? 'light' : 'dark',
+        reducedMotion: 'reduce',
+      })
+      await page.addInitScript(
+        ([s, a]) => {
+          try {
+            localStorage.setItem('chibot.colorScheme', s!)
+            localStorage.setItem('chibot.accent', a!)
+          } catch {}
+        },
+        [scheme, accent],
+      )
+      const id = await savedChat(page, {
+        question: 'Robots?',
+        answerText: 'Robots move things [1](https://example.com/robots).',
+        searchResults: [
+          {
+            title: 'Robots guide',
+            url: 'https://example.com/robots',
+            snippet: 'Robots move things.',
+          },
+        ],
+      })
+      await page.goto(`/c/${id}`)
+      await page.getByRole('textbox', { name: 'Message' }).fill('Hello')
+      await page.locator('.cite-chip').focus()
+      await expect(page.locator('.cite-pop')).toBeVisible()
+      expect(await violations(page), 'chip, card, send button').toEqual([])
+
+      await page.keyboard.press('Escape')
+      await page.keyboard.press('ControlOrMeta+,')
+      const dialog = page.getByRole('dialog', { name: 'Settings' })
+      await dialog.getByRole('button', { name: 'General' }).click()
+      await expect(dialog.getByLabel('Accent colour')).toHaveValue(accent)
+      expect(await violations(page), 'settings').toEqual([])
+    })
+  }
 }

@@ -1,7 +1,7 @@
 /* Dialogs (DESIGN.md §4) */
 
 .dialog {
-  width: min(100% - 32px, 448px);
+  width: min(100% - 32px, 28rem);
   padding: 20px 24px;
   border: none;
   border-radius: 20px;
@@ -174,7 +174,7 @@
 }
 
 .dialog.search {
-  width: min(100% - 32px, 640px);
+  width: min(100% - 32px, 40rem);
   padding: 0;
 }
 

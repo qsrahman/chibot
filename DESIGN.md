@@ -42,7 +42,8 @@ follows; changing `--bg` switches to a dark-grey page.
 | `--surface-muted` | `#f4f4f4` | `#303030` | Hover rows |
 | `--bubble-bg` / `--bubble-fg` | `#f4f4f4` / `#0d0d0d` | `#303030` / `#ffffff` | User message bubble |
 | `--code-chip` | `rgb(238 238 238 / 82%)` | `rgb(42 42 42 / 82%)` | Inline code |
-| `--chip` | `#ececec` | `#414141` | Chips, switch track, and hover/selected rows inside menus and dialogs (where `--surface-muted` would match the raised background) |
+| `--chip` | `#ececec` | `#414141` | Chips, and hover/selected rows inside menus and dialogs (where `--surface-muted` would match the raised background) |
+| `--switch-track` | `#8a8a8a` | `#414141` | A switch's track when off; its white thumb is 3:1 or more on it |
 | `--fg` | `#0d0d0d` | `#ffffff` | Text |
 | `--fg-muted` | `#5d5d5d` | `#cdcdcd` | Descriptions, captions, footer, action icons, code labels |
 | `--border` | `rgb(0 0 0 / 10%)` | `rgb(255 255 255 / 15%)` | Hairlines, composer outline |
@@ -440,6 +441,51 @@ surfaces and hover rows `#363a4f` (surface0), chips `#494d64` (surface1); text
 on it, since white would be 2.3:1), danger `#ed8796`. Code uses the palette's
 mauve, blue, peach, green, yellow and teal. The same contrast checks as the
 other themes cover it (`tests/web/contrast.test.ts`, `tests/e2e/contrast.spec.ts`).
+
+**Catppuccin Latte** is an optional fifth choice (it never follows the system
+either). It is a light scheme: `color-scheme` is `light`, `data-theme="latte"`
+and `:root[data-theme='latte']` replaces the tokens. Steps: page `#e6e9ef`
+(mantle), cards and raised surfaces `#eff1f5` (base), hover rows and the user
+bubble `#dce0e8` (crust), chips `#ccd0da` (surface0); text `#4c4f69`, field
+edges and the off switch `#7c7f93` (overlay2), the blue accent `#1e66f5` with
+white on it. The palette's own muted text, red, code colours and the green,
+teal, peach and pink accents fell under the contrast checks on these surfaces,
+so they are darkened until they pass (muted text `#55586e`, danger `#d00f38`,
+code, and the accents' latte blocks); the thresholds are the same as for every
+theme.
+
+**Accent colour** is a browser preference in Settings → General → Appearance:
+Blue (the default, no attribute), Violet, Teal, Green, Orange or Pink.
+`<html data-accent="…">` (set before first paint, like the theme) makes the
+blocks after the theme blocks in `base.css` replace every token built from the
+accent: `--accent`, `--accent-fg`, `--switch-thumb-on`, `--cite-*` and
+`--accent-tile*`. Each accent has a `light-dark()` set for Light and Dark
+(a deeper colour with white on it, a lighter one with near-black on it) and
+plain colours for Macchiato (the palette's mauve, teal, green, peach and pink,
+with crust on them). The blocks are measured, not guessed: `accent-fg` on
+`--accent` is 4.5:1, `--accent` on the page and cards 3:1, citation text 4.5:1,
+for every accent in every theme (`tests/web/contrast.test.ts`; axe covers all
+of them in `tests/e2e/contrast.spec.ts`). The favicon and app icons keep the
+blue.
+
+**Text size** is a browser preference in Settings → General → Appearance:
+Small (87.5 %), Default (100 %), Large (112.5 %) or Extra large (125 %), set as
+the root `font-size` before first paint, so every `rem` length scales (all type
+is in `rem`). Lengths that hold text are `rem` too: the sidebar (`--sidebar-width`),
+dialogs and the Settings tabs column. Controls with a fixed pixel height
+(36 px buttons, the 52 px composer, which grows with its text) keep it; the type
+inside them is sized to fit at 125 %. `tests/e2e/settings.spec.ts` checks that
+the composer, sidebar and Settings dialog fit with no sideways page scroll at
+Extra large, on a desktop and a phone.
+
+**Reduce transparency** is a switch in Settings → General → Appearance
+(`<html data-transparency="reduced">` or `full`, set before first paint). It
+starts from the system's `prefers-reduced-transparency` and the choice here
+overrides it. The tinted surfaces become opaque steps of the theme's own tokens:
+`--code-chip` is `--surface-muted` and `--row-stripe` mixes `--surface-muted`
+and `--surface`. There is little else to change: borders are hairlines, the
+shadows aren't surfaces, and the modal scrim, which only dims the page behind a
+dialog, stays translucent.
 
 **Footer.** 12 px muted line under the composer: "chibot can make mistakes.
 Check important info."

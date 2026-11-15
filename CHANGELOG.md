@@ -4,8 +4,16 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- A switch that is off is easier to see: its white thumb sat on a track at 1.18:1 in the light theme. The off track is now a mid grey (`--switch-track`, 3.45:1 against the thumb), and the tokens test checks the pair in every theme.
+
 ### Added
 
+- **Reduce transparency**: a switch in Settings → General → Appearance, starting from the system's `prefers-reduced-transparency`. Inline code and table stripes become solid colours; the dialog scrim stays translucent.
+- **Text size**: Settings → General → Appearance has Small (87.5 %), Default, Large (112.5 %) and Extra large (125 %), kept per browser and applied before first paint. The sidebar, dialogs and the Settings tabs now size in `rem`, so they grow with the text.
+- An optional **Catppuccin Latte** theme (Settings → General → Theme), a light counterpart of Macchiato that never follows the system. Colours of the palette that fail the contrast checks on its surfaces (muted text, red, code, some accents) are darkened until they pass.
+- **Accent colour**: Settings → General → Appearance offers Blue (the default), Violet, Teal, Green, Orange and Pink, kept per browser and applied before first paint. It replaces the send button, switches, citation chips and icon tiles in every theme; each accent's colours are chosen per theme and pass the contrast checks (tokens test for all combinations, axe for all of them).
 - An optional **Catppuccin Macchiato** theme: Settings → General → Theme. It is a dark scheme (page `#181926`, blue accent `#8aadf4`, text `#cad3f5`) that replaces the colour tokens only. Its colours pass the same contrast checks as Light and Dark, in the tokens test and in the axe run over every screen.
 
 ## [0.21.0] - 2026-11-15

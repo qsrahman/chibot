@@ -25,7 +25,8 @@
   --border-control: #8a8a8a;
   --accent: #3566f0;
   --accent-fg: #ffffff;
-  /* A switch's thumb, off (on the chip track) and on (on the accent track). */
+  /* A switch: the thumb off (on --switch-track, 3:1) and on (on the accent). */
+  --switch-track: light-dark(#8a8a8a, #414141);
   --switch-thumb: #ffffff;
   --switch-thumb-on: #ffffff;
   /* A citation chip: 6:1 text on its tint, and on the raised surface it opens. */
@@ -69,7 +70,7 @@
   --code-removed: light-dark(#b31d28, #ffdcd7);
   --code-removed-bg: light-dark(#ffeef0, #67060c);
 
-  --sidebar-width: 260px;
+  --sidebar-width: 16.25rem;
   --rail-width: 56px;
 
   --column: 48rem;
@@ -112,6 +113,7 @@
   --border-control: #939ab7;
   --accent: #8aadf4;
   --accent-fg: #181926;
+  --switch-track: #494d64;
   --switch-thumb: #cad3f5;
   --switch-thumb-on: #181926;
   --cite-bg: #2f3652;
@@ -137,6 +139,220 @@
   --code-added-bg: #243a35;
   --code-removed: #f5bde6;
   --code-removed-bg: #4a2a3d;
+}
+
+/* Catppuccin Latte (an optional light theme): the same idea as Macchiato, with
+   `color-scheme: light`. The steps follow the default light theme: page
+   (mantle), cards and raised surfaces (base), hover rows (crust), chips
+   (surface0). Colours that fell under the contrast checks (muted text, danger,
+   code, accents) are the palette's, darkened until they pass. */
+:root[data-theme='latte'] {
+  --bg: #e6e9ef;
+  --surface: #eff1f5;
+  --surface-raised: #eff1f5;
+  --surface-muted: #dce0e8;
+  --chip: #ccd0da;
+  --fg: #4c4f69;
+  --fg-muted: #55586e;
+  --border: rgb(76 79 105 / 16%);
+  --border-control: #7c7f93;
+  --accent: #1e66f5;
+  --accent-fg: #ffffff;
+  --switch-track: #7c7f93;
+  --switch-thumb: #eff1f5;
+  --switch-thumb-on: #ffffff;
+  --cite-bg: #d6e0f5;
+  --cite-fg: #0844bb;
+  --accent-tile: #d6e0f5;
+  --accent-tile-fg: #0844bb;
+  --button: #4c4f69;
+  --button-fg: #eff1f5;
+  --bubble-bg: #dce0e8;
+  --bubble-fg: #4c4f69;
+  --code-chip: rgb(204 208 218 / 82%);
+  --row-stripe: rgb(76 79 105 / 3%);
+  --danger: #d00f38;
+  --danger-fg: #ffffff;
+  --code-keyword: #802cee;
+  --code-title: #0a55ea;
+  --code-number: #ac4001;
+  --code-string: #2d711e;
+  --code-builtin: #8a5812;
+  --code-comment: #606274;
+  --code-name: #116e74;
+  --code-added: #2d711e;
+  --code-added-bg: #e0ebdc;
+  --code-removed: #c50e35;
+  --code-removed-bg: #f1dfe5;
+}
+
+/* Accent colours (Settings → General, DESIGN.md §2): `data-accent` on <html>
+   (appearance.ts, and index.html before first paint) replaces every token
+   built from the accent. Each theme has its own set so every pair keeps its
+   contrast (tests/web/contrast.test.ts); the default blue has no attribute.
+   Macchiato's are its own palette's colours. After the theme blocks above, so
+   they win. */
+/* violet */
+:root[data-accent='violet'] {
+  --accent: light-dark(#8658e1, #ba98ff);
+  --accent-fg: light-dark(#ffffff, #0d0d0d);
+  --switch-thumb-on: light-dark(#ffffff, #0d0d0d);
+  --cite-bg: light-dark(#f3eeff, #302749);
+  --cite-fg: light-dark(#683eb6, #c3aeff);
+  --accent-tile: light-dark(#f3eeff, #302749);
+  --accent-tile-fg: light-dark(#683eb6, #c3aeff);
+}
+:root[data-theme='macchiato'][data-accent='violet'] {
+  --accent: #c6a0f6;
+  --accent-fg: #181926;
+  --switch-thumb-on: #181926;
+  --cite-bg: #34334d;
+  --cite-fg: #d4b8f8;
+  --accent-tile: #34334d;
+  --accent-tile-fg: #d4b8f8;
+}
+
+/* teal */
+:root[data-accent='teal'] {
+  --accent: light-dark(#00827d, #61c4be);
+  --accent-fg: light-dark(#ffffff, #0d0d0d);
+  --switch-thumb-on: light-dark(#ffffff, #0d0d0d);
+  --cite-bg: light-dark(#dcf9f6, #003734);
+  --cite-fg: light-dark(#00635f, #8bccc7);
+  --accent-tile: light-dark(#dcf9f6, #003734);
+  --accent-tile-fg: light-dark(#00635f, #8bccc7);
+}
+:root[data-theme='macchiato'][data-accent='teal'] {
+  --accent: #8bd5ca;
+  --accent-fg: #181926;
+  --switch-thumb-on: #181926;
+  --cite-bg: #2e3848;
+  --cite-fg: #a8e0d7;
+  --accent-tile: #2e3848;
+  --accent-tile-fg: #a8e0d7;
+}
+
+/* green */
+:root[data-accent='green'] {
+  --accent: light-dark(#008736, #6bc982);
+  --accent-fg: light-dark(#ffffff, #0d0d0d);
+  --switch-thumb-on: light-dark(#ffffff, #0d0d0d);
+  --cite-bg: light-dark(#e4f8e7, #14361d);
+  --cite-fg: light-dark(#006720, #90d09d);
+  --accent-tile: light-dark(#e4f8e7, #14361d);
+  --accent-tile-fg: light-dark(#006720, #90d09d);
+}
+:root[data-theme='macchiato'][data-accent='green'] {
+  --accent: #a6da95;
+  --accent-fg: #181926;
+  --switch-thumb-on: #181926;
+  --cite-bg: #313943;
+  --cite-fg: #bce3b0;
+  --accent-tile: #313943;
+  --accent-tile-fg: #bce3b0;
+}
+
+/* orange */
+:root[data-accent='orange'] {
+  --accent: light-dark(#c84900, #ff9043);
+  --accent-fg: light-dark(#ffffff, #0d0d0d);
+  --switch-thumb-on: light-dark(#ffffff, #0d0d0d);
+  --cite-bg: light-dark(#ffede0, #45240e);
+  --cite-fg: light-dark(#9f3000, #f8a878);
+  --accent-tile: light-dark(#ffede0, #45240e);
+  --accent-tile-fg: light-dark(#9f3000, #f8a878);
+}
+:root[data-theme='macchiato'][data-accent='orange'] {
+  --accent: #f5a97f;
+  --accent-fg: #181926;
+  --switch-thumb-on: #181926;
+  --cite-bg: #393441;
+  --cite-fg: #f8be9f;
+  --accent-tile: #393441;
+  --accent-tile-fg: #f8be9f;
+}
+
+/* pink */
+:root[data-accent='pink'] {
+  --accent: light-dark(#cb397c, #ff81b2);
+  --accent-fg: light-dark(#ffffff, #0d0d0d);
+  --switch-thumb-on: light-dark(#ffffff, #0d0d0d);
+  --cite-bg: light-dark(#ffeaf2, #45202e);
+  --cite-fg: light-dark(#a2215f, #f99ebf);
+  --accent-tile: light-dark(#ffeaf2, #45202e);
+  --accent-tile-fg: light-dark(#a2215f, #f99ebf);
+}
+:root[data-theme='macchiato'][data-accent='pink'] {
+  --accent: #f5bde6;
+  --accent-fg: #181926;
+  --switch-thumb-on: #181926;
+  --cite-bg: #39364b;
+  --cite-fg: #f8ceec;
+  --accent-tile: #39364b;
+  --accent-tile-fg: #f8ceec;
+}
+
+:root[data-theme='latte'][data-accent='violet'] {
+  --accent: #8839ef;
+  --accent-fg: #ffffff;
+  --switch-thumb-on: #ffffff;
+  --cite-bg: #e3dbf4;
+  --cite-fg: #6411d0;
+  --accent-tile: #e3dbf4;
+  --accent-tile-fg: #6411d0;
+}
+:root[data-theme='latte'][data-accent='teal'] {
+  --accent: #148187;
+  --accent-fg: #ffffff;
+  --switch-thumb-on: #ffffff;
+  --cite-bg: #d5e4e8;
+  --cite-fg: #0e585c;
+  --accent-tile: #d5e4e8;
+  --accent-tile-fg: #0e585c;
+}
+:root[data-theme='latte'][data-accent='green'] {
+  --accent: #358524;
+  --accent-fg: #ffffff;
+  --switch-thumb-on: #ffffff;
+  --cite-bg: #d9e4dc;
+  --cite-fg: #245b19;
+  --accent-tile: #d9e4dc;
+  --accent-tile-fg: #245b19;
+}
+:root[data-theme='latte'][data-accent='orange'] {
+  --accent: #cb4b01;
+  --accent-fg: #ffffff;
+  --switch-thumb-on: #ffffff;
+  --cite-bg: #ebddd8;
+  --cite-fg: #8a3301;
+  --accent-tile: #ebddd8;
+  --accent-tile-fg: #8a3301;
+}
+:root[data-theme='latte'][data-accent='pink'] {
+  --accent: #d320a4;
+  --accent-fg: #ffffff;
+  --switch-thumb-on: #ffffff;
+  --cite-bg: #ecd8eb;
+  --cite-fg: #8e166e;
+  --accent-tile: #ecd8eb;
+  --accent-tile-fg: #8e166e;
+}
+
+/* Reduce transparency (Settings → General; also the system's
+   prefers-reduced-transparency unless the setting says `full`): the tinted
+   surfaces become opaque steps of the theme's own tokens. The modal scrim
+   stays translucent, since it only dims the page behind a dialog. After the
+   theme blocks, so it wins. */
+:root[data-transparency='reduced'] {
+  --code-chip: var(--surface-muted);
+  --row-stripe: color-mix(in srgb, var(--surface-muted) 50%, var(--surface));
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root:not([data-transparency='full']) {
+    --code-chip: var(--surface-muted);
+    --row-stripe: color-mix(in srgb, var(--surface-muted) 50%, var(--surface));
+  }
 }
 
 * {
