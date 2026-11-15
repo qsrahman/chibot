@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.23.1] - 2026-11-15
+
 ### Fixed
 
 - A code block's line numbers stay level with its lines: the `pre` used a smaller default monospace font than its `code`, so each line box grew past 26 px and the numbers drifted further out of step down a long block.
