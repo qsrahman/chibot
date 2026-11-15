@@ -279,12 +279,15 @@ for (const [name, viewport] of [
       await page.getByRole('button', { name: 'Open sidebar' }).click()
     await inside('nav.sidebar', viewport)
     expect(await noScroll()).toBe(true)
-    if (name === 'phone') await page.keyboard.press('Escape')
 
-    await page.keyboard.press('ControlOrMeta+,')
+    // On a phone there is no shortcut: Settings opens from the drawer.
+    if (name === 'phone')
+      await page.getByRole('button', { name: 'Settings', exact: true }).click()
+    else await page.keyboard.press('ControlOrMeta+,')
     const dialog = page.getByRole('dialog', { name: 'Settings' })
+    const tabs = page.getByRole('navigation', { name: 'Settings sections' })
     for (const tab of ['General', 'Model', 'Tools', 'Data']) {
-      await dialog.getByRole('button', { name: tab, exact: true }).click()
+      await tabs.getByRole('button', { name: tab, exact: true }).click()
       await inside('dialog.settings', viewport)
       expect(
         await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth),
