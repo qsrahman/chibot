@@ -214,7 +214,7 @@ label.button {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #ffffff;
+  background: var(--switch-thumb);
   transition: transform 150ms ease;
 }
 
@@ -223,6 +223,7 @@ label.button {
 }
 
 .switch:checked::after {
+  background: var(--switch-thumb-on);
   transform: translateX(12px);
 }
 

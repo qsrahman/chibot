@@ -4,7 +4,7 @@ import { answered, appReady, savedChat, send } from './helpers.ts'
 
 // Rendered colours, not just tokens: axe measures the text and background
 // actually drawn (code tokens, maths, links, tables, the image viewer, menus,
-// dialogs, toasts) in both colour schemes.
+// dialogs, toasts) in each theme.
 
 const RICH = [
   'A [link](https://example.com/) and `inline code`, ~~struck~~ and **bold**.',
@@ -74,10 +74,13 @@ async function violations(page: Page) {
   )
 }
 
-for (const scheme of ['light', 'dark'] as const) {
+for (const scheme of ['light', 'dark', 'macchiato'] as const) {
   test.describe(`${scheme} theme`, () => {
     test.beforeEach(async ({ page }) => {
-      await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' })
+      await page.emulateMedia({
+        colorScheme: scheme === 'light' ? 'light' : 'dark',
+        reducedMotion: 'reduce',
+      })
       await page.addInitScript((s) => {
         try {
           localStorage.setItem('chibot.colorScheme', s)
