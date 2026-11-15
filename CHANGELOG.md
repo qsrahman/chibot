@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-11-15
+
 ### Added
 
 - **Reduce transparency**: a switch in Settings → General → Appearance, starting from the system's `prefers-reduced-transparency`. Inline code and table stripes become solid colours; the dialog scrim stays translucent.
