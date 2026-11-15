@@ -301,6 +301,10 @@ needs the server running: there is no offline mode, since the server is local.
   **queue** it (text only, no attachments): it appears in a **Queued** row
   above the message box and is sent once the answer is saved — or as soon as
   you **Stop** it. Edit or cancel it from that row. Switching chats drops it.
+- **Follow-ups** (off by default; **Settings → Model → Follow-ups**): once an
+  answer is done, two or three suggested next prompts appear under **Ask next**
+  above the message box, and a click sends one. It costs one more short
+  request per answer, to the chat model or one you name.
 - Scroll up to read while an answer streams and the view stays put; the ↓
   button above the message box jumps back to the latest message.
 - The first message gives the chat its own URL (`/c/…`). Reloading reopens it.

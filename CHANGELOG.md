@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- Follow-up suggestions: after an answer, two or three short prompts appear as pills under "Ask next" above the message box, and a click sends one. They are asked for once the answer is saved (`POST /api/conversations/:id/suggestions`), only for an answer just finished, never on reopening a chat, and a failure just shows none. Settings → Model → Follow-ups switches them on (with the chat model, or one you name); off by default.
+
 ## [0.20.3] - 2026-11-15
 
 ### Fixed
