@@ -303,8 +303,75 @@ function toolSources(tool: ToolActivity): Source[] {
     const { url } = parseJson<{ url?: unknown }>(tool.arguments)
     const parsed = webUrl(url)
     if (parsed) found.set(parsed.href, { url: parsed.href, title: parsed.href })
+  } else {
+    for (const source of mcpSources(tool)) found.set(source.url, source)
   }
   return [...found.values()]
+}
+
+// MCP tools that search or read the web, by their own name (`brave_web_search`,
+// `fetch`, `scrape`…): a tool that merely has a URL in its data (issues, files)
+// is not a source of the answer.
+const WEB_TOOL = /search|fetch|scrape|crawl|browse|extract|read_?(url|page)/i
+
+/**
+ * The pages an MCP web search or page-reading tool found or read. Servers
+ * differ in what they send, so this takes the two common shapes: JSON, in the
+ * whole output or one value to a paragraph (Brave's), where any object with a
+ * web address and a title is a result; and text with `Title:`, `URL:` and
+ * `Description:` lines. A page-reading tool called with a `url` argument read
+ * that page.
+ */
+function mcpSources(tool: ToolActivity): Source[] {
+  const name = mcpToolName(tool.name)?.tool
+  if (!name || !WEB_TOOL.test(name) || !tool.output) return []
+  // Image tools' output wraps the text.
+  const wrapped = parseJson<{ result?: unknown }>(tool.output).result
+  const output = typeof wrapped === 'string' ? wrapped : tool.output
+  const found: Source[] = []
+  const add = (url: unknown, title: unknown, snippet: unknown) => {
+    const parsed = webUrl(url)
+    if (parsed) {
+      found.push({
+        url: parsed.href,
+        title: sourceTitle(title, parsed.href),
+        ...snippetOf(snippet),
+      })
+    }
+  }
+  const walk = (value: unknown, depth = 0) => {
+    if (depth > 6 || typeof value !== 'object' || value === null) return
+    const row = value as Record<string, unknown>
+    if (!Array.isArray(value) && typeof (row.url ?? row.link) === 'string') {
+      add(
+        row.url ?? row.link,
+        row.title ?? row.name,
+        row.description ?? row.snippet ?? row.content,
+      )
+    }
+    for (const child of Object.values(value)) walk(child, depth + 1)
+  }
+  for (const chunk of [output, ...output.split(/\n\s*\n/)]) {
+    const text = chunk.trim()
+    if (!text) continue
+    if (/^[[{]/.test(text)) {
+      const before = found.length
+      walk(parseJson(text))
+      // Whole output parsed: its chunks are the same results again.
+      if (before < found.length && chunk === output) break
+    } else {
+      const line = (label: string) =>
+        new RegExp(`^\\W*${label}:\\s*(.+)$`, 'im').exec(text)?.[1]?.trim()
+      add(line('(?:url|link)'), line('title'), line('(?:description|snippet)'))
+    }
+  }
+  if (found.length === 0) {
+    const { url } = parseJson<{ url?: unknown }>(tool.arguments)
+    if (/fetch|scrape|crawl|browse|extract|read/i.test(name)) {
+      add(url, null, null)
+    }
+  }
+  return found
 }
 
 /** What a tool call did, in people's terms (its raw call stays available). */

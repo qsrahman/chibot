@@ -491,6 +491,82 @@ describe('sources carry a snippet for the card a citation opens', () => {
   })
 })
 
+describe('sourcesOf with MCP web tools', () => {
+  const answerWith = (name: string, output: string, args = {}) => ({
+    itemId: 1,
+    text: '',
+    thinking: '',
+    usage: null,
+    lastUsage: null,
+    model: null,
+    versions: null,
+    incomplete: false,
+    tools: [{ callId: 'c', name, arguments: JSON.stringify(args), output }],
+  })
+
+  it('reads results one JSON value to a paragraph, as Brave sends them', () => {
+    const one = (n: number) =>
+      JSON.stringify({
+        url: `https://r${n}.test/`,
+        title: `R${n}`,
+        description: `about ${n}`,
+        extra_snippets: [],
+      })
+    expect(
+      sourcesOf(
+        answerWith('search__brave_web_search', `${one(1)}\n\n${one(2)}`),
+      ),
+    ).toEqual([
+      { url: 'https://r1.test/', title: 'R1', snippet: 'about 1' },
+      { url: 'https://r2.test/', title: 'R2', snippet: 'about 2' },
+    ])
+  })
+
+  it('reads nested JSON once, skipping addresses that are not web pages', () => {
+    const output = JSON.stringify({
+      web: {
+        results: [
+          { url: 'https://a.test/', title: 'A' },
+          { url: 'file:///etc/passwd', title: 'Local' },
+        ],
+      },
+      news: [{ link: 'https://n.test/', name: 'N', content: 'news' }],
+    })
+    expect(sourcesOf(answerWith('s__web_search', output))).toEqual([
+      { url: 'https://a.test/', title: 'A' },
+      { url: 'https://n.test/', title: 'N', snippet: 'news' },
+    ])
+  })
+
+  it('reads Title / URL / Description lines', () => {
+    const output =
+      'Title: One\nDescription: first\nURL: https://one.test/\n\nTitle: Two\nURL: https://two.test/'
+    expect(sourcesOf(answerWith('s__search', output))).toEqual([
+      { url: 'https://one.test/', title: 'One', snippet: 'first' },
+      { url: 'https://two.test/', title: 'Two' },
+    ])
+  })
+
+  it('counts the page a fetch tool was asked for', () => {
+    expect(
+      sourcesOf(
+        answerWith('fetch__fetch', 'Contents of the page…', {
+          url: 'https://p.test/x',
+        }),
+      ),
+    ).toEqual([{ url: 'https://p.test/x', title: 'https://p.test/x' }])
+  })
+
+  it('ignores other tools, errors and unfinished calls', () => {
+    const output = JSON.stringify({ url: 'https://a.test/', title: 'A' })
+    expect(sourcesOf(answerWith('tracker__list_issues', output))).toEqual([])
+    expect(sourcesOf(answerWith('s__search', `Error: ${output}`))).toEqual([])
+    expect(
+      sourcesOf({ ...answerWith('s__search', output), tools: [] }),
+    ).toEqual([])
+  })
+})
+
 describe('sourcesOf with past chats', () => {
   it('links chats found by search_chats inside chibot', () => {
     const output = JSON.stringify({

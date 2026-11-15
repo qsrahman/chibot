@@ -1235,9 +1235,11 @@ Environment variables:
   outputs the numbers come from. Sources carry a `snippet` where the tool gave one.
 - **Citations from web search** depend on the model following the
   instructions, since there are no hosted `url_citation` annotations. The UI's
-  sources list comes from the tool result, which it understands only for chibot's
-  own tools and chats made with the removed `web_search` and `fetch_url`: an MCP
-  search server's results show as that tool's text, without a Sources list.
+  sources list comes from the tool result: chibot's own tools, chats made with
+  the removed `web_search` and `fetch_url`, and MCP web tools (`mcpSources`:
+  tools named like a search or fetch, whose output is JSON with a web address
+  and title, or `Title:` / `URL:` lines; a server with another shape shows as
+  that tool's text, without Sources).
 - **Known gaps in long-chat summaries** (left out on purpose, see
   [CONTEXT.md](CONTEXT.md)): a JSON export leaves out summaries (one is written
   again when the chat next grows), and the summary is a separate user-role
