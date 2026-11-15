@@ -56,6 +56,12 @@ export abstract class Tool<Parameters extends z.ZodObject = z.ZodObject> {
     return false
   }
 
+  /**
+   * Set when the call comes after a written answer and closes it: the turn
+   * ends once the call's output is saved, without another request.
+   */
+  readonly endsTurn: boolean = false
+
   /** The output holds text from others (web pages, search results). */
   readonly untrustedOutput: boolean = false
   /**

@@ -60,6 +60,7 @@ import {
   imageClient,
 } from './tools/images.ts'
 import { MemoryTool } from './tools/memory.ts'
+import { SuggestNextStepTool } from './tools/next-step.ts'
 import { SearchChatsTool } from './tools/search-chats.ts'
 import { ReadSkillTool, SkillStore } from './skills/index.ts'
 
@@ -94,6 +95,7 @@ export function defaultTools({
     files,
   }
   return [
+    new SuggestNextStepTool(),
     new MemoryTool(memories),
     new SearchChatsTool(search),
     new SearchProjectFilesTool(projects, index),

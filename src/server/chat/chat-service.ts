@@ -4,6 +4,7 @@ import type {
   ResponseInputItem,
   ResponseStreamEvent,
 } from 'openai/resources/responses/responses'
+import { messageText } from '../../shared/messages.ts'
 import type { Settings } from '../../shared/settings.ts'
 import type {
   Conversation,
@@ -185,6 +186,17 @@ export class ChatService {
           item.type === 'function_call',
       )
       if (calls.length === 0) break
+      if (this.#closesAnswer(response.output!, calls)) {
+        leafId = yield* this.#runCalls(
+          plan,
+          conversationId,
+          leafId,
+          calls,
+          undefined,
+          signal,
+        )
+        break
+      }
       if (step === MAX_STEPS) {
         // The server ignored `tool_choice: 'none'`.
         leafId = yield* this.#answer(conversationId, leafId, calls, () =>
@@ -449,6 +461,21 @@ export class ChatService {
       }
     }
     return { leafId, output, answered }
+  }
+
+  /**
+   * Whether the response wrote its answer and only called tools that close
+   * it (`Tool.endsTurn`). Without text the model is asked again, so it
+   * writes the answer.
+   */
+  #closesAnswer(
+    output: ResponseInputItem[],
+    calls: ResponseFunctionToolCall[],
+  ): boolean {
+    return (
+      output.some((item) => messageText(item)?.text.trim()) &&
+      calls.every((call) => this.#tools.get(call.name)?.endsTurn)
+    )
   }
 
   /** The items on the path to `leafId`. */
