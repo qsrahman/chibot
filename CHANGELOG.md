@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- An answer written with saved memories in its instructions has a small "Memory · 3" chip above it that opens the Memories dialog. It says what was provided (every saved memory is in each turn's instructions), not what the model used. Each response keeps the list as it was (migration 17, `items.memories`), so the chip survives reloads, export, import, branching and later edits or deletions of the memories. Nothing shows when memory is off, in temporary chats, or while nothing is remembered.
+
 ## [0.20.3] - 2026-11-15
 
 ### Fixed

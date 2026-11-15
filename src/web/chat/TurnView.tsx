@@ -1,7 +1,7 @@
 // One turn of a chat: the question, then the answer with its thoughts, tool
 // activity, images, sources and actions.
 import { useContext, useState, type KeyboardEvent, type ReactNode } from 'react'
-import { GitBranch, Pencil, RefreshCw, Wrench } from 'lucide-react'
+import { GitBranch, Lightbulb, Pencil, RefreshCw, Wrench } from 'lucide-react'
 import { FileCard } from '../ui/FileCard.tsx'
 import { ImageViewer, opensViewer, type ViewedImage } from './ImageViewer.tsx'
 import { Markdown } from './Markdown.tsx'
@@ -10,6 +10,7 @@ import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
 import { SourcesContext } from './sourcesContext.ts'
 import { sourcesOf, type ToolActivity, type Turn } from './turns.ts'
 import { describeContext, describeUsage } from './usage.ts'
+import { describeUsedMemory } from './usedMemory.ts'
 import { CompactionNote, CompactNow } from './CompactNote.tsx'
 import type { Compaction } from '../../shared/types.ts'
 import { AnswerImages } from './AnswerImages.tsx'
@@ -45,6 +46,8 @@ interface TurnViewProps {
   /** Summarizes the start of the chat now (offered on the latest answer). */
   onCompact?: (focus: string) => void
   onUndoCompaction?: (compaction: Compaction) => void
+  /** Opens the Memories dialog (from the chip over an answer written with them). */
+  onShowMemories?: () => void
 }
 
 export function TurnView({
@@ -64,6 +67,7 @@ export function TurnView({
   context,
   onCompact,
   onUndoCompaction,
+  onShowMemories,
 }: TurnViewProps) {
   const setEditing = (on: boolean) => onEditingChange?.(on)
   const [viewing, setViewing] = useState<ViewedImage | null>(null)
@@ -71,6 +75,7 @@ export function TurnView({
   const saved = question.itemId !== null
   // The links in the answer to these are numbered, as in the list under it.
   const sources = answer ? sourcesOf(answer) : []
+  const usedMemory = describeUsedMemory(answer?.memories ?? [])
   const answerUsage = describeUsage(answer?.usage)
   const contextUsage = describeContext(
     answer?.lastUsage,
@@ -157,6 +162,17 @@ export function TurnView({
         </div>
       )}
 
+      {!pending && usedMemory && onShowMemories && (
+        <button
+          type="button"
+          className="memory-chip"
+          aria-label={usedMemory.label}
+          onClick={onShowMemories}
+        >
+          <Lightbulb size={15} strokeWidth={1.5} aria-hidden />
+          {usedMemory.short}
+        </button>
+      )}
       {answer?.thinking && (
         <Thoughts
           text={answer.thinking}

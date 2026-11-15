@@ -171,6 +171,7 @@ export const turnSoFar = (
           usage: null,
           lastUsage: null,
           model: null,
+          memories: [],
           versions: null,
           incomplete,
         }

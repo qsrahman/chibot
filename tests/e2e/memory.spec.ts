@@ -124,3 +124,41 @@ test('finds an earlier chat and links it in Sources', async ({ page }) => {
   await sources.getByRole('link').click()
   await expect(page).toHaveURL(earlier)
 })
+
+test('an answer written with memories has a chip that opens them', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await send(page, 'Please remember I like tea')
+  await answered(page)
+  // Nothing was remembered yet when the first answer was written.
+  await expect(page.locator('.memory-chip')).toHaveCount(0)
+
+  await send(page, 'What do I like?')
+  await answered(page)
+  const chip = page.getByRole('button', {
+    name: '1 saved memory was in context for this answer. Open memories',
+  })
+  await expect(chip).toHaveText('Memory · 1')
+
+  // It is part of the saved chat, so it stays after a reload and after the
+  // memory is edited.
+  await page.request.patch('/api/memories/1', { data: { text: 'I like tea.' } })
+  await page.reload()
+  await expect(chip).toBeVisible()
+  await chip.click()
+  const dialog = page.getByRole('dialog', { name: 'Memories' })
+  await expect(dialog).toContainText('I like tea.')
+  await page.keyboard.press('Escape')
+
+  // Once the memory is gone, the chip still says what the answer had.
+  await page.request.delete('/api/memories')
+  await page.reload()
+  await expect(chip).toBeVisible()
+
+  await newChat(page)
+  await page.getByRole('button', { name: 'Temporary chat' }).click()
+  await send(page, 'Hello')
+  await answered(page)
+  await expect(page.locator('.memory-chip')).toHaveCount(0)
+})

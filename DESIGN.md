@@ -350,6 +350,12 @@ fitted to the window (16 px radius). Esc or a click outside closes it;
 n", listing each page as its title (`--fg`, one line, ellipsis) and a 12 px
 host name.
 
+**Memory chip.** Above an answer written with saved memories: a 28 px pill
+(`--chip` background, 13 px `--fg-muted` text, `Lightbulb` 15 px, 12 px right
+padding) reading "Memory · n", a real button that opens the Memories dialog.
+Shown like the answer's actions: always on the latest answer, on hover or focus
+for older ones, always where there is no hover.
+
 **Memories dialog.** Like Archived chats: a short explanation, then the count
 ("12 of 100 memories") in 12 px muted text, and one row per memory (14 px
 text, `Pencil` edit and `Trash2` delete icon buttons). Editing swaps the row

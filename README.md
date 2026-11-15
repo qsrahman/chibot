@@ -352,7 +352,9 @@ needs the server running: there is no offline mode, since the server is local.
     chats; the answer says "Memory updated". Ask it to change or forget
     something, or edit or delete memories in Settings → Personalization →
     Memory (which shows how many of the 100 are used). It won't save the same
-    fact twice, and merges related ones when the list is nearly full. In a
+    fact twice, and merges related ones when the list is nearly full. An
+    answer written with memories shows a "Memory · n" chip that opens them
+    (it says they were in context, not that the model used them). In a
     chat that used an MCP tool or searched your chats (text from others),
     memory changes ask first, so it can't plant one.
   - **Images and media from other sites** in an answer (`![](https://…)`, or a

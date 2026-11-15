@@ -141,6 +141,7 @@ describe('toTurns', () => {
           usage,
           lastUsage: usage,
           model: 'm-1',
+          memories: [],
           versions: null,
           incomplete: false,
         },
@@ -274,6 +275,7 @@ describe('sourcesOf and imagesOf', () => {
       thinking: '',
       usage: null,
       lastUsage: null,
+      memories: [],
       model: null,
       versions: null,
       incomplete: false,
@@ -309,6 +311,7 @@ describe('sourcesOf and imagesOf', () => {
       thinking: '',
       usage: null,
       lastUsage: null,
+      memories: [],
       model: null,
       versions: null,
       incomplete: false,
@@ -456,6 +459,7 @@ describe('sourcesOf with past chats', () => {
         thinking: '',
         usage: null,
         lastUsage: null,
+        memories: [],
         model: null,
         versions: null,
         incomplete: false,
@@ -481,6 +485,7 @@ describe('sourcesOf with project files', () => {
         thinking: '',
         usage: null,
         lastUsage: null,
+        memories: [],
         model: null,
         versions: null,
         incomplete: false,
@@ -503,6 +508,7 @@ describe('sourcesOf with project files', () => {
       thinking: '',
       usage: null,
       lastUsage: null,
+      memories: [],
       model: null,
       versions: null,
       incomplete: false,
@@ -542,6 +548,7 @@ describe('sourcesOf with project files', () => {
         thinking: '',
         usage: null,
         lastUsage: null,
+        memories: [],
         model: null,
         versions: null,
         incomplete: false,
@@ -668,5 +675,19 @@ describe('newQuestion and fileIds', () => {
       fileIds: ['f1', 'f2'],
     })
     expect(fileIds([])).toEqual({})
+  })
+})
+
+describe('toTurns memories', () => {
+  it('shows the memories its response was written with, and none otherwise', () => {
+    const memories = [{ id: 1, text: 'Prefers Rust.' }]
+    const [kept, plain] = toTurns([
+      item(1, { role: 'user', content: 'Hi' }),
+      item(2, { role: 'assistant', content: 'Hello' }, { memories }),
+      item(3, { role: 'user', content: 'Again' }),
+      item(4, { role: 'assistant', content: 'Hello' }),
+    ])
+    expect(kept!.answer!.memories).toEqual(memories)
+    expect(plain!.answer!.memories).toEqual([])
   })
 })

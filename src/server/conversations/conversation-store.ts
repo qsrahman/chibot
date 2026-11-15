@@ -219,14 +219,7 @@ export class ConversationStore {
         const itemUsage = last ? usage : null
         const itemModel = last ? model : null
         const itemMemories = last ? memories : null
-        parent = insert(
-          parent,
-          data,
-          itemUsage,
-          itemModel,
-          itemMemories,
-          now,
-        )
+        parent = insert(parent, data, itemUsage, itemModel, itemMemories, now)
         stored.push({
           id: parent,
           parentId: stored.at(-1)?.id ?? parentId,
