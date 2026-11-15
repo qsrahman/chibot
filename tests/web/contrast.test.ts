@@ -79,7 +79,8 @@ const INTERFACE: [string, string][] = [
   ['border-control', 'surface'],
   ['accent', 'bg'],
   ['accent', 'surface'],
-  // A switch's thumb on its track when it is on (settings.css).
+  // A switch's thumb on its track, off and on (settings.css).
+  ['switch-thumb', 'switch-track'],
   ['switch-thumb-on', 'accent'],
 ]
 

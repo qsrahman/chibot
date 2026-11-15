@@ -42,7 +42,8 @@ follows; changing `--bg` switches to a dark-grey page.
 | `--surface-muted` | `#f4f4f4` | `#303030` | Hover rows |
 | `--bubble-bg` / `--bubble-fg` | `#f4f4f4` / `#0d0d0d` | `#303030` / `#ffffff` | User message bubble |
 | `--code-chip` | `rgb(238 238 238 / 82%)` | `rgb(42 42 42 / 82%)` | Inline code |
-| `--chip` | `#ececec` | `#414141` | Chips, switch track, and hover/selected rows inside menus and dialogs (where `--surface-muted` would match the raised background) |
+| `--chip` | `#ececec` | `#414141` | Chips, and hover/selected rows inside menus and dialogs (where `--surface-muted` would match the raised background) |
+| `--switch-track` | `#8a8a8a` | `#414141` | A switch's track when off; its white thumb is 3:1 or more on it |
 | `--fg` | `#0d0d0d` | `#ffffff` | Text |
 | `--fg-muted` | `#5d5d5d` | `#cdcdcd` | Descriptions, captions, footer, action icons, code labels |
 | `--border` | `rgb(0 0 0 / 10%)` | `rgb(255 255 255 / 15%)` | Hairlines, composer outline |

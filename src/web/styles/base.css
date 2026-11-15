@@ -25,7 +25,8 @@
   --border-control: #8a8a8a;
   --accent: #3566f0;
   --accent-fg: #ffffff;
-  /* A switch's thumb, off (on the chip track) and on (on the accent track). */
+  /* A switch: the thumb off (on --switch-track, 3:1) and on (on the accent). */
+  --switch-track: light-dark(#8a8a8a, #414141);
   --switch-thumb: #ffffff;
   --switch-thumb-on: #ffffff;
   /* A citation chip: 6:1 text on its tint, and on the raised surface it opens. */
@@ -112,6 +113,7 @@
   --border-control: #939ab7;
   --accent: #8aadf4;
   --accent-fg: #181926;
+  --switch-track: #494d64;
   --switch-thumb: #cad3f5;
   --switch-thumb-on: #181926;
   --cite-bg: #2f3652;

@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- A switch that is off is easier to see: its white thumb sat on a track at 1.18:1 in the light theme. The off track is now a mid grey (`--switch-track`, 3.45:1 against the thumb), and the tokens test checks the pair in every theme.
+
 ### Added
 
 - An optional **Catppuccin Macchiato** theme: Settings → General → Theme. It is a dark scheme (page `#181926`, blue accent `#8aadf4`, text `#cad3f5`) that replaces the colour tokens only. Its colours pass the same contrast checks as Light and Dark, in the tokens test and in the axe run over every screen.
