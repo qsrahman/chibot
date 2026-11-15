@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- A new chat with history shows "Pick up where you left off" under the message box: the three latest chats (with how long ago) and the two latest projects, each a link. The starter pills ("Summarize a page", …) now show only when there is nothing to go back to. Archived, temporary and empty chats are not listed, and the list uses what the sidebar already loaded.
+
 ## [0.21.0] - 2026-11-15
 
 ### Added

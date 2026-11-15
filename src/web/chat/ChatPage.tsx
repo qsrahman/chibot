@@ -8,7 +8,8 @@ import { Composer } from './Composer.tsx'
 import { FollowUps } from './FollowUps.tsx'
 import { shownSuggestions } from './followUps.ts'
 import { useFollowUps } from './useFollowUps.ts'
-import { Greeting } from './Greeting.tsx'
+import { Greeting, Recents } from './Greeting.tsx'
+import { recentChats, recentProjects } from './recents.ts'
 import { quoteText } from './quote.ts'
 import { QuoteSelection } from './QuoteSelection.tsx'
 import { branchConversation } from '../conversations/api.ts'
@@ -41,6 +42,8 @@ interface Props {
   onListChanged: () => void
   /** The sidebar's chats, whose titles follow renames. */
   conversations: ConversationListItem[]
+  /** Whether the sidebar's list has loaded (an empty one is then really empty). */
+  conversationsLoaded: boolean
   /** On phones while the sidebar is hidden: a header button opens it. */
   onOpenSidebar?: () => void
   /** Shut out while the phone drawer covers the page (nothing here can be reached). */
@@ -68,6 +71,7 @@ export function ChatPage({
   projects,
   onListChanged,
   conversations,
+  conversationsLoaded,
   onOpenSidebar,
   inert,
   onShowMemories,
@@ -216,6 +220,21 @@ export function ChatPage({
   }, [id, turns, pending])
 
   const temporary = id ? isTemporary : temporaryMode
+  const recentChatList = useMemo(
+    () => recentChats(conversations),
+    [conversations],
+  )
+  const recentProjectList = useMemo(
+    () => recentProjects(projects.projects),
+    [projects.projects],
+  )
+  // On a new chat only: somewhere to carry on, in place of the starters.
+  const recents =
+    empty &&
+    !id &&
+    !projectHome &&
+    !temporary &&
+    recentChatList.length + recentProjectList.length > 0
   const projectId = id ? chat.projectId : (projectHome ?? null)
   const project = projects.projects.find((p) => p.id === projectId)
   // The sidebar's copy follows renames; project chats aren't listed there.
@@ -288,6 +307,7 @@ export function ChatPage({
           ) : empty ? (
             <Greeting
               temporary={temporary}
+              suggest={conversationsLoaded && !recents}
               onStart={(text) =>
                 setPrefill((was) => ({ text, n: (was?.n ?? 0) + 1 }))
               }
@@ -422,6 +442,9 @@ export function ChatPage({
               projectId={projectHome}
               onChatsChanged={onListChanged}
             />
+          )}
+          {recents && (
+            <Recents chats={recentChatList} projects={recentProjectList} />
           )}
           <p className="visually-hidden" role="status">
             {announcement}

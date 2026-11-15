@@ -475,6 +475,12 @@ test('a message with other versions shows them without hovering', async ({
 test('an empty chat offers ways to start, which fill the box', async ({
   page,
 }) => {
+  // Starters are for a first visit: with chats to go back to, those show.
+  await page.route('**/api/conversations', (route) =>
+    route.request().method() === 'GET'
+      ? route.fulfill({ json: [] })
+      : route.continue(),
+  )
   await page.goto('/')
   await appReady(page)
   const box = page.getByRole('textbox', { name: 'Message' })
