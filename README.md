@@ -460,6 +460,11 @@ needs the server running: there is no offline mode, since the server is local.
   another direction without touching the original. Summaries and the files its
   messages use are copied too, so deleting either chat leaves the other whole.
   Not offered in a temporary chat.
+- **Find in chat:** the magnifier in the header opens a bar that highlights
+  matches in the messages and answers and steps through them (Enter / Shift+Enter;
+  Esc closes). It looks only at what is shown, not at closed Thoughts. The
+  browser's own Ctrl/Cmd+F still works too. From four messages on, the list
+  icon next to it opens an outline of your messages to jump to one.
 - **Quote:** select text in an answer or message and click **Quote** beside it:
   it is added to the message box as a block quote, under what you have
   written, to ask about that part.
