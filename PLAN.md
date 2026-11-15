@@ -384,7 +384,8 @@ summarizing of long chats on for a 32k window; math formatting via a built-in in
   dark scheme) and Latte (a light one), each with its own tokens (`data-theme` on `<html>`), in Settings →
   General, remembered in
   `localStorage`. The accent colour (blue or five presets, `data-accent`) is
-  chosen there too, and the text size (the root font size, 87.5 to 125 %). Tokens move to `color-scheme` + `light-dark()` so each colour
+  chosen there too, the text size (the root font size, 87.5 to 125 %) and Reduce transparency
+  (follows `prefers-reduced-transparency`, overridable). Tokens move to `color-scheme` + `light-dark()` so each colour
   is defined once; code highlighting uses our own tokens (the highlight.js
   theme files are media-query based and can't follow a manual toggle).
 - **Settings dialog** (DESIGN.md §4): General (theme), Personalization

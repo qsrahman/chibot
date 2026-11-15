@@ -478,6 +478,15 @@ inside them is sized to fit at 125 %. `tests/e2e/settings.spec.ts` checks that
 the composer, sidebar and Settings dialog fit with no sideways page scroll at
 Extra large, on a desktop and a phone.
 
+**Reduce transparency** is a switch in Settings → General → Appearance
+(`<html data-transparency="reduced">` or `full`, set before first paint). It
+starts from the system's `prefers-reduced-transparency` and the choice here
+overrides it. The tinted surfaces become opaque steps of the theme's own tokens:
+`--code-chip` is `--surface-muted` and `--row-stripe` mixes `--surface-muted`
+and `--surface`. There is little else to change: borders are hairlines, the
+shadows aren't surfaces, and the modal scrim, which only dims the page behind a
+dialog, stays translucent.
+
 **Footer.** 12 px muted line under the composer: "chibot can make mistakes.
 Check important info."
 

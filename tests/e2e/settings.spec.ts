@@ -8,6 +8,7 @@ import {
   appReady,
   lastRequest,
   resetSettings,
+  savedChat,
   send,
   turns,
 } from './helpers.ts'
@@ -293,6 +294,35 @@ for (const [name, viewport] of [
     }
   })
 }
+
+test('reduces transparency and remembers it', async ({ page }) => {
+  const id = await savedChat(page, {
+    question: 'Which command?',
+    answerText: 'Run `pnpm test` first.',
+  })
+  await page.goto(`/c/${id}`)
+  const chip = page.locator('.markdown :not(pre) > code').first()
+  const background = () =>
+    chip.evaluate((el) => getComputedStyle(el).backgroundColor)
+  // The code chip is a tint with an alpha channel: "rgba(…, 0.82)".
+  expect(await background()).toMatch(/^rgba\(.*0\.82\)$/)
+
+  const dialog = await openSettings(page, 'General')
+  const toggle = dialog.getByRole('switch', { name: 'Reduce transparency' })
+  await expect(toggle).not.toBeChecked()
+  await toggle.check()
+  expect(await background()).toMatch(/^rgb\(/)
+
+  // Applied before the app loads.
+  await page.reload()
+  expect(await background()).toMatch(/^rgb\(/)
+  const again = await openSettings(page, 'General')
+  await expect(
+    again.getByRole('switch', { name: 'Reduce transparency' }),
+  ).toBeChecked()
+  await again.getByRole('switch', { name: 'Reduce transparency' }).uncheck()
+  expect(await background()).toMatch(/^rgba\(/)
+})
 
 test('exports a chat and imports it back', async ({ page }) => {
   await page.goto('/')

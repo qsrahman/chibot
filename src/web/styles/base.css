@@ -338,6 +338,23 @@
   --accent-tile-fg: #8e166e;
 }
 
+/* Reduce transparency (Settings → General; also the system's
+   prefers-reduced-transparency unless the setting says `full`): the tinted
+   surfaces become opaque steps of the theme's own tokens. The modal scrim
+   stays translucent, since it only dims the page behind a dialog. After the
+   theme blocks, so it wins. */
+:root[data-transparency='reduced'] {
+  --code-chip: var(--surface-muted);
+  --row-stripe: color-mix(in srgb, var(--surface-muted) 50%, var(--surface));
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root:not([data-transparency='full']) {
+    --code-chip: var(--surface-muted);
+    --row-stripe: color-mix(in srgb, var(--surface-muted) 50%, var(--surface));
+  }
+}
+
 * {
   box-sizing: border-box;
 }

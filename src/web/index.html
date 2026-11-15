@@ -45,6 +45,9 @@
         const size = localStorage.getItem('chibot.textSize')
         if (size && /^[\d.]+%$/.test(size))
           document.documentElement.style.fontSize = size
+        const transparency = localStorage.getItem('chibot.transparency')
+        if (transparency === 'reduced' || transparency === 'full')
+          document.documentElement.dataset.transparency = transparency
         const accent = localStorage.getItem('chibot.accent')
         if (accent) document.documentElement.dataset.accent = accent
       } catch {}

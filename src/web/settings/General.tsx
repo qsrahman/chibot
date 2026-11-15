@@ -2,6 +2,7 @@ import {
   ACCENTS,
   TEXT_SIZES,
   useAccent,
+  useReducedTransparency,
   useTextSize,
 } from '../ui/appearance.ts'
 import { useNotifyPreference } from '../ui/notifications.ts'
@@ -12,6 +13,7 @@ export function General() {
   const { scheme, systemScheme, choose } = useColorScheme()
   const [accent, chooseAccent] = useAccent()
   const [textSize, chooseTextSize] = useTextSize()
+  const [reduced, setReduced] = useReducedTransparency()
   const notifications = useNotifyPreference()
   const options: { value: ColorScheme; label: string }[] = [
     { value: null, label: `System (currently ${systemScheme})` },
@@ -76,6 +78,20 @@ export function General() {
               </option>
             ))}
           </select>
+        </Row>
+        <Row
+          label="Reduce transparency"
+          description="Shows code, table stripes and similar tints as solid colours. Follows your system's setting until you change it here."
+          htmlFor="setting-transparency"
+        >
+          <input
+            id="setting-transparency"
+            type="checkbox"
+            role="switch"
+            className="switch"
+            checked={reduced}
+            onChange={(e) => setReduced(e.target.checked)}
+          />
         </Row>
       </Section>
       {notifications.supported && (

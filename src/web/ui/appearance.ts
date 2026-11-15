@@ -34,6 +34,23 @@ function useStoredChoice<T extends string>(
   return [value, choose] as const
 }
 
+/** `reduced` or `full` overrides the system's reduced-transparency setting. */
+export const systemReducesTransparency = () =>
+  matchMedia('(prefers-reduced-transparency: reduce)').matches
+
+export function useReducedTransparency() {
+  const [choice, choose] = useStoredChoice<'reduced' | 'full'>(
+    'chibot.transparency',
+    ['reduced', 'full'],
+    (value) => {
+      if (value) document.documentElement.dataset.transparency = value
+      else delete document.documentElement.dataset.transparency
+    },
+  )
+  const reduced = choice ? choice === 'reduced' : systemReducesTransparency()
+  return [reduced, (on: boolean) => choose(on ? 'reduced' : 'full')] as const
+}
+
 /** The root font size, which scales every rem length. */
 export const TEXT_SIZES = [
   { value: '87.5%', label: 'Small' },

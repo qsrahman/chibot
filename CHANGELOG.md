@@ -10,6 +10,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Added
 
+- **Reduce transparency**: a switch in Settings → General → Appearance, starting from the system's `prefers-reduced-transparency`. Inline code and table stripes become solid colours; the dialog scrim stays translucent.
 - **Text size**: Settings → General → Appearance has Small (87.5 %), Default, Large (112.5 %) and Extra large (125 %), kept per browser and applied before first paint. The sidebar, dialogs and the Settings tabs now size in `rem`, so they grow with the text.
 - An optional **Catppuccin Latte** theme (Settings → General → Theme), a light counterpart of Macchiato that never follows the system. Colours of the palette that fail the contrast checks on its surfaces (muted text, red, code, some accents) are darkened until they pass.
 - **Accent colour**: Settings → General → Appearance offers Blue (the default), Violet, Teal, Green, Orange and Pink, kept per browser and applied before first paint. It replaces the send button, switches, citation chips and icon tiles in every theme; each accent's colours are chosen per theme and pass the contrast checks (tokens test for all combinations, axe for all of them).
