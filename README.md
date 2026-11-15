@@ -416,7 +416,8 @@ needs the server running: there is no offline mode, since the server is local.
   composer's reasoning effort chip picks **Auto** (the model's default) or a
   level from Minimal to Max (also in Settings → Model).
 - **Settings** (sidebar gear, or ⌘/Ctrl+,):
-  - *General:* theme (System, Light, Dark or Catppuccin Macchiato), and **Notify me about
+  - *General:* theme (System, Light, Dark or Catppuccin Macchiato), the **accent colour**
+    (Blue, Violet, Teal, Green, Orange or Pink; kept per browser), and **Notify me about
     finished answers**: a browser notification when an answer finishes or a tool needs your
     approval while chibot is in the background. Either way the page title gets a
     "•" until you are back.

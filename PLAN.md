@@ -383,7 +383,8 @@ summarizing of long chats on for a 32k window; math formatting via a built-in in
 - **Theme.** Light / Dark / System, and the optional Catppuccin Macchiato (a
   dark scheme with its own tokens, `data-theme` on `<html>`), in Settings →
   General, remembered in
-  `localStorage`. Tokens move to `color-scheme` + `light-dark()` so each colour
+  `localStorage`. The accent colour (blue or five presets, `data-accent`) is
+  chosen there too. Tokens move to `color-scheme` + `light-dark()` so each colour
   is defined once; code highlighting uses our own tokens (the highlight.js
   theme files are media-query based and can't follow a manual toggle).
 - **Settings dialog** (DESIGN.md §4): General (theme), Personalization

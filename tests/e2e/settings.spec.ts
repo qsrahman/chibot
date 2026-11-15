@@ -167,6 +167,36 @@ test('switches and remembers the theme', async ({ page }) => {
   ).toBeNull()
 })
 
+test('switches and remembers the accent colour', async ({ page }) => {
+  const accent = () =>
+    page.evaluate(() =>
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--accent')
+        .trim(),
+    )
+  await page.emulateMedia({ colorScheme: 'light' })
+  await page.goto('/')
+  expect(await accent()).toBe('#3566f0')
+
+  const dialog = await openSettings(page, 'General')
+  await dialog.getByLabel('Accent colour').selectOption('orange')
+  expect(await accent()).toBe('#c84900')
+
+  // Applied before the app loads, and in a theme with its own palette.
+  await page.reload()
+  expect(await accent()).toBe('#c84900')
+  const again = await openSettings(page, 'General')
+  await again.getByLabel('Theme').selectOption('macchiato')
+  expect(await accent()).toBe('#f5a97f')
+
+  await again.getByLabel('Accent colour').selectOption('default')
+  expect(await accent()).toBe('#8aadf4')
+  expect(
+    await page.evaluate(() => localStorage.getItem('chibot.accent')),
+  ).toBeNull()
+  await again.getByLabel('Theme').selectOption('system')
+})
+
 test('exports a chat and imports it back', async ({ page }) => {
   await page.goto('/')
   await send(page, 'Keep this for later')

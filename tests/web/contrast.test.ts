@@ -12,22 +12,52 @@ const css = readFileSync(
 const HEX = '#[0-9a-fA-F]{6}'
 
 type Scheme = 'light' | 'dark' | 'macchiato'
+const SCHEMES: Scheme[] = ['light', 'dark', 'macchiato']
+/** `null` is the default blue; the others have blocks in base.css. */
+const ACCENTS = [null, 'violet', 'teal', 'green', 'orange', 'pink']
 
-// The Catppuccin Macchiato block overrides the dark tokens it names.
-const MACCHIATO = css.slice(css.indexOf(":root[data-theme='macchiato']"))
+/** The declarations of the rule that starts with `selector`. */
+function block(selector: string): string {
+  const start = css.indexOf(`${selector} {`)
+  if (start < 0) return ''
+  return css.slice(start, css.indexOf('\n}', start))
+}
 
-function token(name: string, scheme: Scheme): string {
-  if (name.startsWith('#')) return name // a colour written in the CSS itself
-  if (scheme === 'macchiato') {
-    const own = new RegExp(`--${name}:\\s*(${HEX})\\s*;`).exec(MACCHIATO)
-    if (own) return own[1]!
-  }
+// The default tokens are light-dark() pairs in :root; the Macchiato block
+// overrides the dark ones it names; an accent's blocks override the accent's.
+const ROOT = block(':root')
+const MACCHIATO = block(":root[data-theme='macchiato']")
+
+function value(
+  source: string,
+  name: string,
+  scheme: Scheme,
+): string | undefined {
   const pair = new RegExp(
     `--${name}:\\s*light-dark\\(\\s*(${HEX})\\s*,\\s*(${HEX})\\s*\\)`,
-  ).exec(css)
-  if (pair) return pair[scheme === 'light' ? 1 : 2]!
-  const plain = new RegExp(`--${name}:\\s*(${HEX})\\s*;`).exec(css)
-  if (plain) return plain[1]!
+  ).exec(source)
+  if (pair) return pair[scheme === 'light' ? 1 : 2]
+  return new RegExp(`--${name}:\\s*(${HEX})\\s*;`).exec(source)?.[1]
+}
+
+function token(
+  name: string,
+  scheme: Scheme,
+  accent: string | null = null,
+): string {
+  if (name.startsWith('#')) return name // a colour written in the CSS itself
+  if (accent) {
+    const selector =
+      scheme === 'macchiato'
+        ? `:root[data-theme='macchiato'][data-accent='${accent}']`
+        : `:root[data-accent='${accent}']`
+    const own = value(block(selector), name, scheme)
+    if (own) return own
+  }
+  const found =
+    (scheme === 'macchiato' && value(MACCHIATO, name, scheme)) ||
+    value(ROOT, name, scheme)
+  if (found) return found
   throw new Error(`no opaque colour token --${name}`)
 }
 
@@ -77,26 +107,56 @@ const INTERFACE: [string, string][] = [
   // The edge of a field is what shows where it is.
   ['border-control', 'bg'],
   ['border-control', 'surface'],
+  // A switch's thumb on its track when it is off (settings.css).
+  ['switch-thumb', 'switch-track'],
+]
+
+/** The pairs that depend on the accent, checked for each accent. */
+const ACCENT_TEXT: [string, string, number][] = [
+  ['accent-fg', 'accent', 4.5],
+  // A citation chip, on its tint and on the card it opens.
+  ['cite-fg', 'cite-bg', 4.5],
+  ['cite-fg', 'surface-raised', 4.5],
+  ['accent-tile-fg', 'accent-tile', 4.5],
+]
+const ACCENT_INTERFACE: [string, string][] = [
   ['accent', 'bg'],
   ['accent', 'surface'],
-  // A switch's thumb on its track, off and on (settings.css).
-  ['switch-thumb', 'switch-track'],
+  // A switch's thumb on its track when it is on.
   ['switch-thumb-on', 'accent'],
 ]
 
-describe.each(['light', 'dark', 'macchiato'] as const)(
-  'colour tokens, %s',
-  (scheme) => {
-    it.each(TEXT)('%s on %s is readable (4.5:1)', (fg, bg) => {
-      expect(
-        contrast(token(fg, scheme), token(bg, scheme)),
-      ).toBeGreaterThanOrEqual(4.5)
+describe.each(SCHEMES)('colour tokens, %s', (scheme) => {
+  it.each(TEXT)('%s on %s is readable (4.5:1)', (fg, bg) => {
+    expect(
+      contrast(token(fg, scheme), token(bg, scheme)),
+    ).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it.each(INTERFACE)('%s on %s shows (3:1)', (fg, bg) => {
+    expect(
+      contrast(token(fg, scheme), token(bg, scheme)),
+    ).toBeGreaterThanOrEqual(3)
+  })
+})
+
+describe.each(SCHEMES)('accent colours, %s', (scheme) => {
+  describe.each(ACCENTS)('%s', (accent) => {
+    it('has its own colours', () => {
+      const own = token('accent', scheme, accent) !== token('accent', scheme)
+      expect(own).toBe(accent !== null)
     })
 
-    it.each(INTERFACE)('%s on %s shows (3:1)', (fg, bg) => {
+    it.each(ACCENT_TEXT)('%s on %s is readable (%s:1)', (fg, bg, ratio) => {
       expect(
-        contrast(token(fg, scheme), token(bg, scheme)),
+        contrast(token(fg, scheme, accent), token(bg, scheme, accent)),
+      ).toBeGreaterThanOrEqual(ratio)
+    })
+
+    it.each(ACCENT_INTERFACE)('%s on %s shows (3:1)', (fg, bg) => {
+      expect(
+        contrast(token(fg, scheme, accent), token(bg, scheme, accent)),
       ).toBeGreaterThanOrEqual(3)
     })
-  },
-)
+  })
+})

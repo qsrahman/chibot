@@ -442,6 +442,20 @@ on it, since white would be 2.3:1), danger `#ed8796`. Code uses the palette's
 mauve, blue, peach, green, yellow and teal. The same contrast checks as the
 other themes cover it (`tests/web/contrast.test.ts`, `tests/e2e/contrast.spec.ts`).
 
+**Accent colour** is a browser preference in Settings → General → Appearance:
+Blue (the default, no attribute), Violet, Teal, Green, Orange or Pink.
+`<html data-accent="…">` (set before first paint, like the theme) makes the
+blocks after the theme blocks in `base.css` replace every token built from the
+accent: `--accent`, `--accent-fg`, `--switch-thumb-on`, `--cite-*` and
+`--accent-tile*`. Each accent has a `light-dark()` set for Light and Dark
+(a deeper colour with white on it, a lighter one with near-black on it) and
+plain colours for Macchiato (the palette's mauve, teal, green, peach and pink,
+with crust on them). The blocks are measured, not guessed: `accent-fg` on
+`--accent` is 4.5:1, `--accent` on the page and cards 3:1, citation text 4.5:1,
+for every accent in every theme (`tests/web/contrast.test.ts`; axe covers all
+of them in `tests/e2e/contrast.spec.ts`). The favicon and app icons keep the
+blue.
+
 **Footer.** 12 px muted line under the composer: "chibot can make mistakes.
 Check important info."
 

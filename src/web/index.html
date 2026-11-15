@@ -29,7 +29,7 @@
     />
     <meta name="mobile-web-app-capable" content="yes" />
     <script>
-      // Apply a saved theme before first paint (see theme.ts).
+      // Apply a saved theme and accent before first paint (see theme.ts).
       try {
         const saved = localStorage.getItem('chibot.colorScheme')
         document.querySelector('meta[name="color-scheme"]').content =
@@ -44,6 +44,8 @@
                 : saved === 'macchiato'
                   ? '#181926'
                   : '#fcfcfc'
+        const accent = localStorage.getItem('chibot.accent')
+        if (accent) document.documentElement.dataset.accent = accent
       } catch {}
     </script>
     <title>chibot</title>

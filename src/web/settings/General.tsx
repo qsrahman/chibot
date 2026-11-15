@@ -1,9 +1,11 @@
+import { ACCENTS, useAccent } from '../ui/appearance.ts'
 import { useNotifyPreference } from '../ui/notifications.ts'
 import { useColorScheme, type ColorScheme } from '../ui/theme.ts'
 import { Row, Section } from './parts.tsx'
 
 export function General() {
   const { scheme, systemScheme, choose } = useColorScheme()
+  const [accent, chooseAccent] = useAccent()
   const notifications = useNotifyPreference()
   const options: { value: ColorScheme; label: string }[] = [
     { value: null, label: `System (currently ${systemScheme})` },
@@ -28,6 +30,26 @@ export function General() {
           >
             {options.map(({ value, label }) => (
               <option key={label} value={value ?? 'system'}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </Row>
+        <Row label="Accent colour" htmlFor="setting-accent">
+          <select
+            id="setting-accent"
+            value={accent ?? 'default'}
+            onChange={(e) =>
+              chooseAccent(
+                e.target.value === 'default'
+                  ? null
+                  : (e.target.value as NonNullable<typeof accent>),
+              )
+            }
+          >
+            <option value="default">Blue (default)</option>
+            {ACCENTS.map(({ value, label }) => (
+              <option key={value} value={value}>
                 {label}
               </option>
             ))}

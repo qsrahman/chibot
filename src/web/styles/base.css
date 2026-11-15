@@ -141,6 +141,112 @@
   --code-removed-bg: #4a2a3d;
 }
 
+/* Accent colours (Settings → General, DESIGN.md §2): `data-accent` on <html>
+   (appearance.ts, and index.html before first paint) replaces every token
+   built from the accent. Each theme has its own set so every pair keeps its
+   contrast (tests/web/contrast.test.ts); the default blue has no attribute.
+   Macchiato's are its own palette's colours. After the theme blocks above, so
+   they win. */
+/* violet */
+:root[data-accent='violet'] {
+  --accent: light-dark(#8658e1, #ba98ff);
+  --accent-fg: light-dark(#ffffff, #0d0d0d);
+  --switch-thumb-on: light-dark(#ffffff, #0d0d0d);
+  --cite-bg: light-dark(#f3eeff, #302749);
+  --cite-fg: light-dark(#683eb6, #c3aeff);
+  --accent-tile: light-dark(#f3eeff, #302749);
+  --accent-tile-fg: light-dark(#683eb6, #c3aeff);
+}
+:root[data-theme='macchiato'][data-accent='violet'] {
+  --accent: #c6a0f6;
+  --accent-fg: #181926;
+  --switch-thumb-on: #181926;
+  --cite-bg: #34334d;
+  --cite-fg: #d4b8f8;
+  --accent-tile: #34334d;
+  --accent-tile-fg: #d4b8f8;
+}
+
+/* teal */
+:root[data-accent='teal'] {
+  --accent: light-dark(#00827d, #61c4be);
+  --accent-fg: light-dark(#ffffff, #0d0d0d);
+  --switch-thumb-on: light-dark(#ffffff, #0d0d0d);
+  --cite-bg: light-dark(#dcf9f6, #003734);
+  --cite-fg: light-dark(#00635f, #8bccc7);
+  --accent-tile: light-dark(#dcf9f6, #003734);
+  --accent-tile-fg: light-dark(#00635f, #8bccc7);
+}
+:root[data-theme='macchiato'][data-accent='teal'] {
+  --accent: #8bd5ca;
+  --accent-fg: #181926;
+  --switch-thumb-on: #181926;
+  --cite-bg: #2e3848;
+  --cite-fg: #a8e0d7;
+  --accent-tile: #2e3848;
+  --accent-tile-fg: #a8e0d7;
+}
+
+/* green */
+:root[data-accent='green'] {
+  --accent: light-dark(#008736, #6bc982);
+  --accent-fg: light-dark(#ffffff, #0d0d0d);
+  --switch-thumb-on: light-dark(#ffffff, #0d0d0d);
+  --cite-bg: light-dark(#e4f8e7, #14361d);
+  --cite-fg: light-dark(#006720, #90d09d);
+  --accent-tile: light-dark(#e4f8e7, #14361d);
+  --accent-tile-fg: light-dark(#006720, #90d09d);
+}
+:root[data-theme='macchiato'][data-accent='green'] {
+  --accent: #a6da95;
+  --accent-fg: #181926;
+  --switch-thumb-on: #181926;
+  --cite-bg: #313943;
+  --cite-fg: #bce3b0;
+  --accent-tile: #313943;
+  --accent-tile-fg: #bce3b0;
+}
+
+/* orange */
+:root[data-accent='orange'] {
+  --accent: light-dark(#c84900, #ff9043);
+  --accent-fg: light-dark(#ffffff, #0d0d0d);
+  --switch-thumb-on: light-dark(#ffffff, #0d0d0d);
+  --cite-bg: light-dark(#ffede0, #45240e);
+  --cite-fg: light-dark(#9f3000, #f8a878);
+  --accent-tile: light-dark(#ffede0, #45240e);
+  --accent-tile-fg: light-dark(#9f3000, #f8a878);
+}
+:root[data-theme='macchiato'][data-accent='orange'] {
+  --accent: #f5a97f;
+  --accent-fg: #181926;
+  --switch-thumb-on: #181926;
+  --cite-bg: #393441;
+  --cite-fg: #f8be9f;
+  --accent-tile: #393441;
+  --accent-tile-fg: #f8be9f;
+}
+
+/* pink */
+:root[data-accent='pink'] {
+  --accent: light-dark(#cb397c, #ff81b2);
+  --accent-fg: light-dark(#ffffff, #0d0d0d);
+  --switch-thumb-on: light-dark(#ffffff, #0d0d0d);
+  --cite-bg: light-dark(#ffeaf2, #45202e);
+  --cite-fg: light-dark(#a2215f, #f99ebf);
+  --accent-tile: light-dark(#ffeaf2, #45202e);
+  --accent-tile-fg: light-dark(#a2215f, #f99ebf);
+}
+:root[data-theme='macchiato'][data-accent='pink'] {
+  --accent: #f5bde6;
+  --accent-fg: #181926;
+  --switch-thumb-on: #181926;
+  --cite-bg: #39364b;
+  --cite-fg: #f8ceec;
+  --accent-tile: #39364b;
+  --accent-tile-fg: #f8ceec;
+}
+
 * {
   box-sizing: border-box;
 }
