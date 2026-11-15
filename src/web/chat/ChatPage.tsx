@@ -5,6 +5,9 @@ import type { ConversationListItem, Health } from '../../shared/types.ts'
 import { ErrorBoundary } from '../ui/ErrorBoundary.tsx'
 import { ChatTopBar } from './ChatTopBar.tsx'
 import { Composer } from './Composer.tsx'
+import { FollowUps } from './FollowUps.tsx'
+import { shownSuggestions } from './followUps.ts'
+import { useFollowUps } from './useFollowUps.ts'
 import { Greeting } from './Greeting.tsx'
 import { quoteText } from './quote.ts'
 import { QuoteSelection } from './QuoteSelection.tsx'
@@ -17,7 +20,7 @@ import { triggerAt } from '../../shared/context.ts'
 import { knownUrls } from '../../shared/media.ts'
 import { MediaContext } from './mediaContext.ts'
 import { ToolInfoContext } from './toolInfo.ts'
-import { waitingCalls, type Turn } from './turns.ts'
+import { interrupted, waitingCalls, type Turn } from './turns.ts'
 import { ApprovalCard, TurnView } from './TurnView.tsx'
 import { describeUsage } from './usage.ts'
 import { useAttachments } from './useAttachments.ts'
@@ -42,6 +45,8 @@ interface Props {
   onOpenSidebar?: () => void
   /** Shut out while the phone drawer covers the page (nothing here can be reached). */
   inert?: boolean
+  /** Opens the Memories dialog. */
+  onShowMemories: () => void
 }
 
 /** What "Continue" sends after a stopped answer. */
@@ -65,6 +70,7 @@ export function ChatPage({
   conversations,
   onOpenSidebar,
   inert,
+  onShowMemories,
 }: Props) {
   // `projectId`: a project's page, where a new chat starts in the project.
   const { id, projectId: projectHome } = useParams()
@@ -78,6 +84,13 @@ export function ChatPage({
     projectId: projectHome,
   })
   const { turns, pending, error, isTemporary, busy } = chat
+  // An answer that failed is told about in its own turn, with Retry; any
+  // other error (or a failure that left no turn to retry) shows under the thread.
+  const last = turns.at(-1)
+  const failure =
+    error !== null && error === chat.failure && last && interrupted(last)
+      ? error
+      : null
   const { toast } = useToast()
 
   /** A new chat with this one up to the end of `turn`, opened at once. */
@@ -101,6 +114,20 @@ export function ChatPage({
     append?: boolean
   } | null>(null)
   const waiting = pending ? [] : waitingCalls(turns)
+  const followUps = useFollowUps({
+    chatId: id,
+    turns,
+    waiting: waiting.length,
+    busy,
+    queued: chat.queued !== null,
+    enabled: !!settings.settings?.suggestionModel,
+  })
+  const suggestions = shownSuggestions(
+    followUps.found,
+    id,
+    followUps.target,
+    !busy && chat.queued === null && !!settings.settings?.suggestionModel,
+  )
   const toolOptions = toolOptionsOf(settings.tools, settings.settings)
   const chatUsage = describeUsage(chat.usage)
   // Each answer shows the context it sent against the window.
@@ -289,12 +316,22 @@ export function ChatPage({
                       }
                       onEdit={following((text: string) => chat.edit(i, text))}
                       onRegenerate={following(() => chat.regenerate(i))}
+                      failure={failure}
+                      onRetry={following(() => {
+                        void chat.regenerate(i)
+                        composerRef.current?.focus()
+                      })}
                       onBranch={
                         id && !temporary && turn.question.itemId !== null
                           ? () => void branch(id, turn)
                           : undefined
                       }
                       onContinue={following(() => chat.send(CONTINUE))}
+                      onNextStep={
+                        busy || chat.queued !== null
+                          ? undefined
+                          : following(chat.send)
+                      }
                       onSwitch={(itemId) => void chat.switchVersion(itemId)}
                       onImageLoad={follow}
                       context={context}
@@ -302,6 +339,7 @@ export function ChatPage({
                         chat.canCompact ? following(chat.compact) : undefined
                       }
                       onUndoCompaction={(c) => void chat.undo(c)}
+                      onShowMemories={onShowMemories}
                     />
                   </ErrorBoundary>
                 ))}
@@ -325,7 +363,7 @@ export function ChatPage({
                     {chat.notice}
                   </p>
                 )}
-                {error && (
+                {error && !failure && (
                   <p className="error" role="alert">
                     {error}
                   </p>
@@ -355,6 +393,7 @@ export function ChatPage({
               }))
             }
           />
+          <FollowUps suggestions={suggestions} onPick={following(chat.send)} />
           <Composer
             busy={busy}
             onSend={following(chat.send)}

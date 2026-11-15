@@ -3,7 +3,8 @@ import type {
   ResponseUsage,
 } from 'openai/resources/responses/responses'
 import { fileParts, messageText } from '../../shared/messages.ts'
-import type { Compaction, StoredItem } from '../../shared/types.ts'
+import type { Compaction, StoredItem, UsedMemory } from '../../shared/types.ts'
+import { NEXT_STEP_TOOL } from '../../shared/tools.ts'
 import { mcpToolName } from '../settings/mcp.ts'
 import { addUsage } from './usage.ts'
 
@@ -57,11 +58,17 @@ export interface Answer {
   lastUsage: ResponseUsage | null
   /** The model that wrote it, if known. */
   model: string | null
+  /** The saved memories that were in its instructions, as they were then. */
+  memories: UsedMemory[]
   /** Regenerations of this answer, or `null` if there are none. */
   versions: Versions | null
   /** It stopped before it was finished (stopped by the user, or cut off by the model's limit). */
   incomplete: boolean
 }
+
+/** The answer stopped early or never came, and the question was saved: it can be answered again. */
+export const interrupted = ({ question, answer }: Turn) =>
+  answer ? answer.incomplete : question.itemId !== null
 
 /** A user message and the answer to it, as the chat shows them. */
 export interface Turn {
@@ -121,6 +128,7 @@ export function toTurns(
       usage: null,
       lastUsage: null,
       model: null,
+      memories: [],
       versions: versionsOf(item),
       incomplete: false,
     }
@@ -155,6 +163,7 @@ export function toTurns(
       turn.answer.lastUsage = item.usage
     }
     if (item.model) turn.answer.model = item.model
+    if (item.memories) turn.answer.memories = item.memories
   }
   return turns
 }
@@ -191,12 +200,67 @@ export function waitingCalls(turns: Turn[]): ToolActivity[] {
   return turns.at(-1)?.answer?.tools.filter((t) => t.output === null) ?? []
 }
 
+/** The follow-up an answer offers as a card (`suggest_next_step`). */
+export interface NextStep {
+  title: string
+  description: string
+  /** The button's words. */
+  button: string
+  /** What clicking sends as the next message. */
+  prompt: string
+}
+
+/**
+ * The card the answer's last `suggest_next_step` call asks for, or `null`
+ * when it made none, the call failed, or a field is missing (the model
+ * wrote it, so it's only used as text, cut to fit).
+ */
+export function nextStepOf(answer: Answer): NextStep | null {
+  const call = answer.tools.findLast((tool) => tool.name === NEXT_STEP_TOOL)
+  if (!call?.output || call.output.startsWith('Error:')) return null
+  const args = parseJson<Record<string, unknown>>(call.arguments)
+  const field = (key: string, max: number) => {
+    const value = args[key]
+    return typeof value === 'string' ? value.trim().slice(0, max) : ''
+  }
+  const step = {
+    title: field('title', 80),
+    description: field('description', 160),
+    button: field('button', 24),
+    prompt: field('prompt', 2000),
+  }
+  return Object.values(step).every(Boolean) ? step : null
+}
+
 /** A page, past chat or project file an answer searched or read. */
 export interface Source {
   url: string
   title: string
   /** A chat in chibot (`/c/:id`) or a project file, not a web page. */
   kind?: 'chat' | 'file'
+  /** What the search found there, for the card a citation opens. */
+  snippet?: string
+}
+
+/** Where a source is from, in a few words: a site's host, or what kind of thing it is. */
+export function sourceHost({ url, kind }: Source): string {
+  if (kind) return kind === 'chat' ? 'Your chats' : 'Project file'
+  return URL.parse(url)?.hostname ?? url
+}
+
+const SNIPPET_LENGTH = 200
+
+/** `value` as a one-line snippet of at most 200 characters, or nothing. */
+function snippetOf(value: unknown): { snippet: string } | null {
+  if (typeof value !== 'string') return null
+  const text = value.replace(/\s+/g, ' ').trim()
+  if (!text) return null
+  return {
+    snippet:
+      text.length > SNIPPET_LENGTH
+        ? `${text.slice(0, SNIPPET_LENGTH - 1)}…`
+        : text,
+  }
 }
 
 /**
@@ -231,6 +295,7 @@ function toolSources(tool: ToolActivity): Source[] {
       found.set(url.href, {
         url: url.href,
         title: sourceTitle(row.title, url.href),
+        ...snippetOf(row.snippet ?? row.description),
       })
     }
   } else if (tool.name === 'search_chats') {
@@ -242,6 +307,10 @@ function toolSources(tool: ToolActivity): Source[] {
         url,
         title: sourceTitle(row.title, 'Chat'),
         kind: 'chat',
+        ...snippetOf(
+          rows(row.messages).find((m) => typeof m.excerpt === 'string')
+            ?.excerpt,
+        ),
       })
     }
   } else if (tool.name === 'search_project_files') {
@@ -256,6 +325,7 @@ function toolSources(tool: ToolActivity): Source[] {
         url,
         title: page ? `${name} · p. ${page}` : name,
         kind: 'file',
+        ...snippetOf(row.text),
       })
     }
   } else if (tool.name === 'read_project_file') {
@@ -274,8 +344,75 @@ function toolSources(tool: ToolActivity): Source[] {
     const { url } = parseJson<{ url?: unknown }>(tool.arguments)
     const parsed = webUrl(url)
     if (parsed) found.set(parsed.href, { url: parsed.href, title: parsed.href })
+  } else {
+    for (const source of mcpSources(tool)) found.set(source.url, source)
   }
   return [...found.values()]
+}
+
+// MCP tools that search or read the web, by their own name (`brave_web_search`,
+// `fetch`, `scrape`…): a tool that merely has a URL in its data (issues, files)
+// is not a source of the answer.
+const WEB_TOOL = /search|fetch|scrape|crawl|browse|extract|read_?(url|page)/i
+
+/**
+ * The pages an MCP web search or page-reading tool found or read. Servers
+ * differ in what they send, so this takes the two common shapes: JSON, in the
+ * whole output or one value to a paragraph (Brave's), where any object with a
+ * web address and a title is a result; and text with `Title:`, `URL:` and
+ * `Description:` lines. A page-reading tool called with a `url` argument read
+ * that page.
+ */
+function mcpSources(tool: ToolActivity): Source[] {
+  const name = mcpToolName(tool.name)?.tool
+  if (!name || !WEB_TOOL.test(name) || !tool.output) return []
+  // Image tools' output wraps the text.
+  const wrapped = parseJson<{ result?: unknown }>(tool.output).result
+  const output = typeof wrapped === 'string' ? wrapped : tool.output
+  const found: Source[] = []
+  const add = (url: unknown, title: unknown, snippet: unknown) => {
+    const parsed = webUrl(url)
+    if (parsed) {
+      found.push({
+        url: parsed.href,
+        title: sourceTitle(title, parsed.href),
+        ...snippetOf(snippet),
+      })
+    }
+  }
+  const walk = (value: unknown, depth = 0) => {
+    if (depth > 6 || typeof value !== 'object' || value === null) return
+    const row = value as Record<string, unknown>
+    if (!Array.isArray(value) && typeof (row.url ?? row.link) === 'string') {
+      add(
+        row.url ?? row.link,
+        row.title ?? row.name,
+        row.description ?? row.snippet ?? row.content,
+      )
+    }
+    for (const child of Object.values(value)) walk(child, depth + 1)
+  }
+  for (const chunk of [output, ...output.split(/\n\s*\n/)]) {
+    const text = chunk.trim()
+    if (!text) continue
+    if (/^[[{]/.test(text)) {
+      const before = found.length
+      walk(parseJson(text))
+      // Whole output parsed: its chunks are the same results again.
+      if (before < found.length && chunk === output) break
+    } else {
+      const line = (label: string) =>
+        new RegExp(`^\\W*${label}:\\s*(.+)$`, 'im').exec(text)?.[1]?.trim()
+      add(line('(?:url|link)'), line('title'), line('(?:description|snippet)'))
+    }
+  }
+  if (found.length === 0) {
+    const { url } = parseJson<{ url?: unknown }>(tool.arguments)
+    if (/fetch|scrape|crawl|browse|extract|read/i.test(name)) {
+      add(url, null, null)
+    }
+  }
+  return found
 }
 
 /** What a tool call did, in people's terms (its raw call stays available). */

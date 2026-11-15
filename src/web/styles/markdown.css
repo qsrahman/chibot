@@ -19,7 +19,7 @@
 .markdown p,
 .markdown ul,
 .markdown ol,
-.markdown table,
+.markdown .table-block,
 .markdown .code-block {
   margin: 16px 0;
 }
@@ -95,6 +95,103 @@
 .cite:not([data-dismissed]):hover .cite-card,
 .cite:not([data-dismissed]):focus-within .cite-card {
   display: flex;
+}
+
+/* A citation: a numbered chip after the claim, and the card it opens (a
+   popover placed by its anchor, flipping when there is no room). The popover
+   itself is transparent with padding, so the pointer crosses no gap to it. */
+.cite-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  margin: 0 2px;
+  padding: 0 7px;
+  border: none;
+  border-radius: 999px;
+  background: var(--cite-bg);
+  color: var(--cite-fg);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  vertical-align: 1px;
+  cursor: pointer;
+}
+
+.cite-chip[aria-expanded='true'] {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+.cite-pop {
+  position: fixed;
+  inset: auto;
+  width: min(300px, 100vw - 32px);
+  margin: 0;
+  padding: 6px 0;
+  /* Not the popover default (auto), which would clip the card's shadow. */
+  overflow: visible;
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  position-area: block-start span-inline-end;
+  position-try-fallbacks:
+    flip-block,
+    flip-inline,
+    flip-block flip-inline;
+}
+
+.cite-source {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+  box-shadow: var(--dialog-shadow);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.cite-source-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+}
+
+.cite-source-count {
+  margin-inline-start: auto;
+}
+
+.cite-source-title {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.cite-source-snippet {
+  display: -webkit-box;
+  margin-top: 4px;
+  overflow: hidden;
+  color: var(--fg-muted);
+  line-clamp: 4;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+
+.cite-source-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  color: var(--cite-fg);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.cite-source-open:hover {
+  text-decoration: underline;
 }
 
 /* Code blocks have no box, as on ChatGPT: a label, then the code. */
@@ -250,9 +347,50 @@
   font-weight: 500;
 }
 
+.table-block {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 8px 2px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Sideways scrolling stays in the box; a long table scrolls under its sticky header row. */
+.table-scroll {
+  max-height: 28rem;
+  overflow: auto;
+  overscroll-behavior-x: contain;
+}
+
 .markdown table {
-  border-collapse: collapse;
+  width: 100%;
+  margin: 0;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 0.875rem;
+}
+
+.markdown th {
+  position: sticky;
+  top: 0;
+  background: var(--surface-muted);
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.markdown tbody tr:nth-child(even) td {
+  background: var(--row-stripe);
+}
+
+.markdown tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 .markdown th,

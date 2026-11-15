@@ -81,6 +81,7 @@ export function branchChat(
       data: item.data,
       usage: item.usage,
       model: item.model,
+      memories: item.memories,
       createdAt: item.createdAt,
     })),
     copyOnUse,

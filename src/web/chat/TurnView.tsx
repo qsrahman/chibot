@@ -1,15 +1,31 @@
 // One turn of a chat: the question, then the answer with its thoughts, tool
 // activity, images, sources and actions.
 import { useContext, useState, type KeyboardEvent, type ReactNode } from 'react'
-import { GitBranch, Pencil, RefreshCw, Wrench } from 'lucide-react'
+import {
+  CircleAlert,
+  GitBranch,
+  Lightbulb,
+  Pencil,
+  RefreshCw,
+  Wrench,
+} from 'lucide-react'
 import { FileCard } from '../ui/FileCard.tsx'
 import { ImageViewer, opensViewer, type ViewedImage } from './ImageViewer.tsx'
 import { Markdown } from './Markdown.tsx'
 import { TOUCH_ONLY, useMediaQuery } from '../ui/useMediaQuery.ts'
 import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
 import { SourcesContext } from './sourcesContext.ts'
-import { sourcesOf, type ToolActivity, type Turn } from './turns.ts'
+import {
+  interrupted,
+  nextStepOf,
+  sourcesOf,
+  type ToolActivity,
+  type Turn,
+} from './turns.ts'
+import { NextStepCard } from './NextStepCard.tsx'
+import { NEXT_STEP_TOOL } from '../../shared/tools.ts'
 import { describeContext, describeUsage } from './usage.ts'
+import { describeUsedMemory } from './usedMemory.ts'
 import { CompactionNote, CompactNow } from './CompactNote.tsx'
 import type { Compaction } from '../../shared/types.ts'
 import { AnswerImages } from './AnswerImages.tsx'
@@ -33,10 +49,15 @@ interface TurnViewProps {
   onEditingChange?: (editing: boolean) => void
   onEdit?: (text: string) => void
   onRegenerate?: () => void
+  /** Why the answer failed, when the run that gave this turn failed: shown with Retry. */
+  failure?: string | null
+  onRetry?: () => void
   /** Copies the chat up to the end of this turn into a new chat. */
   onBranch?: () => void
   /** Asks the model to carry on from where a stopped answer ended. */
   onContinue?: () => void
+  /** Sends the offered next step; set only while the chat is idle. */
+  onNextStep?: (prompt: string) => void
   onSwitch?: (itemId: number) => void
   /** An image loaded (and grew the page): keep following the answer. */
   onImageLoad?: () => void
@@ -45,10 +66,12 @@ interface TurnViewProps {
   /** Summarizes the start of the chat now (offered on the latest answer). */
   onCompact?: (focus: string) => void
   onUndoCompaction?: (compaction: Compaction) => void
+  /** Opens the Memories dialog (from the chip over an answer written with them). */
+  onShowMemories?: () => void
 }
 
 export function TurnView({
-  turn: { question, answer, compaction },
+  turn,
   pending,
   latest,
   busy,
@@ -57,20 +80,30 @@ export function TurnView({
   onEditingChange,
   onEdit,
   onRegenerate,
+  failure,
+  onRetry,
   onBranch,
   onContinue,
+  onNextStep,
   onSwitch,
   onImageLoad,
   context,
   onCompact,
   onUndoCompaction,
+  onShowMemories,
 }: TurnViewProps) {
+  const { question, answer, compaction } = turn
   const setEditing = (on: boolean) => onEditingChange?.(on)
   const [viewing, setViewing] = useState<ViewedImage | null>(null)
   // Shown after a Stop before the server's ids are known: no edit/regenerate.
   const saved = question.itemId !== null
   // The links in the answer to these are numbered, as in the list under it.
   const sources = answer ? sourcesOf(answer) : []
+  const usedMemory = describeUsedMemory(answer?.memories ?? [])
+  const nextStep =
+    latest && !pending && !approval && answer && !answer.incomplete
+      ? nextStepOf(answer)
+      : null
   const answerUsage = describeUsage(answer?.usage)
   const contextUsage = describeContext(
     answer?.lastUsage,
@@ -157,6 +190,17 @@ export function TurnView({
         </div>
       )}
 
+      {!pending && usedMemory && onShowMemories && (
+        <button
+          type="button"
+          className="memory-chip"
+          aria-label={usedMemory.label}
+          onClick={onShowMemories}
+        >
+          <Lightbulb size={15} strokeWidth={1.5} aria-hidden />
+          {usedMemory.short}
+        </button>
+      )}
       {answer?.thinking && (
         <Thoughts
           text={answer.thinking}
@@ -166,7 +210,11 @@ export function TurnView({
       {answer && (
         <ToolCalls
           // Waiting calls are shown by the approval card instead.
-          tools={answer.tools.filter((tool) => pending || tool.output !== null)}
+          // The next-step tool shows as its card.
+          tools={answer.tools.filter(
+            (tool) =>
+              tool.name !== NEXT_STEP_TOOL && (pending || tool.output !== null),
+          )}
         />
       )}
       {answer && (
@@ -191,43 +239,56 @@ export function TurnView({
       )}
       {answer && <Sources answer={answer} />}
       {approval}
-      {!pending &&
-        !approval &&
-        latest &&
-        (answer ? answer.incomplete : saved) && (
-          <div
-            className="recovery"
-            role="group"
-            aria-label="Answer interrupted"
-          >
-            <span>
-              {answer
-                ? 'The answer stopped before it was finished.'
-                : 'There is no answer to this message.'}
-            </span>
-            {answer && (
-              <button
-                type="button"
-                className="button"
-                disabled={busy}
-                onClick={() => onContinue?.()}
-              >
-                Continue
-              </button>
-            )}
-            {/* Regenerating needs the saved ids, which a just-stopped answer lacks until the chat reloads. */}
-            {saved && (
-              <button
-                type="button"
-                className="button"
-                disabled={busy}
-                onClick={() => onRegenerate?.()}
-              >
-                {answer ? 'Regenerate' : 'Try again'}
-              </button>
-            )}
+      {!pending && !approval && latest && interrupted(turn) && failure && (
+        <div className="recovery failed" role="alert">
+          <CircleAlert size={16} aria-hidden />
+          <div>
+            <p>The answer stopped unexpectedly.</p>
+            <p className="reason">{failure}</p>
           </div>
-        )}
+          <button
+            type="button"
+            className="button"
+            disabled={busy}
+            onClick={() => onRetry?.()}
+          >
+            Retry
+          </button>
+        </div>
+      )}
+      {!pending && !approval && latest && interrupted(turn) && !failure && (
+        <div className="recovery" role="group" aria-label="Answer interrupted">
+          <span>
+            {answer
+              ? 'The answer stopped before it was finished.'
+              : 'There is no answer to this message.'}
+          </span>
+          {answer && (
+            <button
+              type="button"
+              className="button"
+              disabled={busy}
+              onClick={() => onContinue?.()}
+            >
+              Continue
+            </button>
+          )}
+          {/* Regenerating needs the saved ids, which a just-stopped answer lacks until the chat reloads. */}
+          {saved && (
+            <button
+              type="button"
+              className="button"
+              disabled={busy}
+              onClick={() => onRegenerate?.()}
+            >
+              {answer ? 'Regenerate' : 'Try again'}
+            </button>
+          )}
+        </div>
+      )}
+      {nextStep && onNextStep && (
+        <NextStepCard step={nextStep} onChoose={onNextStep} />
+      )}
       {!pending && !approval && (
         <div className="actions answer-actions">
           {answer && <CopyButton text={answer.text} />}

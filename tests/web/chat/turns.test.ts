@@ -5,6 +5,7 @@ import {
   fileIds,
   imageInfo,
   imagesOf,
+  nextStepOf,
   newQuestion,
   toolPreview,
   sourcesOf,
@@ -141,6 +142,7 @@ describe('toTurns', () => {
           usage,
           lastUsage: usage,
           model: 'm-1',
+          memories: [],
           versions: null,
           incomplete: false,
         },
@@ -274,6 +276,7 @@ describe('sourcesOf and imagesOf', () => {
       thinking: '',
       usage: null,
       lastUsage: null,
+      memories: [],
       model: null,
       versions: null,
       incomplete: false,
@@ -309,6 +312,7 @@ describe('sourcesOf and imagesOf', () => {
       thinking: '',
       usage: null,
       lastUsage: null,
+      memories: [],
       model: null,
       versions: null,
       incomplete: false,
@@ -443,6 +447,132 @@ describe('sourcesOf and imagesOf', () => {
   })
 })
 
+describe('sources carry a snippet for the card a citation opens', () => {
+  const answerWith = (name: string, output: object) => ({
+    itemId: 1,
+    text: '',
+    thinking: '',
+    usage: null,
+    lastUsage: null,
+    model: null,
+    versions: null,
+    incomplete: false,
+    memories: [],
+    tools: [
+      { callId: 'c', name, arguments: '{}', output: JSON.stringify(output) },
+    ],
+  })
+
+  it('takes a search result’s snippet or description, tidied and cut', () => {
+    const long = `${'word '.repeat(100)}end`
+    const [a, b, c] = sourcesOf(
+      answerWith('web_search', {
+        results: [
+          { title: 'A', url: 'https://a.test/', snippet: ' one\n two ' },
+          { title: 'B', url: 'https://b.test/', description: long },
+          { title: 'C', url: 'https://c.test/', snippet: '  ' },
+        ],
+      }),
+    )
+    expect(a!.snippet).toBe('one two')
+    expect(b!.snippet).toHaveLength(200)
+    expect(b!.snippet!.endsWith('…')).toBe(true)
+    expect(c).not.toHaveProperty('snippet')
+  })
+
+  it('takes a past chat’s first excerpt', () => {
+    const [source] = sourcesOf(
+      answerWith('search_chats', {
+        results: [
+          {
+            chat_id: 'abc',
+            title: 'T',
+            messages: [{ role: 'user', excerpt: 'we chose SQLite' }],
+          },
+        ],
+      }),
+    )
+    expect(source!.snippet).toBe('we chose SQLite')
+  })
+})
+
+describe('sourcesOf with MCP web tools', () => {
+  const answerWith = (name: string, output: string, args = {}) => ({
+    itemId: 1,
+    text: '',
+    thinking: '',
+    usage: null,
+    lastUsage: null,
+    model: null,
+    versions: null,
+    incomplete: false,
+    memories: [],
+    tools: [{ callId: 'c', name, arguments: JSON.stringify(args), output }],
+  })
+
+  it('reads results one JSON value to a paragraph, as Brave sends them', () => {
+    const one = (n: number) =>
+      JSON.stringify({
+        url: `https://r${n}.test/`,
+        title: `R${n}`,
+        description: `about ${n}`,
+        extra_snippets: [],
+      })
+    expect(
+      sourcesOf(
+        answerWith('search__brave_web_search', `${one(1)}\n\n${one(2)}`),
+      ),
+    ).toEqual([
+      { url: 'https://r1.test/', title: 'R1', snippet: 'about 1' },
+      { url: 'https://r2.test/', title: 'R2', snippet: 'about 2' },
+    ])
+  })
+
+  it('reads nested JSON once, skipping addresses that are not web pages', () => {
+    const output = JSON.stringify({
+      web: {
+        results: [
+          { url: 'https://a.test/', title: 'A' },
+          { url: 'file:///etc/passwd', title: 'Local' },
+        ],
+      },
+      news: [{ link: 'https://n.test/', name: 'N', content: 'news' }],
+    })
+    expect(sourcesOf(answerWith('s__web_search', output))).toEqual([
+      { url: 'https://a.test/', title: 'A' },
+      { url: 'https://n.test/', title: 'N', snippet: 'news' },
+    ])
+  })
+
+  it('reads Title / URL / Description lines', () => {
+    const output =
+      'Title: One\nDescription: first\nURL: https://one.test/\n\nTitle: Two\nURL: https://two.test/'
+    expect(sourcesOf(answerWith('s__search', output))).toEqual([
+      { url: 'https://one.test/', title: 'One', snippet: 'first' },
+      { url: 'https://two.test/', title: 'Two' },
+    ])
+  })
+
+  it('counts the page a fetch tool was asked for', () => {
+    expect(
+      sourcesOf(
+        answerWith('fetch__fetch', 'Contents of the page…', {
+          url: 'https://p.test/x',
+        }),
+      ),
+    ).toEqual([{ url: 'https://p.test/x', title: 'https://p.test/x' }])
+  })
+
+  it('ignores other tools, errors and unfinished calls', () => {
+    const output = JSON.stringify({ url: 'https://a.test/', title: 'A' })
+    expect(sourcesOf(answerWith('tracker__list_issues', output))).toEqual([])
+    expect(sourcesOf(answerWith('s__search', `Error: ${output}`))).toEqual([])
+    expect(
+      sourcesOf({ ...answerWith('s__search', output), tools: [] }),
+    ).toEqual([])
+  })
+})
+
 describe('sourcesOf with past chats', () => {
   it('links chats found by search_chats inside chibot', () => {
     const output = JSON.stringify({
@@ -456,6 +586,7 @@ describe('sourcesOf with past chats', () => {
         thinking: '',
         usage: null,
         lastUsage: null,
+        memories: [],
         model: null,
         versions: null,
         incomplete: false,
@@ -481,6 +612,7 @@ describe('sourcesOf with project files', () => {
         thinking: '',
         usage: null,
         lastUsage: null,
+        memories: [],
         model: null,
         versions: null,
         incomplete: false,
@@ -493,7 +625,9 @@ describe('sourcesOf with project files', () => {
           },
         ],
       }),
-    ).toEqual([{ url: '/api/files/f1', title: 'plan.md', kind: 'file' }])
+    ).toEqual([
+      { url: '/api/files/f1', title: 'plan.md', kind: 'file', snippet: 'b' },
+    ])
   })
 
   it('opens a PDF at the page of each passage', () => {
@@ -503,6 +637,7 @@ describe('sourcesOf with project files', () => {
       thinking: '',
       usage: null,
       lastUsage: null,
+      memories: [],
       model: null,
       versions: null,
       incomplete: false,
@@ -521,8 +656,18 @@ describe('sourcesOf with project files', () => {
         }),
       ),
     ).toEqual([
-      { url: '/api/files/f1#page=12', title: 'a.pdf · p. 12', kind: 'file' },
-      { url: '/api/files/f1#page=3', title: 'a.pdf · p. 3', kind: 'file' },
+      {
+        url: '/api/files/f1#page=12',
+        title: 'a.pdf · p. 12',
+        kind: 'file',
+        snippet: 'z',
+      },
+      {
+        url: '/api/files/f1#page=3',
+        title: 'a.pdf · p. 3',
+        kind: 'file',
+        snippet: 'y',
+      },
     ])
   })
 
@@ -542,6 +687,7 @@ describe('sourcesOf with project files', () => {
         thinking: '',
         usage: null,
         lastUsage: null,
+        memories: [],
         model: null,
         versions: null,
         incomplete: false,
@@ -668,5 +814,84 @@ describe('newQuestion and fileIds', () => {
       fileIds: ['f1', 'f2'],
     })
     expect(fileIds([])).toEqual({})
+  })
+})
+
+describe('toTurns memories', () => {
+  it('shows the memories its response was written with, and none otherwise', () => {
+    const memories = [{ id: 1, text: 'Prefers Rust.' }]
+    const [kept, plain] = toTurns([
+      item(1, { role: 'user', content: 'Hi' }),
+      item(2, { role: 'assistant', content: 'Hello' }, { memories }),
+      item(3, { role: 'user', content: 'Again' }),
+      item(4, { role: 'assistant', content: 'Hello' }),
+    ])
+    expect(kept!.answer!.memories).toEqual(memories)
+    expect(plain!.answer!.memories).toEqual([])
+  })
+})
+
+describe('nextStepOf', () => {
+  const card = {
+    title: 'Weekly learning plan',
+    description: 'turn these into a 16-week plan',
+    button: 'Create plan',
+    prompt: 'Make a 16-week plan',
+  }
+  const answerWith = (args: unknown, output: string | null = 'shown') => {
+    const turns = toTurns([
+      item(1, { role: 'user', content: 'q' }),
+      item(2, {
+        type: 'function_call',
+        call_id: 'c',
+        name: 'suggest_next_step',
+        arguments: typeof args === 'string' ? args : JSON.stringify(args),
+      }),
+      ...(output === null
+        ? []
+        : [item(3, { type: 'function_call_output', call_id: 'c', output })]),
+    ])
+    return turns[0]!.answer!
+  }
+
+  it('reads the card from the call', () => {
+    expect(nextStepOf(answerWith(card))).toEqual(card)
+  })
+
+  it('trims and cuts the model’s text to fit', () => {
+    const step = nextStepOf(
+      answerWith({ ...card, title: `  ${'x'.repeat(200)} `, button: ' Go ' }),
+    )
+    expect(step?.title).toHaveLength(80)
+    expect(step?.button).toBe('Go')
+  })
+
+  it('shows no card for a failed, unanswered, malformed or incomplete call', () => {
+    expect(nextStepOf(answerWith(card, 'Error: invalid arguments'))).toBeNull()
+    expect(nextStepOf(answerWith(card, null))).toBeNull()
+    expect(nextStepOf(answerWith('{not json'))).toBeNull()
+    expect(nextStepOf(answerWith({ ...card, prompt: '  ' }))).toBeNull()
+    expect(nextStepOf(answerWith({ title: 'Only a title' }))).toBeNull()
+    expect(nextStepOf(answerWith({ ...card, button: 7 }))).toBeNull()
+  })
+
+  it('uses the last call', () => {
+    const turns = toTurns([
+      item(1, { role: 'user', content: 'q' }),
+      ...[1, 2].flatMap((n) => [
+        item(n * 2, {
+          type: 'function_call',
+          call_id: `c${n}`,
+          name: 'suggest_next_step',
+          arguments: JSON.stringify({ ...card, title: `T${n}` }),
+        }),
+        item(n * 2 + 1, {
+          type: 'function_call_output',
+          call_id: `c${n}`,
+          output: 'shown',
+        }),
+      ]),
+    ])
+    expect(nextStepOf(turns[0]!.answer!)?.title).toBe('T2')
   })
 })

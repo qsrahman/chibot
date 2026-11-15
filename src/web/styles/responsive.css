@@ -122,6 +122,7 @@
    a chat's "…" menu, message actions and image downloads. */
 @media (hover: none) {
   .actions,
+  .memory-chip,
   .row-menu-button,
   .image-download {
     opacity: 1;

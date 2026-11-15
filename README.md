@@ -293,14 +293,18 @@ needs the server running: there is no offline mode, since the server is local.
   An unsent message stays with its chat, so switching chats doesn't carry it
   along; its text is also kept in this browser across reloads (attached files
   only while the page is open).
-- Answers stream in as Markdown, with tables, syntax-highlighted code and
-  math (`$…$` / `$$…$$`, or LaTeX's `\(…\)` / `\[…\]`).
+- Answers stream in as Markdown, with tables (copy one, or save it as CSV),
+  syntax-highlighted code and math (`$…$` / `$$…$$`, or LaTeX's `\(…\)` / `\[…\]`).
 - **Stop** (■) ends an answer early. What arrived so far is kept, and the same
   happens if you close the tab mid-answer.
 - While an answer streams, type the next message and press **Enter** to
   **queue** it (text only, no attachments): it appears in a **Queued** row
   above the message box and is sent once the answer is saved — or as soon as
   you **Stop** it. Edit or cancel it from that row. Switching chats drops it.
+- **Follow-ups** (off by default; **Settings → Model → Follow-ups**): once an
+  answer is done, two or three suggested next prompts appear under **Ask next**
+  above the message box, and a click sends one. It costs one more short
+  request per answer, to the chat model or one you name.
 - Scroll up to read while an answer streams and the view stays put; the ↓
   button above the message box jumps back to the latest message.
 - The first message gives the chat its own URL (`/c/…`). Reloading reopens it.
@@ -347,12 +351,18 @@ needs the server running: there is no offline mode, since the server is local.
     image (or an attached photo) to see it full size over the chat, with
     Download; ⌘/Ctrl-click opens it in a new tab. They're kept with the chat, and
     deleted with it.
+  - **Next step:** when an answer ends by offering one thing more ("I can
+    turn these into a 16-week plan"), a card under it has a button that sends
+    the offer as your next message. It disappears when you write anything
+    else. Switch the tool off in Settings → Tools → Answers for no cards.
   - **Memory:** chibot remembers lasting facts and preferences you share
     ("remember that…", or things like "I'm vegetarian") and uses them in new
     chats; the answer says "Memory updated". Ask it to change or forget
     something, or edit or delete memories in Settings → Personalization →
     Memory (which shows how many of the 100 are used). It won't save the same
-    fact twice, and merges related ones when the list is nearly full. In a
+    fact twice, and merges related ones when the list is nearly full. An
+    answer written with memories shows a "Memory · n" chip that opens them
+    (it says they were in context, not that the model used them). In a
     chat that used an MCP tool or searched your chats (text from others),
     memory changes ask first, so it can't plant one.
   - **Images and media from other sites** in an answer (`![](https://…)`, or a
@@ -368,6 +378,10 @@ needs the server running: there is no offline mode, since the server is local.
   - **Past chats:** ask about something you discussed before ("what did we
     decide about…?"). chibot searches your other chats (on this machine) and
     links the ones it used under **Sources**.
+  - **Citations:** when a claim rests on a page, past chat or project file,
+    the answer marks it with a numbered chip; hover, focus or tap it for the
+    source's title, snippet and a link to open it. The numbers match the
+    cards under **Sources**.
   - **MCP servers' tools** (see [MCP servers](#mcp-servers)): shown as
     "Used read_file · files", with the arguments and result. Images they
     return appear in the answer and are kept with the chat. **Stop** cancels

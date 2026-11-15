@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises'
 import { expect, test, type Page } from '@playwright/test'
 import {
   answer,
@@ -6,6 +7,7 @@ import {
   clipboard,
   newChat,
   openChat,
+  savedChat,
   send,
   turns,
 } from './helpers.ts'
@@ -797,6 +799,69 @@ test('links to an answer’s sources are numbered, and say which page they are',
   await expect(page.locator('.sources .source-num').first()).toHaveText('1')
 })
 
+test('numbered citations are chips that open a card about their source', async ({
+  page,
+}) => {
+  const id = await savedChat(page, {
+    question: 'Robots?',
+    answerText:
+      'Robots move things [1](https://history.test/r) and are old [[2]](https://nowhere.test/x), see [1](https://example.com/robots).',
+    searchResults: [
+      {
+        title: 'Robots guide',
+        url: 'https://example.com/robots',
+        snippet: 'Robots <b>move</b> things.',
+      },
+      {
+        title: 'History of robots',
+        url: 'https://history.test/r',
+        snippet: 's',
+      },
+    ],
+  })
+  await page.goto(`/c/${id}`)
+  const message = page.locator('.message.assistant')
+  // The number is the source's place in the list; a number whose address is
+  // not a source stays the plain link it was.
+  const chips = message.locator('.cite-chip')
+  await expect(chips).toHaveText(['2', '1'])
+  await expect(message.getByRole('link', { name: '[2]' })).toHaveAttribute(
+    'href',
+    'https://nowhere.test/x',
+  )
+  // The cards under the answer are open, as the chips refer to them.
+  await expect(page.locator('.sources .source-num').first()).toBeVisible()
+
+  const chip = chips.nth(1)
+  const card = message.locator('.cite-pop').nth(1)
+  await expect(card).toBeHidden()
+  await chip.hover()
+  await expect(card).toBeVisible()
+  await expect(card).toContainText('example.com')
+  await expect(card).toContainText('Robots guide')
+  // Text from a page is shown as text, not as markup.
+  await expect(card).toContainText('Robots <b>move</b> things.')
+  await expect(card).toContainText('1 of 2')
+  await page.waitForTimeout(500)
+  // (An open popover is in the top layer, so found from the page.)
+  const open = page.getByRole('link', { name: 'Open page' })
+  await expect(open).toHaveAttribute('href', 'https://example.com/robots')
+  await expect(open).toHaveAttribute('rel', 'noopener noreferrer')
+
+  // Esc closes it and leaves focus where it was; focusing opens it again.
+  await page.mouse.move(5, 5)
+  await expect(card).toBeHidden()
+  await chip.focus()
+  await expect(card).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(card).toBeHidden()
+  await expect(chip).toBeFocused()
+
+  // A tap opens it too.
+  await chip.tap().catch(() => chip.click())
+  await expect(card).toBeVisible()
+})
+
 test('quotes selected text from an answer into the message box', async ({
   page,
 }) => {
@@ -907,4 +972,69 @@ test('a table keeps its words whole and turns <br> in a cell into a line break',
     return broken
   })
   expect(split).toEqual([])
+})
+
+test('a table copies as tab-separated text and downloads as CSV', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  await send(page, 'table-markdown')
+  await answered(page)
+  const block = page.locator('.table-block').last()
+  await block.getByRole('button', { name: 'Copy table' }).click()
+  const copied = await clipboard(page)
+  expect(copied).toMatch(/^Term\tWhat it means\tExamples\n/)
+  // `<br>` in a cell is a line break, so the cell is quoted.
+  expect(copied).toContain(
+    '\t"LLaMA 2-Chat\n• Falcon 180B\n• Mistral-7B-Instruct"',
+  )
+
+  const download = page.waitForEvent('download')
+  await block.getByRole('button', { name: 'Download CSV' }).click()
+  const file = await download
+  expect(file.suggestedFilename()).toBe('table.csv')
+  const csv = await readFile((await file.path())!, 'utf8')
+  expect(csv).toContain('Term,What it means,Examples\n')
+  expect(csv).toContain('The weights are freely redistributable.')
+})
+
+test('a wide table scrolls inside its box, not the page', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 800 })
+  await page.goto('/')
+  await appReady(page)
+  await send(page, 'wide-table')
+  await answered(page)
+  const scroll = page.locator('.table-scroll').last()
+  await expect(scroll).toBeVisible()
+  const sizes = await scroll.evaluate((el) => ({
+    inner: el.scrollWidth,
+    box: el.clientWidth,
+    page: document.documentElement.scrollWidth,
+    window: innerWidth,
+  }))
+  expect(sizes.inner).toBeGreaterThan(sizes.box)
+  expect(sizes.page).toBeLessThanOrEqual(sizes.window)
+})
+
+test('a failed answer says so with Retry, which answers it normally', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  await send(page, 'fail-midway story')
+  const banner = page.getByRole('alert')
+  await expect(banner).toContainText('The answer stopped unexpectedly.')
+  await expect(banner).toContainText('The model server lost its connection.')
+  await banner.getByRole('button', { name: 'Retry' }).click()
+  await answered(page)
+  await expect(banner).toHaveCount(0)
+  // The same question, answered again: one message, and a whole answer.
+  await expect(turns(page)).toHaveCount(1)
+  await expect(page.locator('.message.user')).toHaveCount(1)
+  await expect(answer(page, 0)).toContainText('Answer #')
+  await expect(
+    page.getByRole('group', { name: 'Answer interrupted' }),
+  ).toHaveCount(0)
+  await expect(page.getByRole('textbox', { name: 'Message' })).toBeFocused()
 })

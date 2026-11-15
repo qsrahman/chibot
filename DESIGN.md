@@ -47,6 +47,7 @@ follows; changing `--bg` switches to a dark-grey page.
 | `--fg-muted` | `#5d5d5d` | `#cdcdcd` | Descriptions, captions, footer, action icons, code labels |
 | `--border` | `rgb(0 0 0 / 10%)` | `rgb(255 255 255 / 15%)` | Hairlines, composer outline |
 | `--accent` / `--accent-fg` | `#3566f0` / `#fff` | `#3566f0` / `#fff` | Send button, switches (measured `oklch(0.56 0.21 265)`) |
+| `--cite-bg` / `--cite-fg` | `#eef2ff` / `#2c52c8` | `#1f2b52` / `#b4c6ff` | Citation chips (text 6:1 or more on the tint and on `--surface-raised`) |
 | `--button` / `--button-fg` | `#0d0d0d` / `#fff` | `#e8e8e8` / `#0d0d0d` | Primary buttons in dialogs |
 | `--danger` | `#d93025` | `#ff6b6b` | Errors, destructive buttons |
 | `--scrim` | `rgb(0 0 0 / 50%)` | same | Behind dialogs and the phone sidebar |
@@ -154,6 +155,12 @@ there (36 px rows, `--surface-muted` on hover, scrolling past 240 px), a muted
 line naming the readable files in it, and a primary **Use this folder** at the
 right, which fills the path box and closes it.
 
+**Follow-ups.** Above the composer, a 12 px `--fg-muted` "Ask next" label over
+wrapping 40 px pills (`--surface`, `--border` outline, `--surface-muted` on
+hover, a 15 px muted `CornerDownRight`, text `dir="auto"`, one line with an
+ellipsis). They show only after the newest answer finishes and nothing is
+streaming or queued.
+
 **Queued message.** A row above the text, like attachments: a 15 px muted
 `Clock`, the label **Queued** (500 weight), the text in `--fg` on one
 ellipsized line, then 24 px muted **Edit** (`Pencil`) and **Cancel** (`X`)
@@ -199,6 +206,11 @@ sticks 12 px above the list's bottom, centred over the composer.
     its tooltip. At 80 % of the compaction threshold it turns `--danger` at
     500 weight — the one place besides errors that colour is used — because
     older messages will be summarized next.
+- *Failed answer:* under the turn, a 12 px-radius `--surface-muted` banner
+  with a `--danger` alert icon, "The answer stopped unexpectedly." in body
+  colour, the provider's message under it in 12 px `--fg-muted`, and a
+  **Retry** button (the same request as Regenerate). It is a `role="alert"`
+  region, and the composer takes focus back.
 - *Thinking:* a pulsing dot before the first token arrives.
 
 **Code blocks.** No box: no background, border or radius, just like the text
@@ -207,6 +219,14 @@ around them.
 - Code is 16/26 px monospace.
 - **Copy code** sits at the right of the label row (ChatGPT floats it at the
   block's top right).
+
+**Tables.** A `--border` box with the 16 px card radius that scrolls sideways
+and (past 28 rem) up and down on its own, never the page. A bar on top has a
+12 px muted "Table" label and two 32 px icon buttons at the right: **Copy
+table** (tab-separated, so it pastes into spreadsheet cells) and **Download
+CSV**. The header row sticks under it on `--surface-muted`, in 12 px 600
+`--fg-muted` labels; body rows are 14 px with hairline `--border` dividers and
+`--row-stripe` on every second row. Cells keep `dir="auto"`.
 
 **Quotes.** A 2 px `--border` rule on the left with 12 px padding (the same
 rule as an opened Thoughts), body colour, 16 px block spacing.
@@ -279,6 +299,16 @@ title "chibot wants to use <tool>" and a `Wrench` icon, each call's arguments,
 a 13 px muted hint that a new message denies it, and Deny (secondary) /
 Approve (primary) at the bottom right.
 
+**Next-step card.** Under the latest answer only, when nothing streams or waits
+in the queue, and until the next message, edit, regenerate or branch switch: a
+card like the approval card (`--surface`, hairline border, 16 px radius) in one
+row, 12 px × 14 px padding and 14 px gaps: a 40 px icon tile (12 px radius,
+`--accent-tile` with `--accent-tile-fg`, a `Sparkles` icon), a 15 px title in
+weight 500 over a 13 px `--fg-muted` line "Next step · <what happens>", and
+the primary pill button (`--button`) at the right. Everything is the model's
+text and shown as text (`dir="auto"`, long words wrap). Under 480 px the button
+drops under the text, full width.
+
 **Composer tools.** A 24 px `Plus` button at the composer's left opens a menu
 above it (Add photos & files, then Create an image).
 "Add photos & files" has a muted hint line ("Images, PDF, Word, text and
@@ -347,8 +377,29 @@ fitted to the window (16 px radius). Esc or a click outside closes it;
 ⌘/Ctrl/Shift/middle clicks still open the image in a new tab.
 
 **Sources.** Below the answer, a `<details>` in 14 px muted text, "Sources ·
-n", listing each page as its title (`--fg`, one line, ellipsis) and a 12 px
-host name.
+n", listing each page as a card (`--surface`, 1 px `--border`, 16 px radius, in
+a grid of at least 192 px columns): its number in `--cite-fg`, its title
+(`--fg`, two lines, ellipsis) and a 12 px host name. It is collapsed, except
+when the answer cites with chips: then it starts open, as the list the numbers
+refer to.
+
+**Citations.** A link whose text is only a number to one of the answer's
+sources is a chip: a 20 px pill, `--cite-bg` with `--cite-fg` text (12 px, 500,
+about 6:1), `--accent` with `--accent-fg` while its card is open; it is a
+real button. Hover (mouse), focus or a tap opens a native `popover="auto"`
+card placed by anchor positioning above the chip (flipping), 300 px wide:
+`--surface-raised`, 16 px radius, dialog shadow and 14 px padding. A 12 px
+muted row (an icon for the kind, the host or "Your chats" / "Project file",
+and "n of N"), the title (14 px, 500), up to four lines of the snippet in
+`--fg-muted` (both `dir="auto"`, text only), and "Open page ↗" in `--cite-fg`.
+Esc, a click elsewhere or the pointer leaving closes it (Esc is not also "stop
+the answer"). No favicons: loading one would tell its site that the chat was read.
+
+**Memory chip.** Above an answer written with saved memories: a 28 px pill
+(`--chip` background, 13 px `--fg-muted` text, `Lightbulb` 15 px, 12 px right
+padding) reading "Memory · n", a real button that opens the Memories dialog.
+Shown like the answer's actions: always on the latest answer, on hover or focus
+for older ones, always where there is no hover.
 
 **Memories dialog.** Like Archived chats: a short explanation, then the count
 ("12 of 100 memories") in 12 px muted text, and one row per memory (14 px
@@ -406,6 +457,7 @@ equivalents use a 1.5 px stroke:
 | Export as Markdown / JSON | `FileText` / `FileJson` |
 | Temporary chat / shortcuts | `MessageCircleDashed` / `Keyboard` |
 | Tool approval / Settings → Tools | `Wrench` |
+| Next-step card | `Sparkles` |
 | Project / new project / move in / remove / add files | `Folder` / `FolderPlus` / `FolderInput` / `FolderMinus` / `Upload` |
 | Create an image / download | `ImagePlus` / `Download` |
 | Sync now / stop mirroring / use this folder | `RefreshCw` / `Unlink` / `Check` |

@@ -12,6 +12,7 @@ import {
   ChatService,
   Compactor,
   ModelRequests,
+  FollowUpWriter,
   TitleWriter,
 } from './chat/index.ts'
 import { Config, layered } from './config.ts'
@@ -60,6 +61,7 @@ import {
   imageClient,
 } from './tools/images.ts'
 import { MemoryTool } from './tools/memory.ts'
+import { SuggestNextStepTool } from './tools/next-step.ts'
 import { SearchChatsTool } from './tools/search-chats.ts'
 import { ReadSkillTool, SkillStore } from './skills/index.ts'
 
@@ -94,6 +96,7 @@ export function defaultTools({
     files,
   }
   return [
+    new SuggestNextStepTool(),
     new MemoryTool(memories),
     new SearchChatsTool(search),
     new SearchProjectFilesTool(projects, index),
@@ -244,11 +247,17 @@ function buildApp(
   attachments.deleteOrphans()
   const model = new ModelRequests(client, attachments)
   const titles = new TitleWriter(model, store, settings)
+  const followUps = new FollowUpWriter(
+    model,
+    store,
+    () => settings.get().suggestionModel,
+  )
   const compactor = new Compactor(model, store, settings)
   const chat = new ChatService(model, titles, compactor, store, settings, {
     tools: registry,
     projects,
     attachments,
+    memories,
   })
   return createApp({
     config,
@@ -258,6 +267,7 @@ function buildApp(
     chat,
     compactor,
     titles,
+    followUps,
     model,
     registry,
     files,

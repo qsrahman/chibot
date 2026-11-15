@@ -4,6 +4,16 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- Follow-up suggestions: after an answer, two or three short prompts appear as pills under "Ask next" above the message box, and a click sends one. They are asked for once the answer is saved (`POST /api/conversations/:id/suggestions`), only for an answer just finished, never on reopening a chat, and a failure just shows none. Settings → Model → Follow-ups switches them on (with the chat model, or one you name); off by default.
+- Sources from MCP web tools. A search or page-reading tool of an MCP server (its name has `search`, `fetch`, `scrape`, `crawl`, `browse` or `extract` in it) now fills the answer's Sources: results as JSON (Brave's, one to a paragraph, or nested) or as `Title:` / `URL:` / `Description:` lines, and the page a fetch tool was asked for. Other MCP tools' links are not sources.
+- Inline citations. When a claim rests on a page, past chat or project file a tool returned, the model ends the sentence with a link whose text is only a number (`[1](https://example.com/page)`); the answer shows it as a numbered chip. Hovering, focusing or tapping the chip opens a card with where the source is from, its title and snippet, and "Open page"; Esc closes it. The number is the source's place in the Sources list (a link to an address that isn't one of the answer's sources stays a plain link), the list is open and shown as cards when the answer has chips, and answers without them look as before. Exports keep the links, so they read as `[1](url)`.
+- Tables in answers sit in a rounded box that scrolls sideways on its own (the page never does), with a sticky header row, striped rows and **Copy table** (tab-separated, for pasting into a spreadsheet) and **Download CSV** buttons.
+- An answer that fails shows "The answer stopped unexpectedly." with the reason and a **Retry** button in its turn, instead of red text under the chat. Retry answers the same message again as a new version, so nothing is sent twice.
+- An answer written with saved memories in its instructions has a small "Memory · 3" chip above it that opens the Memories dialog. It says what was provided (every saved memory is in each turn's instructions), not what the model used. Each response keeps the list as it was (migration 17, `items.memories`), so the chip survives reloads, export, import, branching and later edits or deletions of the memories. Nothing shows when memory is off, in temporary chats, or while nothing is remembered.
+- A "Next step" card under the latest answer when it ends by offering one concrete follow-up (for example "turn these into a 16-week plan"): a title, a one-line note and a button that sends the offer as your next message. The model asks for it with a new tool, `suggest_next_step` (Settings → Tools → Answers; off, there is no card), after it has written the answer, and the turn then ends without a closing remark. An answer without an offer looks as before. The card is saved with the answer, so it comes back after a reload, is dropped when you branch or send anything else, and an export of the chat as Markdown keeps it as a "Next step" line.
+
 ## [0.20.3] - 2026-11-15
 
 ### Fixed

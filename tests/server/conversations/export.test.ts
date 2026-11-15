@@ -158,6 +158,27 @@ describe('export and import', () => {
     )
   })
 
+  it('writes a next-step card as a plain line after the answer', async () => {
+    const { id } = store.createConversation()
+    const [q] = store.appendItems(id, null, [{ role: 'user', content: 'q' }])
+    store.appendItems(id, q!.id, [
+      { role: 'assistant', content: 'Here is a list.' },
+      {
+        type: 'function_call',
+        call_id: 'c1',
+        name: 'suggest_next_step',
+        arguments:
+          '{"title":"Learning plan","description":"d","button":"Create plan","prompt":"Make it a 16-week plan"}',
+      },
+      { type: 'function_call_output', call_id: 'c1', output: 'shown' },
+    ])
+    const res = await app.request(`/api/conversations/${id}/export?format=md`)
+    expect(await res.text()).toBe(
+      '# Chat\n\n## You\n\nq\n\n## Assistant\n\nHere is a list.\n\n' +
+        '> **Next step:** Learning plan (“Make it a 16-week plan”)\n',
+    )
+  })
+
   it('rejects malformed files', async () => {
     const good = (await exportJson(sampleChat())).body
     const broken = [

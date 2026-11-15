@@ -73,7 +73,11 @@ turn is about to save. Then `#runTurn`:
      `approvals` says yes; otherwise its output is `TOOL_DENIED`.
    - **`#respond`** makes one streamed request (below), saves the response,
      and returns its output.
-   - If the output has no tool calls, the turn is over. If some need approval
+   - If the output has no tool calls, the turn is over. So is a response that
+     has its answer text and only calls to tools that end the turn
+     (`Tool.endsTurn`, e.g. `suggest_next_step`): they run, their outputs are
+     saved, and no request follows.
+   - If some need approval
      (`ToolRegistry.needsApproval`), the turn ends with `chibot.approval`; the
      browser asks, and the answer comes back as a new `{ approvals }` turn.
      The pending approval is just the history ending in unanswered calls, so
@@ -131,7 +135,11 @@ re-reads the chat (`getConversation`) and shows it as `toTurns(items)`
 - a message queued while the answer streamed is sent (`useQueue`, `drain`);
 - Stop aborts the request, and the server keeps the partial answer;
 - leaving the chat mid-answer counts as Stop; a run still going for another
-  chat can't touch the screen (`runRef`).
+  chat can't touch the screen (`runRef`);
+- when an answer has just finished and Settings → Model → Follow-ups is on,
+  `useFollowUps` posts to `/api/conversations/:id/suggestions` (`FollowUpWriter`),
+  and `FollowUps` shows the prompts above the composer until anything else
+  happens. This is not a stream event, so the turn doesn't wait on a second request.
 
 ## Where to look
 
@@ -143,6 +151,7 @@ re-reads the chat (`getConversation`) and shows it as `toTurns(items)`
 | History shape, versions, usage | `conversations/` (`ConversationStore`) |
 | What to do when an endpoint rejects a feature or file | `ModelRequests` |
 | How chats are titled | `TitleWriter`, `TITLE_INSTRUCTIONS` |
+| Follow-up prompts | `FollowUpWriter`, `SUGGESTION_INSTRUCTIONS`, `chat/useFollowUps.ts` |
 | How a turn shows on screen | `chat/useChat.ts`, `chat/turns.ts`, `chat/TurnView.tsx` |
 
 To see what chibot sent in a test run, `GET /debug/last-request` on the fake

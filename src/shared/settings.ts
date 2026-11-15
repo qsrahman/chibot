@@ -27,6 +27,8 @@ export const settingsSchema = z.object({
   responseStyle: z.string().max(1500),
   /** Model that writes summaries of long chats; `''` uses the chat model. */
   summaryModel: z.string().trim().max(200),
+  /** Model that suggests follow-up questions after an answer; `''` is off. */
+  suggestionModel: z.string().trim().max(200),
   /** Summarize earlier messages when the context nears the window. */
   autoCompact: z.boolean(),
   /** Tokens the model reads at most (chibot can't ask the server). */

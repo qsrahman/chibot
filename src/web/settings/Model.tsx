@@ -58,6 +58,29 @@ export function Model({
           </select>
         </Row>
       </Section>
+      <Section title="Follow-ups">
+        <Row
+          label="Suggest follow-ups"
+          description="After an answer, the model suggests a few prompts to ask next. It costs one more short request per answer."
+          htmlFor="setting-follow-ups"
+        >
+          <input
+            id="setting-follow-ups"
+            type="checkbox"
+            role="switch"
+            className="switch"
+            checked={settings.suggestionModel !== ''}
+            onChange={(e) =>
+              void onChange({
+                suggestionModel: e.target.checked ? settings.model : '',
+              })
+            }
+          />
+        </Row>
+        {settings.suggestionModel !== '' && (
+          <SuggestionModelRow settings={settings} onChange={onChange} />
+        )}
+      </Section>
       <Section title="Long chats">
         <Row
           label="Summarize long chats"
@@ -232,6 +255,42 @@ function SummaryModelRow({
         type="text"
         value={draft}
         placeholder={settings.model}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => e.key === 'Enter' && save()}
+      />
+    </Row>
+  )
+}
+
+/** The model that suggests follow-ups; a smaller, faster one is enough. */
+function SuggestionModelRow({
+  settings,
+  onChange,
+}: {
+  settings: Settings
+  onChange: SettingsApi['update']
+}) {
+  const [draft, setDraft] = useState(settings.suggestionModel)
+
+  function save() {
+    const next = draft.trim()
+    // Emptying the box would turn the feature off; the switch does that.
+    if (next && next !== settings.suggestionModel) {
+      void onChange({ suggestionModel: next })
+    } else setDraft(settings.suggestionModel)
+  }
+
+  return (
+    <Row
+      label="Suggestion model"
+      description="A model on the same server, for example a smaller, faster one."
+      htmlFor="setting-suggestion-model"
+    >
+      <input
+        id="setting-suggestion-model"
+        type="text"
+        value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={save}
         onKeyDown={(e) => e.key === 'Enter' && save()}

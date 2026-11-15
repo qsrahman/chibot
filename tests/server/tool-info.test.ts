@@ -114,6 +114,7 @@ describe('shipped tools', () => {
       'read_skill',
       'search_chats',
       'search_project_files',
+      'suggest_next_step',
     ])
     // A new tool that forgets this would show under "Other", unexplained, as
     // "Used <label>".

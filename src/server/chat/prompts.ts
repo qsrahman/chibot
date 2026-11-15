@@ -25,8 +25,13 @@ const FORMATTING = [
   'Put formulas and equations between $…$ (inline) or $$…$$ (display): the chat renders math only that way, not with \\(…\\) or \\[…\\]. Write plain numbers and simple arithmetic as ordinary text (391, not $391$).',
 ]
 
+// The chat turns a link whose text is only a number into a chip that opens a
+// card about that source, but only for an address a tool returned; the number
+// it shows is the source's place in the chat's own list, so the text must not
+// lean on the number.
 const TOOLS = [
   'Answer from your own knowledge when you can. Use a tool when the answer needs current, personal or exact information you don’t have, and say so when a tool fails.',
+  'When a claim rests on a page, past chat or project file a tool returned, end that sentence with a link whose text is only a number, such as [1](https://example.com/page), using the address the tool returned (/c/<chat_id> for a past chat, /api/files/<file_id> for a project file). The chat shows it as a small numbered chip that opens the source, so readers can check the claim; it renumbers the chips to match its own source list, so write the sentence to read well without the number. Cite only sources you used.',
 ]
 
 // Said once when any tool whose output is others' text (web pages, search
@@ -46,6 +51,12 @@ const PRIORITY =
 export const TITLE_INSTRUCTIONS =
   'Write a short title (3 to 6 words) for the conversation below, in its ' +
   'language. Reply with the title only: no quotes, no trailing punctuation.'
+
+export const SUGGESTION_INSTRUCTIONS =
+  'Suggest three short follow-up prompts the user might send next, based on ' +
+  'the exchange in <exchange>. Write each as the user would, in the language ' +
+  'they write in, under 60 characters, one per line, with no numbering, ' +
+  'quotes or other text.'
 
 /** What goes into a chat's instructions besides the user's own settings. */
 export interface ChatContext {
@@ -129,6 +140,20 @@ export function cleanTitle(raw: string): string | null {
     .slice(0, 80)
     .trim()
   return title || null
+}
+
+/** The suggestions in a reply: one per line, cleaned, at most three. */
+export function cleanSuggestions(raw: string): string[] {
+  const lines = raw
+    .split('\n')
+    .map((line) =>
+      line
+        .replace(/^[\s\-*•\d.)]+|[\s"'“”‘’]+$/g, '')
+        .replace(/^["'“”‘’]+/, '')
+        .trim(),
+    )
+    .filter((line) => line && line.length <= 80)
+  return [...new Set(lines)].slice(0, 3)
 }
 
 // Instructions for the model that summarizes earlier messages. The summary

@@ -125,6 +125,13 @@ describe('custom instructions', () => {
     expect(untrusted).toContain('others may have planted text in them')
   })
 
+  it('ask for numbered-link citations while tools are offered', () => {
+    expect(chatInstructions(none, { tools: true })).toContain(
+      'a link whose text is only a number, such as [1](https://example.com/page)',
+    )
+    expect(chatInstructions(none)).not.toContain('link whose text is only')
+  })
+
   it('sends them with chat turns, not with title requests', async () => {
     const calls: FakeCall[] = []
     const titleCalls: { instructions?: string | null }[] = []

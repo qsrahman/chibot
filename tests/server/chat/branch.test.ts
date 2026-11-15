@@ -65,6 +65,7 @@ describe('branching a chat', () => {
       ],
       { input_tokens: 100, output_tokens: 20, total_tokens: 120 } as never,
       'm',
+      [{ id: 1, text: 'Likes cats.' }],
     )
     const q2 = store.appendItems(id, a1.at(-1)!.id, [
       {
@@ -102,6 +103,7 @@ describe('branching a chat', () => {
     expect(copy.at(-1)).toMatchObject({
       usage: { input_tokens: 100 },
       model: 'm',
+      memories: [{ id: 1, text: 'Likes cats.' }],
     })
     expect(created.currentLeafId).toBe(copy.at(-1)!.id)
     // The original is untouched, and the copy is the newest chat.

@@ -1,13 +1,21 @@
 import { Link } from 'react-router'
-import { type Answer, type Source, sourcesOf } from './turns.ts'
+import { citedNumbers } from './citations.ts'
+import { type Answer, type Source, sourceHost, sourcesOf } from './turns.ts'
 import { Summary } from '../ui/Summary.tsx'
 
-/** The pages the answer searched or read, collapsed under "Sources". */
+/**
+ * The pages the answer searched or read, as cards under "Sources". Collapsed,
+ * unless the answer cites them with numbered chips: then the cards are the
+ * list those numbers refer to.
+ */
 export function Sources({ answer }: { answer: Answer }) {
   const sources = sourcesOf(answer)
   if (sources.length === 0) return null
   return (
-    <details className="sources">
+    <details
+      className="sources"
+      open={citedNumbers(answer.text, sources).length > 0 || undefined}
+    >
       <Summary>Sources · {sources.length}</Summary>
       <ul className="source-list">
         {sources.map((source, i) => (
@@ -40,9 +48,7 @@ export function SourceLink({
   return (
     <a href={url} target="_blank" rel="noreferrer">
       <span className="source-title">{title}</span>
-      <span className="source-host">
-        {kind === 'file' ? 'Project file' : new URL(url).hostname}
-      </span>
+      <span className="source-host">{sourceHost({ url, title, kind })}</span>
     </a>
   )
 }

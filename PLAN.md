@@ -171,6 +171,7 @@ items(id INTEGER PK AUTOINCREMENT,
       data TEXT,                          -- JSON ResponseInputItem
       usage TEXT NULL,                    -- JSON ResponseUsage, last item of a response
       model TEXT NULL,                    -- Phase 4: model that wrote it, set like usage
+      memories TEXT NULL,                 -- JSON [{id, text}]: the memories in the instructions, set like usage
       created_at INTEGER)
 settings(key TEXT PK, value TEXT)     -- Phase 4: JSON values over env defaults
 items_fts USING fts5(text, conversation_id UNINDEXED)  -- Phase 2: message text for search
@@ -224,6 +225,7 @@ in a way a transaction does not undo leaves a database to restore.
 | `GET /api/conversations?q=&archived=1` | 2 | List (pinned first, newest first), archived view, or search (titles + message text, with snippets) |
 | `PATCH/DELETE /api/conversations/:id` | 2 | Rename, pin, archive/restore / delete |
 | `POST /api/conversations/:id/title` | 10 | Have the model name the chat again (replaces the title); `{ title }` |
+| `POST /api/conversations/:id/suggestions` | – | Up to three prompts that could follow the latest answer, from the `suggestionModel` setting (`''` is off); `{ suggestions }`, empty on any failure. The browser asks after an answer is saved, so the turn's stream is unchanged |
 | `PUT /api/conversations/:id/leaf` | 3 | Switch to a message version |
 | `GET /api/conversations/:id/export?format=md\|json` · `POST /api/conversations/import` | 4 | Export (download) / import (validated JSON, ≤ 200 MB since Phase 9 embeds files) |
 | `GET/PATCH /api/settings` | 4 | User settings and their defaults (never secrets) |
@@ -538,7 +540,7 @@ on Ollama, images need `OPENAI_IMAGE_BASE_URL` / `_API_KEY`.
   download), with a shimmering "Creating image…" placeholder while running.
   A Sources row under the answer lists the searched and read sites as links
   with their domain, built from the tool outputs, so sources show even if the
-  model doesn't cite them.
+  model doesn't cite them. Later (v0.21): inline citations, below.
 - **Dependencies:** `undici`, `@mozilla/readability`, `linkedom`.
 
 ### Phase 7 — Memory ✅
@@ -566,7 +568,9 @@ The sidebar search (every word must match) doesn't suit model queries.
   memories with their ids inside `<memories>`, as facts about the user rather
   than instructions, and say how to use the tool: save lasting facts and
   preferences, update what changed, forget on request, no secrets or one-off
-  details, and merge related entries when close to the limit.
+  details, and merge related entries when close to the limit. Each response
+  stores the list it was written with (`items.memories`), and the chat shows
+  a "Memory · n" chip over such an answer that opens the Memories dialog.
 - **Temporary chats** get no memories, no `memory` and no `search_chats` (a
   tool flag).
 - **One switch.** The memory tool's Settings → Tools switch turns memory off
@@ -1220,11 +1224,26 @@ Environment variables:
   shell/filesystem tools (too costly when mis-approved on an unauthenticated
   server) and narrow APIs like weather, which a web search MCP server plus a
   page-reading one cover.
+- **Inline citations** (v0.21): the instructions ask the model to end a sentence
+  that rests on a source with a link whose text is only a number,
+  `[1](address)`, using the address its tool returned. The web app turns such a
+  link into a chip (`CitationChip`) only when the address is one of the answer's
+  sources (`sourcesOf`, from the stored tool outputs), and shows the source's place
+  in that list as its number, so numbering is the same after a reload and nothing
+  is persisted beside the history. Why not `[1]` plus a mapping: the model can't
+  know the numbers (tool outputs aren't numbered, and an MCP server's are free
+  text), but it knows the address, and matching by address can't name a source
+  that wasn't found. The address is also what exports keep. The static rule sits
+  in the tool rules of the instructions, so it doesn't disturb the prompt cache;
+  summaries and pruned tool results change only what the model sees, not the stored
+  outputs the numbers come from. Sources carry a `snippet` where the tool gave one.
 - **Citations from web search** depend on the model following the
   instructions, since there are no hosted `url_citation` annotations. The UI's
-  sources list comes from the tool result, which it understands only for chibot's
-  own tools and chats made with the removed `web_search` and `fetch_url`: an MCP
-  search server's results show as that tool's text, without a Sources list.
+  sources list comes from the tool result: chibot's own tools, chats made with
+  the removed `web_search` and `fetch_url`, and MCP web tools (`mcpSources`:
+  tools named like a search or fetch, whose output is JSON with a web address
+  and title, or `Title:` / `URL:` lines; a server with another shape shows as
+  that tool's text, without Sources).
 - **Known gaps in long-chat summaries** (left out on purpose, see
   [CONTEXT.md](CONTEXT.md)): a JSON export leaves out summaries (one is written
   again when the chat next grows), and the summary is a separate user-role

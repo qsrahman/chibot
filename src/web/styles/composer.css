@@ -351,3 +351,53 @@
 .chat.empty .disclaimer {
   visibility: hidden;
 }
+
+/* Suggested next prompts above the composer; they wrap on narrow screens. */
+.follow-ups {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  width: calc(100% - 32px);
+  max-width: calc(var(--column) - 32px);
+  margin: 0 auto 8px;
+}
+
+.follow-ups-label {
+  flex-basis: 100%;
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+}
+
+.follow-up {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.follow-up svg {
+  flex: none;
+  color: var(--fg-muted);
+}
+
+.follow-up span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.follow-up:hover {
+  background: var(--surface-muted);
+}

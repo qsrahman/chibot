@@ -4,6 +4,7 @@
 // streams its first word and waits there until POST /debug/release (so a test
 // can act mid-answer without racing a timer), "think"
 // first streams a reasoning summary, and "compact" returns a compaction item.
+// "offer-next-step" ends the answer with a next-step card.
 // A question's words can call a tool ("approve", "draw", "remember <fact>",
 // "mcp echo <text>", "mcp resource <uri>", …): `TRIGGERS` below lists
 // them. A forced tool_choice is followed. Once the tool's output arrives, the
@@ -13,7 +14,8 @@
 // (/v1/files) keeps uploads until POST /debug/forget-files; a request naming
 // an unknown file gets a 404, as on OpenAI, and e2e-other rejects
 // `input_file` parts with a 400, as Ollama does.
-// Non-streaming requests are title requests. GET /debug/last-request shows
+// Non-streaming requests are title requests (or, with chibot's follow-up
+// instructions, three suggested prompts). GET /debug/last-request shows
 // the last chat request, so tests can check what chibot sent.
 import { serve } from '@hono/node-server'
 import { Hono, type Context } from 'hono'
@@ -42,6 +44,15 @@ const TABLE_MARKDOWN = [
 const RTL_MARKDOWN =
   '# عنوان\n\nیہ ایک پیراگراف ہے۔\n\n- پہلا\n- دوسرا\n\n```js\nconst x = 1\n```'
 
+// What "wide-table" answers with: more columns of long words than a phone's width.
+const WIDE_TABLE = [
+  `| ${Array.from({ length: 8 }, (_, i) => `Column${i}`).join(' | ')} |`,
+  `|${'---|'.repeat(8)}`,
+  `| ${Array.from({ length: 8 }, (_, i) => `unbreakable${i}word`).join(' | ')} |`,
+].join('\n')
+
+// Questions with "fail-midway" whose first answer has failed: the second one works.
+const failedMidway = new Set<string>()
 let answers = 0
 let lastRequest: unknown = null
 // Chat requests, newest last, for checks on earlier steps of a turn.
@@ -236,11 +247,17 @@ app.post('/v1/responses', async (c) => {
         usage,
       })
     }
+    // A follow-up suggestion request (chibot's own instructions).
+    const suggesting = JSON.stringify(body).includes('follow-up prompts')
     return c.json({
       id: `resp_${crypto.randomUUID()}`,
       object: 'response',
       status: 'completed',
-      output: [message('E2E Title')],
+      output: [
+        message(
+          suggesting ? 'Tell me more\nGive an example\nSum it up' : 'E2E Title',
+        ),
+      ],
       usage,
     })
   }
@@ -279,13 +296,18 @@ app.post('/v1/responses', async (c) => {
       : textOf(body.input.findLast((i) => i.role === 'user')?.content)
   const slow = question.includes('slow')
   const holding = question.includes('hold')
+  const failing =
+    question.includes('fail-midway') && !failedMidway.has(question)
+  failedMidway.add(question)
   const text = slow
     ? Array.from({ length: 200 }, (_, i) => `word${i}`).join(' ')
     : question.includes('table-markdown')
       ? TABLE_MARKDOWN
-      : question.includes('rtl-markdown')
-        ? RTL_MARKDOWN
-        : `Answer #${++answers} to: ${question}`
+      : question.includes('wide-table')
+        ? WIDE_TABLE
+        : question.includes('rtl-markdown')
+          ? RTL_MARKDOWN
+          : `Answer #${++answers} to: ${question}`
   const id = `resp_${crypto.randomUUID()}`
   const thinking = question.includes('think')
   const reasoning = {
@@ -311,9 +333,34 @@ app.post('/v1/responses', async (c) => {
     call_id: `call_${crypto.randomUUID()}`,
     ...tool,
   }
+  // "offer-next-step" ends the answer with a suggest_next_step call (as a
+  // model that follows chibot's instructions does): the card's prompt carries
+  // no magic word, so answering it makes no second card.
+  const offer =
+    !call &&
+    last?.type !== 'function_call_output' &&
+    question.includes('offer-next-step')
+      ? {
+          id: `fc_${crypto.randomUUID()}`,
+          type: 'function_call',
+          status: 'completed',
+          call_id: `call_${crypto.randomUUID()}`,
+          name: 'suggest_next_step',
+          arguments: JSON.stringify({
+            title: 'Weekly learning plan',
+            description: 'turn these into a 16-week plan with milestones',
+            button: 'Create plan',
+            prompt: 'Turn these into a 16-week plan with milestones',
+          }),
+        }
+      : null
   const reply =
     last?.type === 'function_call_output' ? `Tool said: ${last.output}` : text
-  const output = [...(thinking ? [reasoning] : []), call ?? message(reply)]
+  const output = [
+    ...(thinking ? [reasoning] : []),
+    call ?? message(reply),
+    ...(offer ? [offer] : []),
+  ]
 
   return streamSSE(c, async (stream) => {
     const send = (event: Record<string, unknown> & { type: string }) =>
@@ -354,7 +401,29 @@ app.post('/v1/responses', async (c) => {
         delta: i === 0 ? word : ` ${word}`,
       })
       if (holding && i === 0) await hold()
+      if (failing && i === 2) {
+        await send({
+          type: 'response.failed',
+          response: {
+            id,
+            status: 'failed',
+            output: [],
+            error: {
+              code: 'server_error',
+              message: 'The model server lost its connection.',
+            },
+          },
+        })
+        return
+      }
       await stream.sleep(slow ? 100 : 5)
+    }
+    if (offer) {
+      await send({
+        type: 'response.output_item.done',
+        output_index: 1,
+        item: offer,
+      })
     }
     await send({
       type: 'response.completed',

@@ -25,11 +25,19 @@
   --border-control: #8a8a8a;
   --accent: #3566f0;
   --accent-fg: #ffffff;
+  /* A citation chip: 6:1 text on its tint, and on the raised surface it opens. */
+  --cite-bg: light-dark(#eef2ff, #1f2b52);
+  --cite-fg: light-dark(#2c52c8, #b4c6ff);
+  /* An icon on a soft blue tile (3:1 for the icon, in both themes). */
+  --accent-tile: light-dark(#e8f0fe, #1d2a4f);
+  --accent-tile-fg: light-dark(#2c52c8, #9db4ff);
   --button: light-dark(#0d0d0d, #e8e8e8);
   --button-fg: light-dark(#ffffff, #0d0d0d);
   --bubble-bg: light-dark(#f4f4f4, #303030);
   --bubble-fg: light-dark(#0d0d0d, #ffffff);
   --code-chip: light-dark(rgb(238 238 238 / 82%), rgb(42 42 42 / 82%));
+  /* The even rows of a table. */
+  --row-stripe: light-dark(rgb(0 0 0 / 2.5%), rgb(255 255 255 / 3%));
   --danger: light-dark(#d93025, #ff6b6b);
   /* Text on a danger-coloured button: white on the light red would be 2.5:1. */
   --danger-fg: light-dark(#ffffff, #0d0d0d);
