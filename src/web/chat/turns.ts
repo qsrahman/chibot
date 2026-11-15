@@ -4,6 +4,7 @@ import type {
 } from 'openai/resources/responses/responses'
 import { fileParts, messageText } from '../../shared/messages.ts'
 import type { Compaction, StoredItem, UsedMemory } from '../../shared/types.ts'
+import { NEXT_STEP_TOOL } from '../../shared/tools.ts'
 import { mcpToolName } from '../settings/mcp.ts'
 import { addUsage } from './usage.ts'
 
@@ -197,6 +198,38 @@ export const fileIds = (attachments: Attachment[]) =>
  */
 export function waitingCalls(turns: Turn[]): ToolActivity[] {
   return turns.at(-1)?.answer?.tools.filter((t) => t.output === null) ?? []
+}
+
+/** The follow-up an answer offers as a card (`suggest_next_step`). */
+export interface NextStep {
+  title: string
+  description: string
+  /** The button's words. */
+  button: string
+  /** What clicking sends as the next message. */
+  prompt: string
+}
+
+/**
+ * The card the answer's last `suggest_next_step` call asks for, or `null`
+ * when it made none, the call failed, or a field is missing (the model
+ * wrote it, so it's only used as text, cut to fit).
+ */
+export function nextStepOf(answer: Answer): NextStep | null {
+  const call = answer.tools.findLast((tool) => tool.name === NEXT_STEP_TOOL)
+  if (!call?.output || call.output.startsWith('Error:')) return null
+  const args = parseJson<Record<string, unknown>>(call.arguments)
+  const field = (key: string, max: number) => {
+    const value = args[key]
+    return typeof value === 'string' ? value.trim().slice(0, max) : ''
+  }
+  const step = {
+    title: field('title', 80),
+    description: field('description', 160),
+    button: field('button', 24),
+    prompt: field('prompt', 2000),
+  }
+  return Object.values(step).every(Boolean) ? step : null
 }
 
 /** A page, past chat or project file an answer searched or read. */

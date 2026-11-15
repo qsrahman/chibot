@@ -162,6 +162,65 @@
   font-size: 0.875rem;
 }
 
+.next-step {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.next-step-icon {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--accent-tile);
+  color: var(--accent-tile-fg);
+}
+
+.next-step-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.next-step-title {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.next-step-detail {
+  color: var(--fg-muted);
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+.next-step .button {
+  flex: none;
+}
+
+/* A phone: the button drops under the text, full width. */
+@media (max-width: 480px) {
+  .next-step {
+    flex-wrap: wrap;
+  }
+
+  .next-step-text {
+    flex-basis: calc(100% - 54px);
+  }
+
+  .next-step .button {
+    width: 100%;
+  }
+}
+
 .actions {
   display: flex;
   align-items: center;

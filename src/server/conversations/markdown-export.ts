@@ -1,4 +1,5 @@
 import { fileParts, messageText } from '../../shared/messages.ts'
+import { NEXT_STEP_TOOL } from '../../shared/tools.ts'
 import type { Conversation, StoredItem } from '../../shared/types.ts'
 
 /**
@@ -18,6 +19,13 @@ export function toMarkdown(
   )
   const sections = path.flatMap((item) => {
     const { data } = item
+    if (data.type === 'function_call' && data.name === NEXT_STEP_TOOL) {
+      // The card's offer, as the plain line a reader would see.
+      const { title, prompt } = parseArguments(data.arguments)
+      return typeof title === 'string' && typeof prompt === 'string'
+        ? [`> **Next step:** ${title} (“${prompt}”)`]
+        : []
+    }
     if (data.type === 'function_call') {
       const output = outputs.get(data.call_id)
       return [
@@ -41,6 +49,14 @@ export function toMarkdown(
     ]
   })
   return `# ${conversation.title ?? 'Chat'}\n\n${sections.join('\n\n')}\n`
+}
+
+function parseArguments(json: string): Record<string, unknown> {
+  try {
+    return JSON.parse(json) as Record<string, unknown>
+  } catch {
+    return {}
+  }
 }
 
 /** Keeps a multi-line text inside a blockquote. */

@@ -351,6 +351,10 @@ needs the server running: there is no offline mode, since the server is local.
     image (or an attached photo) to see it full size over the chat, with
     Download; ⌘/Ctrl-click opens it in a new tab. They're kept with the chat, and
     deleted with it.
+  - **Next step:** when an answer ends by offering one thing more ("I can
+    turn these into a 16-week plan"), a card under it has a button that sends
+    the offer as your next message. It disappears when you write anything
+    else. Switch the tool off in Settings → Tools → Answers for no cards.
   - **Memory:** chibot remembers lasting facts and preferences you share
     ("remember that…", or things like "I'm vegetarian") and uses them in new
     chats; the answer says "Memory updated". Ask it to change or forget

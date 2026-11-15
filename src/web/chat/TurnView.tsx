@@ -10,10 +10,13 @@ import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
 import { SourcesContext } from './sourcesContext.ts'
 import {
   interrupted,
+  nextStepOf,
   sourcesOf,
   type ToolActivity,
   type Turn,
 } from './turns.ts'
+import { NextStepCard } from './NextStepCard.tsx'
+import { NEXT_STEP_TOOL } from '../../shared/tools.ts'
 import { describeContext, describeUsage } from './usage.ts'
 import { describeUsedMemory } from './usedMemory.ts'
 import { CompactionNote, CompactNow } from './CompactNote.tsx'
@@ -46,6 +49,8 @@ interface TurnViewProps {
   onBranch?: () => void
   /** Asks the model to carry on from where a stopped answer ended. */
   onContinue?: () => void
+  /** Sends the offered next step; set only while the chat is idle. */
+  onNextStep?: (prompt: string) => void
   onSwitch?: (itemId: number) => void
   /** An image loaded (and grew the page): keep following the answer. */
   onImageLoad?: () => void
@@ -72,6 +77,7 @@ export function TurnView({
   onRetry,
   onBranch,
   onContinue,
+  onNextStep,
   onSwitch,
   onImageLoad,
   context,
@@ -87,6 +93,10 @@ export function TurnView({
   // The links in the answer to these are numbered, as in the list under it.
   const sources = answer ? sourcesOf(answer) : []
   const usedMemory = describeUsedMemory(answer?.memories ?? [])
+  const nextStep =
+    latest && !pending && !approval && answer && !answer.incomplete
+      ? nextStepOf(answer)
+      : null
   const answerUsage = describeUsage(answer?.usage)
   const contextUsage = describeContext(
     answer?.lastUsage,
@@ -193,7 +203,11 @@ export function TurnView({
       {answer && (
         <ToolCalls
           // Waiting calls are shown by the approval card instead.
-          tools={answer.tools.filter((tool) => pending || tool.output !== null)}
+          // The next-step tool shows as its card.
+          tools={answer.tools.filter(
+            (tool) =>
+              tool.name !== NEXT_STEP_TOOL && (pending || tool.output !== null),
+          )}
         />
       )}
       {answer && (
@@ -264,6 +278,9 @@ export function TurnView({
             </button>
           )}
         </div>
+      )}
+      {nextStep && onNextStep && (
+        <NextStepCard step={nextStep} onChoose={onNextStep} />
       )}
       {!pending && !approval && (
         <div className="actions answer-actions">

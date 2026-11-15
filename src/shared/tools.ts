@@ -2,9 +2,13 @@
 // themselves (`Tool.info`, sent by `GET /api/tools`), so the web app keeps no
 // per-tool tables.
 
+/** The tool that offers the next-step card under an answer. */
+export const NEXT_STEP_TOOL = 'suggest_next_step'
+
 /** Settings' sections, in the order they're shown. */
 export const TOOL_GROUPS = [
   'Images',
+  'Answers',
   'Your chats and files',
   'Skills',
   'MCP resources',

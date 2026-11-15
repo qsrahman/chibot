@@ -327,6 +327,11 @@ export function ChatPage({
                           : undefined
                       }
                       onContinue={following(() => chat.send(CONTINUE))}
+                      onNextStep={
+                        busy || chat.queued !== null
+                          ? undefined
+                          : following(chat.send)
+                      }
                       onSwitch={(itemId) => void chat.switchVersion(itemId)}
                       onImageLoad={follow}
                       context={context}

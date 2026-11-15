@@ -299,6 +299,16 @@ title "chibot wants to use <tool>" and a `Wrench` icon, each call's arguments,
 a 13 px muted hint that a new message denies it, and Deny (secondary) /
 Approve (primary) at the bottom right.
 
+**Next-step card.** Under the latest answer only, when nothing streams or waits
+in the queue, and until the next message, edit, regenerate or branch switch: a
+card like the approval card (`--surface`, hairline border, 16 px radius) in one
+row, 12 px × 14 px padding and 14 px gaps: a 40 px icon tile (12 px radius,
+`--accent-tile` with `--accent-tile-fg`, a `Sparkles` icon), a 15 px title in
+weight 500 over a 13 px `--fg-muted` line "Next step · <what happens>", and
+the primary pill button (`--button`) at the right. Everything is the model's
+text and shown as text (`dir="auto"`, long words wrap). Under 480 px the button
+drops under the text, full width.
+
 **Composer tools.** A 24 px `Plus` button at the composer's left opens a menu
 above it (Add photos & files, then Create an image).
 "Add photos & files" has a muted hint line ("Images, PDF, Word, text and
@@ -447,6 +457,7 @@ equivalents use a 1.5 px stroke:
 | Export as Markdown / JSON | `FileText` / `FileJson` |
 | Temporary chat / shortcuts | `MessageCircleDashed` / `Keyboard` |
 | Tool approval / Settings → Tools | `Wrench` |
+| Next-step card | `Sparkles` |
 | Project / new project / move in / remove / add files | `Folder` / `FolderPlus` / `FolderInput` / `FolderMinus` / `Upload` |
 | Create an image / download | `ImagePlus` / `Download` |
 | Sync now / stop mirroring / use this folder | `RefreshCw` / `Unlink` / `Check` |

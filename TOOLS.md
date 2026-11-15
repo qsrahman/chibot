@@ -27,6 +27,9 @@ How to add a function tool to chibot. Part of the developer guide ([AGENTS.md](A
    the user's history override `offeredIn(conversation)` to leave out
    temporary chats, and a tool can add to the chat's instructions while
    offered by overriding `instructions()`.
+   A tool that closes a written answer (the next-step card) sets
+   `endsTurn = true`: when the response has its text and only such calls, the
+   turn ends once their outputs are saved, with no further request.
 4. Throw for errors: `ToolRegistry` returns `Error: …` to the model, as it
    does for invalid arguments. Honour `signal` for anything slow.
 5. Add it to `defaultTools()` (`main.ts`). A tool that needs setup (keys,
