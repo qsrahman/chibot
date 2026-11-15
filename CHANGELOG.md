@@ -4,6 +4,11 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- An answer with a next-step card no longer also gets "Ask next" suggestions (and no longer costs the extra request): the card is the offer.
+- On a phone, the model name and the context figure under an answer no longer break inside their words ("e2e-" over "model"); the row wraps between items and a long model name is cut with an ellipsis.
+
 ## [0.21.0] - 2026-11-15
 
 ### Added

@@ -223,6 +223,7 @@
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 2px;
   min-height: 32px;
@@ -321,10 +322,20 @@
 
 .usage {
   margin-left: 8px;
+  /* A label stays on one line; a narrow row wraps between items instead. */
+  white-space: nowrap;
   color: var(--fg-muted);
   font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
   cursor: default;
+}
+
+/* A long model name is cut, not wrapped. */
+.usage.model-name {
+  min-width: 0;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* The answer used most of the context: chibot will compact soon. */
