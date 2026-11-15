@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-11-15
+
 ### Added
 
 - A banner when chibot's server can't be reached, with **Retry**. The page looks again by itself (every 2 s, slowing to 15 s, not while the tab is hidden); when chibot answers, the banner goes, a "Reconnected" toast shows, and the chat list, projects, settings and the open chat load again. Sending while it is down says so and keeps the message.
