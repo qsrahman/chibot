@@ -48,6 +48,8 @@ export function useChat(
     error,
     /** What the last answer failed with (`error` while it is still shown). */
     failure: answers.failure,
+    /** The last failure when it was the setup's fault, else `null`. */
+    problem: answers.problem,
     summarizing: compaction.summarizing,
     notice: compaction.notice,
     isTemporary:

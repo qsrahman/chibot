@@ -8,6 +8,7 @@ import {
   appReady,
   lastRequest,
   resetSettings,
+  savedChat,
   send,
   turns,
 } from './helpers.ts'
@@ -151,11 +152,179 @@ test('switches and remembers the theme', async ({ page }) => {
   expect(await background()).toBe('rgb(0, 0, 0)')
 
   const again = await openSettings(page, 'General')
-  await again.getByLabel('Theme').selectOption('system')
+  await again.getByLabel('Theme').selectOption('macchiato')
+  expect(await background()).toBe('rgb(24, 25, 38)')
+  await page.reload()
+  expect(await background()).toBe('rgb(24, 25, 38)')
+
+  const third = await openSettings(page, 'General')
+  await third.getByLabel('Theme').selectOption('latte')
+  expect(await background()).toBe('rgb(230, 233, 239)')
+  await page.reload()
+  expect(await background()).toBe('rgb(230, 233, 239)')
+
+  // Latte stays light when the system is dark.
+  await page.emulateMedia({ colorScheme: 'dark' })
+  expect(await background()).toBe('rgb(230, 233, 239)')
+  await page.emulateMedia({ colorScheme: 'light' })
+
+  const last = await openSettings(page, 'General')
+  await last.getByLabel('Theme').selectOption('system')
   expect(await background()).toBe('rgb(252, 252, 252)')
+  expect(
+    await page.evaluate(() => document.documentElement.dataset.theme),
+  ).toBeUndefined()
   expect(
     await page.evaluate(() => localStorage.getItem('chibot.colorScheme')),
   ).toBeNull()
+})
+
+test('switches and remembers the accent colour', async ({ page }) => {
+  const accent = () =>
+    page.evaluate(() =>
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--accent')
+        .trim(),
+    )
+  await page.emulateMedia({ colorScheme: 'light' })
+  await page.goto('/')
+  expect(await accent()).toBe('#3566f0')
+
+  const dialog = await openSettings(page, 'General')
+  await dialog.getByLabel('Accent colour').selectOption('orange')
+  expect(await accent()).toBe('#c84900')
+
+  // Applied before the app loads, and in a theme with its own palette.
+  await page.reload()
+  expect(await accent()).toBe('#c84900')
+  const again = await openSettings(page, 'General')
+  await again.getByLabel('Theme').selectOption('macchiato')
+  expect(await accent()).toBe('#f5a97f')
+
+  await again.getByLabel('Accent colour').selectOption('default')
+  expect(await accent()).toBe('#8aadf4')
+  expect(
+    await page.evaluate(() => localStorage.getItem('chibot.accent')),
+  ).toBeNull()
+  await again.getByLabel('Theme').selectOption('system')
+})
+
+test('switches and remembers the text size', async ({ page }) => {
+  const size = () =>
+    page.evaluate(() => getComputedStyle(document.documentElement).fontSize)
+  await page.goto('/')
+  expect(await size()).toBe('16px')
+
+  const dialog = await openSettings(page, 'General')
+  await dialog.getByLabel('Text size').selectOption('Extra large')
+  expect(await size()).toBe('20px')
+
+  // Applied before the app loads.
+  await page.reload()
+  expect(await size()).toBe('20px')
+  const again = await openSettings(page, 'General')
+  await again.getByLabel('Text size').selectOption('Default')
+  expect(await size()).toBe('16px')
+})
+
+// At the largest size the layout still fits: the page never scrolls sideways,
+// and the composer, sidebar and Settings dialog stay inside the window.
+for (const [name, viewport] of [
+  ['desktop', { width: 1280, height: 800 }],
+  ['phone', { width: 375, height: 812 }],
+] as const) {
+  test(`fits at the largest text size, ${name}`, async ({ page }) => {
+    await page.setViewportSize(viewport)
+    await page.addInitScript(() => {
+      try {
+        localStorage.setItem('chibot.textSize', '125%')
+      } catch {}
+    })
+    await page.goto('/')
+    await appReady(page)
+    expect(
+      await page.evaluate(
+        () => getComputedStyle(document.documentElement).fontSize,
+      ),
+    ).toBe('20px')
+
+    const inside = async (
+      selector: string,
+      within: { width: number; height: number },
+    ) => {
+      const box = await page.locator(selector).first().boundingBox()
+      expect(box, selector).not.toBeNull()
+      expect(box!.x, selector).toBeGreaterThanOrEqual(0)
+      expect(box!.x + box!.width, selector).toBeLessThanOrEqual(within.width)
+    }
+    const noScroll = () =>
+      page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <=
+          document.documentElement.clientWidth,
+      )
+
+    // Everything in the composer sits inside its box.
+    await inside('.composer', viewport)
+    const box = (await page.locator('.composer').boundingBox())!
+    for (const child of await page.locator('.composer button').all()) {
+      const b = await child.boundingBox()
+      if (!b) continue
+      expect(b.x).toBeGreaterThanOrEqual(box.x)
+      expect(b.x + b.width).toBeLessThanOrEqual(box.x + box.width + 1)
+    }
+    expect(await noScroll()).toBe(true)
+
+    if (name === 'phone')
+      await page.getByRole('button', { name: 'Open sidebar' }).click()
+    await inside('nav.sidebar', viewport)
+    expect(await noScroll()).toBe(true)
+
+    // On a phone there is no shortcut: Settings opens from the drawer.
+    if (name === 'phone')
+      await page.getByRole('button', { name: 'Settings', exact: true }).click()
+    else await page.keyboard.press('ControlOrMeta+,')
+    const dialog = page.getByRole('dialog', { name: 'Settings' })
+    const tabs = page.getByRole('navigation', { name: 'Settings sections' })
+    for (const tab of ['General', 'Model', 'Tools', 'Data']) {
+      await tabs.getByRole('button', { name: tab, exact: true }).click()
+      await inside('dialog.settings', viewport)
+      expect(
+        await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth),
+        tab,
+      ).toBe(true)
+      expect(await noScroll(), tab).toBe(true)
+    }
+  })
+}
+
+test('reduces transparency and remembers it', async ({ page }) => {
+  const id = await savedChat(page, {
+    question: 'Which command?',
+    answerText: 'Run `pnpm test` first.',
+  })
+  await page.goto(`/c/${id}`)
+  const chip = page.locator('.markdown :not(pre) > code').first()
+  const background = () =>
+    chip.evaluate((el) => getComputedStyle(el).backgroundColor)
+  // The code chip is a tint with an alpha channel: "rgba(…, 0.82)".
+  expect(await background()).toMatch(/^rgba\(.*0\.82\)$/)
+
+  const dialog = await openSettings(page, 'General')
+  const toggle = dialog.getByRole('switch', { name: 'Reduce transparency' })
+  await expect(toggle).not.toBeChecked()
+  await toggle.check()
+  expect(await background()).toMatch(/^rgb\(/)
+
+  // Applied before the app loads.
+  await page.reload()
+  expect(await background()).toMatch(/^rgb\(/)
+  const again = await openSettings(page, 'General')
+  await expect(
+    again.getByRole('switch', { name: 'Reduce transparency' }),
+  ).toBeChecked()
+  await again.getByRole('switch', { name: 'Reduce transparency' }).uncheck()
+  expect(await background()).toMatch(/^rgba\(/)
 })
 
 test('exports a chat and imports it back', async ({ page }) => {

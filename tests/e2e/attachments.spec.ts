@@ -370,3 +370,47 @@ test('takes a photo with the camera and attaches it', async ({ page }) => {
   await expect(dialog).toBeHidden()
   await expect(page.locator('.attachment.image.ready')).toHaveCount(1)
 })
+
+test('a drop overlay names what is accepted, for files only', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  const chat = page.locator('main.chat')
+  const overlay = page.getByText('Add anything')
+  const text = await page.evaluateHandle(() => {
+    const data = new DataTransfer()
+    data.setData('text/plain', 'just words')
+    return data
+  })
+  await chat.dispatchEvent('dragover', { dataTransfer: text })
+  await expect(overlay).toHaveCount(0)
+
+  const files = await page.evaluateHandle(
+    (bytes) => {
+      const data = new DataTransfer()
+      data.items.add(
+        new File([new Uint8Array(bytes)], 'dot.png', { type: 'image/png' }),
+      )
+      return data
+    },
+    [...PNG],
+  )
+  await chat.dispatchEvent('dragenter', { dataTransfer: files })
+  await chat.dispatchEvent('dragover', { dataTransfer: files })
+  await expect(overlay).toBeVisible()
+  await expect(
+    page.locator('.drop-overlay').getByText('Images, PDF, Word, text and code'),
+  ).toBeVisible()
+
+  await page.keyboard.press('Escape')
+  await expect(overlay).toHaveCount(0)
+
+  await chat.dispatchEvent('dragover', { dataTransfer: files })
+  await expect(overlay).toBeVisible()
+  await chat.dispatchEvent('drop', { dataTransfer: files })
+  await expect(overlay).toHaveCount(0)
+  await expect(
+    page.locator('.composer').getByRole('img', { name: 'dot.png' }),
+  ).toBeVisible()
+})

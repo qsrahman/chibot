@@ -9,7 +9,7 @@ const turn = (answer: Partial<NonNullable<Turn['answer']>> | null) =>
   ({
     key: 'k',
     question: {},
-    answer: answer && { itemId: 5, incomplete: false, ...answer },
+    answer: answer && { itemId: 5, incomplete: false, tools: [], ...answer },
   }) as unknown as Turn
 
 describe('suggestionTarget', () => {
@@ -25,6 +25,26 @@ describe('suggestionTarget', () => {
     expect(suggestionTarget([turn({ incomplete: true })], 0)).toBeNull()
     expect(suggestionTarget([turn({ itemId: null })], 0)).toBeNull()
     expect(suggestionTarget([turn({})], 1)).toBeNull()
+  })
+
+  it('is none for an answer that offers a next-step card', () => {
+    const tools = [
+      {
+        callId: 'c',
+        name: 'suggest_next_step',
+        arguments: JSON.stringify({
+          title: 'Weekly plan',
+          description: 'turn these into a plan',
+          button: 'Create plan',
+          prompt: 'Make a plan',
+        }),
+        output: 'shown',
+      },
+    ]
+    expect(suggestionTarget([turn({ tools })], 0)).toBeNull()
+    // A call that failed shows no card, so the suggestions stay.
+    const failed = [{ ...tools[0]!, output: 'Error: invalid arguments' }]
+    expect(suggestionTarget([turn({ tools: failed })], 0)).toBe(5)
   })
 })
 

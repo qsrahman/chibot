@@ -137,7 +137,9 @@ re-reads the chat (`getConversation`) and shows it as `toTurns(items)`
 - leaving the chat mid-answer counts as Stop; a run still going for another
   chat can't touch the screen (`runRef`);
 - when an answer has just finished and Settings → Model → Follow-ups is on,
-  `useFollowUps` posts to `/api/conversations/:id/suggestions` (`FollowUpWriter`),
+  and the answer has no next-step card (the card is the model's own offer, so a
+  second set of suggestions would compete with it), `useFollowUps` posts to
+  `/api/conversations/:id/suggestions` (`FollowUpWriter`),
   and `FollowUps` shows the prompts above the composer until anything else
   happens. This is not a stream event, so the turn doesn't wait on a second request.
 

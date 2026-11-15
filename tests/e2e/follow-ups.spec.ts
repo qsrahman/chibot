@@ -80,3 +80,24 @@ test('the setting switch turns them on and off', async ({ page }) => {
   }
   expect(settings.suggestionModel).toBe('')
 })
+
+test('an answer with a next-step card gets the card, not suggestions', async ({
+  page,
+}) => {
+  await page.request.patch('/api/settings', {
+    data: { suggestionModel: 'e2e-model' },
+  })
+  await page.goto('/')
+  await appReady(page)
+  await send(page, 'offer-next-step please')
+  await answered(page)
+  await expect(page.getByRole('button', { name: 'Create plan' })).toBeVisible()
+  await expect(page.getByRole('group', { name: 'Ask next' })).toHaveCount(0)
+
+  // The plain answer after it gets its suggestions again.
+  await send(page, 'and now a plain one')
+  await answered(page)
+  await expect(
+    page.getByRole('group', { name: 'Ask next' }).getByRole('button'),
+  ).toHaveCount(3)
+})

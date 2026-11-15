@@ -287,13 +287,56 @@
 }
 
 /* Dropping files anywhere on the chat attaches them. */
-.chat.dragging::after {
+.drop-overlay {
   position: absolute;
   inset: 8px;
+  z-index: 5;
+  display: grid;
+  place-items: center;
   border: 2px dashed var(--accent);
   border-radius: var(--radius-card);
-  content: '';
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
   pointer-events: none;
+  animation: drop-fade 150ms ease-out;
+}
+
+.drop-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 24px 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+  box-shadow: var(--dialog-shadow);
+  text-align: center;
+}
+
+.drop-card svg {
+  margin-bottom: 8px;
+  color: var(--accent);
+}
+
+.drop-card strong {
+  font-weight: 600;
+}
+
+.drop-card span {
+  color: var(--fg-muted);
+  font-size: 14px;
+}
+
+@keyframes drop-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drop-overlay {
+    animation: none;
+  }
 }
 
 .composer-chip {

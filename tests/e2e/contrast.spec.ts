@@ -4,7 +4,7 @@ import { answered, appReady, savedChat, send } from './helpers.ts'
 
 // Rendered colours, not just tokens: axe measures the text and background
 // actually drawn (code tokens, maths, links, tables, the image viewer, menus,
-// dialogs, toasts) in both colour schemes.
+// dialogs, toasts) in each theme.
 
 const RICH = [
   'A [link](https://example.com/) and `inline code`, ~~struck~~ and **bold**.',
@@ -74,10 +74,14 @@ async function violations(page: Page) {
   )
 }
 
-for (const scheme of ['light', 'dark'] as const) {
+for (const scheme of ['light', 'dark', 'macchiato', 'latte'] as const) {
   test.describe(`${scheme} theme`, () => {
     test.beforeEach(async ({ page }) => {
-      await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' })
+      await page.emulateMedia({
+        colorScheme:
+          scheme === 'light' || scheme === 'latte' ? 'light' : 'dark',
+        reducedMotion: 'reduce',
+      })
       await page.addInitScript((s) => {
         try {
           localStorage.setItem('chibot.colorScheme', s)
@@ -89,6 +93,28 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.goto('/')
       await appReady(page)
       expect(await violations(page)).toEqual([])
+    })
+
+    test('a new chat with recent chats, and with the setup card', async ({
+      page,
+    }) => {
+      const id = await richChat(page)
+      await page.goto('/')
+      await appReady(page)
+      await expect(page.locator('.recents')).toBeVisible()
+      expect(await violations(page), 'recents').toEqual([])
+      await page.request.delete(`/api/conversations/${id}`)
+
+      await page.route('**/api/health', async (route) => {
+        const res = await route.fetch()
+        await route.fulfill({
+          response: res,
+          json: { ...(await res.json()), configured: false },
+        })
+      })
+      await page.goto('/')
+      await expect(page.locator('.setup-card')).toBeVisible()
+      expect(await violations(page), 'setup card').toEqual([])
     })
 
     test('an answer with code, maths, a table and a link', async ({ page }) => {
@@ -247,4 +273,50 @@ for (const scheme of ['light', 'dark'] as const) {
       expect(await violations(page), 'Add an MCP server').toEqual([])
     })
   })
+}
+
+// Each accent's own colours (base.css) on what uses them: the citation chip
+// and card, the send button and a switch that is on.
+for (const scheme of ['light', 'dark', 'macchiato', 'latte'] as const) {
+  for (const accent of ['violet', 'teal', 'green', 'orange', 'pink']) {
+    test(`${accent} accent, ${scheme} theme`, async ({ page }) => {
+      await page.emulateMedia({
+        colorScheme:
+          scheme === 'light' || scheme === 'latte' ? 'light' : 'dark',
+        reducedMotion: 'reduce',
+      })
+      await page.addInitScript(
+        ([s, a]) => {
+          try {
+            localStorage.setItem('chibot.colorScheme', s!)
+            localStorage.setItem('chibot.accent', a!)
+          } catch {}
+        },
+        [scheme, accent],
+      )
+      const id = await savedChat(page, {
+        question: 'Robots?',
+        answerText: 'Robots move things [1](https://example.com/robots).',
+        searchResults: [
+          {
+            title: 'Robots guide',
+            url: 'https://example.com/robots',
+            snippet: 'Robots move things.',
+          },
+        ],
+      })
+      await page.goto(`/c/${id}`)
+      await page.getByRole('textbox', { name: 'Message' }).fill('Hello')
+      await page.locator('.cite-chip').focus()
+      await expect(page.locator('.cite-pop')).toBeVisible()
+      expect(await violations(page), 'chip, card, send button').toEqual([])
+
+      await page.keyboard.press('Escape')
+      await page.keyboard.press('ControlOrMeta+,')
+      const dialog = page.getByRole('dialog', { name: 'Settings' })
+      await dialog.getByRole('button', { name: 'General' }).click()
+      await expect(dialog.getByLabel('Accent colour')).toHaveValue(accent)
+      expect(await violations(page), 'settings').toEqual([])
+    })
+  }
 }

@@ -77,3 +77,6 @@ export const ATTACHMENT_ACCEPT = accept([
   ...Object.keys(KINDS),
   ...TEXT,
 ])
+
+/** What the pickers and drops accept, in words (kept in step with the lists above by tests). */
+export const ACCEPTED_LABEL = 'Images, PDF, Word, text and code'

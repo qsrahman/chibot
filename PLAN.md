@@ -218,7 +218,7 @@ in a way a transaction does not undo leaves a database to restore.
 
 | Method & path | Phase | Purpose |
 |---|---|---|
-| `GET /api/health` | 0 | Liveness + chat model and base URL (never the key) |
+| `GET /api/health` | 0 | Liveness + chat model and base URL, and `configured` (whether a key or server is set; never the key) |
 | `POST /api/conversations` | 1 | Create a conversation. Phase 2: `{ temporary: true }` |
 | `GET /api/conversations/:id` | 1 | Conversation with its current path. Phase 3 adds sibling info. |
 | `POST /api/conversations/:id/turns` | 1 | Send a message; SSE stream of `ResponseStreamEvent`s plus `chibot.error`, and (Phase 2) `chibot.title` after `response.completed`. Phase 3 adds `parentId` for edit/regenerate. Phase 5 adds `approvals` and the `chibot.tool_output` / `chibot.approval` events. |
@@ -287,6 +287,7 @@ bumps the minor version. Work stops after each phase for review.
 - Pin to top; archive with an archived view to restore from.
 - Search over titles and message text (FTS5).
 - Temporary chat: a toggle on a new chat; see §3.
+- Getting around a long chat: Find in chat (matches highlighted in the page, searched locally) and a message outline from four messages on.
 - Automatic title after the first exchange from the chat model, in the
   background, using low reasoning effort if the model supports it.
 
@@ -380,8 +381,12 @@ summarizing of long chats on for a 32k window; math formatting via a built-in in
   (full tree, `{ version: 1, … }`, with versions, usage and models). Import a
   JSON file from Settings → Data: validated, new ids, current version kept,
   arrives unpinned and unarchived.
-- **Theme.** Light / Dark / System in Settings → General, remembered in
-  `localStorage`. Tokens move to `color-scheme` + `light-dark()` so each colour
+- **Theme.** Light / Dark / System, and the optional Catppuccin Macchiato (a
+  dark scheme) and Latte (a light one), each with its own tokens (`data-theme` on `<html>`), in Settings →
+  General, remembered in
+  `localStorage`. The accent colour (blue or five presets, `data-accent`) is
+  chosen there too, the text size (the root font size, 87.5 to 125 %) and Reduce transparency
+  (follows `prefers-reduced-transparency`, overridable). Tokens move to `color-scheme` + `light-dark()` so each colour
   is defined once; code highlighting uses our own tokens (the highlight.js
   theme files are media-query based and can't follow a manual toggle).
 - **Settings dialog** (DESIGN.md §4): General (theme), Personalization

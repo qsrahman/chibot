@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { ConversationListItem } from '../../../src/shared/types.ts'
-import { groupConversations } from '../../../src/web/conversations/dates.ts'
+import {
+  groupConversations,
+  relativeTime,
+} from '../../../src/web/conversations/dates.ts'
 
 const now = new Date(2026, 9, 22, 15, 0) // 22 Oct 2026, 15:00 local
 const daysAgo = (n: number, hour = 12) =>
@@ -38,5 +41,26 @@ describe('groupConversations', () => {
 
   it('returns no groups for an empty list', () => {
     expect(groupConversations([], now)).toEqual([])
+  })
+})
+
+describe('relativeTime', () => {
+  const at = (days: number, hour: number, minute = 0) =>
+    new Date(2026, 9, 22 - days, hour, minute).getTime()
+
+  it('says how long ago, in words', () => {
+    expect(relativeTime(at(0, 15), now.getTime())).toBe('just now')
+    expect(relativeTime(at(0, 14, 55), now.getTime())).toBe('5 minutes ago')
+    expect(relativeTime(at(0, 12), now.getTime())).toBe('3 hours ago')
+    expect(relativeTime(at(1, 8), now.getTime())).toBe('yesterday')
+    expect(relativeTime(at(3, 9), now.getTime())).toBe('3 days ago')
+  })
+
+  it('gives a date after a week', () => {
+    expect(relativeTime(at(10, 9), now.getTime())).toMatch(/Oct|12/)
+  })
+
+  it('never says the future', () => {
+    expect(relativeTime(now.getTime() + 5000, now.getTime())).toBe('just now')
   })
 })

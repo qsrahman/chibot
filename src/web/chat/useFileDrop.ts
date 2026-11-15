@@ -1,4 +1,4 @@
-import { useState, type DragEvent, type RefObject } from 'react'
+import { useEffect, useState, type DragEvent, type RefObject } from 'react'
 
 /**
  * Files dropped on the chat attach to the message. Spread `handlers` on the
@@ -9,6 +9,13 @@ export function useFileDrop(
   focus: RefObject<HTMLElement | null>,
 ) {
   const [dragging, setDragging] = useState(false)
+  // Escape cancels the drag; browsers don't always say so with a dragleave.
+  useEffect(() => {
+    if (!dragging) return
+    const stop = (e: KeyboardEvent) => e.key === 'Escape' && setDragging(false)
+    addEventListener('keydown', stop)
+    return () => removeEventListener('keydown', stop)
+  }, [dragging])
   const dropping = (e: DragEvent) => e.dataTransfer.types.includes('Files')
   return {
     dragging,

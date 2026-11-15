@@ -127,6 +127,7 @@ export function createApp(deps: AppDeps) {
   app.get('/api/health', (c) =>
     c.json({
       status: 'ok',
+      configured: config.chatConfigured,
       model: config.chat.model,
       // Never expose the key.
       baseURL: config.chat.baseURL ?? null,
@@ -134,6 +135,11 @@ export function createApp(deps: AppDeps) {
       features: { transcription: transcription !== null },
       build: readBuildId(),
     } satisfies Health),
+  )
+
+  // Nothing to answer with yet: say so, rather than sending a made-up key.
+  app.post('/api/conversations/:id/turns', (c, next) =>
+    config.chatConfigured ? next() : c.json({ error: NOT_SET_UP }, 409),
   )
 
   app.route('/', settingsRoutes(deps))
@@ -149,6 +155,9 @@ export function createApp(deps: AppDeps) {
 
   return app
 }
+
+const NOT_SET_UP =
+  'chibot has no model server or API key yet. Run `chibot init` in a terminal (or `chibot config set chat.apiKey <key>`), then restart chibot.'
 
 const TOKEN_COOKIE = 'chibot_token'
 /**

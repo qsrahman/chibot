@@ -42,7 +42,8 @@ follows; changing `--bg` switches to a dark-grey page.
 | `--surface-muted` | `#f4f4f4` | `#303030` | Hover rows |
 | `--bubble-bg` / `--bubble-fg` | `#f4f4f4` / `#0d0d0d` | `#303030` / `#ffffff` | User message bubble |
 | `--code-chip` | `rgb(238 238 238 / 82%)` | `rgb(42 42 42 / 82%)` | Inline code |
-| `--chip` | `#ececec` | `#414141` | Chips, switch track, and hover/selected rows inside menus and dialogs (where `--surface-muted` would match the raised background) |
+| `--chip` | `#ececec` | `#414141` | Chips, and hover/selected rows inside menus and dialogs (where `--surface-muted` would match the raised background) |
+| `--switch-track` | `#8a8a8a` | `#414141` | A switch's track when off; its white thumb is 3:1 or more on it |
 | `--fg` | `#0d0d0d` | `#ffffff` | Text |
 | `--fg-muted` | `#5d5d5d` | `#cdcdcd` | Descriptions, captions, footer, action icons, code labels |
 | `--border` | `rgb(0 0 0 / 10%)` | `rgb(255 255 255 / 15%)` | Hairlines, composer outline |
@@ -111,6 +112,22 @@ Code uses `"SF Mono", SFMono-Regular, ui-monospace, Consolas, "Liberation Mono",
 
 ## 4. Components
 
+**New chat.** The greeting ("What's on your mind?") sits above the composer. With
+no history it offers four starter pills; with history it shows, below the
+composer, a "Pick up where you left off" list in the composer's column: a 12 px
+`--fg-muted` label, then up to three recent chats (title and a 12 px muted
+relative time) and up to two recent projects (`Folder` icon and name), each a
+link. Rows are 36 px (44 px on touch and phone widths), `--radius-row`,
+`--surface-muted` on hover; titles are text only, `dir="auto"`, one line with an
+ellipsis. Archived, temporary and empty chats are not listed.
+
+**Setup card.** With no key or server set (`GET /api/health` says
+`configured: false`) the starters and recents give way to a card: `--surface`,
+`--border`, `--radius-card`, a 16 px semibold title, a 14 px `--fg-muted` line, and
+two code blocks (`chibot init`, `chibot config set …`) with Copy. Sending is
+refused with a toast and the draft kept. After a failed answer the same card
+sits under it when the server said 401 or 403, or could not be reached.
+
 **Composer.** A 28 px-radius pill on `--surface` with a `--border` outline,
 7×10 px padding and 52 px tall when one line. The textarea grows up to 40 vh.
 A round 36 px icon button on the right is **send** (blue `--accent`, arrow-up icon),
@@ -159,7 +176,7 @@ right, which fills the path box and closes it.
 wrapping 40 px pills (`--surface`, `--border` outline, `--surface-muted` on
 hover, a 15 px muted `CornerDownRight`, text `dir="auto"`, one line with an
 ellipsis). They show only after the newest answer finishes and nothing is
-streaming or queued.
+streaming or queued, and not for an answer that has a next-step card.
 
 **Queued message.** A row above the text, like attachments: a 15 px muted
 `Clock`, the label **Queued** (500 weight), the text in `--fg` on one
@@ -174,8 +191,12 @@ type ("PDF") in `--fg-muted`, or the error in `--danger` with a `--danger`
 outline. A spinning `LoaderCircle` covers a chip while it uploads (dimmed), and
 a 20 px round `--button` × sits on its top-right corner. In a sent message the
 same thumbnails (up to 240 px, 16 px radius) and cards sit right-aligned above
-the bubble. Dragging files over the chat outlines it with a 2 px dashed
-`--accent` border.
+the bubble. Dragging files over the chat (not text or links) covers it with a
+2 px dashed `--accent` outline inset 8 px and a centred 16 px-radius
+`--surface-raised` card (`--border`, `--dialog-shadow`): an `Upload` icon in
+`--accent`, "Add anything", and what's accepted in `--fg-muted`. It fades in
+over 150 ms (not under reduced motion), ignores the pointer and is `aria-hidden`.
+It clears on drop, leave and Escape.
 
 **Effort switch.** Left of the mic: a 36 px pill showing the reasoning effort
 ("Auto", "Minimal" … "Max") in `--fg-muted` 14 px text with a chevron,
@@ -186,6 +207,19 @@ The model menu has no effort.
 **Jump to latest.** While the message list is scrolled up, a 36 px round
 `ArrowDown` button (`--surface-raised`, `--border` outline, `--composer-shadow`)
 sticks 12 px above the list's bottom, centred over the composer.
+
+**Find in chat and the message outline** sit in the header's right group as
+36 px `icon-button`s: `Search` (`aria-pressed` while its bar is open) and
+`ListTree` (only from four messages on). The find bar floats 56 px from the
+top, right-aligned (`--surface-raised`, `--border`, dialog shadow): a 36 px
+search field, a muted tabular "3 of 12" (`role="status"`), `ChevronUp`,
+`ChevronDown` and `X`. Matches use `::highlight(find)` and
+`::highlight(find-current)` with `--find-bg`, `--find-current-bg` and
+`--find-fg` (4.5:1, both schemes); jumps are instant. The outline is a
+`.menu.outline` (max 360 px wide, 420 px tall, scrolling): 36 px rows with a
+muted number and the message's first line, ellipsised, `dir="auto"`; the row
+in view has `aria-current` and a `--chip` background, and the menu opens
+focused on it.
 
 **Messages.**
 - *User:* right-aligned bubble with `--bubble-bg` and `--bubble-fg` text,
@@ -200,7 +234,9 @@ sticks 12 px above the list's bottom, centred over the composer.
   answer (ChatGPT uses a 44 px hit area and 20 px icons; chibot is a little
   denser):
   - Assistant: **Copy**, then **Regenerate**, **Branch in new chat** (`GitBranch`), version switcher `< 2/3 >` and
-    context usage. These show on hover and always on the latest answer.
+    context usage. These show on hover and always on the latest answer. On a
+    narrow screen (44 px touch buttons) the row wraps between items; a label
+    never breaks inside its words, and a long model name is cut with an ellipsis.
     Context usage is 12 px tabular muted text (`12.4K / 64K context`, or
     `12.4K context` with compaction off), with the full input/output count in
     its tooltip. At 80 % of the compaction threshold it turns `--danger` at
@@ -429,6 +465,63 @@ follows the system unless `<meta name="color-scheme">` is set to `light` or
 `dark` (the Theme setting, applied before first paint). Code highlighting
 uses `--code-*` tokens with GitHub's light and dark palettes.
 
+**Catppuccin Macchiato** is an optional fourth choice in Settings → General →
+Theme (it never follows the system). It is a dark scheme, so `color-scheme` is
+`dark` and `<html data-theme="macchiato">` (set with the saved choice before
+first paint) makes `:root[data-theme='macchiato']` in `base.css` replace the
+colour tokens, with no second set of component styles. It keeps the default
+dark theme's steps: page `#181926` (crust), cards `#24273a` (base), raised
+surfaces and hover rows `#363a4f` (surface0), chips `#494d64` (surface1); text
+`#cad3f5`, muted text `#b8c0e0`, the blue accent `#8aadf4` (with crust `#181926`
+on it, since white would be 2.3:1), danger `#ed8796`. Code uses the palette's
+mauve, blue, peach, green, yellow and teal. The same contrast checks as the
+other themes cover it (`tests/web/contrast.test.ts`, `tests/e2e/contrast.spec.ts`).
+
+**Catppuccin Latte** is an optional fifth choice (it never follows the system
+either). It is a light scheme: `color-scheme` is `light`, `data-theme="latte"`
+and `:root[data-theme='latte']` replaces the tokens. Steps: page `#e6e9ef`
+(mantle), cards and raised surfaces `#eff1f5` (base), hover rows and the user
+bubble `#dce0e8` (crust), chips `#ccd0da` (surface0); text `#4c4f69`, field
+edges and the off switch `#7c7f93` (overlay2), the blue accent `#1e66f5` with
+white on it. The palette's own muted text, red, code colours and the green,
+teal, peach and pink accents fell under the contrast checks on these surfaces,
+so they are darkened until they pass (muted text `#55586e`, danger `#d00f38`,
+code, and the accents' latte blocks); the thresholds are the same as for every
+theme.
+
+**Accent colour** is a browser preference in Settings → General → Appearance:
+Blue (the default, no attribute), Violet, Teal, Green, Orange or Pink.
+`<html data-accent="…">` (set before first paint, like the theme) makes the
+blocks after the theme blocks in `base.css` replace every token built from the
+accent: `--accent`, `--accent-fg`, `--switch-thumb-on`, `--cite-*` and
+`--accent-tile*`. Each accent has a `light-dark()` set for Light and Dark
+(a deeper colour with white on it, a lighter one with near-black on it) and
+plain colours for Macchiato (the palette's mauve, teal, green, peach and pink,
+with crust on them). The blocks are measured, not guessed: `accent-fg` on
+`--accent` is 4.5:1, `--accent` on the page and cards 3:1, citation text 4.5:1,
+for every accent in every theme (`tests/web/contrast.test.ts`; axe covers all
+of them in `tests/e2e/contrast.spec.ts`). The favicon and app icons keep the
+blue.
+
+**Text size** is a browser preference in Settings → General → Appearance:
+Small (87.5 %), Default (100 %), Large (112.5 %) or Extra large (125 %), set as
+the root `font-size` before first paint, so every `rem` length scales (all type
+is in `rem`). Lengths that hold text are `rem` too: the sidebar (`--sidebar-width`),
+dialogs and the Settings tabs column. Controls with a fixed pixel height
+(36 px buttons, the 52 px composer, which grows with its text) keep it; the type
+inside them is sized to fit at 125 %. `tests/e2e/settings.spec.ts` checks that
+the composer, sidebar and Settings dialog fit with no sideways page scroll at
+Extra large, on a desktop and a phone.
+
+**Reduce transparency** is a switch in Settings → General → Appearance
+(`<html data-transparency="reduced">` or `full`, set before first paint). It
+starts from the system's `prefers-reduced-transparency` and the choice here
+overrides it. The tinted surfaces become opaque steps of the theme's own tokens:
+`--code-chip` is `--surface-muted` and `--row-stripe` mixes `--surface-muted`
+and `--surface`. There is little else to change: borders are hairlines, the
+shadows aren't surfaces, and the modal scrim, which only dims the page behind a
+dialog, stays translucent.
+
 **Footer.** 12 px muted line under the composer: "chibot can make mistakes.
 Check important info."
 
@@ -458,6 +551,7 @@ equivalents use a 1.5 px stroke:
 | Temporary chat / shortcuts | `MessageCircleDashed` / `Keyboard` |
 | Tool approval / Settings → Tools | `Wrench` |
 | Next-step card | `Sparkles` |
+| Find in chat / message outline | `Search`, `ChevronUp`, `ChevronDown`, `X` / `ListTree` |
 | Project / new project / move in / remove / add files | `Folder` / `FolderPlus` / `FolderInput` / `FolderMinus` / `Upload` |
 | Create an image / download | `ImagePlus` / `Download` |
 | Sync now / stop mirroring / use this folder | `RefreshCw` / `Unlink` / `Check` |

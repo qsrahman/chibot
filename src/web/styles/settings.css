@@ -1,14 +1,14 @@
 /* Settings (DESIGN.md §4) */
 
 .dialog.settings {
-  width: min(100% - 32px, 760px);
+  width: min(100% - 32px, 47.5rem);
   /* Anchored near the top, so it opens in the same place at any window height. */
   margin-top: max(16px, 10dvh);
 }
 
 .settings-layout {
   display: grid;
-  grid-template-columns: 180px 1fr;
+  grid-template-columns: 11.25rem 1fr;
   gap: 16px;
   align-items: start;
 }
@@ -200,7 +200,7 @@ label.button {
   height: 20px;
   margin: 0;
   border-radius: 999px;
-  background: var(--chip);
+  background: var(--switch-track);
   appearance: none;
   cursor: pointer;
   transition: background-color 150ms ease;
@@ -214,7 +214,7 @@ label.button {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #ffffff;
+  background: var(--switch-thumb);
   transition: transform 150ms ease;
 }
 
@@ -223,6 +223,7 @@ label.button {
 }
 
 .switch:checked::after {
+  background: var(--switch-thumb-on);
   transform: translateX(12px);
 }
 

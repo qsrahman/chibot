@@ -318,7 +318,10 @@ export function TurnView({
             />
           )}
           {answer?.model && (
-            <span className="usage" title="Model that wrote this answer">
+            <span
+              className="usage model-name"
+              title="Model that wrote this answer"
+            >
               {answer.model}
             </span>
           )}

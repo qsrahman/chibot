@@ -4,11 +4,15 @@ import { ArrowDown } from 'lucide-react'
 import type { ConversationListItem, Health } from '../../shared/types.ts'
 import { ErrorBoundary } from '../ui/ErrorBoundary.tsx'
 import { ChatTopBar } from './ChatTopBar.tsx'
+import { FindBar } from './FindBar.tsx'
+import { OutlineMenu } from './OutlineMenu.tsx'
 import { Composer } from './Composer.tsx'
 import { FollowUps } from './FollowUps.tsx'
 import { shownSuggestions } from './followUps.ts'
 import { useFollowUps } from './useFollowUps.ts'
-import { Greeting } from './Greeting.tsx'
+import { Greeting, Recents } from './Greeting.tsx'
+import { SetupCard } from './SetupCard.tsx'
+import { emptyState, recentChats, recentProjects } from './recents.ts'
 import { quoteText } from './quote.ts'
 import { QuoteSelection } from './QuoteSelection.tsx'
 import { branchConversation } from '../conversations/api.ts'
@@ -27,6 +31,7 @@ import { useAttachments } from './useAttachments.ts'
 import { toolOptions as toolOptionsOf } from './toolOptions.tsx'
 import { useAnswerAlert } from './useAnswerAlert.ts'
 import { useChat } from './useChat.ts'
+import { DropOverlay } from './DropOverlay.tsx'
 import { useFileDrop } from './useFileDrop.ts'
 import { useScrollFollow } from './useScrollFollow.ts'
 import { UNTITLED } from '../conversations/useConversations.ts'
@@ -41,6 +46,8 @@ interface Props {
   onListChanged: () => void
   /** The sidebar's chats, whose titles follow renames. */
   conversations: ConversationListItem[]
+  /** Whether the sidebar's list has loaded (an empty one is then really empty). */
+  conversationsLoaded: boolean
   /** On phones while the sidebar is hidden: a header button opens it. */
   onOpenSidebar?: () => void
   /** Shut out while the phone drawer covers the page (nothing here can be reached). */
@@ -68,6 +75,7 @@ export function ChatPage({
   projects,
   onListChanged,
   conversations,
+  conversationsLoaded,
   onOpenSidebar,
   inert,
   onShowMemories,
@@ -175,7 +183,12 @@ export function ChatPage({
     inputProps,
     onScroll,
     jumpToLatest,
+    leaveEnd,
   } = useScrollFollow(id, [turns, pending], empty)
+  // Find in chat: its bar, which closes with the chat.
+  const [finding, setFinding] = useState(false)
+  const findButtonRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => setFinding(false), [id])
   // A new chat starts as a normal one again.
   useEffect(() => {
     if (!id) setTemporaryMode(false)
@@ -216,6 +229,31 @@ export function ChatPage({
   }, [id, turns, pending])
 
   const temporary = id ? isTemporary : temporaryMode
+  const recentChatList = useMemo(
+    () => recentChats(conversations),
+    [conversations],
+  )
+  const recentProjectList = useMemo(
+    () => recentProjects(projects.projects),
+    [projects.projects],
+  )
+  // A health check that hasn't answered yet counts as set up (no flash).
+  const configured = health?.configured !== false
+  // On a new chat only: the setup, else somewhere to carry on, else starters.
+  const state = emptyState({
+    configured,
+    hasRecents: recentChatList.length + recentProjectList.length > 0,
+    loaded: conversationsLoaded,
+  })
+  const recents =
+    empty && !id && !projectHome && !temporary && state === 'recents'
+  /** Nothing can be answered yet: say so, and keep what was typed. */
+  const explainSetup = () => {
+    toast('Set up a model first: see the steps above the message box.', {
+      kind: 'error',
+    })
+    return Promise.resolve(false)
+  }
   const projectId = id ? chat.projectId : (projectHome ?? null)
   const project = projects.projects.find((p) => p.id === projectId)
   // The sidebar's copy follows renames; project chats aren't listed there.
@@ -256,6 +294,7 @@ export function ChatPage({
           inert={inert}
           {...dragHandlers}
         >
+          {dragging && <DropOverlay />}
           <ChatTopBar
             id={id}
             projectHome={projectHome}
@@ -268,7 +307,30 @@ export function ChatPage({
             temporaryMode={temporaryMode}
             onToggleTemporary={() => setTemporaryMode((on) => !on)}
             onOpenSidebar={onOpenSidebar}
+            find={
+              turns.length > 0
+                ? {
+                    open: finding,
+                    onToggle: () => setFinding((on) => !on),
+                    buttonRef: findButtonRef,
+                  }
+                : undefined
+            }
+            outline={
+              <OutlineMenu turns={turns} thread={threadRef} onJump={leaveEnd} />
+            }
           />
+          {finding && !empty && (
+            <FindBar
+              root={threadRef}
+              content={[turns, pending]}
+              onJump={leaveEnd}
+              onClose={() => {
+                setFinding(false)
+                findButtonRef.current?.focus()
+              }}
+            />
+          )}
           {empty && projectHome ? (
             project ? (
               <ProjectHeading
@@ -288,6 +350,7 @@ export function ChatPage({
           ) : empty ? (
             <Greeting
               temporary={temporary}
+              state={state}
               onStart={(text) =>
                 setPrefill((was) => ({ text, n: (was?.n ?? 0) + 1 }))
               }
@@ -368,6 +431,7 @@ export function ChatPage({
                     {error}
                   </p>
                 )}
+                {chat.problem && <SetupCard problem={chat.problem} />}
                 <div ref={endRef} />
               </div>
               {away && (
@@ -396,7 +460,7 @@ export function ChatPage({
           <FollowUps suggestions={suggestions} onPick={following(chat.send)} />
           <Composer
             busy={busy}
-            onSend={following(chat.send)}
+            onSend={configured ? following(chat.send) : explainSetup}
             onStop={chat.stop}
             queued={chat.queued}
             onQueue={chat.enqueue}
@@ -422,6 +486,9 @@ export function ChatPage({
               projectId={projectHome}
               onChatsChanged={onListChanged}
             />
+          )}
+          {recents && (
+            <Recents chats={recentChatList} projects={recentProjectList} />
           )}
           <p className="visually-hidden" role="status">
             {announcement}

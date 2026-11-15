@@ -108,6 +108,10 @@ function toErrorEvent(err: unknown): TurnErrorEvent {
       type: 'chibot.error',
       message: explainApiError(err),
       status: err.status,
+      ...(err instanceof OpenAI.APIConnectionError &&
+        !(err instanceof OpenAI.APIConnectionTimeoutError) && {
+          unreachable: true,
+        }),
       requestId: err.requestID ?? undefined,
     }
   }

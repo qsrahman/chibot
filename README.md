@@ -77,7 +77,7 @@ or a one-off run changes a value. A `.env` file is not read.
 | Setting (`chibot config set …`) | Variable | Default | Purpose |
 |---|---|---|---|
 | `chat.baseURL` | `OPENAI_BASE_URL` | OpenAI | Any server with a Responses API |
-| `chat.apiKey` | `OPENAI_API_KEY` | — | Required for OpenAI; optional with `chat.baseURL` |
+| `chat.apiKey` | `OPENAI_API_KEY` | — | Needed for OpenAI; optional with `chat.baseURL`. Without either, chibot still starts: the new-chat page shows `chibot init` and `chibot config set chat.apiKey <key>` to copy, and sending is held until you set one and restart |
 | `chat.model` | `OPENAI_MODEL` | `gpt-6-astra` | Chat model; required with `chat.baseURL` |
 | `server.host` | `HOST` | `127.0.0.1` | Interface to listen on (see below) |
 | `server.port` | `PORT` | `3000` | API server port |
@@ -304,7 +304,8 @@ needs the server running: there is no offline mode, since the server is local.
 - **Follow-ups** (off by default; **Settings → Model → Follow-ups**): once an
   answer is done, two or three suggested next prompts appear under **Ask next**
   above the message box, and a click sends one. It costs one more short
-  request per answer, to the chat model or one you name.
+  request per answer, to the chat model or one you name. An answer that offers
+  a next-step card gets the card instead, and no request.
 - Scroll up to read while an answer streams and the view stays put; the ↓
   button above the message box jumps back to the latest message.
 - The first message gives the chat its own URL (`/c/…`). Reloading reopens it.
@@ -405,7 +406,7 @@ needs the server running: there is no offline mode, since the server is local.
   cursor to check before sending. It needs a transcription model (see
   `OPENAI_TRANSCRIBE_*`); without one the mic is greyed out and says so.
 - **Attachments:** **+** → **Add photos & files**, or paste or drop them onto
-  the chat: images (PNG, JPEG, WebP, GIF) and the document types projects
+  the chat (an "Add anything" card shows while you drag): images (PNG, JPEG, WebP, GIF) and the document types projects
   take. **+** → **Take a photo** opens the device's camera in a preview;
   nothing is captured until you click **Take photo**, and the picture is
   attached like any other image (the browser allows cameras on localhost and
@@ -416,7 +417,9 @@ needs the server running: there is no offline mode, since the server is local.
   composer's reasoning effort chip picks **Auto** (the model's default) or a
   level from Minimal to Max (also in Settings → Model).
 - **Settings** (sidebar gear, or ⌘/Ctrl+,):
-  - *General:* theme (System, Light or Dark), and **Notify me about
+  - *General:* theme (System, Light, Dark, Catppuccin Macchiato or Catppuccin Latte), the **accent colour**
+    (Blue, Violet, Teal, Green, Orange or Pink), the **text size** (Small to Extra large) and **Reduce transparency** (follows your system's
+    setting until you change it; all kept per browser), and **Notify me about
     finished answers**: a browser notification when an answer finishes or a tool needs your
     approval while chibot is in the background. Either way the page title gets a
     "•" until you are back.
@@ -460,6 +463,11 @@ needs the server running: there is no offline mode, since the server is local.
   another direction without touching the original. Summaries and the files its
   messages use are copied too, so deleting either chat leaves the other whole.
   Not offered in a temporary chat.
+- **Find in chat:** the magnifier in the header opens a bar that highlights
+  matches in the messages and answers and steps through them (Enter / Shift+Enter;
+  Esc closes). It looks only at what is shown, not at closed Thoughts. The
+  browser's own Ctrl/Cmd+F still works too. From four messages on, the list
+  icon next to it opens an outline of your messages to jump to one.
 - **Quote:** select text in an answer or message and click **Quote** beside it:
   it is added to the message box as a block quote, under what you have
   written, to ask about that part.

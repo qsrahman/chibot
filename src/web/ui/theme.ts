@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { readStored, writeStored } from './storage.ts'
 
 /** `null` follows the system; otherwise the user's override. */
-export type ColorScheme = 'light' | 'dark' | null
+export type ColorScheme = 'light' | 'dark' | 'macchiato' | 'latte' | null
 
 // The same key the inline script in index.html reads before first paint.
 const KEY = 'chibot.colorScheme'
@@ -11,14 +11,30 @@ const meta = () =>
 
 function load(): ColorScheme {
   const value = readStored(KEY)
-  return value === 'light' || value === 'dark' ? value : null
+  return value === 'light' ||
+    value === 'dark' ||
+    value === 'macchiato' ||
+    value === 'latte'
+    ? value
+    : null
 }
 
 // --bg in base.css, for the browser's own bars (a <meta> can't take light-dark()).
-const THEME_COLORS = { light: '#fcfcfc', dark: '#000000' }
+const THEME_COLORS = {
+  light: '#fcfcfc',
+  dark: '#000000',
+  macchiato: '#181926',
+  latte: '#e6e9ef',
+}
 
 function apply(scheme: ColorScheme) {
-  meta().content = scheme ?? 'light dark'
+  // Macchiato (dark) and Latte (light) are schemes with their own colours
+  // (base.css).
+  const base =
+    scheme === 'macchiato' ? 'dark' : scheme === 'latte' ? 'light' : scheme
+  meta().content = base ?? 'light dark'
+  if (base !== scheme) document.documentElement.dataset.theme = scheme!
+  else delete document.documentElement.dataset.theme
   for (const bar of document.querySelectorAll<HTMLMetaElement>(
     'meta[name="theme-color"]',
   )) {

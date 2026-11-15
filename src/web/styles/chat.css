@@ -87,6 +87,62 @@
   line-height: 1.25rem;
 }
 
+/* "Pick up where you left off", under the composer of a new chat. */
+.recents {
+  width: calc(100% - 32px);
+  max-width: calc(var(--column) - 32px);
+  margin: 16px auto 0;
+}
+
+.recents h2 {
+  margin: 0 0 4px;
+  padding: 0 10px;
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1rem;
+}
+
+.recent-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: var(--radius-row);
+  color: inherit;
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.recent-row:hover {
+  background: var(--surface-muted);
+}
+
+.recent-row svg {
+  flex: none;
+}
+
+.recent-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-row time {
+  flex: none;
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+}
+
+@media (pointer: coarse), (max-width: 767px) {
+  .recent-row {
+    min-height: 44px;
+  }
+}
+
 /* Full-width scroller, so the scrollbar sits at the window edge. */
 .messages {
   flex: 1;
@@ -111,6 +167,81 @@
   color: var(--fg);
   box-shadow: var(--composer-shadow);
   cursor: pointer;
+}
+
+/* Find in chat: under the header, over the messages. */
+.find-bar {
+  position: absolute;
+  top: 56px;
+  right: 16px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: calc(100% - 32px);
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+  box-shadow: var(--dialog-shadow);
+}
+
+.find-input {
+  flex: 1;
+  min-width: 0;
+  width: 220px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-row);
+  background: var(--bg);
+  color: inherit;
+  font: inherit;
+}
+
+.find-count {
+  min-width: 4.5em;
+  color: var(--fg-muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  white-space: nowrap;
+}
+
+::highlight(find) {
+  background-color: var(--find-bg);
+  color: var(--find-fg);
+}
+
+::highlight(find-current) {
+  background-color: var(--find-current-bg);
+  color: var(--find-fg);
+}
+
+/* The message outline: a menu of one-line messages, the one in view marked. */
+.menu.outline {
+  width: min(360px, calc(100vw - 32px));
+  max-height: min(60dvh, 420px);
+  overflow-y: auto;
+}
+
+.menu.outline .menu-item[aria-current] {
+  background: var(--chip);
+}
+
+.outline-number {
+  flex: none;
+  min-width: 2ch;
+  color: var(--fg-muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.outline-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 6px more above and below than it looks: see .turn. */
@@ -223,6 +354,7 @@
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 2px;
   min-height: 32px;
@@ -321,10 +453,20 @@
 
 .usage {
   margin-left: 8px;
+  /* A label stays on one line; a narrow row wraps between items instead. */
+  white-space: nowrap;
   color: var(--fg-muted);
   font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
   cursor: default;
+}
+
+/* A long model name is cut, not wrapped. */
+.usage.model-name {
+  min-width: 0;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* The answer used most of the context: chibot will compact soon. */
@@ -879,4 +1021,31 @@ details[open] > summary > .disclosure-chevron {
   color: var(--fg-muted);
   font-size: 0.75rem;
   overflow-wrap: anywhere;
+}
+
+/* What to do when chibot has no model or key: in place of the starters, and
+   under a failed answer when the key was refused or the server is down. */
+.setup-card {
+  max-width: 40rem;
+  margin: 16px auto 0;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  text-align: left;
+}
+
+.setup-card h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5rem;
+}
+
+.setup-card p {
+  max-width: none;
+  margin: 4px 0 0;
+  color: var(--fg-muted);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
 }

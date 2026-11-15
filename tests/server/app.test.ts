@@ -75,12 +75,30 @@ describe('API', () => {
     const res = await appWith([]).request('/api/health')
     expect(await res.json()).toEqual({
       status: 'ok',
+      configured: true,
       model: 'm-1',
       baseURL: 'http://localhost:1234/v1',
       // A compatible server without a transcription model: no mic.
       features: { transcription: false },
       // Whichever build is beside the server (none in a fresh checkout).
       build: expect.toBeOneOf([null, expect.any(String)]),
+    })
+  })
+
+  it('says it is not configured without a key or server, and refuses turns', async () => {
+    const unconfigured = new Config({})
+    expect(unconfigured.chatConfigured).toBe(false)
+    const app = testApp({ config: unconfigured, store })
+    const health = await (await app.request('/api/health')).json()
+    expect(health).toMatchObject({ configured: false })
+    expect(JSON.stringify(health)).not.toContain('unconfigured')
+    const { id } = await createConversation(app as ReturnType<typeof appWith>)
+    const res = await postTurn(app as ReturnType<typeof appWith>, id, {
+      text: 'Hello',
+    })
+    expect(res.status).toBe(409)
+    expect(await res.json()).toEqual({
+      error: expect.stringContaining('chibot init'),
     })
   })
 
@@ -170,6 +188,22 @@ describe('API', () => {
       status: 429,
       message: expect.stringContaining('reached its usage limit'),
     })
+  })
+
+  it('marks an error as unreachable when the request never got through', async () => {
+    const app = appWith(new OpenAI.APIConnectionError({ message: 'refused' }))
+    const { id } = await createConversation(app)
+    const [event] = await readEvents(await postTurn(app, id, { text: 'Hello' }))
+    expect(JSON.parse(event!.data)).toMatchObject({
+      type: 'chibot.error',
+      unreachable: true,
+    })
+    const timeout = appWith(new OpenAI.APIConnectionTimeoutError())
+    const again = await createConversation(timeout)
+    const [late] = await readEvents(
+      await postTurn(timeout, again.id, { text: 'Hello' }),
+    )
+    expect(JSON.parse(late!.data)).not.toHaveProperty('unreachable')
   })
 
   it('reports upstream errors as a chibot.error event', async () => {

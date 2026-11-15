@@ -1,14 +1,26 @@
+import {
+  ACCENTS,
+  TEXT_SIZES,
+  useAccent,
+  useReducedTransparency,
+  useTextSize,
+} from '../ui/appearance.ts'
 import { useNotifyPreference } from '../ui/notifications.ts'
 import { useColorScheme, type ColorScheme } from '../ui/theme.ts'
 import { Row, Section } from './parts.tsx'
 
 export function General() {
   const { scheme, systemScheme, choose } = useColorScheme()
+  const [accent, chooseAccent] = useAccent()
+  const [textSize, chooseTextSize] = useTextSize()
+  const [reduced, setReduced] = useReducedTransparency()
   const notifications = useNotifyPreference()
   const options: { value: ColorScheme; label: string }[] = [
     { value: null, label: `System (currently ${systemScheme})` },
     { value: 'light', label: 'Light' },
     { value: 'dark', label: 'Dark' },
+    { value: 'macchiato', label: 'Catppuccin Macchiato' },
+    { value: 'latte', label: 'Catppuccin Latte' },
   ]
   return (
     <>
@@ -21,7 +33,7 @@ export function General() {
               choose(
                 e.target.value === 'system'
                   ? null
-                  : (e.target.value as 'light' | 'dark'),
+                  : (e.target.value as NonNullable<ColorScheme>),
               )
             }
           >
@@ -31,6 +43,55 @@ export function General() {
               </option>
             ))}
           </select>
+        </Row>
+        <Row label="Accent colour" htmlFor="setting-accent">
+          <select
+            id="setting-accent"
+            value={accent ?? 'default'}
+            onChange={(e) =>
+              chooseAccent(
+                e.target.value === 'default'
+                  ? null
+                  : (e.target.value as NonNullable<typeof accent>),
+              )
+            }
+          >
+            <option value="default">Blue (default)</option>
+            {ACCENTS.map(({ value, label }) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </Row>
+        <Row label="Text size" htmlFor="setting-text-size">
+          <select
+            id="setting-text-size"
+            value={textSize ?? '100%'}
+            onChange={(e) =>
+              chooseTextSize(e.target.value as NonNullable<typeof textSize>)
+            }
+          >
+            {TEXT_SIZES.map(({ value, label }) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </Row>
+        <Row
+          label="Reduce transparency"
+          description="Shows code, table stripes and similar tints as solid colours. Follows your system's setting until you change it here."
+          htmlFor="setting-transparency"
+        >
+          <input
+            id="setting-transparency"
+            type="checkbox"
+            role="switch"
+            className="switch"
+            checked={reduced}
+            onChange={(e) => setReduced(e.target.checked)}
+          />
         </Row>
       </Section>
       {notifications.supported && (

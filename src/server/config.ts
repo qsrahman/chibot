@@ -83,13 +83,6 @@ const envSchema = z
     ),
   })
   .superRefine((env, ctx) => {
-    if (!env.OPENAI_API_KEY && !env.OPENAI_BASE_URL) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['OPENAI_API_KEY'],
-        message: 'is not set (run `chibot init`, or set it in the environment)',
-      })
-    }
     if (!env.OPENAI_MODEL && env.OPENAI_BASE_URL) {
       ctx.addIssue({
         code: 'custom',
@@ -102,6 +95,11 @@ const envSchema = z
 /** Typed, validated settings read from environment variables. */
 export class Config {
   readonly chat: Endpoint
+  /**
+   * Whether a key or a server is set for chat. Without either, chibot still
+   * starts so its page can say how to set one up (`chibot init`).
+   */
+  readonly chatConfigured: boolean
   /** Image generation, or `null` without a server or key to use. */
   readonly image: Endpoint | null
   /** Project file embeddings, or `null`: then search is by keywords only. */
@@ -138,9 +136,11 @@ export class Config {
     }
     const e = parsed.data
     // On OpenAI, models have defaults; a compatible server needs them named.
+    this.chatConfigured = Boolean(e.OPENAI_API_KEY || e.OPENAI_BASE_URL)
     this.chat = endpoint(
       e.OPENAI_BASE_URL,
-      e.OPENAI_API_KEY,
+      // Never sent: turns are refused until a key is set.
+      e.OPENAI_API_KEY ?? (this.chatConfigured ? undefined : 'unconfigured'),
       e.OPENAI_MODEL ?? (e.OPENAI_BASE_URL ? undefined : OPENAI_DEFAULT_MODEL),
     )!
     // A feature's endpoint: each part not set (OPENAI_<FEATURE>_*) is the

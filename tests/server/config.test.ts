@@ -41,8 +41,8 @@ describe('Config', () => {
     ).toThrow(/OPENAI_MODEL/)
   })
 
-  it('requires an API key for OpenAI', () => {
-    expect(() => new Config({ OPENAI_API_KEY: '  ' })).toThrow(/OPENAI_API_KEY/)
+  it('treats a blank API key as not set', () => {
+    expect(new Config({ OPENAI_API_KEY: '  ' }).chatConfigured).toBe(false)
   })
 
   it('flags a non-loopback HOST', () => {
@@ -207,15 +207,23 @@ describe('Config', () => {
 
 describe('Config errors', () => {
   it('name the setting as well as the variable', () => {
-    expect(() => new Config({})).toThrow(
-      /OPENAI_API_KEY \(chat\.apiKey\): is not set \(run `chibot init`/,
-    )
     expect(() => new Config({ OPENAI_BASE_URL: 'http://h/v1' })).toThrow(
       /OPENAI_MODEL \(chat\.model\): is required/,
     )
     expect(() => new Config({ OPENAI_API_KEY: 'k', PORT: 'x' })).toThrow(
       /PORT \(server\.port\)/,
     )
+  })
+})
+
+describe('chat setup', () => {
+  it('starts without a key or server, reporting chat as not configured', () => {
+    expect(new Config({}).chatConfigured).toBe(false)
+    expect(new Config({ OPENAI_API_KEY: 'k' }).chatConfigured).toBe(true)
+    expect(
+      new Config({ OPENAI_BASE_URL: 'http://h/v1', OPENAI_MODEL: 'm' })
+        .chatConfigured,
+    ).toBe(true)
   })
 })
 

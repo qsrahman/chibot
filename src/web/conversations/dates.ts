@@ -40,3 +40,26 @@ function labelFor(time: number, startOfToday: number): string {
   if (time >= startOfToday - 30 * DAY) return 'Previous 30 days'
   return monthFormat.format(time)
 }
+
+const relative = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
+const dayFormat = new Intl.DateTimeFormat(undefined, {
+  month: 'short',
+  day: 'numeric',
+})
+
+/** "just now", "5 minutes ago", "yesterday", then a date after a week. */
+export function relativeTime(time: number, now = Date.now()): string {
+  const seconds = Math.max(0, Math.round((now - time) / 1000))
+  if (seconds < 60) return 'just now'
+  if (seconds < 3600)
+    return relative.format(-Math.floor(seconds / 60), 'minute')
+  if (seconds < DAY / 1000) {
+    return relative.format(-Math.floor(seconds / 3600), 'hour')
+  }
+  const days = Math.round(
+    (new Date(now).setHours(0, 0, 0, 0) - new Date(time).setHours(0, 0, 0, 0)) /
+      DAY,
+  )
+  if (days < 7) return relative.format(-Math.max(days, 1), 'day')
+  return dayFormat.format(time)
+}
