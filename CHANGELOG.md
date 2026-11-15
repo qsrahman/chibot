@@ -6,6 +6,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Added
 
+- A first-run setup card. chibot now starts without an API key or model server (it used to exit with an error), and its new-chat page says what is missing in plain words with `chibot init` and `chibot config set chat.apiKey <key>` to copy, in place of the starter pills. Sending is explained rather than failing (the server also refuses turns, `409`, until a key or server is set), and `GET /api/health` has `configured`. The same card appears under a failed answer when the server said 401 or 403 (the key is refused) or could not be reached (`chibot.error` events now carry `unreachable`); other errors are shown as before.
 - A new chat with history shows "Pick up where you left off" under the message box: the three latest chats (with how long ago) and the two latest projects, each a link. The starter pills ("Summarize a page", …) now show only when there is nothing to go back to. Archived, temporary and empty chats are not listed, and the list uses what the sidebar already loaded.
 
 ## [0.21.0] - 2026-11-15

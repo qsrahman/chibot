@@ -9,7 +9,8 @@ import { FollowUps } from './FollowUps.tsx'
 import { shownSuggestions } from './followUps.ts'
 import { useFollowUps } from './useFollowUps.ts'
 import { Greeting, Recents } from './Greeting.tsx'
-import { recentChats, recentProjects } from './recents.ts'
+import { SetupCard } from './SetupCard.tsx'
+import { emptyState, recentChats, recentProjects } from './recents.ts'
 import { quoteText } from './quote.ts'
 import { QuoteSelection } from './QuoteSelection.tsx'
 import { branchConversation } from '../conversations/api.ts'
@@ -228,13 +229,23 @@ export function ChatPage({
     () => recentProjects(projects.projects),
     [projects.projects],
   )
-  // On a new chat only: somewhere to carry on, in place of the starters.
+  // A health check that hasn't answered yet counts as set up (no flash).
+  const configured = health?.configured !== false
+  // On a new chat only: the setup, else somewhere to carry on, else starters.
+  const state = emptyState({
+    configured,
+    hasRecents: recentChatList.length + recentProjectList.length > 0,
+    loaded: conversationsLoaded,
+  })
   const recents =
-    empty &&
-    !id &&
-    !projectHome &&
-    !temporary &&
-    recentChatList.length + recentProjectList.length > 0
+    empty && !id && !projectHome && !temporary && state === 'recents'
+  /** Nothing can be answered yet: say so, and keep what was typed. */
+  const explainSetup = () => {
+    toast('Set up a model first: see the steps above the message box.', {
+      kind: 'error',
+    })
+    return Promise.resolve(false)
+  }
   const projectId = id ? chat.projectId : (projectHome ?? null)
   const project = projects.projects.find((p) => p.id === projectId)
   // The sidebar's copy follows renames; project chats aren't listed there.
@@ -307,7 +318,7 @@ export function ChatPage({
           ) : empty ? (
             <Greeting
               temporary={temporary}
-              suggest={conversationsLoaded && !recents}
+              state={state}
               onStart={(text) =>
                 setPrefill((was) => ({ text, n: (was?.n ?? 0) + 1 }))
               }
@@ -388,6 +399,7 @@ export function ChatPage({
                     {error}
                   </p>
                 )}
+                {chat.problem && <SetupCard problem={chat.problem} />}
                 <div ref={endRef} />
               </div>
               {away && (
@@ -416,7 +428,7 @@ export function ChatPage({
           <FollowUps suggestions={suggestions} onPick={following(chat.send)} />
           <Composer
             busy={busy}
-            onSend={following(chat.send)}
+            onSend={configured ? following(chat.send) : explainSetup}
             onStop={chat.stop}
             queued={chat.queued}
             onQueue={chat.enqueue}

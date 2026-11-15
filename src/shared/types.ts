@@ -203,6 +203,8 @@ export interface TurnErrorEvent {
   type: 'chibot.error'
   message: string
   status?: number
+  /** The request never reached the server (refused, no route, DNS). */
+  unreachable?: boolean
   requestId?: string
 }
 
@@ -245,6 +247,8 @@ export interface Health {
   model: string
   /** The chat endpoint; `null` is OpenAI. */
   baseURL: string | null
+  /** Whether a key or a server is set for chat (never the key itself). */
+  configured: boolean
   /** What the setup allows (e.g. no mic without a transcription endpoint). */
   features: { transcription: boolean }
   /** The build of the web app served, or `null` in development. */

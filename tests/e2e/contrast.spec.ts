@@ -91,6 +91,28 @@ for (const scheme of ['light', 'dark'] as const) {
       expect(await violations(page)).toEqual([])
     })
 
+    test('a new chat with recent chats, and with the setup card', async ({
+      page,
+    }) => {
+      const id = await richChat(page)
+      await page.goto('/')
+      await appReady(page)
+      await expect(page.locator('.recents')).toBeVisible()
+      expect(await violations(page), 'recents').toEqual([])
+      await page.request.delete(`/api/conversations/${id}`)
+
+      await page.route('**/api/health', async (route) => {
+        const res = await route.fetch()
+        await route.fulfill({
+          response: res,
+          json: { ...(await res.json()), configured: false },
+        })
+      })
+      await page.goto('/')
+      await expect(page.locator('.setup-card')).toBeVisible()
+      expect(await violations(page), 'setup card').toEqual([])
+    })
+
     test('an answer with code, maths, a table and a link', async ({ page }) => {
       const id = await richChat(page)
       await page.goto(`/c/${id}`)

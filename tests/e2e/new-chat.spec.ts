@@ -64,8 +64,78 @@ test('without chats the starters stay', async ({ page }) => {
       ? route.fulfill({ json: [] })
       : route.continue(),
   )
+  await page.route('**/api/projects', (route) => route.fulfill({ json: [] }))
   await page.goto('/')
   await appReady(page)
   await expect(page.locator('.suggestions')).toBeVisible()
   await expect(page.locator('.recents')).toHaveCount(0)
 })
+
+// The server's own refusal and health flag are covered by tests/server; here
+// the page is given an unconfigured health (the e2e server has a key).
+test('without a model or key, a new chat shows how to set one up', async ({
+  page,
+}) => {
+  await page.route('**/api/health', async (route) => {
+    const res = await route.fetch()
+    await route.fulfill({
+      response: res,
+      json: { ...(await res.json()), configured: false },
+    })
+  })
+  let turns = 0
+  await page.route('**/api/conversations/*/turns', (route) => {
+    turns++
+    return route.continue()
+  })
+  await page.goto('/')
+  await appReady(page)
+  const card = page.getByRole('region', { name: 'Set up a model' })
+  await expect(card).toContainText('needs a model before it can answer')
+  await expect(page.locator('.suggestions')).toHaveCount(0)
+  await expect(page.locator('.recents')).toHaveCount(0)
+  await expect(card.getByText('chibot init', { exact: true })).toBeVisible()
+  await expect(card.getByText('chibot config set chat.apiKey')).toBeVisible()
+  await card.getByRole('button', { name: 'Copy chibot init' }).click()
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+    'chibot init',
+  )
+
+  // Sending explains instead of failing, and keeps what was typed.
+  const box = page.getByRole('textbox', { name: 'Message' })
+  await box.fill('Hello there')
+  await box.press('Enter')
+  await expect(page.locator('.toast-message')).toBeVisible()
+  await expect(box).toHaveValue('Hello there')
+  expect(turns).toBe(0)
+})
+
+for (const [name, event, words] of [
+  ['refuses the key', { status: 401 }, 'refused the API key'],
+  ['is unreachable', { unreachable: true }, 'could not reach the model server'],
+] as const) {
+  test(`a server that ${name} is explained in the setup card`, async ({
+    page,
+  }) => {
+    await page.route('**/api/conversations/*/turns', (route) =>
+      route.fulfill({
+        contentType: 'text/event-stream',
+        body: `event: chibot.error\ndata: ${JSON.stringify({
+          type: 'chibot.error',
+          message: 'Something provider-specific',
+          ...event,
+        })}\n\n`,
+      }),
+    )
+    await page.goto('/')
+    await appReady(page)
+    await page.getByRole('textbox', { name: 'Message' }).fill('Hello')
+    await page.keyboard.press('Enter')
+    await expect(
+      page.getByRole('region', { name: 'Set up a model' }),
+    ).toContainText(words)
+    await expect(page.getByText('Something provider-specific')).toBeVisible()
+    const id = new URL(page.url()).pathname.split('/').pop()!
+    await page.request.delete(`/api/conversations/${id}`)
+  })
+}

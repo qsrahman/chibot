@@ -1,3 +1,5 @@
+import { SetupCard } from './SetupCard.tsx'
+import type { EmptyState } from './recents.ts'
 import { Link } from 'react-router'
 import { Folder } from 'lucide-react'
 import type { ConversationListItem, Project } from '../../shared/types.ts'
@@ -18,12 +20,12 @@ const STARTERS = [
 /** An empty chat's greeting, centred above the composer as ChatGPT does. */
 export function Greeting({
   temporary,
-  suggest,
+  state,
   onStart,
 }: {
   temporary: boolean
-  /** Whether to offer the starters (a first-time hint: not with history to return to). */
-  suggest: boolean
+  /** What to show under the heading; see `emptyState`. */
+  state: EmptyState | null
   /** Puts the start of a message in the box. */
   onStart: (text: string) => void
 }) {
@@ -35,7 +37,9 @@ export function Greeting({
           This chat won’t appear in your history or search, and it’s deleted
           when you leave it.
         </p>
-      ) : suggest ? (
+      ) : state === 'setup' ? (
+        <SetupCard problem="missing" />
+      ) : state === 'starters' ? (
         <div className="suggestions">
           {STARTERS.map(({ label, text }) => (
             <button

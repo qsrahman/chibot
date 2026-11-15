@@ -936,3 +936,30 @@ details[open] > summary > .disclosure-chevron {
   font-size: 0.75rem;
   overflow-wrap: anywhere;
 }
+
+/* What to do when chibot has no model or key: in place of the starters, and
+   under a failed answer when the key was refused or the server is down. */
+.setup-card {
+  max-width: 40rem;
+  margin: 16px auto 0;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  text-align: left;
+}
+
+.setup-card h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5rem;
+}
+
+.setup-card p {
+  max-width: none;
+  margin: 4px 0 0;
+  color: var(--fg-muted);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}

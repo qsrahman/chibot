@@ -218,7 +218,7 @@ in a way a transaction does not undo leaves a database to restore.
 
 | Method & path | Phase | Purpose |
 |---|---|---|
-| `GET /api/health` | 0 | Liveness + chat model and base URL (never the key) |
+| `GET /api/health` | 0 | Liveness + chat model and base URL, and `configured` (whether a key or server is set; never the key) |
 | `POST /api/conversations` | 1 | Create a conversation. Phase 2: `{ temporary: true }` |
 | `GET /api/conversations/:id` | 1 | Conversation with its current path. Phase 3 adds sibling info. |
 | `POST /api/conversations/:id/turns` | 1 | Send a message; SSE stream of `ResponseStreamEvent`s plus `chibot.error`, and (Phase 2) `chibot.title` after `response.completed`. Phase 3 adds `parentId` for edit/regenerate. Phase 5 adds `approvals` and the `chibot.tool_output` / `chibot.approval` events. |

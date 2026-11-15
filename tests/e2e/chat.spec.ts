@@ -481,6 +481,7 @@ test('an empty chat offers ways to start, which fill the box', async ({
       ? route.fulfill({ json: [] })
       : route.continue(),
   )
+  await page.route('**/api/projects', (route) => route.fulfill({ json: [] }))
   await page.goto('/')
   await appReady(page)
   const box = page.getByRole('textbox', { name: 'Message' })

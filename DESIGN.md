@@ -120,6 +120,13 @@ link. Rows are 36 px (44 px on touch and phone widths), `--radius-row`,
 `--surface-muted` on hover; titles are text only, `dir="auto"`, one line with an
 ellipsis. Archived, temporary and empty chats are not listed.
 
+**Setup card.** With no key or server set (`GET /api/health` says
+`configured: false`) the starters and recents give way to a card: `--surface`,
+`--border`, `--radius-card`, a 16 px semibold title, a 14 px `--fg-muted` line, and
+two code blocks (`chibot init`, `chibot config set …`) with Copy. Sending is
+refused with a toast and the draft kept. After a failed answer the same card
+sits under it when the server said 401 or 403, or could not be reached.
+
 **Composer.** A 28 px-radius pill on `--surface` with a `--border` outline,
 7×10 px padding and 52 px tall when one line. The textarea grows up to 40 vh.
 A round 36 px icon button on the right is **send** (blue `--accent`, arrow-up icon),

@@ -3,6 +3,7 @@ import type { TurnRequest } from '../../shared/types.ts'
 import { errorMessage } from '../../shared/errors.ts'
 import { createConversation } from '../conversations/api.ts'
 import { streamTurn } from './api.ts'
+import { setupProblem, type SetupProblem } from './recents.ts'
 import { applyEvent, startAnswer, turnSoFar } from './streamedAnswer.ts'
 import {
   fileIds,
@@ -58,6 +59,8 @@ export function useAnswerRun(
   // The message the last run failed with (the page's `error` is the same text
   // while it is still on screen), so Retry is offered for it and not for, say, a failed summary.
   const [failure, setFailure] = useState<string | null>(null)
+  // Why it failed, when that is about the setup (a key refused, a server down).
+  const [problem, setProblem] = useState<SetupProblem | null>(null)
   // A message typed while an answer streams goes once that answer is saved.
   const queue = useQueue()
   // The run whose updates belong on screen. Cleared when the user switches
@@ -136,9 +139,11 @@ export function useAnswerRun(
 
     setError(null)
     setFailure(null)
-    const fail = (message: string) => {
+    setProblem(null)
+    const fail = (message: string, cause?: SetupProblem | null) => {
       setError(message)
       setFailure(message)
+      setProblem(cause ?? null)
     }
     show()
     let id = chatId
@@ -181,7 +186,9 @@ export function useAnswerRun(
         const { effect } = applied
         if (effect?.type === 'answered') await finish(id)
         else if (effect?.type === 'approval') await finish(id, false)
-        else if (effect?.type === 'error') fail(effect.message)
+        else if (effect?.type === 'error') {
+          fail(effect.message, setupProblem(effect))
+        }
       }
       accepted = true
       if (live() && !run.answered) await finish(id)
@@ -278,6 +285,7 @@ export function useAnswerRun(
   return {
     pending,
     failure,
+    problem,
     /** The message waiting for the current answer, if any. */
     queued: queue.queued?.text ?? null,
     createdId,
