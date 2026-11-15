@@ -380,7 +380,9 @@ summarizing of long chats on for a 32k window; math formatting via a built-in in
   (full tree, `{ version: 1, … }`, with versions, usage and models). Import a
   JSON file from Settings → Data: validated, new ids, current version kept,
   arrives unpinned and unarchived.
-- **Theme.** Light / Dark / System in Settings → General, remembered in
+- **Theme.** Light / Dark / System, and the optional Catppuccin Macchiato (a
+  dark scheme with its own tokens, `data-theme` on `<html>`), in Settings →
+  General, remembered in
   `localStorage`. Tokens move to `color-scheme` + `light-dark()` so each colour
   is defined once; code highlighting uses our own tokens (the highlight.js
   theme files are media-query based and can't follow a manual toggle).
