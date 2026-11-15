@@ -364,6 +364,17 @@ behind the dialog's backdrop); it can't be clicked while a modal is open, so
 such a toast has no action. Up to three stack; they stay six seconds, longer
 under the pointer.
 
+**Connection banner.** While chibot's own server can't be reached (a network
+error, or a proxy's 502/503/504; chibot's own JSON errors don't count), a
+`role="alert"` card sits over the header: `--surface-raised`, 1 px `--border`,
+card radius, a 20 px `WifiOff` in `--danger` (the only use of it), "Can’t
+reach chibot" in medium weight, a muted line on what to try, and a **Retry**
+`.button`. It takes no focus and says the same while the page keeps looking
+(2 s growing to 15 s, paused in a hidden tab), so it is announced once; on
+phones the button wraps under the text. When chibot answers it goes, a
+"Reconnected" toast shows and what failed to load loads again. Sending is
+refused with a toast and the draft stays. The header keeps the model name.
+
 **Tooltips.** Any element with a `title` gets one (`ui/Tooltips.tsx`): a small
 inverted bubble (`--button` / `--button-fg`, 8 px radius, 12 px text, up to 280 px
 wide) in the top layer, 8 px below the control or above when there is no room,

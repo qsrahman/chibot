@@ -15,6 +15,8 @@ export function useChat(
 ) {
   const [error, setError] = useState<string | null>(null)
   const history = useChatHistory(conversationId)
+  // Bumped to open the chat again after its load failed.
+  const [reopened, setReopened] = useState(0)
   const compaction = useCompaction(conversationId, history, setError)
   const answers = useAnswerRun(
     conversationId,
@@ -35,7 +37,7 @@ export function useChat(
     setError(null)
     if (!conversationId) return
     return history.open(conversationId, setError)
-  }, [conversationId])
+  }, [conversationId, reopened])
 
   const { pending } = answers
   // While a turn is pending, the turns it replaces are hidden.
@@ -43,6 +45,11 @@ export function useChat(
 
   return {
     turns: shown,
+    /** Opens the chat again if it failed to load (chibot was unreachable). */
+    refresh: () => {
+      if (conversationId && error && !answers.failure && !answers.pending)
+        setReopened((n) => n + 1)
+    },
     pending,
     usage: history.usage,
     error,

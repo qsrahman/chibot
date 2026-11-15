@@ -17,6 +17,8 @@ import { quoteText } from './quote.ts'
 import { QuoteSelection } from './QuoteSelection.tsx'
 import { branchConversation } from '../conversations/api.ts'
 import { useToast } from '../ui/toast.tsx'
+import { ConnectionBanner } from '../ui/ConnectionBanner.tsx'
+import type { Connection } from '../ui/useReconnect.ts'
 import { ProjectDetails } from '../projects/ProjectDetails.tsx'
 import { ProjectHeading } from '../projects/ProjectHeading.tsx'
 import { SHORTCUTS, useShortcuts } from '../ui/shortcuts.ts'
@@ -41,6 +43,10 @@ import { errorMessage } from '../../shared/errors.ts'
 
 interface Props {
   health: Health | undefined
+  /** Whether chibot's server can be reached, and how to look again. */
+  connection: Connection
+  /** Counts the times chibot came back after being unreachable. */
+  recovered: number
   settings: SettingsApi
   projects: ProjectsApi
   onListChanged: () => void
@@ -71,6 +77,8 @@ const turnFailed = (retry: () => void) => (
 
 export function ChatPage({
   health,
+  connection,
+  recovered,
   settings,
   projects,
   onListChanged,
@@ -247,6 +255,22 @@ export function ChatPage({
   })
   const recents =
     empty && !id && !projectHome && !temporary && state === 'recents'
+  /** The server is down: say so, and keep what was typed. */
+  const explainOffline = () => {
+    toast(
+      'Can’t reach chibot. Your message is kept; send it once it is back.',
+      {
+        kind: 'error',
+      },
+    )
+    void connection.retry()
+    return Promise.resolve(false)
+  }
+  // The chat that was opening when chibot went away opens again.
+  const refreshChat = chat.refresh
+  useEffect(() => {
+    if (recovered > 0) refreshChat()
+  }, [recovered])
   /** Nothing can be answered yet: say so, and keep what was typed. */
   const explainSetup = () => {
     toast('Set up a model first: see the steps above the message box.', {
@@ -295,6 +319,7 @@ export function ChatPage({
           {...dragHandlers}
         >
           {dragging && <DropOverlay />}
+          {connection.unreachable && <ConnectionBanner {...connection} />}
           <ChatTopBar
             id={id}
             projectHome={projectHome}
@@ -460,7 +485,13 @@ export function ChatPage({
           <FollowUps suggestions={suggestions} onPick={following(chat.send)} />
           <Composer
             busy={busy}
-            onSend={configured ? following(chat.send) : explainSetup}
+            onSend={
+              !configured
+                ? explainSetup
+                : connection.unreachable
+                  ? explainOffline
+                  : following(chat.send)
+            }
             onStop={chat.stop}
             queued={chat.queued}
             onQueue={chat.enqueue}

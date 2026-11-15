@@ -284,7 +284,9 @@ history: open `?token=…` once yourself, as chibot says).
 **As an app:** chibot has a web manifest and icons, so a browser can install
 it (Chrome and Edge: the install button in the address bar; Safari: Share →
 Add to Dock or Home Screen). It then opens in a window of its own. It still
-needs the server running: there is no offline mode, since the server is local.
+needs the server running: there is no offline mode, since the server is local. When it can't be reached, a
+banner says so with a Retry button, and the page reconnects by itself once
+`chibot` is running again.
 
 ## Using it
 

@@ -11,6 +11,7 @@ import { useProjects } from './projects/useProjects.ts'
 import { readStored, writeStored } from './ui/storage.ts'
 import { useUpdateNotice } from './ui/updates.ts'
 import { useSettings } from './settings/useSettings.ts'
+import { useReconnect } from './ui/useReconnect.ts'
 
 const COLLAPSED_KEY = 'chibot.sidebarCollapsed'
 
@@ -24,6 +25,8 @@ export function App() {
   const narrow = useMediaQuery(NARROW)
   // Not remembered: a phone starts on the chat.
   const [drawerOpen, setDrawerOpen] = useState(false)
+  // Counts the times chibot came back, for the open chat to load again.
+  const [recovered, setRecovered] = useState(0)
   // Opened from Settings and from the chip over an answer.
   const [memoriesOpen, setMemoriesOpen] = useState(false)
   const conversations = useConversations()
@@ -44,6 +47,14 @@ export function App() {
     }
   }, [])
   useUpdateNotice(health)
+  // Back after chibot was unreachable: load again what failed to load.
+  const connection = useReconnect(getHealth, () => {
+    void getHealth().then(setHealth, () => {})
+    void conversations.refresh()
+    void projects.refresh()
+    settings.reload()
+    setRecovered((n) => n + 1)
+  })
 
   function toggleSidebar() {
     setCollapsed((c) => {
@@ -55,6 +66,8 @@ export function App() {
   const page = (
     <ChatPage
       health={health}
+      connection={connection}
+      recovered={recovered}
       settings={settings}
       projects={projects}
       onListChanged={conversations.refresh}

@@ -145,3 +145,52 @@
   opacity: 0.3;
   cursor: default;
 }
+
+/* Over the header while chibot's server can't be reached (ConnectionBanner). */
+.connection-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 12px 0;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+}
+
+.connection-banner > svg {
+  flex: none;
+  color: var(--danger);
+}
+
+.connection-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.connection-text p {
+  margin: 0;
+}
+
+.connection-title {
+  font-weight: 500;
+}
+
+.connection-hint {
+  color: var(--fg-muted);
+  font-size: 0.875rem;
+}
+
+.connection-banner .button {
+  flex: none;
+}
+
+@media (max-width: 480px) {
+  .connection-banner {
+    flex-wrap: wrap;
+  }
+
+  .connection-text {
+    flex-basis: calc(100% - 40px);
+  }
+}
