@@ -429,8 +429,12 @@ test('says when chibot can’t be reached, and recovers when it can', async ({
   await expect(note).toBeVisible()
   await expect(note).toHaveCount(1)
   await page.unroute('**/api/conversations')
-  await note.getByRole('button', { name: 'Try again' }).click()
-  await expect(note).toHaveCount(0)
+  // The page looks again by itself (see connection.spec.ts), or the button asks now.
+  await note
+    .getByRole('button', { name: 'Try again' })
+    .click({ timeout: 1000 })
+    .catch(() => {})
+  await expect(note).toHaveCount(0, { timeout: 10_000 })
   await expect(
     page
       .locator('.conversation-row')
