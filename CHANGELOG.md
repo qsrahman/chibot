@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.24.1] - 2026-11-17
+
 ### Changed
 
 - The "Ask anything" hint in the message box is dimmer (`--fg-placeholder`, in all four themes), so it reads as a hint and not as text. It keeps 4.5:1 on the box, which the contrast test checks for each theme.
