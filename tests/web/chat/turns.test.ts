@@ -5,8 +5,10 @@ import {
   fileIds,
   imageInfo,
   imagesOf,
+  nextStepInText,
   nextStepOf,
   newQuestion,
+  shownText,
   toolPreview,
   sourcesOf,
   summarizeTool,
@@ -893,5 +895,99 @@ describe('nextStepOf', () => {
       ]),
     ])
     expect(nextStepOf(turns[0]!.answer!)?.title).toBe('T2')
+  })
+})
+
+describe('a next-step card written out as text', () => {
+  const offer = '**Want a concise timeline of the key events?**'
+  const card = {
+    button: 'Create timeline',
+    description: 'I’ll draft a brief chronological overview',
+    prompt: 'Please give me a timeline of the key events',
+    title: 'Crypto-Jewish timeline',
+  }
+  const written = (label = '*Suggest a next step:*', body = card) =>
+    `Some answer.\n\n---\n\n${offer}\n\n${label}\n\n\`\`\`json\n${JSON.stringify(body, null, 2)}\n\`\`\``
+  const answerOf = (text: string) =>
+    toTurns([
+      item(1, { role: 'user', content: 'q' }),
+      item(2, {
+        type: 'message',
+        role: 'assistant',
+        status: 'completed',
+        id: 'm',
+        content: [{ type: 'output_text', text, annotations: [] }],
+      }),
+    ])[0]!.answer!
+
+  it('is read as the card, and the answer reads without it', () => {
+    const text = written()
+    expect(nextStepInText(text)?.step).toEqual({
+      title: card.title,
+      description: card.description,
+      button: card.button,
+      prompt: card.prompt,
+    })
+    // The offer stays; the label and the block go.
+    expect(nextStepInText(text)?.text).toBe(`Some answer.\n\n---\n\n${offer}`)
+    const answer = answerOf(text)
+    expect(nextStepOf(answer)?.title).toBe(card.title)
+    expect(shownText(answer)).toBe(`Some answer.\n\n---\n\n${offer}`)
+  })
+
+  it('takes the label plain, bold or in the past tense, and a fence without a language', () => {
+    for (const label of [
+      'Suggest a next step:',
+      '**Suggest a next step:**',
+      'Suggested next step:',
+    ]) {
+      expect(nextStepInText(written(label))?.step.title).toBe(card.title)
+    }
+    const bare = written().replace('```json', '```')
+    expect(nextStepInText(bare)?.step.title).toBe(card.title)
+  })
+
+  it('is left alone without the label, in the middle, or with a bad block', () => {
+    const noLabel = written('Here you go:')
+    expect(nextStepInText(noLabel)).toBeNull()
+    expect(shownText(answerOf(noLabel))).toBe(noLabel)
+
+    const middle = `${written()}\n\nAnd one more thing.`
+    expect(nextStepInText(middle)).toBeNull()
+
+    const missing = written('Suggest a next step:', { ...card, prompt: ' ' })
+    expect(nextStepInText(missing)).toBeNull()
+    expect(
+      nextStepInText(written().replace('"button"', '"button" ')),
+    ).not.toBeNull()
+    expect(
+      nextStepInText('Suggest a next step:\n\n```json\n{not json}\n```'),
+    ).toBeNull()
+  })
+
+  it('does not apply to an answer that made the call, or one that was cut off', () => {
+    const text = written()
+    const called = toTurns([
+      item(1, { role: 'user', content: 'q' }),
+      item(2, {
+        type: 'message',
+        role: 'assistant',
+        status: 'completed',
+        id: 'm',
+        content: [{ type: 'output_text', text, annotations: [] }],
+      }),
+      item(3, {
+        type: 'function_call',
+        call_id: 'c',
+        name: 'suggest_next_step',
+        arguments: JSON.stringify({ ...card, title: 'From the call' }),
+      }),
+      item(4, { type: 'function_call_output', call_id: 'c', output: 'shown' }),
+    ])[0]!.answer!
+    expect(nextStepOf(called)?.title).toBe('From the call')
+    expect(shownText(called)).toBe(called.text)
+
+    const cut = { ...answerOf(text), incomplete: true }
+    expect(shownText(cut)).toBe(cut.text)
   })
 })

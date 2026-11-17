@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- A next-step card a model wrote out as text ("Suggest a next step:" and a JSON block at the end of the answer, as `gpt-oss` through Ollama does) is now drawn as the card, and the answer reads without that block, instead of showing the raw JSON. Only that exact shape counts. The tool's instructions also say to make the call through the tool interface and to write nothing of it in the answer.
+
 ## [0.23.2] - 2026-11-15
 
 ### Fixed

@@ -9,7 +9,13 @@ const turn = (answer: Partial<NonNullable<Turn['answer']>> | null) =>
   ({
     key: 'k',
     question: {},
-    answer: answer && { itemId: 5, incomplete: false, tools: [], ...answer },
+    answer: answer && {
+      itemId: 5,
+      incomplete: false,
+      text: '',
+      tools: [],
+      ...answer,
+    },
   }) as unknown as Turn
 
 describe('suggestionTarget', () => {

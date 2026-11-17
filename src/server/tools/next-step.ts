@@ -42,6 +42,9 @@ export class SuggestNextStepTool extends Tool {
       'When your answer ends by offering to do one more concrete thing for the ' +
       `user, such as turning a list into a plan, call ${NEXT_STEP_TOOL} once ` +
       'after the whole answer is written, so they can accept with one click. ' +
+      'Make the call through the tool interface and write nothing of it in ' +
+      'your answer: the card is drawn from the call, and its name or ' +
+      'arguments written out would only show as stray text. ' +
       'Keep the offer in your answer too. Most answers have no such offer; ' +
       'leave the card out for plain questions and small talk, so it stays ' +
       'worth noticing.'

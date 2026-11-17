@@ -35,6 +35,29 @@ test('shows the card under the latest answer and sends its prompt', async ({
   await expect(card(page)).toHaveCount(0)
 })
 
+test('a card the model wrote out as text is drawn as the card, not as JSON', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await send(page, 'next-step-as-text please')
+  await answered(page)
+  await expect(card(page)).toContainText('Weekly learning plan')
+  // The label and the JSON block are not left in the answer.
+  const text = answer(page, 0)
+  await expect(text).toContainText('Want a 16-week plan?')
+  await expect(text).not.toContainText('Suggest a next step')
+  await expect(text.locator('pre')).toHaveCount(0)
+
+  // Still so after a reload, and the button sends its prompt.
+  await page.reload()
+  await expect(card(page)).toBeVisible()
+  await card(page).getByRole('button', { name: 'Create plan' }).click()
+  await answered(page)
+  await expect(turns(page).nth(1).locator('.message.user')).toHaveText(
+    'Turn these into a 16-week plan with milestones',
+  )
+})
+
 test('is reachable by keyboard', async ({ page }) => {
   await page.goto('/')
   await send(page, 'offer-next-step please')

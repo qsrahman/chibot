@@ -4,7 +4,9 @@
 // streams its first word and waits there until POST /debug/release (so a test
 // can act mid-answer without racing a timer), "think"
 // first streams a reasoning summary, and "compact" returns a compaction item.
-// "offer-next-step" ends the answer with a next-step card.
+// "offer-next-step" ends the answer with a next-step card, "next-step-as-text"
+// with the same card written out as text (as a model that does not call the
+// tool does).
 // A question's words can call a tool ("approve", "draw", "remember <fact>",
 // "mcp echo <text>", "mcp resource <uri>", …): `TRIGGERS` below lists
 // them. A forced tool_choice is followed. Once the tool's output arrives, the
@@ -354,8 +356,27 @@ app.post('/v1/responses', async (c) => {
           }),
         }
       : null
+  // "next-step-as-text": the card written in the answer, not called.
+  const written = JSON.stringify(
+    {
+      button: 'Create plan',
+      description: 'turn these into a 16-week plan with milestones',
+      prompt: 'Turn these into a 16-week plan with milestones',
+      title: 'Weekly learning plan',
+    },
+    null,
+    2,
+  )
+  const asText =
+    !call &&
+    last?.type !== 'function_call_output' &&
+    question.includes('next-step-as-text')
   const reply =
-    last?.type === 'function_call_output' ? `Tool said: ${last.output}` : text
+    last?.type === 'function_call_output'
+      ? `Tool said: ${last.output}`
+      : asText
+        ? `${text}\n\nWant a 16-week plan?\n\n*Suggest a next step:*\n\n\`\`\`json\n${written}\n\`\`\``
+        : text
   const output = [
     ...(thinking ? [reasoning] : []),
     call ?? message(reply),

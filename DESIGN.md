@@ -356,7 +356,11 @@ row, 12 px × 14 px padding and 14 px gaps: a 40 px icon tile (12 px radius,
 weight 500 over a 13 px `--fg-muted` line "Next step · <what happens>", and
 the primary pill button (`--button`) at the right. Everything is the model's
 text and shown as text (`dir="auto"`, long words wrap). Under 480 px the button
-drops under the text, full width.
+drops under the text, full width. A model that writes the call out in the
+answer (the label "Suggest a next step:" and its arguments as a JSON block, at
+the very end) instead of making it still gets the card, and the answer reads
+without that block (`nextStepInText`); JSON that is not that exact shape is left
+as it is.
 
 **Composer tools.** A 24 px `Plus` button at the composer's left opens a menu
 above it (Add photos & files, then Create an image).

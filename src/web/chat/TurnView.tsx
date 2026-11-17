@@ -18,6 +18,7 @@ import { LiveContext, SourcesContext } from './sourcesContext.ts'
 import {
   interrupted,
   nextStepOf,
+  shownText,
   sourcesOf,
   type ToolActivity,
   type Turn,
@@ -100,6 +101,8 @@ export function TurnView({
   // The links in the answer to these are numbered, as in the list under it.
   const sources = answer ? sourcesOf(answer) : []
   const usedMemory = describeUsedMemory(answer?.memories ?? [])
+  // Without a card a model wrote out as text (see `nextStepInText`).
+  const text = answer ? shownText(answer) : ''
   const nextStep =
     latest && !pending && !approval && answer && !answer.incomplete
       ? nextStepOf(answer)
@@ -224,11 +227,11 @@ export function TurnView({
           onView={(fileId) => setViewing({ fileId, label: 'Generated image' })}
         />
       )}
-      {answer?.text ? (
+      {text ? (
         <div className="message assistant">
           <SourcesContext value={sources}>
             <LiveContext value={Boolean(pending)}>
-              <Markdown text={answer.text} />
+              <Markdown text={text} />
             </LiveContext>
           </SourcesContext>
         </div>
@@ -293,7 +296,7 @@ export function TurnView({
       )}
       {!pending && !approval && (
         <div className="actions answer-actions">
-          {answer && <CopyButton text={answer.text} />}
+          {answer && <CopyButton text={text} />}
           {saved && (
             <IconAction
               label={answer ? 'Regenerate' : 'Retry'}

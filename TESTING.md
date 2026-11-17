@@ -59,7 +59,7 @@ How chibot is tested and how to add tests. Part of the developer guide ([AGENTS.
   `POST /debug/release` (to queue a message while it streams, however slow the
   machine), "think" adds a reasoning summary, "mcp resource <uri>" reads an MCP resource and "mcp resources" lists them, "table-markdown" answers with a table, "wide-table" with one wider than a phone, "fail-midway" with an answer whose first try fails after a few words (the same question works the second time), a non-streaming request with chibot's follow-up instructions gets three suggested prompts (a spec turns them on with `PATCH /api/settings`, and `resetSettings` turns them off), "rtl-markdown" answers in Urdu (a heading, a paragraph, a list and code), "huge" a reported context past the trigger (so the next message is
   summarized first, and "fail-summary" makes that summary fail),
-  "offer-next-step" ends the answer with a next-step card, and a question's words call a tool ("approve", "draw", "mcp echo <text>", …:
+  "offer-next-step" ends the answer with a next-step card, "next-step-as-text" with the same card written out as text, and a question's words call a tool ("approve", "draw", "mcp echo <text>", …:
   the `TRIGGERS` table in the file lists them, and a new tool needs one row
   there). It also fakes the images API, embeddings, transcription
   (`/debug/last-transcription`) and a Files API (`/debug/files`,

@@ -217,8 +217,15 @@ export interface NextStep {
  */
 export function nextStepOf(answer: Answer): NextStep | null {
   const call = answer.tools.findLast((tool) => tool.name === NEXT_STEP_TOOL)
-  if (!call?.output || call.output.startsWith('Error:')) return null
-  const args = parseJson<Record<string, unknown>>(call.arguments)
+  if (call) {
+    if (!call.output || call.output.startsWith('Error:')) return null
+    return stepFrom(parseJson<Record<string, unknown>>(call.arguments))
+  }
+  return nextStepInText(answer.text)?.step ?? null
+}
+
+/** `args` (a call's, or JSON a model wrote) as a card, cut to fit; `null` when a field is missing. */
+function stepFrom(args: Record<string, unknown>): NextStep | null {
   const field = (key: string, max: number) => {
     const value = args[key]
     return typeof value === 'string' ? value.trim().slice(0, max) : ''
@@ -230,6 +237,43 @@ export function nextStepOf(answer: Answer): NextStep | null {
     prompt: field('prompt', 2000),
   }
   return Object.values(step).every(Boolean) ? step : null
+}
+
+// What some models write in the answer instead of making the call: the
+// tool's label, then its arguments as a JSON block, at the very end.
+const CALL_AS_TEXT_BLOCK = /\n*```(?:json)?[ \t]*\n([\s\S]*?)\n```[ \t]*$/
+const CALL_AS_TEXT_LABEL =
+  /(?:^|\n)[ \t]*[*_]*suggest(?:ed)? (?:a )?next step[*_]*[ \t]*:[ \t]*[*_]*[ \t]*$/i
+
+/**
+ * The card a model wrote out as text (`Suggest a next step:` and a JSON block
+ * ending the answer) instead of calling the tool, with the answer as it reads
+ * without it. Only that exact shape counts: an answer that merely ends with
+ * some JSON is left alone. `null` when it has none.
+ */
+export function nextStepInText(
+  text: string,
+): { text: string; step: NextStep } | null {
+  const trimmed = text.trimEnd()
+  const block = CALL_AS_TEXT_BLOCK.exec(trimmed)
+  if (!block) return null
+  const before = trimmed.slice(0, block.index)
+  const label = CALL_AS_TEXT_LABEL.exec(before)
+  if (!label) return null
+  const step = stepFrom(parseJson<Record<string, unknown>>(block[1]!))
+  return step ? { text: before.slice(0, label.index).trimEnd(), step } : null
+}
+
+/**
+ * What to show of a finished answer's text: without a card the model wrote
+ * out as text (a call that was made is not in the text at all).
+ */
+export function shownText(answer: Answer): string {
+  if (answer.incomplete) return answer.text
+  if (answer.tools.some((tool) => tool.name === NEXT_STEP_TOOL)) {
+    return answer.text
+  }
+  return nextStepInText(answer.text)?.text ?? answer.text
 }
 
 /** A page, past chat or project file an answer searched or read. */
