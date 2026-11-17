@@ -1246,3 +1246,34 @@ test('the message box’s hint is dimmer than muted text', async ({ page }) => {
   expect(colours.hint).toBe(colours.placeholder)
   expect(colours.hint).not.toBe(colours.muted)
 })
+
+test('a list written as HTML in a table cell shows as bullet lines, not as tags', async ({
+  page,
+}) => {
+  const id = await savedChat(page, {
+    question: 'Who was he?',
+    answerText: [
+      '| Item | Details |',
+      '| --- | --- |',
+      '| Born | 1881, Salonika |',
+      '| Key achievements | <ul><li>Led the war of independence.</li><li>Founded the republic.</li></ul> |',
+    ].join('\n'),
+  })
+  await page.goto(`/c/${id}`)
+  await appReady(page)
+  const cell = page.locator('.markdown td', { hasText: 'Led the war' })
+  await expect(cell).toBeVisible()
+  await expect(cell).not.toContainText('<ul>')
+  await expect(cell).not.toContainText('<li>')
+  await expect(cell).not.toContainText('</li>')
+  // Each item on a line of its own.
+  const lines = await cell.evaluate((el) =>
+    (el as HTMLElement).innerText
+      .split('\n')
+      .map((line: string) => line.trim()),
+  )
+  expect(lines).toEqual([
+    '• Led the war of independence.',
+    '• Founded the republic.',
+  ])
+})

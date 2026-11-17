@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- A list a model writes as HTML in a table cell (`<ul><li>…</li></ul>`, or `<ol>`) shows as lines of "• item" (or "1. item") instead of the raw tags, like `<br>` already showed as a line break. Raw HTML is still never rendered; any other tag is still shown as text.
+
 ## [0.24.1] - 2026-11-17
 
 ### Changed

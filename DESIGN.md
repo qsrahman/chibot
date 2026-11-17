@@ -271,7 +271,10 @@ and (past 28 rem) up and down on its own, never the page. A bar on top has a
 table** (tab-separated, so it pastes into spreadsheet cells) and **Download
 CSV**. The header row sticks under it on `--surface-muted`, in 12 px 600
 `--fg-muted` labels; body rows are 14 px with hairline `--border` dividers and
-`--row-stripe` on every second row. Cells keep `dir="auto"`.
+`--row-stripe` on every second row. Cells keep `dir="auto"`. Raw HTML is never
+rendered, but the few tags models use inside a cell are read for what they mean
+(`htmlBreaks.ts`): `<br>` is a line break, and `<ul>`/`<ol>` with `<li>` become
+lines of "• item" or "1. item" (indented when nested). Any other tag shows as text.
 
 **Task lists.** A `- [x]` item's checkbox is drawn in CSS (the renderer's is
 disabled, which the browser draws grey): a 16 px box with a `--border-control`
