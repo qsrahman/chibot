@@ -1098,7 +1098,7 @@ test('a table copies as tab-separated text and downloads as CSV', async ({
   await appReady(page)
   await send(page, 'table-markdown')
   await answered(page)
-  const block = page.locator('.table-block').last()
+  const block = page.locator('.table-wrap').last()
   await block.getByRole('button', { name: 'Copy table' }).click()
   const copied = await clipboard(page)
   expect(copied).toMatch(/^Term\tWhat it means\tExamples\n/)
@@ -1291,4 +1291,47 @@ test('a new chat on a wide screen keeps the composer under the greeting, mid-pag
   // list under it, which moves it up.
   expect(composer.y).toBeGreaterThan(greeting.y + greeting.height)
   expect(composer.y + composer.height).toBeLessThan(768 - 150)
+})
+
+test('a table has no header bar; its actions sit under it and show on hover', async ({
+  page,
+}) => {
+  const id = await savedChat(page, {
+    question: 'A table',
+    answerText: '| Item | Details |\n| --- | --- |\n| a | one |\n| b | two |',
+  })
+  await page.goto(`/c/${id}`)
+  await appReady(page)
+  const wrap = page.locator('.table-wrap').last()
+  await expect(wrap.locator('table')).toBeVisible()
+  await expect(page.locator('.table-header')).toHaveCount(0)
+  await expect(wrap).not.toContainText('Table')
+
+  const actions = wrap.locator('.table-actions')
+  const table = (await wrap.locator('.table-block').boundingBox())!
+  const row = (await actions.boundingBox())!
+  expect(row.y).toBeGreaterThanOrEqual(table.y + table.height)
+  // At the right, under the table's right edge.
+  const download = (await actions
+    .getByRole('button', { name: 'Download CSV' })
+    .boundingBox())!
+  expect(download.x + download.width).toBeGreaterThan(
+    table.x + table.width - 16,
+  )
+  expect(download.x).toBeGreaterThan(table.x + table.width / 2)
+  // Out of the way until the pointer is over the table, like a message's actions.
+  await expect(actions).toHaveCSS('opacity', '0')
+  await wrap.locator('table').hover()
+  await expect(actions).toHaveCSS('opacity', '1')
+  await expect(
+    actions.getByRole('button', { name: 'Copy table' }),
+  ).toBeVisible()
+  await expect(
+    actions.getByRole('button', { name: 'Download CSV' }),
+  ).toBeVisible()
+  // The keyboard reaches them too.
+  await page.mouse.move(0, 0)
+  await expect(actions).toHaveCSS('opacity', '0')
+  await actions.getByRole('button', { name: 'Copy table' }).focus()
+  await expect(actions).toHaveCSS('opacity', '1')
 })

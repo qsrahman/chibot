@@ -19,9 +19,14 @@
 .markdown p,
 .markdown ul,
 .markdown ol,
-.markdown .table-block,
+.markdown .table-wrap,
 .markdown .code-block {
   margin: 16px 0;
+}
+
+/* The actions under a table take the room the gap below it had. */
+.markdown .table-wrap {
+  margin-bottom: 0;
 }
 
 /* The rule an opened Thoughts uses, so quoted text reads as set apart. */
@@ -436,12 +441,22 @@
   overflow: hidden;
 }
 
-.table-header {
+/* Under the table, like a message's actions: shown while the pointer is over
+   the table (or the keyboard is in them), and always without a hover. */
+.table-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 2px 8px 2px 12px;
-  border-bottom: 1px solid var(--border);
+  justify-content: flex-end;
+  gap: 2px;
+  min-height: 32px;
+  margin-top: 4px;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.table-wrap:hover .table-actions,
+.table-actions:focus-within {
+  opacity: 1;
 }
 
 /* Sideways scrolling stays in the box; a long table scrolls under its sticky header row. */

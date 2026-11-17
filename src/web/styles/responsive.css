@@ -171,6 +171,7 @@
    a chat's "…" menu, message actions and image downloads. */
 @media (hover: none) {
   .actions,
+  .table-actions,
   .memory-chip,
   .row-menu-button,
   .image-download {

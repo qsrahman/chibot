@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- A table no longer has a header bar with a "Table" label: its **Copy table** and **Download CSV** buttons now sit under it, at the right, shown on hover like a message's actions (and always on touch screens).
+
 ### Added
 
 - **Audio files become text.** A recording added to the message (**+** → **Add photos & files**, a paste, or a drop) is transcribed by the transcription model and its text goes into the message box under what you have written, for review, instead of being attached. Up to 25 MB; "Transcribing notes.mp3…" shows while it is read. Without a transcription model a toast says so. The menu and the drop card name audio when the server can transcribe.

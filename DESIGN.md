@@ -279,10 +279,11 @@ around them.
   that appeared while the answer streamed stays open.
 
 **Tables.** A `--border` box with the 16 px card radius that scrolls sideways
-and (past 28 rem) up and down on its own, never the page. A bar on top has a
-12 px muted "Table" label and two 32 px icon buttons at the right: **Copy
-table** (tab-separated, so it pastes into spreadsheet cells) and **Download
-CSV**. The header row sticks under it on `--surface-muted`, in 12 px 600
+and (past 28 rem) up and down on its own, never the page. There is no bar or
+label on it: under the box, like a message's actions, two 32 px icon buttons at
+the right (under the table's right edge), **Copy table** (tab-separated, so it pastes into spreadsheet cells)
+and **Download CSV**, shown while the pointer is over the table or the keyboard
+is in them, and always on touch screens. The header row sticks on `--surface-muted`, in 12 px 600
 `--fg-muted` labels; body rows are 14 px with hairline `--border` dividers and
 `--row-stripe` on every second row. Cells keep `dir="auto"`. Raw HTML is never
 rendered, but the few tags models use inside a cell are read for what they mean

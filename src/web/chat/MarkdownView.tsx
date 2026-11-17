@@ -126,8 +126,9 @@ function TaskBox({
 }
 
 /**
- * A table in a box that scrolls sideways on its own (never the page), with a
- * bar to copy it (tab-separated, which pastes into cells) or save it as CSV.
+ * A table in a box that scrolls sideways on its own (never the page). Under
+ * it, shown on hover (and always on touch screens) like a message's actions:
+ * copy it (tab-separated, which pastes into cells) or save it as CSV.
  */
 function Table({ node, ...props }: ComponentProps<'table'> & ExtraProps) {
   const rows = node ? tableRows(node) : []
@@ -143,18 +144,17 @@ function Table({ node, ...props }: ComponentProps<'table'> & ExtraProps) {
     URL.revokeObjectURL(link.href)
   }
   return (
-    <div className="table-block">
-      <div className="table-header">
-        <span className="code-label">Table</span>
-        <span className="code-actions">
-          <CopyButton text={delimited(rows, '\t')} label="Copy table" />
-          <IconAction label="Download CSV" onClick={saveCsv}>
-            <Download />
-          </IconAction>
-        </span>
+    <div className="table-wrap">
+      <div className="table-block">
+        <div className="table-scroll">
+          <table dir="auto" {...props} />
+        </div>
       </div>
-      <div className="table-scroll">
-        <table dir="auto" {...props} />
+      <div className="table-actions">
+        <CopyButton text={delimited(rows, '\t')} label="Copy table" />
+        <IconAction label="Download CSV" onClick={saveCsv}>
+          <Download />
+        </IconAction>
       </div>
     </div>
   )
