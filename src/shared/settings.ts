@@ -27,7 +27,9 @@ export const settingsSchema = z.object({
   responseStyle: z.string().max(1500),
   /** Model that writes summaries of long chats; `''` uses the chat model. */
   summaryModel: z.string().trim().max(200),
-  /** Model that suggests follow-up questions after an answer; `''` is off. */
+  /** Whether a few prompts to ask next are suggested after an answer. */
+  suggestFollowUps: z.boolean(),
+  /** Model that suggests them; `''` uses the chat model in use. */
   suggestionModel: z.string().trim().max(200),
   /** Summarize earlier messages when the context nears the window. */
   autoCompact: z.boolean(),

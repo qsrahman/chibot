@@ -69,15 +69,13 @@ export function Model({
             type="checkbox"
             role="switch"
             className="switch"
-            checked={settings.suggestionModel !== ''}
+            checked={settings.suggestFollowUps}
             onChange={(e) =>
-              void onChange({
-                suggestionModel: e.target.checked ? settings.model : '',
-              })
+              void onChange({ suggestFollowUps: e.target.checked })
             }
           />
         </Row>
-        {settings.suggestionModel !== '' && (
+        {settings.suggestFollowUps && (
           <SuggestionModelRow settings={settings} onChange={onChange} />
         )}
       </Section>
@@ -275,22 +273,21 @@ function SuggestionModelRow({
 
   function save() {
     const next = draft.trim()
-    // Emptying the box would turn the feature off; the switch does that.
-    if (next && next !== settings.suggestionModel) {
+    if (next !== settings.suggestionModel)
       void onChange({ suggestionModel: next })
-    } else setDraft(settings.suggestionModel)
   }
 
   return (
     <Row
       label="Suggestion model"
-      description="A model on the same server, for example a smaller, faster one."
+      description="A model on the same server, for example a smaller, faster one. Empty uses the chat's model."
       htmlFor="setting-suggestion-model"
     >
       <input
         id="setting-suggestion-model"
         type="text"
         value={draft}
+        placeholder={settings.model}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={save}
         onKeyDown={(e) => e.key === 'Enter' && save()}

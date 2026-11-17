@@ -247,11 +247,7 @@ function buildApp(
   attachments.deleteOrphans()
   const model = new ModelRequests(client, attachments)
   const titles = new TitleWriter(model, store, settings)
-  const followUps = new FollowUpWriter(
-    model,
-    store,
-    () => settings.get().suggestionModel,
-  )
+  const followUps = new FollowUpWriter(model, store, settings)
   const compactor = new Compactor(model, store, settings)
   const chat = new ChatService(model, titles, compactor, store, settings, {
     tools: registry,

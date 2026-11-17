@@ -47,6 +47,30 @@ describe('SettingsStore', () => {
     })
   })
 
+  it('has follow-ups off, and a suggestion model that is the chat model while empty', () => {
+    expect(settings.get()).toMatchObject({
+      suggestFollowUps: false,
+      suggestionModel: '',
+    })
+  })
+
+  it('keeps follow-ups on for whoever had a suggestion model before the switch existed', () => {
+    // Only the model is stored, as an older version wrote it.
+    settings.update({ suggestionModel: 'small' })
+    expect(settings.get().suggestFollowUps).toBe(true)
+    // Once the switch is stored it decides, whatever the model.
+    settings.update({ suggestFollowUps: false })
+    expect(settings.get()).toMatchObject({
+      suggestFollowUps: false,
+      suggestionModel: 'small',
+    })
+    settings.update({ suggestFollowUps: true, suggestionModel: '' })
+    expect(settings.get()).toMatchObject({
+      suggestFollowUps: true,
+      suggestionModel: '',
+    })
+  })
+
   it('has the other services’ models from the environment, off without one', () => {
     expect(settings.get()).toMatchObject({
       imageModel: '',

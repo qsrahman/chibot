@@ -137,13 +137,13 @@ export function ChatPage({
     waiting: waiting.length,
     busy,
     queued: chat.queued !== null,
-    enabled: !!settings.settings?.suggestionModel,
+    enabled: !!settings.settings?.suggestFollowUps,
   })
   const suggestions = shownSuggestions(
     followUps.found,
     id,
     followUps.target,
-    !busy && chat.queued === null && !!settings.settings?.suggestionModel,
+    !busy && chat.queued === null && !!settings.settings?.suggestFollowUps,
   )
   const toolOptions = toolOptionsOf(settings.tools, settings.settings)
   const chatUsage = describeUsage(chat.usage)

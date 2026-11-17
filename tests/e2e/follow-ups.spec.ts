@@ -19,7 +19,7 @@ test('suggests follow-ups after an answer, and a click sends one', async ({
   page,
 }) => {
   await page.request.patch('/api/settings', {
-    data: { suggestionModel: 'e2e-model' },
+    data: { suggestFollowUps: true },
   })
   await page.goto('/')
   await appReady(page)
@@ -52,7 +52,7 @@ test('shows none when the setting is off, or after reopening a chat', async ({
   await expect(page.getByRole('group', { name: 'Ask next' })).toHaveCount(0)
 
   await page.request.patch('/api/settings', {
-    data: { suggestionModel: 'e2e-model' },
+    data: { suggestFollowUps: true },
   })
   await page.reload()
   await expect(answer(page, 0)).toContainText('to: first')
@@ -69,23 +69,56 @@ test('the setting switch turns them on and off', async ({ page }) => {
   await expect(toggle).not.toBeChecked()
   await toggle.click()
   await expect(toggle).toBeChecked()
-  await expect(dialog.getByLabel('Suggestion model')).toHaveValue('e2e-model')
+  // No model of its own: empty, and the chat's model shows as what it uses.
+  const modelField = dialog.getByLabel('Suggestion model')
+  await expect(modelField).toHaveValue('')
+  await expect(modelField).toHaveAttribute('placeholder', 'e2e-model')
+  const stored = async () =>
+    (
+      (await (await page.request.get('/api/settings')).json()) as {
+        settings: { suggestFollowUps: boolean; suggestionModel: string }
+      }
+    ).settings
+  expect(await stored()).toMatchObject({
+    suggestFollowUps: true,
+    suggestionModel: '',
+  })
+  // A model of its own can be set, and emptied again to follow the chat's.
+  // (Each save is waited for, and the page given a frame to show it, so the
+  // next one is compared with what was saved.)
+  const save = async (value: string) => {
+    await modelField.fill(value)
+    await Promise.all([
+      page.waitForResponse(
+        (res) =>
+          res.url().includes('/api/settings') &&
+          res.request().method() === 'PATCH',
+      ),
+      modelField.press('Enter'),
+    ])
+    await page.evaluate(
+      () =>
+        new Promise((done) =>
+          requestAnimationFrame(() => requestAnimationFrame(done)),
+        ),
+    )
+  }
+  await save('e2e-other')
+  expect((await stored()).suggestionModel).toBe('e2e-other')
+  await save('')
+  expect((await stored()).suggestionModel).toBe('')
+
   await toggle.click()
   await expect(toggle).not.toBeChecked()
   await expect(dialog.getByLabel('Suggestion model')).toHaveCount(0)
-  const { settings } = (await (
-    await page.request.get('/api/settings')
-  ).json()) as {
-    settings: { suggestionModel: string }
-  }
-  expect(settings.suggestionModel).toBe('')
+  expect((await stored()).suggestFollowUps).toBe(false)
 })
 
 test('an answer with a next-step card gets the card, not suggestions', async ({
   page,
 }) => {
   await page.request.patch('/api/settings', {
-    data: { suggestionModel: 'e2e-model' },
+    data: { suggestFollowUps: true },
   })
   await page.goto('/')
   await appReady(page)

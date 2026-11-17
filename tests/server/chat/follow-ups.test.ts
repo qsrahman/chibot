@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ResponseCreateParams } from 'openai/resources/responses/responses'
+import type { Settings } from '../../../src/shared/settings.ts'
 import { ConversationStore } from '../../../src/server/conversations/index.ts'
 import { cleanSuggestions } from '../../../src/server/chat/prompts.ts'
 import {
@@ -18,8 +19,15 @@ describe('FollowUpWriter', () => {
     store = memoryStore()
   })
 
-  async function answered(options: FakeOptions, suggestionModel = 'sm') {
-    const settings = testSettings('m', { suggestionModel })
+  async function answered(
+    options: FakeOptions,
+    settingsOverride: Partial<Settings> = {},
+  ) {
+    const settings = testSettings('m', {
+      suggestFollowUps: true,
+      suggestionModel: 'sm',
+      ...settingsOverride,
+    })
     const services = testChatServices(answerEvents('Pangolins eat ants.'), {
       store,
       settings,
@@ -47,16 +55,35 @@ describe('FollowUpWriter', () => {
     expect(suggestionCalls[0]!.input).toContain('Pangolins eat ants.')
   })
 
-  it('is off while the model is empty, and reads it on each call', async () => {
+  it('is off until the switch is on, and reads the settings on each call', async () => {
     const suggestionCalls: ResponseCreateParams[] = []
     const { followUps, id, settings } = await answered(
       { suggestions: 'One?', suggestionCalls },
-      '',
+      { suggestFollowUps: false },
     )
+    // A model set does not turn it on.
     expect(await followUps.suggest(id)).toEqual([])
     expect(suggestionCalls).toHaveLength(0)
-    settings.update({ suggestionModel: 'later' })
+    settings.update({ suggestFollowUps: true })
     expect(await followUps.suggest(id)).toEqual(['One?'])
+    expect(suggestionCalls[0]).toMatchObject({ model: 'sm' })
+  })
+
+  it('uses the chat model while no suggestion model is set, and follows it', async () => {
+    const suggestionCalls: ResponseCreateParams[] = []
+    const { followUps, id, settings } = await answered(
+      { suggestions: 'One?', suggestionCalls },
+      { suggestionModel: '' },
+    )
+    expect(await followUps.suggest(id)).toEqual(['One?'])
+    expect(suggestionCalls[0]).toMatchObject({ model: 'm' })
+    // Changing the chat's model changes it; setting one of its own takes over.
+    settings.update({ model: 'bigger' })
+    await followUps.suggest(id)
+    expect(suggestionCalls[1]).toMatchObject({ model: 'bigger' })
+    settings.update({ suggestionModel: 'small' })
+    await followUps.suggest(id)
+    expect(suggestionCalls[2]).toMatchObject({ model: 'small' })
   })
 
   it('gives none when the model fails, and none for a chat with no answer', async () => {

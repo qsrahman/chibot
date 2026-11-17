@@ -255,11 +255,7 @@ export function chatServices(
 ) {
   const model = new ModelRequests(client, options.attachments)
   const titles = new TitleWriter(model, store, settings)
-  const followUps = new FollowUpWriter(
-    model,
-    store,
-    () => settings.get().suggestionModel,
-  )
+  const followUps = new FollowUpWriter(model, store, settings)
   const compactor = new Compactor(model, store, settings)
   const chat = new ChatService(
     model,

@@ -27,6 +27,7 @@ export function settingsDefaults(
     aboutUser: '',
     responseStyle: '',
     summaryModel: '',
+    suggestFollowUps: false,
     suggestionModel: '',
     autoCompact: true,
     // Small enough for local models; the user raises it for larger ones.
@@ -86,6 +87,11 @@ export class SettingsStore {
       if (!(key in stored)) continue
       const parsed = settingsSchema.shape[key].safeParse(stored[key])
       if (parsed.success) Object.assign(settings, { [key]: parsed.data })
+    }
+    // Before the switch existed, a suggestion model was what turned follow-ups
+    // on: whoever had one set keeps them.
+    if (!('suggestFollowUps' in stored) && settings.suggestionModel !== '') {
+      settings.suggestFollowUps = true
     }
     settings.disabledTools = this.#tools.read() ?? []
     return settings

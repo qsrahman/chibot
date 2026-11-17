@@ -281,7 +281,7 @@ test('the follow-up chips wrap above the composer without overflowing', async ({
   page,
 }) => {
   await page.request.patch('/api/settings', {
-    data: { suggestionModel: 'e2e-model' },
+    data: { suggestFollowUps: true },
   })
   try {
     await page.goto('/')
@@ -309,6 +309,8 @@ test('the follow-up chips wrap above the composer without overflowing', async ({
       ),
     ).toBe(true)
   } finally {
-    await page.request.patch('/api/settings', { data: { suggestionModel: '' } })
+    await page.request.patch('/api/settings', {
+      data: { suggestFollowUps: false },
+    })
   }
 })

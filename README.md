@@ -306,8 +306,10 @@ banner says so with a Retry button, and the page reconnects by itself once
 - **Follow-ups** (off by default; **Settings → Model → Follow-ups**): once an
   answer is done, two or three suggested next prompts appear under **Ask next**
   above the message box, and a click sends one. It costs one more short
-  request per answer, to the chat model or one you name. An answer that offers
-  a next-step card gets the card instead, and no request.
+  request per answer. It uses the model the chat uses, and follows it when you
+  change it in the header; name another in **Suggestion model** (for example a
+  smaller, faster one), and empty the box to follow the chat's model again. An
+  answer that offers a next-step card gets the card instead, and no request.
 - Scroll up to read while an answer streams and the view stays put; the ↓
   button above the message box jumps back to the latest message.
 - The first message gives the chat its own URL (`/c/…`). Reloading reopens it.

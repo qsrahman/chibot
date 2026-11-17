@@ -1,6 +1,7 @@
 import type { ResponseCreateParamsNonStreaming } from 'openai/resources/responses/responses'
 import { messageText } from '../../shared/messages.ts'
 import type { ConversationStore } from '../conversations/index.ts'
+import type { SettingsStore } from '../settings-store.ts'
 import type { ModelRequests } from './model-requests.ts'
 import { cleanSuggestions, SUGGESTION_INSTRUCTIONS } from './prompts.ts'
 import { logFailure } from '../api-errors.ts'
@@ -10,17 +11,17 @@ import { section } from '../prompt-tags.ts'
 export class FollowUpWriter {
   readonly #model: ModelRequests
   readonly #store: ConversationStore
-  /** The model to ask; `''` turns suggestions off. Read on each call. */
-  readonly #modelName: () => string
+  /** Read on each call: the switch, and which model to ask. */
+  readonly #settings: SettingsStore
 
   constructor(
     model: ModelRequests,
     store: ConversationStore,
-    modelName: () => string,
+    settings: SettingsStore,
   ) {
     this.#model = model
     this.#store = store
-    this.#modelName = modelName
+    this.#settings = settings
   }
 
   /**
@@ -32,7 +33,14 @@ export class FollowUpWriter {
     conversationId: string,
     signal?: AbortSignal,
   ): Promise<string[]> {
-    const model = this.#modelName()
+    const {
+      suggestFollowUps,
+      suggestionModel,
+      model: chatModel,
+    } = this.#settings.get()
+    if (!suggestFollowUps) return []
+    // Unset, the model the chat uses (a smaller one is cheaper, not required).
+    const model = suggestionModel || chatModel
     if (!model) return []
     const messages = this.#store
       .getPath(conversationId)

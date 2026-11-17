@@ -225,7 +225,7 @@ in a way a transaction does not undo leaves a database to restore.
 | `GET /api/conversations?q=&archived=1` | 2 | List (pinned first, newest first), archived view, or search (titles + message text, with snippets) |
 | `PATCH/DELETE /api/conversations/:id` | 2 | Rename, pin, archive/restore / delete |
 | `POST /api/conversations/:id/title` | 10 | Have the model name the chat again (replaces the title); `{ title }` |
-| `POST /api/conversations/:id/suggestions` | – | Up to three prompts that could follow the latest answer, from the `suggestionModel` setting (`''` is off); `{ suggestions }`, empty on any failure. The browser asks after an answer is saved, so the turn's stream is unchanged |
+| `POST /api/conversations/:id/suggestions` | – | Up to three prompts that could follow the latest answer, when the `suggestFollowUps` setting is on, from the `suggestionModel` setting (`''` uses the chat model in use); `{ suggestions }`, empty on any failure. The browser asks after an answer is saved, so the turn's stream is unchanged |
 | `PUT /api/conversations/:id/leaf` | 3 | Switch to a message version |
 | `GET /api/conversations/:id/export?format=md\|json` · `POST /api/conversations/import` | 4 | Export (download) / import (validated JSON, ≤ 200 MB since Phase 9 embeds files) |
 | `GET/PATCH /api/settings` | 4 | User settings and their defaults (never secrets) |
