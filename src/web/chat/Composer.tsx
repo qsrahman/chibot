@@ -144,6 +144,7 @@ export function Composer({
       <div className="composer-left">
         <AddMenu
           tools={tools}
+          transcription={transcription}
           onFiles={(files) => {
             attachments.add(files)
             inputRef.current?.focus()

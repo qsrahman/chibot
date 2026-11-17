@@ -400,7 +400,10 @@ test('a drop overlay names what is accepted, for files only', async ({
   await chat.dispatchEvent('dragover', { dataTransfer: files })
   await expect(overlay).toBeVisible()
   await expect(
-    page.locator('.drop-overlay').getByText('Images, PDF, Word, text and code'),
+    // The e2e server can transcribe, so recordings are named too.
+    page
+      .locator('.drop-overlay')
+      .getByText('Images, PDF, Word, text, code and audio'),
   ).toBeVisible()
 
   await page.keyboard.press('Escape')

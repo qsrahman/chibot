@@ -78,6 +78,35 @@
   }
 }
 
+/* A new chat on a phone: the composer sits at the bottom, within reach of the
+   thumb, and the greeting (with "Pick up where you left off" under it) takes
+   the room above. The flex order puts the recents above the composer, where
+   they follow the page's order below it on a desktop. A project's page keeps
+   its cards below the composer, so it keeps the centred layout. */
+@media (max-width: 767px) {
+  .chat.empty:not(.project-home) {
+    padding-bottom: 0;
+  }
+
+  .chat.empty:not(.project-home) .greeting {
+    order: 1;
+  }
+
+  .chat.empty:not(.project-home) .recents {
+    order: 2;
+  }
+
+  .chat.empty:not(.project-home) .composer {
+    order: 3;
+    margin-top: auto;
+  }
+
+  .chat.empty:not(.project-home) .disclaimer {
+    order: 4;
+    margin-bottom: 0;
+  }
+}
+
 /* The find bar's input, on a phone, takes a row of its own: beside the count and
    three 44 px buttons it was left about 90 px wide. */
 @media (max-width: 767px) {

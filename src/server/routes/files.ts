@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
 import { z } from 'zod'
-import { fileKind } from '../../shared/documents.ts'
+import { AUDIO_LIMIT, fileKind } from '../../shared/documents.ts'
 import type { FileStore } from '../file-store.ts'
 import type { Transcription } from '../transcription.ts'
 import { disposition, form, notFound } from './helpers.ts'
@@ -96,4 +96,3 @@ export function fileRoutes({
 }
 
 const FILE_LIMIT = 50 * 1024 * 1024
-const AUDIO_LIMIT = 25 * 1024 * 1024

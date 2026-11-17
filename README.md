@@ -408,7 +408,10 @@ banner says so with a Retry button, and the page reconnects by itself once
   its chats and files.
 - **Voice input:** click the mic, speak, click again: the text appears at the
   cursor to check before sending. It needs a transcription model (see
-  `OPENAI_TRANSCRIBE_*`); without one the mic is greyed out and says so.
+  `OPENAI_TRANSCRIBE_*`); without one the mic is greyed out and says so. An
+  **audio file** (MP3, WAV, M4A, OGG, FLAC… up to 25 MB) added to the message,
+  with **+**, a paste or a drop, is transcribed the same way and its text is
+  added to the box, not attached.
 - **Attachments:** **+** → **Add photos & files**, or paste or drop them onto
   the chat (an "Add anything" card shows while you drag): images (PNG, JPEG, WebP, GIF) and the document types projects
   take. **+** → **Take a photo** opens the device's camera in a preview;

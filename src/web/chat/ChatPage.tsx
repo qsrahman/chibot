@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
-import { ArrowDown } from 'lucide-react'
+import { ArrowDown, LoaderCircle } from 'lucide-react'
 import type { ConversationListItem, Health } from '../../shared/types.ts'
 import { ErrorBoundary } from '../ui/ErrorBoundary.tsx'
 import { ChatTopBar } from './ChatTopBar.tsx'
@@ -8,6 +8,7 @@ import { FindBar } from './FindBar.tsx'
 import { OutlineMenu } from './OutlineMenu.tsx'
 import { Composer } from './Composer.tsx'
 import { FollowUps } from './FollowUps.tsx'
+import { useAudioFiles } from './useAudioFiles.ts'
 import { shownSuggestions } from './followUps.ts'
 import { useFollowUps } from './useFollowUps.ts'
 import { Greeting, Recents } from './Greeting.tsx'
@@ -220,8 +221,22 @@ export function ChatPage({
     },
   })
 
+  // Recordings (picked, pasted or dropped) become text in the box; the other
+  // files attach as before.
+  const canTranscribe =
+    (health?.features.transcription ?? false) &&
+    !!settings.settings?.transcribeModel
+  const audio = useAudioFiles({
+    transcription: canTranscribe,
+    onText: (text) =>
+      setPrefill((was) => ({ text, n: (was?.n ?? 0) + 1, append: true })),
+  })
+  const files = {
+    ...attachments,
+    add: (picked: File[]) => attachments.add(audio.take(picked)),
+  }
   const { dragging, handlers: dragHandlers } = useFileDrop(
-    attachments.add,
+    files.add,
     composerRef,
   )
 
@@ -319,7 +334,7 @@ export function ChatPage({
           inert={inert}
           {...dragHandlers}
         >
-          {dragging && <DropOverlay />}
+          {dragging && <DropOverlay transcription={canTranscribe} />}
           {connection.unreachable && <ConnectionBanner {...connection} />}
           <ChatTopBar
             id={id}
@@ -487,6 +502,12 @@ export function ChatPage({
             }
           />
           <FollowUps suggestions={suggestions} onPick={following(chat.send)} />
+          {audio.busy.length > 0 && (
+            <p className="audio-busy" role="status">
+              <LoaderCircle size={16} className="spin" aria-hidden />
+              Transcribing {audio.busy.join(', ')}…
+            </p>
+          )}
           <Composer
             busy={busy}
             onSend={
@@ -504,12 +525,9 @@ export function ChatPage({
             onEditLast={editLast}
             inputRef={composerRef}
             tools={toolOptions}
-            attachments={attachments}
+            attachments={files}
             draftKey={draftKey}
-            transcription={
-              (health?.features.transcription ?? false) &&
-              !!settings.settings?.transcribeModel
-            }
+            transcription={canTranscribe}
             effort={settings.settings?.reasoningEffort ?? null}
             prefill={prefill}
             onEffort={(reasoningEffort) =>

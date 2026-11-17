@@ -1277,3 +1277,18 @@ test('a list written as HTML in a table cell shows as bullet lines, not as tags'
     '• Founded the republic.',
   ])
 })
+
+test('a new chat on a wide screen keeps the composer under the greeting, mid-page', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1024, height: 768 })
+  await page.goto('/')
+  await appReady(page)
+  const composer = (await page.locator('.composer').boundingBox())!
+  const greeting = (await page.locator('.greeting').boundingBox())!
+  // Under the greeting and clear of the bottom edge (the phone layout docks
+  // it there instead); earlier chats may add a "Pick up where you left off"
+  // list under it, which moves it up.
+  expect(composer.y).toBeGreaterThan(greeting.y + greeting.height)
+  expect(composer.y + composer.height).toBeLessThan(768 - 150)
+})

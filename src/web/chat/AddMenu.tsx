@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { Camera, Paperclip, Plus } from 'lucide-react'
-import { ACCEPTED_LABEL, ATTACHMENT_ACCEPT } from '../../shared/documents.ts'
+import { acceptedLabel, ATTACHMENT_ACCEPT } from '../../shared/documents.ts'
 import { useAnchoredPopover } from '../ui/popover.ts'
 import { CameraDialog } from './CameraDialog.tsx'
 
@@ -21,10 +21,13 @@ export interface ToolOption {
 /** The "+" button and its menu: add files, or pick a tool for the message. */
 export function AddMenu({
   tools,
+  transcription,
   onFiles,
   onPick,
 }: {
   tools: ToolOption[]
+  /** The server can transcribe: a recording is accepted too. */
+  transcription: boolean
   onFiles: (files: File[]) => void
   onPick: (tool: ToolOption) => void
 }) {
@@ -79,7 +82,7 @@ export function AddMenu({
           <Paperclip size={18} strokeWidth={1.5} aria-hidden />
           <span className="menu-item-text">
             Add photos & files
-            <span className="menu-hint">{ACCEPTED_LABEL}</span>
+            <span className="menu-hint">{acceptedLabel(transcription)}</span>
           </span>
         </button>
         {canUseCamera && (

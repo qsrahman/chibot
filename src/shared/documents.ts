@@ -65,6 +65,21 @@ export function fileKind(
   return image ? { kind: 'image', mime: image } : documentKind(name)
 }
 
+// Recordings, which are turned into text (by the transcription model) rather
+// than attached. `webm` and `mp4` are left out: they are as often video, so
+// only their type (audio/*) says.
+const AUDIO = 'mp3 wav m4a aac ogg oga opus flac weba mpga'.split(' ')
+
+/** Whether a file is a recording: by its type (audio/*), or its extension. */
+export function isAudioFile(name: string, type = ''): boolean {
+  if (type.startsWith('audio/')) return true
+  const extension = /\.([^.]+)$/.exec(name)?.[1]?.toLowerCase() ?? ''
+  return AUDIO.includes(extension)
+}
+
+/** The largest recording the transcription route takes (the API's own limit). */
+export const AUDIO_LIMIT = 25 * 1024 * 1024
+
 const accept = (extensions: string[]) =>
   extensions.map((extension) => `.${extension}`).join(',')
 
@@ -72,11 +87,18 @@ const accept = (extensions: string[]) =>
 export const DOCUMENT_ACCEPT = accept([...Object.keys(KINDS), ...TEXT])
 
 /** For `<input type="file" accept>`: documents and images (attachments). */
-export const ATTACHMENT_ACCEPT = accept([
+export const ATTACHMENT_ACCEPT = `${accept([
   ...Object.keys(IMAGES),
   ...Object.keys(KINDS),
   ...TEXT,
-])
+  ...AUDIO,
+])},audio/*`
 
 /** What the pickers and drops accept, in words (kept in step with the lists above by tests). */
 export const ACCEPTED_LABEL = 'Images, PDF, Word, text and code'
+
+/** The same, when the server can transcribe: a recording is accepted too. */
+export const ACCEPTED_WITH_AUDIO = 'Images, PDF, Word, text, code and audio'
+
+export const acceptedLabel = (transcription: boolean) =>
+  transcription ? ACCEPTED_WITH_AUDIO : ACCEPTED_LABEL

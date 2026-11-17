@@ -4,6 +4,14 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- **Audio files become text.** A recording added to the message (**+** → **Add photos & files**, a paste, or a drop) is transcribed by the transcription model and its text goes into the message box under what you have written, for review, instead of being attached. Up to 25 MB; "Transcribing notes.mp3…" shows while it is read. Without a transcription model a toast says so. The menu and the drop card name audio when the server can transcribe.
+
+### Changed
+
+- A new chat on a phone puts the composer at the bottom of the screen, within reach of the thumb, with the greeting (and "Pick up where you left off") above it; wider screens and a project's page keep the composer centred.
+
 ## [0.24.2] - 2026-11-17
 
 ### Fixed

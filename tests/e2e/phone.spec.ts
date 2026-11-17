@@ -1,5 +1,12 @@
 import { expect, test, type Page } from '@playwright/test'
-import { answer, answered, appReady, lastRequest, send } from './helpers.ts'
+import {
+  answer,
+  answered,
+  appReady,
+  lastRequest,
+  savedChat,
+  send,
+} from './helpers.ts'
 
 // Phones: the sidebar is a drawer over a full-width chat.
 
@@ -313,4 +320,37 @@ test('the follow-up chips wrap above the composer without overflowing', async ({
       data: { suggestFollowUps: false },
     })
   }
+})
+
+test('a new chat keeps the composer at the bottom, with the greeting above it', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  const box = async (selector: string) =>
+    (await page.locator(selector).first().boundingBox())!
+  const composer = await box('.composer')
+  const greeting = await box('.greeting')
+  const height = page.viewportSize()!.height
+  // Within reach of the thumb: at the bottom edge, not in the middle.
+  expect(composer.y + composer.height).toBeGreaterThan(height - 64)
+  expect(greeting.y + greeting.height).toBeLessThanOrEqual(composer.y)
+  // The greeting is not stuck at the top either: it sits in the room above.
+  expect(greeting.y).toBeGreaterThan(120)
+})
+
+test('"Pick up where you left off" sits above the docked composer', async ({
+  page,
+}) => {
+  await savedChat(page, { question: 'An earlier chat', answerText: 'Yes.' })
+  await page.goto('/')
+  await appReady(page)
+  const recents = page.locator('.recents')
+  await expect(recents).toBeVisible()
+  const above = (await recents.boundingBox())!
+  const composer = (await page.locator('.composer').boundingBox())!
+  expect(above.y + above.height).toBeLessThanOrEqual(composer.y)
+  expect(composer.y + composer.height).toBeGreaterThan(
+    page.viewportSize()!.height - 64,
+  )
 })

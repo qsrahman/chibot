@@ -93,7 +93,11 @@ Code uses `"SF Mono", SFMono-Regular, ui-monospace, Consolas, "Liberation Mono",
 
 - **Empty state.** A heading ("What's on your mind?") with the composer
   directly below it, both vertically centred. After the first message the
-  composer docks to the bottom and the thread scrolls above it.
+  composer docks to the bottom and the thread scrolls above it. On a phone
+  (below 768 px) a new chat already has it at the bottom, within reach of the
+  thumb, with the greeting and the starters in the room above and "Pick up where
+  you left off" between them and the composer (a project's page keeps the
+  centred layout, since its cards sit below the composer).
 - **Sidebar.** 260 px, with a hairline right border. Rows are 36 px
   tall, 8×10 px padding, 10 px radius, 6 px icon gap. The hover/active fill is
   `--surface-muted`. Groups have 12 px muted headings (Today, Yesterday, …).
@@ -195,9 +199,18 @@ same thumbnails (up to 240 px, 16 px radius) and cards sit right-aligned above
 the bubble. Dragging files over the chat (not text or links) covers it with a
 2 px dashed `--accent` outline inset 8 px and a centred 16 px-radius
 `--surface-raised` card (`--border`, `--dialog-shadow`): an `Upload` icon in
-`--accent`, "Add anything", and what's accepted in `--fg-muted`. It fades in
+`--accent`, "Add anything", and what's accepted in `--fg-muted` (with "audio" too
+when the server can transcribe). It fades in
 over 150 ms (not under reduced motion), ignores the pointer and is `aria-hidden`.
 It clears on drop, leave and Escape.
+
+**Recordings.** An audio file added to the message (picked, pasted or
+dropped; `.mp3`, `.wav`, `.m4a`, `.ogg`, `.opus`, `.flac`, anything typed
+`audio/*`) is not attached: when the server can transcribe, it is read by the
+transcription model and its text is added to the message box under what is
+written, for review, like dictation. While it is read, a 14 px `--fg-muted` line
+"Transcribing notes.mp3…" with a spinning `LoaderCircle` shows above the box.
+Over 25 MB, or with no transcription model, a toast says so and nothing is added.
 
 **Effort switch.** Left of the mic: a 36 px pill showing the reasoning effort
 ("Auto", "Minimal" … "Max") in `--fg-muted` 14 px text with a chevron,
