@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-11-17
+
 ### Changed
 
 - Follow-ups have their own switch (`suggestFollowUps`), and the suggestion model is optional: while it is empty they use the model the chat uses, and follow it when you change it (switching them on used to copy the chat's model name into the setting, so it stayed behind). Name a model of your own in Settings → Model → Follow-ups, and empty the box to follow the chat's again. Anyone who already had a suggestion model keeps follow-ups on.
