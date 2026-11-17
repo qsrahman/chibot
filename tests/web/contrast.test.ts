@@ -95,6 +95,8 @@ const TEXT: [string, string][] = [
   ...['bg', 'surface', 'surface-muted', 'surface-raised', 'chip'].map(
     (bg): [string, string] => ['fg-muted', bg],
   ),
+  // The message box's hint is drawn on its card (--surface).
+  ['fg-placeholder', 'surface'],
   ...['bg', 'surface'].map((bg): [string, string] => ['danger', bg]),
   ['bubble-fg', 'bubble-bg'],
   ['danger-fg', 'danger'],

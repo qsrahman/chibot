@@ -46,6 +46,7 @@ follows; changing `--bg` switches to a dark-grey page.
 | `--switch-track` | `#8a8a8a` | `#414141` | A switch's track when off; its white thumb is 3:1 or more on it |
 | `--fg` | `#0d0d0d` | `#ffffff` | Text |
 | `--fg-muted` | `#5d5d5d` | `#cdcdcd` | Descriptions, captions, footer, action icons, code labels |
+| `--fg-placeholder` | `#767676` | `#8f8f8f` | The message box's hint ("Ask anything"): dimmer than `--fg-muted`, still 4.5:1 on its card (`--surface`) |
 | `--border` | `rgb(0 0 0 / 10%)` | `rgb(255 255 255 / 15%)` | Hairlines, composer outline |
 | `--accent` / `--accent-fg` | `#3566f0` / `#fff` | `#3566f0` / `#fff` | Send button, switches (measured `oklch(0.56 0.21 265)`) |
 | `--cite-bg` / `--cite-fg` | `#eef2ff` / `#2c52c8` | `#1f2b52` / `#b4c6ff` | Citation chips (text 6:1 or more on the tint and on `--surface-raised`) |

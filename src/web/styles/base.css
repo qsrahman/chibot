@@ -19,6 +19,8 @@
   --chip: light-dark(#ececec, #414141);
   --fg: light-dark(#0d0d0d, #ffffff);
   --fg-muted: light-dark(#5d5d5d, #cdcdcd);
+  /* The message box's hint: dimmer than --fg-muted, still 4.5:1 on its card. */
+  --fg-placeholder: light-dark(#767676, #8f8f8f);
   --border: light-dark(rgb(0 0 0 / 10%), rgb(255 255 255 / 15%));
   /* The edge of a field (an input, a select), which has to show where it is:
      3:1 against the page and cards; --border is for dividers and cards. */
@@ -113,6 +115,7 @@
   --chip: #494d64;
   --fg: #cad3f5;
   --fg-muted: #b8c0e0;
+  --fg-placeholder: #939ab7;
   --border: rgb(202 211 245 / 14%);
   --border-control: #939ab7;
   --accent: #8aadf4;
@@ -158,6 +161,7 @@
   --chip: #ccd0da;
   --fg: #4c4f69;
   --fg-muted: #55586e;
+  --fg-placeholder: #686b80;
   --border: rgb(76 79 105 / 16%);
   --border-control: #7c7f93;
   --accent: #1e66f5;

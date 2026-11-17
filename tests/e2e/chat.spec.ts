@@ -1223,3 +1223,26 @@ test('the find bar’s input keeps a usable width on a phone', async ({
   expect(input).toBeGreaterThan(bar * 0.8)
   expect(bar).toBeLessThanOrEqual(375)
 })
+
+test('the message box’s hint is dimmer than muted text', async ({ page }) => {
+  await page.goto('/')
+  await appReady(page)
+  const colours = await page.evaluate(() => {
+    const read = (name: string) => {
+      const probe = document.createElement('span')
+      probe.style.color = `var(${name})`
+      document.body.append(probe)
+      const colour = getComputedStyle(probe).color
+      probe.remove()
+      return colour
+    }
+    const box = document.querySelector('.composer textarea')!
+    return {
+      hint: getComputedStyle(box, '::placeholder').color,
+      placeholder: read('--fg-placeholder'),
+      muted: read('--fg-muted'),
+    }
+  })
+  expect(colours.hint).toBe(colours.placeholder)
+  expect(colours.hint).not.toBe(colours.muted)
+})
