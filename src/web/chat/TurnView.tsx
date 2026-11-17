@@ -18,6 +18,7 @@ import { LiveContext, SourcesContext } from './sourcesContext.ts'
 import {
   interrupted,
   nextStepOf,
+  holdBackCard,
   shownText,
   sourcesOf,
   type ToolActivity,
@@ -102,7 +103,11 @@ export function TurnView({
   const sources = answer ? sourcesOf(answer) : []
   const usedMemory = describeUsedMemory(answer?.memories ?? [])
   // Without a card a model wrote out as text (see `nextStepInText`).
-  const text = answer ? shownText(answer) : ''
+  const text = !answer
+    ? ''
+    : pending
+      ? holdBackCard(answer.text)
+      : shownText(answer)
   const nextStep =
     latest && !pending && !approval && answer && !answer.incomplete
       ? nextStepOf(answer)

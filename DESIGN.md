@@ -359,8 +359,10 @@ text and shown as text (`dir="auto"`, long words wrap). Under 480 px the button
 drops under the text, full width. A model that writes the call out in the
 answer (the label "Suggest a next step:" and its arguments as a JSON block, at
 the very end) instead of making it still gets the card, and the answer reads
-without that block (`nextStepInText`); JSON that is not that exact shape is left
-as it is.
+without that block (`nextStepInText`); while the answer still streams, that
+label (as it is typed) and the fence after it are held back (`holdBackCard`), so
+no JSON shows on its way to becoming the card. JSON that is not that exact
+shape is left as it is.
 
 **Composer tools.** A 24 px `Plus` button at the composer's left opens a menu
 above it (Add photos & files, then Create an image).

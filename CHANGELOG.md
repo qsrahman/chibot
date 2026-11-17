@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- A next-step card a model writes out as text no longer shows its raw JSON while the answer streams: the label and the code block are held back until the answer is done, then the card appears.
+
 ## [0.23.3] - 2026-11-17
 
 ### Fixed

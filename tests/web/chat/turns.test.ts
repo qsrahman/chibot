@@ -5,6 +5,7 @@ import {
   fileIds,
   imageInfo,
   imagesOf,
+  holdBackCard,
   nextStepInText,
   nextStepOf,
   newQuestion,
@@ -963,6 +964,38 @@ describe('a next-step card written out as text', () => {
     expect(
       nextStepInText('Suggest a next step:\n\n```json\n{not json}\n```'),
     ).toBeNull()
+  })
+
+  it('is held back while it streams: no label, no fence, no JSON at any point', () => {
+    const text = written()
+    const labelDone = text.indexOf('step:*') + 'step:*'.length
+    for (let end = 0; end <= text.length; end++) {
+      const held = holdBackCard(text.slice(0, end))
+      expect(held, `at ${end}`).not.toContain('`')
+      expect(held, `at ${end}`).not.toContain('"title"')
+      if (end >= labelDone) expect(held, `at ${end}`).not.toContain('Suggest')
+    }
+    // And what is left is the answer, as it will read when it is done.
+    expect(holdBackCard(text)).toBe(nextStepInText(text)!.text)
+  })
+
+  it('holds back only that: other text streams as it is', () => {
+    for (const plain of [
+      '',
+      'Plain answer',
+      'Suggestions are welcome',
+      'Suggest a next step: read the docs',
+      'Suggest a next step:\n\nRead the docs first.',
+      'Code:\n\n```json\n{"a": 1}\n```',
+      'Ends with a line, Su',
+    ]) {
+      expect(holdBackCard(plain)).toBe(plain)
+    }
+    expect(holdBackCard('Offer?\n\nSuggest a ne')).toBe('Offer?')
+    expect(holdBackCard('Offer?\n\n*Suggest a next step:*')).toBe('Offer?')
+    expect(holdBackCard('Offer?\n\nSuggest a next step:\n\n```js')).toBe(
+      'Offer?',
+    )
   })
 
   it('does not apply to an answer that made the call, or one that was cut off', () => {

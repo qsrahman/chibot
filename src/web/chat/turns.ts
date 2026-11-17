@@ -264,6 +264,30 @@ export function nextStepInText(
   return step ? { text: before.slice(0, label.index).trimEnd(), step } : null
 }
 
+const NEXT_STEP_LABEL = 'suggest a next step:'
+// The label as its own line, then nothing yet or the start of the code fence.
+const PENDING_CARD =
+  /(?:^|\n)[ \t]*[*_]*suggest(?:ed)? (?:a )?next step[*_]*[ \t]*:[ \t]*[*_]*[ \t]*(?:\n[ \t\n]*(?:`[^]*)?)?$/i
+
+/**
+ * An answer's text while it still streams, without what may turn out to be a
+ * card written out as text: the label as it is typed, and the code fence after
+ * it. Without this the raw JSON shows for as long as it takes to arrive, and
+ * then turns into the card. Anything else after the label (an answer that
+ * only mentions it) shows as usual; a finished answer is `shownText`.
+ */
+export function holdBackCard(text: string): string {
+  const pending = PENDING_CARD.exec(text)
+  if (pending) return text.slice(0, pending.index).trimEnd()
+  // The label half typed: "…\n\n*Suggest a ne".
+  const lastLine = text.slice(text.lastIndexOf('\n') + 1)
+  const typed = lastLine.replace(/^[ \t*_]+/, '').toLowerCase()
+  if (typed.length >= 7 && NEXT_STEP_LABEL.startsWith(typed)) {
+    return text.slice(0, text.length - lastLine.length).trimEnd()
+  }
+  return text
+}
+
 /**
  * What to show of a finished answer's text: without a card the model wrote
  * out as text (a call that was made is not in the text at all).
