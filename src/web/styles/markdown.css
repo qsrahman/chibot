@@ -199,7 +199,14 @@
   text-decoration: underline;
 }
 
-/* Code blocks have no box, as on ChatGPT: a label, then the code. */
+/* A code block is a card, as ChatGPT's now are: a grey fill and the card
+   radius around a label row (with the actions) and the code. */
+.markdown .code-block {
+  padding: 4px 16px 12px;
+  border-radius: var(--radius-card);
+  background: var(--surface-muted);
+}
+
 .code-header {
   display: flex;
   align-items: center;
@@ -272,7 +279,7 @@
   position: absolute;
   inset: auto 0 0;
   height: 4.5rem;
-  background: linear-gradient(transparent, var(--bg));
+  background: linear-gradient(transparent, var(--surface-muted));
   pointer-events: none;
 }
 
@@ -292,8 +299,13 @@
 }
 
 .code-more:hover {
-  background: var(--surface-muted);
+  background: var(--chip);
   color: var(--fg);
+}
+
+/* The card is already --surface-muted, which is what a hover fills with elsewhere. */
+.code-block .action:hover:not(:disabled) {
+  background: var(--chip);
 }
 
 .code-more svg {

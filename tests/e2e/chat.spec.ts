@@ -1335,3 +1335,34 @@ test('a table has no header bar; its actions sit under it and show on hover', as
   await actions.getByRole('button', { name: 'Copy table' }).focus()
   await expect(actions).toHaveCSS('opacity', '1')
 })
+
+test('a code block is a grey card with its actions inside, not bare text', async ({
+  page,
+}) => {
+  const id = await savedChat(page, {
+    question: 'Show code',
+    answerText: '```ts\nconst a = 1\nconst b = 2\n```',
+  })
+  await page.goto(`/c/${id}`)
+  await appReady(page)
+  const block = page.locator('.code-block').first()
+  await expect(block).toBeVisible()
+  const look = await block.evaluate((el) => {
+    const css = getComputedStyle(el)
+    const probe = document.createElement('span')
+    probe.style.color = 'var(--surface-muted)'
+    document.body.append(probe)
+    const muted = getComputedStyle(probe).color
+    probe.remove()
+    return { background: css.backgroundColor, muted, radius: css.borderRadius }
+  })
+  expect(look.background).toBe(look.muted)
+  expect(look.radius).toBe('16px')
+  // The label and the actions sit inside the card.
+  const box = (await block.boundingBox())!
+  const copy = (await block
+    .getByRole('button', { name: 'Copy code' })
+    .boundingBox())!
+  expect(copy.x + copy.width).toBeLessThanOrEqual(box.x + box.width)
+  expect(copy.y).toBeGreaterThanOrEqual(box.y)
+})

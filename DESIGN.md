@@ -278,9 +278,12 @@ focused on it.
   region, and the composer takes focus back.
 - *Thinking:* a pulsing dot before the first token arrives.
 
-**Code blocks.** No box: no background, border or radius, just like the text
-around them.
-- The language name sits above the code in a 12 px muted label.
+**Code blocks.** A card, as ChatGPT's now are (measured on chatgpt.com, 20 Nov
+2026; the earlier version of this guide had none): `--surface-muted` with the
+16 px card radius, no border, 4 px 16 px 12 px of padding, so code stands apart
+from the prose and a long block reads as one thing. The fold's fade goes to the
+same fill, and hovers inside it fill with `--chip`.
+- The language name sits at the top left in a 12 px muted label.
 - Code is 16/26 px monospace. The `pre` takes the same font as its `code`, so
   every line box is exactly 26 px and the line numbers stay level with the lines.
 - **Wrap lines**, **Download as file** and **Copy code** are 32 px icon buttons

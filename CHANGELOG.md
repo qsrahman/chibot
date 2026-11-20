@@ -13,6 +13,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- **Code blocks are cards**, as ChatGPT's are now: a grey fill (`--surface-muted`) with rounded corners around the language label, the Wrap, Download and Copy buttons, and the code, so code stands apart from the prose. The fold's fade and the hover fills follow the card.
 - **The composer's main button is the mic while the box is empty**, as ChatGPT's is voice: a dimmed send arrow did nothing, and the mic is what an empty box wants. Writing (or attaching a file) turns it into Send, with the plain mic beside it. Without a transcription model the dimmed Send stays.
 - The reasoning-effort chip has a brain icon, so "Auto" or "Medium" reads as a level of thinking (not shown on a phone, where the row is tight).
 - A table no longer has a header bar with a "Table" label: its **Copy table** and **Download CSV** buttons now sit under it, at the right, shown on hover like a message's actions (and always on touch screens).
