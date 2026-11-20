@@ -6,6 +6,9 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Added
 
+- **Read aloud.** A speaker button under each answer has the browser's own voice read it (code blocks left out, Urdu and Arabic text read in an Urdu voice), and stops on a second click. It uses the Web Speech API, so nothing leaves the browser, and it is hidden where the browser can't speak.
+- **When an answer was written.** The model name under an answer has a tooltip with the time ("Written by gpt-5, Today, 9:07 PM").
+- **A code icon** before the language name in a code block's header, as ChatGPT's.
 - **A greeting with your name.** Give your name in Settings → Personalization and a new chat greets you for the time of day ("Good afternoon, Que") instead of "What's on your mind?". Without a name nothing changes; the model is not told your name.
 - **Pick a project on a new chat.** Under the message box, a **Project** button chooses the project the chat starts in, so you don't have to open the project's page first. It is for that chat only, and shows only when you have projects. On a phone it sits just above the composer.
 - **Spoken language for voice input** (Settings → Other models → Voice input). Tell the transcription model which language you speak (Urdu, Arabic, English, and more) for the microphone and for audio files; the default still lets it detect the language.

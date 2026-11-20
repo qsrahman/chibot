@@ -485,6 +485,8 @@ banner says so with a Retry button, and the page reconnects by itself once
 - **Quote:** select text in an answer or message and click **Quote** beside it:
   it is added to the message box as a block quote, under what you have
   written, to ask about that part.
+- **Read aloud** (the speaker under an answer) has the browser's own voice speak the answer, without code blocks; click again to stop. It shows only where the browser has speech synthesis, and nothing is sent anywhere.
+- Hover the model name under an answer to see when it was written.
 - **Copy** buttons sit under messages and answers, and on code blocks. Code blocks can also wrap long lines (one preference, also in Settings → General), be downloaded as a file, and fold when over 30 lines.
 - **Context usage:** each answer shows the context it sent against the
   window (e.g. `12.4K / 32K context`), turning red once it reaches where

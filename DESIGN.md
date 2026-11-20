@@ -262,10 +262,13 @@ focused on it.
   (`--fg-muted`), 2 px apart, 8 px radius hover fill, directly under the
   answer (ChatGPT uses a 44 px hit area and 20 px icons; chibot is a little
   denser):
-  - Assistant: **Copy**, then **Regenerate**, **Branch in new chat** (`GitBranch`), version switcher `< 2/3 >` and
+  - Assistant: **Copy**, **Read aloud** (`Volume2`, `VolumeX` while reading; only
+    where the browser can speak), then **Regenerate**, **Branch in new chat** (`GitBranch`), version switcher `< 2/3 >` and
     context usage. These show on hover and always on the latest answer. On a
     narrow screen (44 px touch buttons) the row wraps between items; a label
     never breaks inside its words, and a long model name is cut with an ellipsis.
+    The model name's tooltip says when the answer was written ("Written by gpt-5,
+    Today, 9:07 PM").
     Context usage is 12 px tabular muted text (`12.4K / 64K context`, or
     `12.4K context` with compaction off), with the full input/output count in
     its tooltip. At 80 % of the compaction threshold it turns `--danger` at
@@ -283,7 +286,8 @@ focused on it.
 16 px card radius, no border, 4 px 16 px 12 px of padding, so code stands apart
 from the prose and a long block reads as one thing. The fold's fade goes to the
 same fill, and hovers inside it fill with `--chip`.
-- The language name sits at the top left in a 12 px muted label.
+- The language name sits at the top left in a 12 px muted label, after a 14 px
+  `CodeXml` icon.
 - Code is 16/26 px monospace. The `pre` takes the same font as its `code`, so
   every line box is exactly 26 px and the line numbers stay level with the lines.
 - **Wrap lines**, **Download as file** and **Copy code** are 32 px icon buttons
@@ -608,6 +612,7 @@ equivalents use a 1.5 px stroke:
 | New chat | `SquarePen` |
 | Copy / copied | `Copy` / `Check` |
 | Edit message | `Pencil` |
+| Read aloud / stop | `Volume2` / `VolumeX` |
 | Regenerate / branch in new chat | `RefreshCw` / `GitBranch` |
 | Versions | `ChevronLeft` / `ChevronRight` |
 | Attach / voice | `Plus` / `Mic` |

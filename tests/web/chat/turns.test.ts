@@ -139,6 +139,7 @@ describe('toTurns', () => {
         // branch off), and its text joins the message items.
         answer: {
           itemId: 2,
+          createdAt: 0,
           text: 'Hello \n\nthere',
           thinking: '**Plan**\n\nSay hello.',
           tools: [],

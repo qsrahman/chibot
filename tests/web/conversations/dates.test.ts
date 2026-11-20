@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { ConversationListItem } from '../../../src/shared/types.ts'
 import {
   groupConversations,
+  messageTime,
   relativeTime,
 } from '../../../src/web/conversations/dates.ts'
 
@@ -62,5 +63,14 @@ describe('relativeTime', () => {
 
   it('never says the future', () => {
     expect(relativeTime(now.getTime() + 5000, now.getTime())).toBe('just now')
+  })
+})
+
+describe('messageTime', () => {
+  it('says Today or Yesterday with the time, else the date', () => {
+    expect(messageTime(daysAgo(0, 9), now)).toMatch(/^Today, 9:00/)
+    expect(messageTime(daysAgo(1, 21), now)).toMatch(/^Yesterday, 9:00/)
+    expect(messageTime(daysAgo(5, 9), now)).not.toMatch(/Today|Yesterday/)
+    expect(messageTime(daysAgo(5, 9), now)).toContain('2026')
   })
 })

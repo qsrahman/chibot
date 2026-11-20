@@ -63,3 +63,20 @@ export function relativeTime(time: number, now = Date.now()): string {
   if (days < 7) return relative.format(-Math.max(days, 1), 'day')
   return dayFormat.format(time)
 }
+
+const timeFormat = new Intl.DateTimeFormat(undefined, {
+  hour: 'numeric',
+  minute: '2-digit',
+})
+const dateTimeFormat = new Intl.DateTimeFormat(undefined, {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+})
+
+/** When a message was written: the time today, "Yesterday, 9:07 PM", else the date and time. */
+export function messageTime(time: number, now = new Date()): string {
+  const startOfToday = new Date(now).setHours(0, 0, 0, 0)
+  if (time >= startOfToday) return `Today, ${timeFormat.format(time)}`
+  if (time >= startOfToday - DAY) return `Yesterday, ${timeFormat.format(time)}`
+  return dateTimeFormat.format(time)
+}

@@ -45,6 +45,8 @@ export interface ToolActivity {
 
 export interface Answer {
   itemId: number | null
+  /** When the answer's first item was stored; unset while it is still arriving. */
+  createdAt?: number
   text: string
   /** The model's reasoning summary, `''` if it gave none. */
   thinking: string
@@ -122,6 +124,7 @@ export function toTurns(
     turn.compaction ??= after.get(item.id) ?? null
     turn.answer ??= {
       itemId: item.id,
+      createdAt: item.createdAt,
       text: '',
       thinking: '',
       tools: [],

@@ -214,9 +214,17 @@
 }
 
 .code-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--fg-muted);
   font-size: 0.75rem;
   line-height: 1rem;
+}
+
+.code-label svg {
+  width: 14px;
+  height: 14px;
 }
 
 .code-actions {

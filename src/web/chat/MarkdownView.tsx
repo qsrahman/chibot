@@ -15,7 +15,13 @@ import remarkMath from 'remark-math'
 import { dollarMath } from './math.ts'
 import { remarkHtmlBreaks } from './htmlBreaks.ts'
 import { delimited, tableRows } from './tableData.ts'
-import { ChevronDown, ChevronUp, Download, WrapText } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronUp,
+  CodeXml,
+  Download,
+  WrapText,
+} from 'lucide-react'
 import { CopyButton, IconAction } from './MessageActions.tsx'
 import { normalizedUrl } from '../../shared/media.ts'
 import { MediaContext } from './mediaContext.ts'
@@ -187,7 +193,10 @@ function CodeBlock({ node, ...props }: ComponentProps<'pre'> & ExtraProps) {
   return (
     <div className="code-block">
       <div className="code-header">
-        <span className="code-label">{language}</span>
+        <span className="code-label">
+          <CodeXml aria-hidden />
+          {language}
+        </span>
         <span className="code-actions">
           <IconAction
             label="Wrap lines"

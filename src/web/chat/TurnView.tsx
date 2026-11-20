@@ -7,6 +7,8 @@ import {
   Lightbulb,
   Pencil,
   RefreshCw,
+  Volume2,
+  VolumeX,
   Wrench,
 } from 'lucide-react'
 import { FileCard } from '../ui/FileCard.tsx'
@@ -14,6 +16,8 @@ import { ImageViewer, opensViewer, type ViewedImage } from './ImageViewer.tsx'
 import { Markdown } from './Markdown.tsx'
 import { TOUCH_ONLY, useMediaQuery } from '../ui/useMediaQuery.ts'
 import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
+import { canSpeak, toggleReading, useReading } from './readAloud.ts'
+import { messageTime } from '../conversations/dates.ts'
 import { LiveContext, SourcesContext } from './sourcesContext.ts'
 import {
   interrupted,
@@ -108,6 +112,8 @@ export function TurnView({
     : pending
       ? holdBackCard(answer.text)
       : shownText(answer)
+  const readingKey = String(answer?.itemId ?? question.itemId)
+  const reading = useReading() === readingKey
   const nextStep =
     latest && !pending && !approval && answer && !answer.incomplete
       ? nextStepOf(answer)
@@ -302,6 +308,15 @@ export function TurnView({
       {!pending && !approval && (
         <div className="actions answer-actions">
           {answer && <CopyButton text={text} />}
+          {answer && !pending && canSpeak() && (
+            <IconAction
+              label={reading ? 'Stop reading' : 'Read aloud'}
+              pressed={reading}
+              onClick={() => toggleReading(readingKey, text)}
+            >
+              {reading ? <VolumeX /> : <Volume2 />}
+            </IconAction>
+          )}
           {saved && (
             <IconAction
               label={answer ? 'Regenerate' : 'Retry'}
@@ -330,7 +345,11 @@ export function TurnView({
           {answer?.model && (
             <span
               className="usage model-name"
-              title="Model that wrote this answer"
+              title={
+                answer.createdAt
+                  ? `Written by ${answer.model}, ${messageTime(answer.createdAt)}`
+                  : 'Model that wrote this answer'
+              }
             >
               {answer.model}
             </span>
