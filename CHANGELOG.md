@@ -4,16 +4,16 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
-### Changed
-
-- A table no longer has a header bar with a "Table" label: its **Copy table** and **Download CSV** buttons now sit under it, at the right, shown on hover like a message's actions (and always on touch screens).
-
 ### Added
 
+- **A greeting with your name.** Give your name in Settings → Personalization and a new chat greets you for the time of day ("Good afternoon, Que") instead of "What's on your mind?". Without a name nothing changes; the model is not told your name.
+- **Pick a project on a new chat.** Under the message box, a **Project** button chooses the project the chat starts in, so you don't have to open the project's page first. It is for that chat only, and shows only when you have projects. On a phone it sits just above the composer.
+- **Spoken language for voice input** (Settings → Other models → Voice input). Tell the transcription model which language you speak (Urdu, Arabic, English, and more) for the microphone and for audio files; the default still lets it detect the language.
 - **Audio files become text.** A recording added to the message (**+** → **Add photos & files**, a paste, or a drop) is transcribed by the transcription model and its text goes into the message box under what you have written, for review, instead of being attached. Up to 25 MB; "Transcribing notes.mp3…" shows while it is read. Without a transcription model a toast says so. The menu and the drop card name audio when the server can transcribe.
 
 ### Changed
 
+- A table no longer has a header bar with a "Table" label: its **Copy table** and **Download CSV** buttons now sit under it, at the right, shown on hover like a message's actions (and always on touch screens).
 - A new chat on a phone puts the composer at the bottom of the screen, within reach of the thumb, with the greeting (and "Pick up where you left off") above it; wider screens and a project's page keep the composer centred.
 
 ## [0.24.2] - 2026-11-17

@@ -96,13 +96,23 @@
     order: 2;
   }
 
-  .chat.empty:not(.project-home) .composer {
+  /* The project it starts in is picked just above the composer. */
+  .chat.empty:not(.project-home) .project-picker {
     order: 3;
+    margin: auto auto 8px;
+  }
+
+  .chat.empty:not(.project-home):has(.project-picker) .composer {
+    margin-top: 0;
+  }
+
+  .chat.empty:not(.project-home) .composer {
+    order: 4;
     margin-top: auto;
   }
 
   .chat.empty:not(.project-home) .disclaimer {
-    order: 4;
+    order: 5;
     margin-bottom: 0;
   }
 }

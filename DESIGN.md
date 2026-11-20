@@ -91,13 +91,21 @@ Code uses `"SF Mono", SFMono-Regular, ui-monospace, Consolas, "Liberation Mono",
 └──────────┴─────────────────────────────────────────────┘
 ```
 
-- **Empty state.** A heading ("What's on your mind?") with the composer
-  directly below it, both vertically centred. After the first message the
+- **Empty state.** A heading ("What's on your mind?", or, once the user has
+  given a name in Settings → Personalization, a greeting for the time of day:
+  "Good morning / afternoon / evening, Que", "Hello, Que" in the small hours)
+  with the composer directly below it, both vertically centred. Under the
+  composer, left-aligned and when there are projects, a **Project** button
+  (`.mode-button`, `Folder` and `ChevronDown`, the project's name once picked)
+  opens a menu of "No project" and the projects, so the chat starts in one
+  (its instructions and files apply); it is for that chat only, and a project's
+  own page needs no picker. After the first message the
   composer docks to the bottom and the thread scrolls above it. On a phone
   (below 768 px) a new chat already has it at the bottom, within reach of the
   thumb, with the greeting and the starters in the room above and "Pick up where
   you left off" between them and the composer (a project's page keeps the
-  centred layout, since its cards sit below the composer).
+  centred layout, since its cards sit below the composer). There the project
+  picker sits just above the composer.
 - **Sidebar.** 260 px, with a hairline right border. Rows are 36 px
   tall, 8×10 px padding, 10 px radius, 6 px icon gap. The hover/active fill is
   `--surface-muted`. Groups have 12 px muted headings (Today, Yesterday, …).

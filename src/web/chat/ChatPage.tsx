@@ -8,6 +8,7 @@ import { FindBar } from './FindBar.tsx'
 import { OutlineMenu } from './OutlineMenu.tsx'
 import { Composer } from './Composer.tsx'
 import { FollowUps } from './FollowUps.tsx'
+import { ProjectPicker } from './ProjectPicker.tsx'
 import { useAudioFiles } from './useAudioFiles.ts'
 import { shownSuggestions } from './followUps.ts'
 import { useFollowUps } from './useFollowUps.ts'
@@ -95,11 +96,15 @@ export function ChatPage({
   const navigate = useNavigate()
   // Chosen on a new chat before the first message; applies to that chat.
   const [temporaryMode, setTemporaryMode] = useState(false)
+  // Picked under the message box of a new chat: the project it starts in
+  // (instead of going to the project's page first).
+  const [pickedProject, setPickedProject] = useState<string | null>(null)
+  useEffect(() => setPickedProject(null), [id, projectHome])
   const chat = useChat(id, {
     onCreated: (newId) => navigate(`/c/${newId}`),
     onListChanged,
     temporary: temporaryMode,
-    projectId: projectHome,
+    projectId: projectHome ?? pickedProject ?? undefined,
   })
   const { turns, pending, error, isTemporary, busy } = chat
   // An answer that failed is told about in its own turn, with Retry; any
@@ -294,7 +299,7 @@ export function ChatPage({
     })
     return Promise.resolve(false)
   }
-  const projectId = id ? chat.projectId : (projectHome ?? null)
+  const projectId = id ? chat.projectId : (projectHome ?? pickedProject)
   const project = projects.projects.find((p) => p.id === projectId)
   // The sidebar's copy follows renames; project chats aren't listed there.
   const title = id
@@ -391,6 +396,7 @@ export function ChatPage({
           ) : empty ? (
             <Greeting
               temporary={temporary}
+              userName={settings.settings?.userName ?? ''}
               state={state}
               onStart={(text) =>
                 setPrefill((was) => ({ text, n: (was?.n ?? 0) + 1 }))
@@ -540,6 +546,17 @@ export function ChatPage({
               onChatsChanged={onListChanged}
             />
           )}
+          {empty &&
+            !id &&
+            !projectHome &&
+            !temporary &&
+            projects.projects.length > 0 && (
+              <ProjectPicker
+                projects={projects.projects}
+                chosen={pickedProject}
+                onChoose={setPickedProject}
+              />
+            )}
           {recents && (
             <Recents chats={recentChatList} projects={recentProjectList} />
           )}

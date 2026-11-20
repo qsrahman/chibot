@@ -19,8 +19,15 @@ export const settingsSchema = z.object({
   embeddingQueryPrefix: z.string().max(200),
   embeddingDocumentPrefix: z.string().max(200),
   transcribeModel: z.string().trim().max(200),
+  /** The language spoken into the microphone or in a recording (ISO 639-1, e.g. `ur`); `''` lets the model detect it. */
+  transcribeLanguage: z
+    .string()
+    .trim()
+    .regex(/^([a-z]{2,3})?$/i),
   /** `null` sends no effort, so the model uses its own default. */
   reasoningEffort: z.enum(REASONING_EFFORTS).nullable(),
+  /** What the greeting on a new chat calls the user; `''` keeps "What's on your mind?". */
+  userName: z.string().trim().max(60),
   /** Custom instructions: what chibot should know about the user. */
   aboutUser: z.string().max(1500),
   /** Custom instructions: how chibot should respond. */

@@ -4,12 +4,18 @@ import { Transcription } from '../../src/server/transcription.ts'
 import { testApp } from './fakes.ts'
 
 /** A client whose transcriptions answer `text`, or fail with `error`. */
-function fakeAudio(answer: string | Error, seen: File[] = []) {
+function fakeAudio(
+  answer: string | Error,
+  seen: File[] = [],
+  params: Record<string, unknown>[] = [],
+) {
   return {
     baseURL: 'http://localhost:11434/v1',
     audio: {
       transcriptions: {
-        create: async ({ file }: { file: File }) => {
+        create: async (request: { file: File }) => {
+          const { file } = request
+          params.push(request)
           seen.push(file)
           if (answer instanceof Error) throw answer
           return { text: answer }
@@ -24,6 +30,25 @@ const record = (app: ReturnType<typeof testApp>) => {
   form.append('file', new File(['audio'], 'recording.webm'))
   return app.request('/api/transcriptions', { method: 'POST', body: form })
 }
+
+describe('the spoken language', () => {
+  it('goes to the model when set, and is left out when not (it detects it)', async () => {
+    let language = ''
+    const params: Record<string, unknown>[] = []
+    const app = testApp({
+      transcription: new Transcription(
+        fakeAudio('Salam.', [], params),
+        () => 't-1',
+        () => language,
+      ),
+    })
+    await record(app)
+    expect(params[0]).not.toHaveProperty('language')
+    language = 'ur'
+    await record(app)
+    expect(params[1]).toMatchObject({ model: 't-1', language: 'ur' })
+  })
+})
 
 describe('POST /api/transcriptions', () => {
   it('transcribes a recording', async () => {

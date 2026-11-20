@@ -2,6 +2,7 @@ import { Fragment, useState } from 'react'
 import { Check, RotateCcw } from 'lucide-react'
 import { suggestedPrefixes } from '../../shared/embedding-prefixes.ts'
 import type { ServiceModel } from '../../shared/service-models.ts'
+import { TRANSCRIPTION_LANGUAGES } from '../../shared/transcription-languages.ts'
 import type { Settings } from '../../shared/settings.ts'
 import type { SettingsApi } from './useSettings.ts'
 import { IconButton } from '../ui/IconButton.tsx'
@@ -79,6 +80,11 @@ export function OtherModels({
                 connected={endpoints[service.setting]}
                 onSave={(value) => onChange({ [service.setting]: value })}
               />
+              {service.setting === 'transcribeModel' &&
+                endpoints.transcribeModel &&
+                settings.transcribeModel && (
+                  <LanguageRow settings={settings} onChange={onChange} />
+                )}
               {service.setting === 'embeddingModel' &&
                 endpoints.embeddingModel &&
                 settings.embeddingModel && (
@@ -89,6 +95,44 @@ export function OtherModels({
         </Section>
       ))}
     </>
+  )
+}
+
+/** The language spoken into the microphone and in recordings. */
+function LanguageRow({
+  settings,
+  onChange,
+}: {
+  settings: Settings
+  onChange: SettingsApi['update']
+}) {
+  const known = TRANSCRIPTION_LANGUAGES.some(
+    (language) => language.code === settings.transcribeLanguage,
+  )
+  return (
+    <Row
+      label="Spoken language"
+      description="Tells the model what you speak, which helps with short phrases and accents. Detect automatically lets it decide."
+      htmlFor="setting-transcribe-language"
+    >
+      <select
+        id="setting-transcribe-language"
+        value={settings.transcribeLanguage}
+        onChange={(e) => void onChange({ transcribeLanguage: e.target.value })}
+      >
+        {TRANSCRIPTION_LANGUAGES.map(({ code, name }) => (
+          <option key={code} value={code}>
+            {name}
+          </option>
+        ))}
+        {/* One set some other way (config or the API) stays shown. */}
+        {!known && (
+          <option value={settings.transcribeLanguage}>
+            {settings.transcribeLanguage}
+          </option>
+        )}
+      </select>
+    </Row>
   )
 }
 

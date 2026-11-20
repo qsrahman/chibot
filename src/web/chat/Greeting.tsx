@@ -1,4 +1,5 @@
 import { SetupCard } from './SetupCard.tsx'
+import { greetingText } from './greeting.ts'
 import type { EmptyState } from './recents.ts'
 import { Link } from 'react-router'
 import { Folder } from 'lucide-react'
@@ -20,10 +21,13 @@ const STARTERS = [
 /** An empty chat's greeting, centred above the composer as ChatGPT does. */
 export function Greeting({
   temporary,
+  userName,
   state,
   onStart,
 }: {
   temporary: boolean
+  /** From Settings → Personalization; `''` when not given. */
+  userName: string
   /** What to show under the heading; see `emptyState`. */
   state: EmptyState | null
   /** Puts the start of a message in the box. */
@@ -31,7 +35,11 @@ export function Greeting({
 }) {
   return (
     <div className="greeting">
-      <h1>{temporary ? 'Temporary chat' : 'What’s on your mind?'}</h1>
+      <h1 dir="auto">
+        {temporary
+          ? 'Temporary chat'
+          : greetingText(userName, new Date().getHours())}
+      </h1>
       {temporary ? (
         <p>
           This chat won’t appear in your history or search, and it’s deleted

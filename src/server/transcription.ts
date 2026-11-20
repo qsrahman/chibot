@@ -6,19 +6,29 @@ import type { Endpoint } from './config.ts'
 export class Transcription {
   readonly #client: OpenAI
   readonly #model: () => string
+  readonly #language: () => string
 
-  /** @param model read at each call, since Settings can change it; `''` is off */
-  constructor(client: OpenAI, model: () => string) {
+  /**
+   * @param model read at each call, since Settings can change it; `''` is off
+   * @param language the same: the language spoken (ISO 639-1), or `''` to let the model detect it
+   */
+  constructor(
+    client: OpenAI,
+    model: () => string,
+    language: () => string = () => '',
+  ) {
     this.#client = client
     this.#model = model
+    this.#language = language
   }
 
   /** From `Config.transcription`. */
   static from(
     { baseURL, apiKey }: Endpoint,
     model: () => string,
+    language?: () => string,
   ): Transcription {
-    return new Transcription(new OpenAI({ baseURL, apiKey }), model)
+    return new Transcription(new OpenAI({ baseURL, apiKey }), model, language)
   }
 
   /** Whether there is a model to transcribe with. */
@@ -33,9 +43,11 @@ export class Transcription {
    */
   async transcribe(audio: File, signal?: AbortSignal): Promise<string> {
     const model = this.#model()
+    // Said, it helps short phrases and accents; unsaid, the model detects it.
+    const language = this.#language()
     try {
       const { text } = await this.#client.audio.transcriptions.create(
-        { file: audio, model },
+        { file: audio, model, ...(language && { language }) },
         { signal },
       )
       return text

@@ -283,6 +283,7 @@ function buildApp(
       Transcription.from(
         config.transcription,
         () => settings.get().transcribeModel,
+        () => settings.get().transcribeLanguage,
       ),
   })
 }

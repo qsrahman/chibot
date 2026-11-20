@@ -382,6 +382,21 @@
   color: var(--fg-placeholder);
 }
 
+/* Under the message box of a new chat: the project it starts in. */
+.project-picker {
+  display: flex;
+  width: calc(100% - 32px);
+  max-width: calc(var(--column) - 32px);
+  margin: 8px auto 0;
+}
+
+.project-picker-name {
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* "Transcribing notes.mp3…" above the message box while a recording is read. */
 .audio-busy {
   display: flex;

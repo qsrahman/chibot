@@ -406,12 +406,18 @@ banner says so with a Retry button, and the page reconnects by itself once
   on their project's page; a chat's **…** menu moves it into a project or out.
   Edit a project's name and one-line description, or delete it, from **…** next to its name; deleting it deletes
   its chats and files.
+- **Starting in a project:** under the message box of a new chat, **Project**
+  picks the project the chat starts in (its instructions and files apply), as
+  an alternative to opening the project's page first.
 - **Voice input:** click the mic, speak, click again: the text appears at the
   cursor to check before sending. It needs a transcription model (see
   `OPENAI_TRANSCRIBE_*`); without one the mic is greyed out and says so. An
   **audio file** (MP3, WAV, M4A, OGG, FLAC… up to 25 MB) added to the message,
   with **+**, a paste or a drop, is transcribed the same way and its text is
-  added to the box, not attached.
+  added to the box, not attached. Under **Settings → Other models → Voice
+  input**, **Spoken language** tells the model which language you speak (Urdu,
+  Arabic, English…), which helps short phrases and accents; the default lets it
+  detect the language.
 - **Attachments:** **+** → **Add photos & files**, or paste or drop them onto
   the chat (an "Add anything" card shows while you drag): images (PNG, JPEG, WebP, GIF) and the document types projects
   take. **+** → **Take a photo** opens the device's camera in a preview;
@@ -430,8 +436,9 @@ banner says so with a Retry button, and the page reconnects by itself once
     finished answers**: a browser notification when an answer finishes or a tool needs your
     approval while chibot is in the background. Either way the page title gets a
     "•" until you are back.
-  - *Personalization:* what chibot should know about you, and how it should
-    respond. Sent with every message. **Memory**: turn it off, or edit and
+  - *Personalization:* your name (for the greeting on a new chat, such as
+    "Good afternoon, Que"; the model is not told it), what chibot should know
+    about you, and how it should respond. Sent with every message. **Memory**: turn it off, or edit and
     delete what chibot remembers.
   - *Model:* reasoning effort, and long chats: the context window of your
     model (32,000 tokens unless you set it; **Use N** appears when the server

@@ -1,0 +1,20 @@
+/** Languages offered for voice input: ISO 639-1 code and name. The first (`''`) lets the model decide. */
+export const TRANSCRIPTION_LANGUAGES: { code: string; name: string }[] = [
+  { code: '', name: 'Detect automatically' },
+  { code: 'en', name: 'English' },
+  { code: 'ur', name: 'Urdu' },
+  { code: 'ar', name: 'Arabic' },
+  { code: 'hi', name: 'Hindi' },
+  { code: 'bn', name: 'Bengali' },
+  { code: 'fa', name: 'Persian' },
+  { code: 'tr', name: 'Turkish' },
+  { code: 'es', name: 'Spanish' },
+  { code: 'fr', name: 'French' },
+  { code: 'de', name: 'German' },
+  { code: 'pt', name: 'Portuguese' },
+  { code: 'ru', name: 'Russian' },
+  { code: 'id', name: 'Indonesian' },
+  { code: 'zh', name: 'Chinese' },
+  { code: 'ja', name: 'Japanese' },
+  { code: 'ko', name: 'Korean' },
+]
