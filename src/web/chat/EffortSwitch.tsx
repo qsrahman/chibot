@@ -1,4 +1,4 @@
-import { Check, ChevronDown } from 'lucide-react'
+import { Brain, Check, ChevronDown } from 'lucide-react'
 import {
   EFFORT_HINTS,
   effortChoices,
@@ -28,8 +28,14 @@ export function EffortSwitch({
         popoverTarget={menu.id}
         style={menu.triggerStyle}
       >
+        <Brain
+          className="effort-icon"
+          size={16}
+          strokeWidth={1.5}
+          aria-hidden
+        />
         {label}
-        <ChevronDown size={16} strokeWidth={1.5} />
+        <ChevronDown size={16} strokeWidth={1.5} aria-hidden />
       </button>
       <div
         id={menu.id}

@@ -117,6 +117,13 @@
   }
 }
 
+/* The composer's row is tight on a phone: the effort chip keeps its words, not its icon. */
+@media (max-width: 767px) {
+  .mode-button .effort-icon {
+    display: none;
+  }
+}
+
 /* The find bar's input, on a phone, takes a row of its own: beside the count and
    three 44 px buttons it was left about 90 px wide. */
 @media (max-width: 767px) {

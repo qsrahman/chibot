@@ -13,6 +13,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- **The composer's main button is the mic while the box is empty**, as ChatGPT's is voice: a dimmed send arrow did nothing, and the mic is what an empty box wants. Writing (or attaching a file) turns it into Send, with the plain mic beside it. Without a transcription model the dimmed Send stays.
+- The reasoning-effort chip has a brain icon, so "Auto" or "Medium" reads as a level of thinking (not shown on a phone, where the row is tight).
 - A table no longer has a header bar with a "Table" label: its **Copy table** and **Download CSV** buttons now sit under it, at the right, shown on hover like a message's actions (and always on touch screens).
 - A new chat on a phone puts the composer at the bottom of the screen, within reach of the thumb, with the greeting (and "Pick up where you left off") above it; wider screens and a project's page keep the composer centred.
 

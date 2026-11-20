@@ -194,6 +194,7 @@ export function Composer({
         busy={busy}
         canQueue={canQueue}
         canSend={canSend}
+        empty={text.trim() === '' && attachments.drafts.length === 0}
         uploadQueued={uploadQueued}
         onStop={() => {
           onStop()

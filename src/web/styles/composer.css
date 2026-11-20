@@ -149,7 +149,7 @@
   cursor: default;
 }
 
-/* The reasoning effort chip left of the mic. */
+/* The reasoning effort chip left of the mic (its brain says what the level is of). */
 .mode-button {
   display: inline-flex;
   flex: none;
@@ -207,6 +207,12 @@
 /* The mic while recording. */
 .composer .icon-button.recording {
   color: var(--danger);
+}
+
+/* The mic as the main button (an empty box), while recording: the red stop. */
+.composer .icon-button.primary.recording {
+  background: var(--danger);
+  color: var(--danger-fg);
 }
 
 .composer-error {

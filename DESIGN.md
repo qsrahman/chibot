@@ -143,14 +143,19 @@ sits under it when the server said 401 or 403, or could not be reached.
 
 **Composer.** A 28 px-radius pill on `--surface` with a `--border` outline,
 7×10 px padding and 52 px tall when one line. The textarea grows up to 40 vh.
-A round 36 px icon button on the right is **send** (blue `--accent`, arrow-up icon),
-dimmed while the input is empty, and shows a spinning `LoaderCircle` while a
+A round 36 px icon button on the right is the main one: with nothing written or
+attached and a transcription model set it is the **mic** (blue `--accent`, as
+ChatGPT's main button is voice when the box is empty; a dimmed send arrow would
+do nothing); once there is text or a file it is **send** (arrow-up icon) and the
+plain mic stays beside it. With no transcription model it stays a dimmed send.
+It shows a spinning `LoaderCircle` while a
 message waits for its attachments to upload. While an answer streams it becomes
 **stop** (square icon); once there is text to send, a muted stop button sits
 left of it and the primary button turns back into an arrow-up that **queues**
 the message for after the answer. A "+" button sits on the left (attachments
-and tools, see *Composer tools*); a 36 px `Mic` icon button sits left of send.
-While recording it shows a stop square in `--danger`, then a spinning
+and tools, see *Composer tools*); the 36 px `Mic` icon button sits left of send
+(or is the main button, see above). While recording it shows a stop square in
+`--danger` (a `--danger` fill when it is the main button), then a spinning
 `LoaderCircle` while transcribing. Without transcription it's dimmed to 40 %
 (`aria-disabled`, so its tooltip still says why). Errors show in `--danger`
 14 px text under the composer's row.
@@ -165,7 +170,8 @@ would leave the "+" alone above it). Below 768 px a chosen tool's chip and the
 chip would leave the box a few pixels wide.
 
 *Effort chip.* A transparent 36 px pill (12 px left, 10 px right padding) with
-14 px `--fg` text, the reasoning effort (Auto, Minimal … Max) and a 16 px
+a 16 px `Brain` (saying what the level is of; not on a phone, where the row is
+tight), 14 px `--fg` text, the reasoning effort (Auto, Minimal … Max) and a 16 px
 `ChevronDown`; `--surface-muted` on hover. It opens a menu above it and sits
 left of the mic.
 

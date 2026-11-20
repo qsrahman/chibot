@@ -51,6 +51,8 @@ export function useVoiceInput(
         ? 'Transcribing…'
         : 'Dictate'
   return {
+    /** The server can transcribe, so the mic can be used at all. */
+    supported: transcription,
     state: dictation.state,
     stream: dictation.stream,
     error: dictation.error,

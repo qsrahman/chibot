@@ -12,6 +12,7 @@ export function ComposerActions({
   busy,
   canQueue,
   canSend,
+  empty,
   uploadQueued,
   onStop,
 }: {
@@ -22,6 +23,8 @@ export function ComposerActions({
   /** Busy, with text that can wait for the answer. */
   canQueue: boolean
   canSend: boolean
+  /** Nothing is written and nothing is attached. */
+  empty: boolean
   /** Sent while files were uploading: goes once they are up. */
   uploadQueued: boolean
   onStop: () => void
@@ -40,30 +43,45 @@ export function ComposerActions({
       <Square size={14} fill="currentColor" />
     </button>
   )
+  // With nothing to send, the main button is the mic (as ChatGPT's is voice):
+  // a dimmed send arrow does nothing, and the mic is what an empty box wants.
+  // Typing (or attaching) turns it into Send, and the mic stays beside it.
+  const micIsMain = voice.supported && !busy && empty && !uploadQueued
+  const mic = (main: boolean) => (
+    <button
+      type="button"
+      className={[
+        'icon-button',
+        main && 'primary',
+        voice.recording && 'recording',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      aria-label={voice.micLabel}
+      title={voice.micLabel}
+      // aria-disabled rather than disabled, so the tooltip still shows.
+      aria-disabled={voice.disabled}
+      aria-pressed={voice.recording}
+      onClick={voice.toggle}
+    >
+      {voice.state === 'transcribing' ? (
+        <LoaderCircle className="spin" size={20} strokeWidth={1.5} />
+      ) : voice.recording ? (
+        <Square size={14} fill="currentColor" />
+      ) : (
+        <Mic size={20} strokeWidth={main ? 2 : 1.5} />
+      )}
+    </button>
+  )
   return (
     <div className="composer-actions">
       <EffortSwitch effort={effort} onChange={onEffort} />
       {voice.stream && <DictationMeter stream={voice.stream} />}
-      <button
-        type="button"
-        className={voice.recording ? 'icon-button recording' : 'icon-button'}
-        aria-label={voice.micLabel}
-        title={voice.micLabel}
-        // aria-disabled rather than disabled, so the tooltip still shows.
-        aria-disabled={voice.disabled}
-        aria-pressed={voice.recording}
-        onClick={voice.toggle}
-      >
-        {voice.state === 'transcribing' ? (
-          <LoaderCircle className="spin" size={20} strokeWidth={1.5} />
-        ) : voice.recording ? (
-          <Square size={14} fill="currentColor" />
-        ) : (
-          <Mic size={20} strokeWidth={1.5} />
-        )}
-      </button>
+      {!micIsMain && mic(false)}
       {busy && canQueue && stop(false)}
-      {busy ? (
+      {micIsMain ? (
+        mic(true)
+      ) : busy ? (
         canQueue ? (
           <button
             type="submit"
