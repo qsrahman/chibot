@@ -407,7 +407,8 @@ shape is left as it is.
 above it (Add photos & files, then Create an image).
 "Add photos & files" has a muted hint line ("Images, PDF, Word, text and
 code"); a tool that isn't set up or is switched off stays listed, disabled in
-`--fg-muted`, with the reason as its hint line. The picked tool shows as a pill
+`--fg-muted`, with the reason as its hint line. The menu is 280 px wide (ChatGPT's
+is about that; hints wrap instead of widening it). The picked tool shows as a pill
 chip (`--bubble-bg` / `--bubble-fg`, 36 px tall, icon + "Search"/"Image" +
 `X`) before the text; it applies to one message.
 

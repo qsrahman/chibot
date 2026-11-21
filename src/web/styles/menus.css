@@ -49,6 +49,11 @@
   position-area: block-start span-inline-end;
 }
 
+/* Hints wrap rather than widen the menu; ChatGPT's is about this wide. */
+.menu.add-menu {
+  width: min(280px, calc(100vw - 32px));
+}
+
 /* A name over a muted hint; .menu-item alone is one 36 px line. */
 .menu-item.has-hint {
   height: auto;

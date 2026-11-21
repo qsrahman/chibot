@@ -65,7 +65,7 @@ export function AddMenu({
         id={menu.id}
         ref={menu.ref}
         popover="auto"
-        className="menu above"
+        className="menu above add-menu"
         role="menu"
         style={menu.style}
         {...menu.menuProps}
@@ -98,9 +98,7 @@ export function AddMenu({
             <Camera size={18} strokeWidth={1.5} aria-hidden />
             <span className="menu-item-text">
               Take a photo
-              <span className="menu-hint">
-                With this device’s camera; it is attached to your message
-              </span>
+              <span className="menu-hint">Attached to your message</span>
             </span>
           </button>
         )}

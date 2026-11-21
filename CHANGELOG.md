@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Changed
+
+- The composer's **+** menu is 280 px wide (it was 384 px, widened by its longest hint); hints wrap, and the camera hint is shorter.
+
 ## [0.25.0] - 2026-11-21
 
 ### Added

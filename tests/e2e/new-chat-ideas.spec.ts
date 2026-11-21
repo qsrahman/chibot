@@ -125,3 +125,11 @@ test('the spoken language is set under voice input and saved', async ({
     })
     .toBe('ur')
 })
+
+test('the + menu is narrow, its hints wrap', async ({ page }) => {
+  await page.goto('/')
+  await appReady(page)
+  await page.getByRole('button', { name: 'Add files and more' }).click()
+  const box = await page.locator('.add-menu').boundingBox()
+  expect(box?.width).toBeLessThanOrEqual(280)
+})
