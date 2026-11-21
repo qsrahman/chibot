@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-11-21
+
 ### Added
 
 - **Read aloud.** A speaker button under each answer has the browser's own voice read it (code blocks left out, Urdu and Arabic text read in an Urdu voice), and stops on a second click. It uses the Web Speech API, so nothing leaves the browser, and it is hidden where the browser can't speak.
