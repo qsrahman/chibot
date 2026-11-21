@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- **A dropped connection is retried before you see it.** When the stream to the model is cut before it has said anything (a reset, a timeout, a server that hangs up), chibot asks again after 0.5 s and then 1.5 s, instead of showing an error with a Retry button. Once the answer has begun, or when the server itself refused the request, nothing is repeated.
+
 ### Changed
 
 - The composer's **+** menu is 280 px wide (it was 384 px, widened by its longest hint); hints wrap, and the camera hint is shorter.

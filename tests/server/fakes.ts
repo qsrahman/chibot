@@ -109,7 +109,9 @@ export interface FakeOptions {
 export function fakeClient(
   /** Per streaming call: the events, an error, or a function picking them. */
   events:
-    ResponseStreamEvent[] | Error | ((call: number) => ResponseStreamEvent[]),
+    | ResponseStreamEvent[]
+    | Error
+    | ((call: number) => (ResponseStreamEvent | Error)[]),
   calls: FakeCall[] = [],
   {
     title = 'Test Title',
@@ -159,6 +161,8 @@ export function fakeClient(
       for (const event of streamed) {
         await Promise.resolve()
         if (options?.signal?.aborted) throw new OpenAI.APIUserAbortError()
+        // An error among the events is thrown at that point: a dropped stream.
+        if (event instanceof Error) throw event
         yield event
       }
     })()

@@ -89,7 +89,10 @@ phases*). Next: Phase 11a (multiple providers, design agreed) and Phase 11
   handled the same way: the request's `AbortSignal` aborts the upstream call
   and the partial answer is saved. Nothing generates in the background.
 - When a request **fails**, the user message is kept and the UI offers *Retry*
-  (that's a regenerate from that message).
+  (that's a regenerate from that message). A stream that drops *before the
+  model has said anything* (not a refusal, which the SDK already retries for
+  408/409/429/5xx) is asked again twice, after about 0.5 s and 1.5 s
+  (`chat/stream-retry.ts`); after any output, nothing is repeated.
 - **Context growth:** long chats exceed the context window. chibot handles it
   itself, whatever the server (see Long chats in §6 and
   [CONTEXT.md](CONTEXT.md)): it shortens old tool results, then has the chat

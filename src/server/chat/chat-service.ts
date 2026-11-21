@@ -30,6 +30,11 @@ import {
 } from './context.ts'
 import type { ModelRequests } from './model-requests.ts'
 import { chatInstructions } from './prompts.ts'
+import {
+  MAX_STREAM_RETRIES,
+  isDroppedStream,
+  waitToRetry,
+} from './stream-retry.ts'
 import type { TitleWriter } from './title-writer.ts'
 import { TOOL_DENIED, ToolRegistry } from '../tool-registry.ts'
 
@@ -408,10 +413,18 @@ export class ChatService {
     // Whether the model has begun answering: after that a retry would repeat
     // what the user has already seen.
     let started = false
+    let dropped = 0
+    // Whether the server accepted the request: the SDK has already retried
+    // a request that failed to connect, so only a stream that then dropped is
+    // asked again here.
+    let connected = false
     try {
       for (let attempt = 0; ; attempt++) {
         try {
-          for await (const event of await send(input)) {
+          connected = false
+          const stream = await send(input)
+          connected = true
+          for await (const event of stream) {
             const refusal = tooLongInStream(event)
             if (refusal && !started) throw new StreamTooLong(refusal)
             if (!PRELUDE.has(event.type)) started = true
@@ -440,6 +453,19 @@ export class ChatService {
           }
           break
         } catch (err) {
+          // The connection dropped before the model said anything: ask again
+          // after a short wait, without the user having seen a thing.
+          if (
+            connected &&
+            !started &&
+            dropped < MAX_STREAM_RETRIES &&
+            !signal?.aborted &&
+            isDroppedStream(err)
+          ) {
+            await waitToRetry(dropped++, signal)
+            attempt-- // a drop is not a try at the overflow below
+            continue
+          }
           // The estimate was too low: the server says the request is too long,
           // in its reply or at the start of the stream. Summarize harder and
           // ask once more.
