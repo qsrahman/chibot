@@ -11,6 +11,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 ### Changed
 
 - Code only: `chat/turns.ts` (691 lines) is split by job into `turns.ts` (grouping items into turns), `nextStep.ts`, `sources.ts`, `toolSummary.ts`, `toolImages.ts` and `toolJson.ts`. Behavior is unchanged.
+- Code only: `ChatService`'s model call is easier to follow: the request's arguments are built by `modelRequest`, and which recovery a failure gets (ask again after a drop, or summarize harder after "too long") is decided by `recoveryFor` in `chat/stream-retry.ts`, with its own tests. Behavior is unchanged.
 - Code only: the three largest web components are smaller. `TurnView` keeps its rows of buttons and the interrupted-answer notice in `TurnActions.tsx`; `ChatPage` gets `useAnnouncement`, `usePageTitle` and `useChatMedia`; `Sidebar` gets `BrandMark`, `SidebarProjects`, `SidebarButton` and `useDrawerFocus`. Behavior is unchanged.
 - The composer's **+** menu is 280 px wide (it was 384 px, widened by its longest hint); hints wrap, and the camera hint is shorter.
 

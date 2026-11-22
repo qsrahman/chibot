@@ -22,19 +22,10 @@ import type { MemoryStore } from '../memory-store.ts'
 import type { SettingsStore } from '../settings-store.ts'
 import type { Compactor } from './compactor.ts'
 import { fitContext, type FitPlan } from './context-fit.ts'
-import {
-  isContextOverflow,
-  PRELUDE,
-  StreamTooLong,
-  tooLongInStream,
-} from './context.ts'
+import { PRELUDE, StreamTooLong, tooLongInStream } from './context.ts'
 import type { ModelRequests } from './model-requests.ts'
 import { chatInstructions } from './prompts.ts'
-import {
-  MAX_STREAM_RETRIES,
-  isDroppedStream,
-  waitToRetry,
-} from './stream-retry.ts'
+import { recoveryFor, waitToRetry } from './stream-retry.ts'
 import type { TitleWriter } from './title-writer.ts'
 import { TOOL_DENIED, ToolRegistry } from '../tool-registry.ts'
 
@@ -369,7 +360,7 @@ export class ChatService {
     ResponseStreamEvent | TurnCompactionEvent,
     { leafId: number; output: ResponseInputItem[] | null; answered: boolean }
   > {
-    const { model, instructions, tools, forced, memories } = plan
+    const { model, memories } = plan
     let input = (yield* fitContext(
       this.#context,
       plan,
@@ -381,45 +372,18 @@ export class ChatService {
     let output: ResponseInputItem[] | null = null
     let answered = false
     const send = (input: ResponseInputItem[]) =>
-      this.#model.stream(
-        {
-          model,
-          instructions,
-          input,
-          ...(tools.length > 0 && {
-            tools,
-            // Make the last request answer instead of calling more.
-            ...(step === MAX_STEPS && { tool_choice: 'none' as const }),
-            ...(step === 1 &&
-              forced && {
-                tool_choice: { type: 'function', name: forced.name },
-              }),
-          }),
-          stream: true,
-          store: false,
-        },
-        {
-          // Reasoning items can only be replayed without server-side
-          // storage when they carry their encrypted content. A server that
-          // doesn't know the option or `reasoning` gets the request without.
-          include: ['reasoning.encrypted_content'],
-          reasoning: {
-            summary: 'auto',
-            ...(plan.reasoningEffort && { effort: plan.reasoningEffort }),
-          },
-        },
-        signal,
-      )
+      this.#model.stream(...modelRequest(plan, step, input), signal)
     // Whether the model has begun answering: after that a retry would repeat
     // what the user has already seen.
     let started = false
     let dropped = 0
+    let compacted = false
     // Whether the server accepted the request: the SDK has already retried
     // a request that failed to connect, so only a stream that then dropped is
     // asked again here.
     let connected = false
     try {
-      for (let attempt = 0; ; attempt++) {
+      for (;;) {
         try {
           connected = false
           const stream = await send(input)
@@ -453,40 +417,31 @@ export class ChatService {
           }
           break
         } catch (err) {
-          // The connection dropped before the model said anything: ask again
-          // after a short wait, without the user having seen a thing.
-          if (
-            connected &&
-            !started &&
-            dropped < MAX_STREAM_RETRIES &&
-            !signal?.aborted &&
-            isDroppedStream(err)
-          ) {
+          const recovery = recoveryFor(err, {
+            connected,
+            started,
+            dropped,
+            compacted,
+            aborted: !!signal?.aborted,
+            autoCompact: plan.autoCompact,
+          })
+          if (recovery === 'wait') {
             await waitToRetry(dropped++, signal)
-            attempt-- // a drop is not a try at the overflow below
-            continue
-          }
-          // The estimate was too low: the server says the request is too long,
-          // in its reply or at the start of the stream. Summarize harder and
-          // ask once more.
-          if (
-            attempt > 0 ||
-            started ||
-            !plan.autoCompact ||
-            !(isContextOverflow(err) || err instanceof StreamTooLong)
-          ) {
+          } else if (recovery === 'compact') {
+            compacted = true
+            const retry = yield* fitContext(
+              this.#context,
+              plan,
+              conversationId,
+              leafId,
+              signal,
+              true,
+            )
+            if (!retry) throw err
+            input = retry
+          } else {
             throw err
           }
-          const retry = yield* fitContext(
-            this.#context,
-            plan,
-            conversationId,
-            leafId,
-            signal,
-            true,
-          )
-          if (!retry) throw err
-          input = retry
         }
       }
     } finally {
@@ -581,4 +536,44 @@ async function untilOrTimeout(promise: Promise<void>, ms: number) {
     new Promise((resolve) => (timer = setTimeout(resolve, ms))),
   ])
   clearTimeout(timer)
+}
+
+/** The arguments of one model request of a turn: `step` 1 may force the tool the user picked, the last may not call tools. */
+function modelRequest(
+  plan: TurnPlan,
+  step: number,
+  input: ResponseInputItem[],
+): [
+  Parameters<ModelRequests['stream']>[0],
+  Parameters<ModelRequests['stream']>[1],
+] {
+  const { model, instructions, tools, forced } = plan
+  return [
+    {
+      model,
+      instructions,
+      input,
+      ...(tools.length > 0 && {
+        tools,
+        // Make the last request answer instead of calling more.
+        ...(step === MAX_STEPS && { tool_choice: 'none' as const }),
+        ...(step === 1 &&
+          forced && {
+            tool_choice: { type: 'function', name: forced.name },
+          }),
+      }),
+      stream: true,
+      store: false,
+    },
+    {
+      // Reasoning items can only be replayed without server-side storage
+      // when they carry their encrypted content. A server that doesn't know
+      // the option or `reasoning` gets the request without.
+      include: ['reasoning.encrypted_content'],
+      reasoning: {
+        summary: 'auto',
+        ...(plan.reasoningEffort && { effort: plan.reasoningEffort }),
+      },
+    },
+  ]
 }

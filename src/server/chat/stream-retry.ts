@@ -1,5 +1,6 @@
 import { setTimeout as sleep } from 'node:timers/promises'
 import OpenAI from 'openai'
+import { isContextOverflow, StreamTooLong } from './context.ts'
 
 /** Waits before each retry of a stream that dropped before any output. */
 const RETRY_DELAYS_MS = [500, 1500] as const
@@ -25,4 +26,49 @@ export function isDroppedStream(err: unknown): boolean {
 export function waitToRetry(attempt: number, signal?: AbortSignal) {
   const jitter = Math.floor(Math.random() * 151)
   return sleep(RETRY_DELAYS_MS[attempt]! + jitter, undefined, { signal })
+}
+
+/** What a failed request of a turn's model call gets next (see `recoveryFor`). */
+export interface RecoveryState {
+  /** The server accepted the request: the failure came from the stream. */
+  connected: boolean
+  /** The model has begun answering: a repeat would show the user the same text twice. */
+  started: boolean
+  /** Times it was asked again after a drop. */
+  dropped: number
+  /** The context was already summarized harder for this request. */
+  compacted: boolean
+  aborted: boolean
+  autoCompact: boolean
+}
+
+/**
+ * How to go on after `err`, or `null` to fail with it:
+ * - `'wait'`: the connection dropped before any output; ask again after a
+ *   short wait, without the user having seen a thing.
+ * - `'compact'`: the estimate was too low and the server says the request is
+ *   too long, in its reply or at the start of the stream; summarize harder
+ *   and ask once more.
+ */
+export function recoveryFor(
+  err: unknown,
+  s: RecoveryState,
+): 'wait' | 'compact' | null {
+  if (s.started) return null
+  if (
+    s.connected &&
+    s.dropped < MAX_STREAM_RETRIES &&
+    !s.aborted &&
+    isDroppedStream(err)
+  ) {
+    return 'wait'
+  }
+  if (
+    !s.compacted &&
+    s.autoCompact &&
+    (isContextOverflow(err) || err instanceof StreamTooLong)
+  ) {
+    return 'compact'
+  }
+  return null
 }

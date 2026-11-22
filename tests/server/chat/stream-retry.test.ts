@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import OpenAI from 'openai'
 import { ConversationStore } from '../../../src/server/conversations/index.ts'
-import { isDroppedStream } from '../../../src/server/chat/stream-retry.ts'
+import { StreamTooLong } from '../../../src/server/chat/context.ts'
+import {
+  isDroppedStream,
+  recoveryFor,
+} from '../../../src/server/chat/stream-retry.ts'
 import {
   answerEvents,
   drain,
@@ -88,5 +92,43 @@ describe('a stream that drops before any output', () => {
     const chat = testChat(refused, { store, calls })
     await expect(drain(chat.runTurn(id, { text: 'Hi' }))).rejects.toThrow('500')
     expect(calls).toHaveLength(1)
+  })
+})
+
+describe('recoveryFor', () => {
+  const base = {
+    connected: true,
+    started: false,
+    dropped: 0,
+    compacted: false,
+    aborted: false,
+    autoCompact: true,
+  }
+  const tooLong = new OpenAI.BadRequestError(
+    400,
+    { message: 'maximum context length exceeded' },
+    'maximum context length exceeded',
+    new Headers(),
+  )
+
+  it('waits after a drop, up to twice, never once output began or after Stop', () => {
+    expect(recoveryFor(terminated(), base)).toBe('wait')
+    expect(recoveryFor(terminated(), { ...base, dropped: 2 })).toBeNull()
+    expect(recoveryFor(terminated(), { ...base, started: true })).toBeNull()
+    expect(recoveryFor(terminated(), { ...base, aborted: true })).toBeNull()
+    // The SDK has already retried a request that never connected.
+    expect(recoveryFor(terminated(), { ...base, connected: false })).toBeNull()
+  })
+
+  it('compacts once when the request was too long, if that is on', () => {
+    expect(recoveryFor(tooLong, base)).toBe('compact')
+    expect(recoveryFor(new StreamTooLong('too long'), base)).toBe('compact')
+    expect(recoveryFor(tooLong, { ...base, compacted: true })).toBeNull()
+    expect(recoveryFor(tooLong, { ...base, autoCompact: false })).toBeNull()
+    expect(recoveryFor(tooLong, { ...base, started: true })).toBeNull()
+  })
+
+  it('does nothing for other failures', () => {
+    expect(recoveryFor(new Error('bug'), base)).toBeNull()
   })
 })
