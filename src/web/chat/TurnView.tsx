@@ -1,32 +1,20 @@
 // One turn of a chat: the question, then the answer with its thoughts, tool
 // activity, images, sources and actions.
 import { useContext, useState, type KeyboardEvent, type ReactNode } from 'react'
-import {
-  CircleAlert,
-  GitBranch,
-  Lightbulb,
-  Pencil,
-  RefreshCw,
-  Volume2,
-  VolumeX,
-  Wrench,
-} from 'lucide-react'
+import { Lightbulb, Wrench } from 'lucide-react'
 import { FileCard } from '../ui/FileCard.tsx'
 import { ImageViewer, opensViewer, type ViewedImage } from './ImageViewer.tsx'
 import { Markdown } from './Markdown.tsx'
 import { TOUCH_ONLY, useMediaQuery } from '../ui/useMediaQuery.ts'
-import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
-import { canSpeak, toggleReading, useReading } from './readAloud.ts'
-import { messageTime } from '../conversations/dates.ts'
+import { AnswerActions, Interrupted, UserActions } from './TurnActions.tsx'
 import { LiveContext, SourcesContext } from './sourcesContext.ts'
 import { interrupted, type ToolActivity, type Turn } from './turns.ts'
 import { nextStepOf, holdBackCard, shownText } from './nextStep.ts'
 import { sourcesOf } from './sources.ts'
 import { NextStepCard } from './NextStepCard.tsx'
 import { NEXT_STEP_TOOL } from '../../shared/tools.ts'
-import { describeContext, describeUsage } from './usage.ts'
 import { describeUsedMemory } from './usedMemory.ts'
-import { CompactionNote, CompactNow } from './CompactNote.tsx'
+import { CompactionNote } from './CompactNote.tsx'
 import type { Compaction } from '../../shared/types.ts'
 import { AnswerImages } from './AnswerImages.tsx'
 import { Sources } from './Sources.tsx'
@@ -106,18 +94,10 @@ export function TurnView({
     : pending
       ? holdBackCard(answer.text)
       : shownText(answer)
-  const readingKey = String(answer?.itemId ?? question.itemId)
-  const reading = useReading() === readingKey
   const nextStep =
     latest && !pending && !approval && answer && !answer.incomplete
       ? nextStepOf(answer)
       : null
-  const answerUsage = describeUsage(answer?.usage)
-  const contextUsage = describeContext(
-    answer?.lastUsage,
-    context.window,
-    context.trigger,
-  )
 
   return (
     <div
@@ -177,25 +157,12 @@ export function TurnView({
         </div>
       )}
       {!pending && !editing && (
-        <div className="actions user-actions">
-          {question.text && <CopyButton text={question.text} />}
-          {saved && (
-            <IconAction
-              label="Edit message"
-              disabled={busy}
-              onClick={() => setEditing(true)}
-            >
-              <Pencil />
-            </IconAction>
-          )}
-          {question.versions && onSwitch && (
-            <VersionSwitcher
-              versions={question.versions}
-              disabled={busy}
-              onSwitch={onSwitch}
-            />
-          )}
-        </div>
+        <UserActions
+          question={question}
+          busy={busy}
+          onEdit={() => setEditing(true)}
+          onSwitch={onSwitch}
+        />
       )}
 
       {!pending && usedMemory && onShowMemories && (
@@ -249,119 +216,34 @@ export function TurnView({
       )}
       {answer && <Sources answer={answer} />}
       {approval}
-      {!pending && !approval && latest && interrupted(turn) && failure && (
-        <div className="recovery failed" role="alert">
-          <CircleAlert size={16} aria-hidden />
-          <div>
-            <p>The answer stopped unexpectedly.</p>
-            <p className="reason">{failure}</p>
-          </div>
-          <button
-            type="button"
-            className="button"
-            disabled={busy}
-            onClick={() => onRetry?.()}
-          >
-            Retry
-          </button>
-        </div>
-      )}
-      {!pending && !approval && latest && interrupted(turn) && !failure && (
-        <div className="recovery" role="group" aria-label="Answer interrupted">
-          <span>
-            {answer
-              ? 'The answer stopped before it was finished.'
-              : 'There is no answer to this message.'}
-          </span>
-          {answer && (
-            <button
-              type="button"
-              className="button"
-              disabled={busy}
-              onClick={() => onContinue?.()}
-            >
-              Continue
-            </button>
-          )}
-          {/* Regenerating needs the saved ids, which a just-stopped answer lacks until the chat reloads. */}
-          {saved && (
-            <button
-              type="button"
-              className="button"
-              disabled={busy}
-              onClick={() => onRegenerate?.()}
-            >
-              {answer ? 'Regenerate' : 'Try again'}
-            </button>
-          )}
-        </div>
+      {!pending && !approval && latest && interrupted(turn) && (
+        <Interrupted
+          hasAnswer={!!answer}
+          saved={saved}
+          failure={failure}
+          busy={busy}
+          onRetry={onRetry}
+          onContinue={onContinue}
+          onRegenerate={onRegenerate}
+        />
       )}
       {nextStep && onNextStep && (
         <NextStepCard step={nextStep} onChoose={onNextStep} />
       )}
       {!pending && !approval && (
-        <div className="actions answer-actions">
-          {answer && <CopyButton text={text} />}
-          {answer && !pending && canSpeak() && (
-            <IconAction
-              label={reading ? 'Stop reading' : 'Read aloud'}
-              pressed={reading}
-              onClick={() => toggleReading(readingKey, text)}
-            >
-              {reading ? <VolumeX /> : <Volume2 />}
-            </IconAction>
-          )}
-          {saved && (
-            <IconAction
-              label={answer ? 'Regenerate' : 'Retry'}
-              disabled={busy}
-              onClick={() => onRegenerate?.()}
-            >
-              <RefreshCw />
-            </IconAction>
-          )}
-          {answer && onBranch && (
-            <IconAction
-              label="Branch in new chat"
-              disabled={busy}
-              onClick={onBranch}
-            >
-              <GitBranch />
-            </IconAction>
-          )}
-          {answer?.versions && onSwitch && (
-            <VersionSwitcher
-              versions={answer.versions}
-              disabled={busy}
-              onSwitch={onSwitch}
-            />
-          )}
-          {answer?.model && (
-            <span
-              className="usage model-name"
-              title={
-                answer.createdAt
-                  ? `Written by ${answer.model}, ${messageTime(answer.createdAt)}`
-                  : 'Model that wrote this answer'
-              }
-            >
-              {answer.model}
-            </span>
-          )}
-          {contextUsage && (
-            <span
-              className={contextUsage.nearLimit ? 'usage near-limit' : 'usage'}
-              title={[contextUsage.detail, answerUsage?.detail]
-                .filter(Boolean)
-                .join(' · ')}
-            >
-              {contextUsage.short}
-            </span>
-          )}
-          {latest && onCompact && (
-            <CompactNow busy={!!busy} onCompact={onCompact} />
-          )}
-        </div>
+        <AnswerActions
+          answer={answer}
+          itemId={answer?.itemId ?? question.itemId}
+          text={text}
+          saved={saved}
+          busy={busy}
+          latest={latest}
+          context={context}
+          onRegenerate={onRegenerate}
+          onBranch={onBranch}
+          onSwitch={onSwitch}
+          onCompact={onCompact}
+        />
       )}
       <ImageViewer image={viewing} onClose={() => setViewing(null)} />
     </div>
