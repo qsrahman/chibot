@@ -25,15 +25,15 @@ import { ProjectDetails } from '../projects/ProjectDetails.tsx'
 import { ProjectHeading } from '../projects/ProjectHeading.tsx'
 import { SHORTCUTS, useShortcuts } from '../ui/shortcuts.ts'
 import { triggerAt } from '../../shared/context.ts'
-import { knownUrls } from '../../shared/media.ts'
-import { MediaContext } from './mediaContext.ts'
+import { MediaContext, useChatMedia } from './mediaContext.ts'
 import { ToolInfoContext } from './toolInfo.ts'
 import { interrupted, waitingCalls, type Turn } from './turns.ts'
 import { ApprovalCard, TurnView } from './TurnView.tsx'
 import { describeUsage } from './usage.ts'
 import { useAttachments } from './useAttachments.ts'
 import { toolOptions as toolOptionsOf } from './toolOptions.tsx'
-import { useAnswerAlert } from './useAnswerAlert.ts'
+import { useAnnouncement } from './useAnnouncement.ts'
+import { usePageTitle } from './usePageTitle.ts'
 import { useChat } from './useChat.ts'
 import { DropOverlay } from './DropOverlay.tsx'
 import { useFileDrop } from './useFileDrop.ts'
@@ -160,22 +160,7 @@ export function ChatPage({
     trigger: contextSettings?.autoCompact ? triggerAt(contextSettings) : null,
   }
   const composerRef = useRef<HTMLTextAreaElement>(null)
-  // Read out by screen readers (a live region): an answer starting, then
-  // ready or waiting for approval. Errors announce themselves (alert).
-  const [announcement, setAnnouncement] = useState('')
-  const wasBusy = useRef(false)
-  useEffect(() => {
-    if (busy && !wasBusy.current) setAnnouncement('Answering…')
-    else if (!busy && wasBusy.current && !error) {
-      setAnnouncement(
-        waiting.length > 0
-          ? 'A tool is waiting for your approval'
-          : 'Answer ready',
-      )
-    }
-    wasBusy.current = busy
-  }, [busy, error, waiting.length])
-  useEffect(() => setAnnouncement(''), [id])
+  const announcement = useAnnouncement(id, busy, error, waiting.length)
   // The turn whose question is open for editing (one at a time).
   const [editingTurn, setEditingTurn] = useState<string | null>(null)
   useEffect(() => setEditingTurn(null), [id])
@@ -245,17 +230,7 @@ export function ChatPage({
     composerRef,
   )
 
-  // The addresses in answers that may load by themselves: those the user wrote
-  // and tools returned (the server checks the same, and which it knows).
-  const media = useMemo(() => {
-    if (!id) return null
-    const shown = pending ? [...turns, pending.turn] : turns
-    const texts = shown.flatMap(({ question, answer }) => [
-      question.text,
-      ...(answer?.tools.map((tool) => tool.output ?? '') ?? []),
-    ])
-    return { conversationId: id, known: knownUrls(texts) }
-  }, [id, turns, pending])
+  const media = useChatMedia(id, turns, pending)
 
   const temporary = id ? isTemporary : temporaryMode
   const recentChatList = useMemo(
@@ -313,16 +288,11 @@ export function ChatPage({
       ? project?.name
       : null
 
-  // Tabs, history and bookmarks name the chat (or project) on screen.
-  const alerted = useAnswerAlert(
-    id,
-    { busy, waiting: waiting.length > 0, failed: error !== null },
-    pageTitle ?? 'chibot',
-  )
-  useEffect(() => {
-    const name = pageTitle ? `${pageTitle} – chibot` : 'chibot'
-    document.title = alerted ? `• ${name}` : name
-  }, [pageTitle, alerted])
+  usePageTitle(id, pageTitle, {
+    busy,
+    waiting: waiting.length > 0,
+    failed: error !== null,
+  })
 
   return (
     <ToolInfoContext value={settings.tools}>
