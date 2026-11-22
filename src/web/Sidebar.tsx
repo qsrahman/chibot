@@ -1,21 +1,11 @@
-import { useEffect, useRef, useState, type ReactElement } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
-  Link,
-  NavLink,
   useLocation,
   useMatch,
   useNavigate,
   useSearchParams,
 } from 'react-router'
-import {
-  Folder,
-  FolderPlus,
-  Keyboard,
-  PanelLeft,
-  Search,
-  Settings,
-  SquarePen,
-} from 'lucide-react'
+import { Keyboard, PanelLeft, Search, Settings, SquarePen } from 'lucide-react'
 import type { ConversationListItem } from '../shared/types.ts'
 import { ArchivedDialog } from './conversations/ArchivedDialog.tsx'
 import { ConversationRow } from './conversations/ConversationRow.tsx'
@@ -33,6 +23,10 @@ import { useToast } from './ui/toast.tsx'
 import type { ConversationsApi } from './conversations/useConversations.ts'
 import type { ProjectsApi } from './projects/useProjects.ts'
 import type { SettingsApi } from './settings/useSettings.ts'
+import { BrandMark } from './BrandMark.tsx'
+import { SidebarButton } from './SidebarButton.tsx'
+import { SidebarProjects } from './SidebarProjects.tsx'
+import { useDrawerFocus } from './useDrawerFocus.ts'
 
 interface Props {
   collapsed: boolean
@@ -60,25 +54,8 @@ export function Sidebar({
 }: Props) {
   const navigate = useNavigate()
   const nav = useRef<HTMLElement>(null)
-  // The phone drawer covers the page like a dialog: focus moves into it, and
-  // back to what opened it once it closes (the page behind is inert, and
-  // Escape closes it: see App and the nav's onKeyDown).
   const open = drawer && !collapsed
-  useEffect(() => {
-    if (!open) return
-    const opener = document.activeElement
-    nav.current?.querySelector<HTMLElement>('button, a[href]')?.focus()
-    return () => {
-      // Unless something else has taken focus meanwhile (a chat opened).
-      // Hiding the drawer has usually sent it to the page by now.
-      const active = document.activeElement
-      const free =
-        !active || active === document.body || nav.current?.contains(active)
-      if (opener instanceof HTMLElement && opener.isConnected && free) {
-        opener.focus()
-      }
-    }
-  }, [open])
+  useDrawerFocus(open, nav)
   const openId = useMatch('/c/:id')?.params.id
   const { pathname } = useLocation()
   // Opening a chat (or a new one) closes the drawer.
@@ -191,27 +168,7 @@ export function Sidebar({
         }}
       >
         <div className="sidebar-top">
-          {!collapsed && (
-            <span className="brand">
-              <svg
-                className="brand-mark"
-                viewBox="0 0 32 32"
-                aria-hidden="true"
-              >
-                <g
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={3.2}
-                  strokeLinecap="round"
-                >
-                  <path d="M8.5 7.5C11.8 7.7 15 10.5 15 17V25" />
-                  <path d="M15 18C15 12.5 18.8 9.5 21.5 9.5" />
-                </g>
-                <circle className="bead" cx="23.7" cy="9.5" r="2.5" />
-              </svg>
-              chibot
-            </span>
-          )}
+          {!collapsed && <BrandMark />}
           <button
             type="button"
             className="icon-button"
@@ -227,40 +184,13 @@ export function Sidebar({
 
         {!collapsed && (
           <div className="sidebar-list">
-            <section>
-              {/* Labels, not headings: the sidebar comes before the page's own
-                  heading, and its groups would be the first outline a screen
-                  reader lists. */}
-              <p className="sidebar-heading">Projects</p>
-              <SidebarButton
-                icon={<FolderPlus />}
-                label="New project"
-                onClick={() => setNewProjectOpen(true)}
-              />
-              {/* One message when the server is down, under the chats. */}
-              {projects.error && projects.error !== conversations.error && (
-                <p className="sidebar-note">{projects.error}</p>
-              )}
-              {projects.projects.map((project) => (
-                <NavLink
-                  key={project.id}
-                  to={`/projects/${project.id}`}
-                  className="sidebar-row"
-                  title={
-                    project.description
-                      ? `${project.name}: ${project.description}`
-                      : project.name
-                  }
-                >
-                  <span className="row-icon" aria-hidden>
-                    <Folder />
-                  </span>
-                  <span className="row-label" dir="auto">
-                    {project.name}
-                  </span>
-                </NavLink>
-              ))}
-            </section>
+            <SidebarProjects
+              projects={projects.projects}
+              error={
+                projects.error !== conversations.error ? projects.error : null
+              }
+              onNew={() => setNewProjectOpen(true)}
+            />
             {conversations.loaded &&
               !conversations.error &&
               conversations.conversations.length === 0 && (
@@ -377,45 +307,5 @@ export function Sidebar({
         />
       </nav>
     </>
-  )
-}
-
-/** A full-width row in the expanded sidebar, an icon in the collapsed rail. */
-function SidebarButton({
-  icon,
-  label,
-  to,
-  className,
-  onClick,
-}: {
-  icon: ReactElement
-  label: string
-  to?: string
-  className?: string
-  onClick?: () => void
-}) {
-  const classes = className ? `sidebar-row ${className}` : 'sidebar-row'
-  const content = (
-    <>
-      <span className="row-icon" aria-hidden>
-        {icon}
-      </span>
-      <span className="row-label">{label}</span>
-    </>
-  )
-  return to ? (
-    <Link to={to} className={classes} aria-label={label} title={label}>
-      {content}
-    </Link>
-  ) : (
-    <button
-      type="button"
-      className={classes}
-      aria-label={label}
-      title={label}
-      onClick={onClick}
-    >
-      {content}
-    </button>
   )
 }
