@@ -2,7 +2,7 @@
 // sections, top-level code units, paragraphs, and only then lines, sentences
 // or words, so a chunk reads as a unit rather than as a slice.
 // About 400 tokens, with 15% overlap. Measured on two sets of questions
-// (PLAN.md, Phase 8): at the same amount of text per search, smaller chunks put
+// (docs/PHASES.md, Phase 8): at the same amount of text per search, smaller chunks put
 // the answer in the results more often on long documents (71% at 3,200
 // characters, 80% at 1,600, 85% at 1,200) and made no difference on short notes.
 const CHUNK_SIZE = 1600

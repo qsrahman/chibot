@@ -40,7 +40,7 @@ How chibot is tested and how to add tests. Part of the developer guide ([AGENTS.
   documents (`--docs`), a local model keeps them on the machine; `--effort none`
   (the default) matters, since a model that thinks takes minutes over this. A
   different corpus (the hybrid-retrieval and agentic-rag tutorials' notes) gave
-  the same direction on chunk size (PLAN.md, Phase 8). Add `--disable-console-intercept` to the `vitest run`
+  the same direction on chunk size (docs/PHASES.md, Phase 8). Add `--disable-console-intercept` to the `vitest run`
   command to see the tables of a passing run. With `RETRIEVAL_RERANK_URL`,
   `RETRIEVAL_RERANK_MODEL` (and `RETRIEVAL_RERANK_KEY`) it also scores keyword
   search, and the hybrid when an embedding endpoint is set, with and without a

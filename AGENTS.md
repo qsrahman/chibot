@@ -1,7 +1,8 @@
 # chibot — Developer Guide
 
 Guide for humans and coding agents working on this repo. Product scope and the
-phase roadmap live in [PLAN.md](PLAN.md). Usage lives in [README.md](README.md).
+phase roadmap live in [PLAN.md](PLAN.md) (the finished phases, as built, in
+[docs/PHASES.md](docs/PHASES.md)). Usage lives in [README.md](README.md).
 How a message becomes an answer lives in [TURN.md](TURN.md); adding a tool in
 [TOOLS.md](TOOLS.md); how to test in [TESTING.md](TESTING.md).
 
@@ -237,8 +238,12 @@ invariants, API quirks. No line-by-line narration.
 2. Before each commit: `pnpm typecheck && pnpm test && pnpm format:check`,
    plus `pnpm test:e2e` when the web app changes.
 3. After any change that affects features, architecture or conventions, update
-   **PLAN.md**, **README.md** and this guide as needed, and add an entry under
-   `[Unreleased]` in **CHANGELOG.md**
+   the document that owns it, not all of them: **README.md** for usage,
+   **DESIGN.md** for how the interface looks, **PLAN.md** only for goals,
+   decisions, architecture, the API, configuration or the roadmap, and this
+   guide for conventions. [docs/PHASES.md](docs/PHASES.md) records the finished
+   phases and is not updated. Add an entry under `[Unreleased]` in
+   **CHANGELOG.md**
    ([Keep a Changelog](https://keepachangelog.com/en/1.1.0/)).
 4. Each completed phase ends with a release commit (`chore: release vX.Y.0`).
    It bumps the minor version in `package.json` ([SemVer](https://semver.org/))

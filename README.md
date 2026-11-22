@@ -397,15 +397,33 @@ banner says so with a Retry button, and the page reconnects by itself once
   **Approve** or **Deny**, or send a new message to deny. Models also know
   today's date and the time to the quarter hour.
 - **Projects** (sidebar → **New project**) group chats with their own files
-  and instructions. On a project's page, add files (PDF, Word, text, notes,
-  code, data, including `Dockerfile`-style names; pick or drop them) or a whole folder, or write a note, or **mirror a folder** (files that come from folders are listed as a tree: folders open and close, **Expand all** and **Collapse all** do every one at once; the **Files** heading opens and closes the whole list, which starts closed) on this machine by its path (`~/notes` works, or **Browse** in the dialog to walk this machine's folders and pick one): the project's files then follow it, indexing only what changed, while chibot runs, and also when the page opens or you press **Sync now**, for folders that can't be watched, such as some network drives (files added by hand stay; **Stop mirroring** keeps the files; **Sync now** says which files it left out and why, such as types a project can't read, files over 50 MB, links or a file it can't read; hidden files and folders such as `.git` or `.obsidian`, and folders such as `node_modules`, `vendor` or `dist`, are always skipped without comment), retry a file that failed (a file already in the project is refused), and write instructions (preview first; **Suggest from files** drafts them with your chat model from the start of each file, for you to check); chats started there
-  search the files (by keywords, and by meaning with an embedding model),
-  read a whole file when asked about all of it, cite them under **Sources**,
-  and follow the instructions. Their "search past chats" looks in the
-  project's chats only. Project chats are listed
-  on their project's page; a chat's **…** menu moves it into a project or out.
-  Edit a project's name and one-line description, or delete it, from **…** next to its name; deleting it deletes
-  its chats and files.
+  and instructions. On a project's page you can:
+  - **Add files** (PDF, Word, text, notes, code, data, including
+    `Dockerfile`-style names; pick or drop them), a whole folder, or write a
+    note. A failed file can be retried (a file already in the project is
+    refused). Files that come from folders are listed as a tree: folders open
+    and close, **Expand all** and **Collapse all** do every one at once, and
+    the **Files** heading opens and closes the whole list, which starts closed.
+  - **Mirror a folder** on this machine by its path (`~/notes` works, or
+    **Browse** in the dialog to walk this machine's folders and pick one). The
+    project's files then follow it, indexing only what changed, while chibot
+    runs, and also when the page opens or you press **Sync now** (for folders
+    that can't be watched, such as some network drives). Files added by hand
+    stay; **Stop mirroring** keeps the files; **Sync now** says which files it
+    left out and why, such as types a project can't read, files over 50 MB,
+    links or a file it can't read. Hidden files and folders such as `.git` or
+    `.obsidian`, and folders such as `node_modules`, `vendor` or `dist`, are
+    always skipped without comment.
+  - **Write instructions** (preview first). **Suggest from files** drafts them
+    with your chat model from the start of each file, for you to check.
+  - Edit the project's name and one-line description, or delete it, from
+    **…** next to its name; deleting it deletes its chats and files.
+
+  Chats started there search the files (by keywords, and by meaning with an
+  embedding model), read a whole file when asked about all of it, cite them
+  under **Sources**, and follow the instructions. Their "search past chats"
+  looks in the project's chats only. Project chats are listed on their
+  project's page; a chat's **…** menu moves it into a project or out.
 - **Starting in a project:** under the message box of a new chat, **Project**
   picks the project the chat starts in (its instructions and files apply), as
   an alternative to opening the project's page first.
