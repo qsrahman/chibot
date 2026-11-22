@@ -8,7 +8,7 @@ const KEY = 'chibot.notify'
 
 const supported = () => typeof Notification !== 'undefined'
 
-export function notificationsOn(): boolean {
+function notificationsOn(): boolean {
   return (
     supported() &&
     readStored(KEY) === '1' &&

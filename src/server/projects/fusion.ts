@@ -5,7 +5,7 @@ export interface Hit {
 }
 
 /** The usual constant of reciprocal rank fusion. */
-export const RRF_K = 60
+const RRF_K = 60
 
 /**
  * Merges ranked lists into one by reciprocal rank fusion: a chunk scores

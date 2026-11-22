@@ -78,13 +78,6 @@ export const canSpeak = () =>
   typeof speechSynthesis !== 'undefined' &&
   typeof SpeechSynthesisUtterance !== 'undefined'
 
-/** Stops what is being read, if anything. */
-export function stopReading() {
-  if (reading === null) return
-  speechSynthesis.cancel()
-  set(null)
-}
-
 /** Reads `markdown` aloud as answer `key`, or stops if it is already being read. */
 export function toggleReading(key: string, markdown: string) {
   if (!canSpeak()) return

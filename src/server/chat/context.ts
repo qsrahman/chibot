@@ -142,7 +142,7 @@ export function buildContext(
 }
 
 /** Index of the first item in the newest `tokens` worth of `items`. */
-export function tailStart(items: StoredItem[], tokens: number): number {
+function tailStart(items: StoredItem[], tokens: number): number {
   let sum = 0
   for (let i = items.length - 1; i >= 0; i--) {
     sum += estimateTokens(items[i]!.data)

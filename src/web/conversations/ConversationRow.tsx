@@ -1,4 +1,4 @@
-import { useState, type ReactElement, type ReactNode } from 'react'
+import { useState } from 'react'
 import { NavLink } from 'react-router'
 import {
   Archive,
@@ -14,6 +14,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import type { ConversationListItem } from '../../shared/types.ts'
+import { MenuItem } from '../ui/MenuItem.tsx'
 import { exportUrl } from './api.ts'
 import { useAnchoredPopover } from '../ui/popover.ts'
 import { UNTITLED } from './useConversations.ts'
@@ -150,52 +151,5 @@ export function ConversationRow({
         </MenuItem>
       </div>
     </div>
-  )
-}
-
-/** A menu row: a button, or a download link when `download` is set. */
-/** A row in a "…" menu: an icon and a label, or a download link. */
-export function MenuItem({
-  icon,
-  danger,
-  onClick,
-  download,
-  children,
-}: {
-  icon: ReactElement
-  danger?: boolean
-  onClick: () => void
-  download?: string
-  children: ReactNode
-}) {
-  const content = (
-    <>
-      <span className="row-icon" aria-hidden>
-        {icon}
-      </span>
-      {children}
-    </>
-  )
-  const className = danger ? 'menu-item danger' : 'menu-item'
-  // The server names the file (Content-Disposition), so `download` is bare.
-  return download ? (
-    <a
-      className={className}
-      role="menuitem"
-      href={download}
-      download
-      onClick={onClick}
-    >
-      {content}
-    </a>
-  ) : (
-    <button
-      type="button"
-      className={className}
-      role="menuitem"
-      onClick={onClick}
-    >
-      {content}
-    </button>
   )
 }

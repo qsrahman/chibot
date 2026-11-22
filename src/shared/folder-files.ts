@@ -28,7 +28,7 @@ export function skipsPath(path: string): boolean {
 
 // Uploads are one request each; a folder bigger than this is probably a mistake.
 export const MAX_FOLDER_FILES = 1000
-export const MAX_FILE_SIZE = 50 * 1024 * 1024
+const MAX_FILE_SIZE = 50 * 1024 * 1024
 
 /**
  * Why a file found in a folder is not taken, in words for the person who

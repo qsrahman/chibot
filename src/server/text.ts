@@ -6,7 +6,7 @@ import { extractText, getDocumentProxy } from 'unpdf'
 import type { DocumentKind } from '../shared/documents.ts'
 
 /** A page's main text (Readability), or all of its text as a fallback. */
-export function htmlToText(html: string): { title: string; text: string } {
+function htmlToText(html: string): { title: string; text: string } {
   const { document } = parseHTML(html)
   const article = new Readability(document).parse()
   return {
@@ -33,7 +33,7 @@ const docxToText = async (data: Uint8Array) =>
   tidy((await mammoth.extractRawText({ buffer: Buffer.from(data) })).value)
 
 /** Collapses runs of spaces, and of blank lines into one. */
-export function tidy(text: string): string {
+function tidy(text: string): string {
   return text
     .replace(/[ \t ]+/g, ' ')
     .replace(/\s*\n\s*\n\s*/g, '\n\n')

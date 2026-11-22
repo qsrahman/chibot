@@ -2,8 +2,8 @@ import type { TurnErrorEvent } from '../../shared/types.ts'
 import type { ConversationListItem, Project } from '../../shared/types.ts'
 
 /** Chats and projects the new-chat page offers to go back to. */
-export const RECENT_CHATS = 3
-export const RECENT_PROJECTS = 2
+const RECENT_CHATS = 3
+const RECENT_PROJECTS = 2
 
 /**
  * The newest chats, from the sidebar's list (which has no archived ones):

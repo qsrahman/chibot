@@ -35,7 +35,7 @@ function useStoredChoice<T extends string>(
 }
 
 /** `reduced` or `full` overrides the system's reduced-transparency setting. */
-export const systemReducesTransparency = () =>
+const systemReducesTransparency = () =>
   matchMedia('(prefers-reduced-transparency: reduce)').matches
 
 export function useReducedTransparency() {

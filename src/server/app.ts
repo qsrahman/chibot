@@ -6,14 +6,20 @@ import { csrf } from 'hono/csrf'
 import type { Health } from '../shared/types.ts'
 import { readBuildId } from './build-id.ts'
 import type { Attachments } from './attachments.ts'
-import type { ChatService, Compactor } from './chat/index.ts'
+import {
+  conversationRoutes,
+  type ChatService,
+  type Compactor,
+  type FollowUpWriter,
+  type ModelRequests,
+  type TitleWriter,
+} from './chat/index.ts'
 import type { Config } from './config.ts'
-import type { ConversationSearch } from './conversations/index.ts'
-import type { ConversationStore } from './conversations/index.ts'
+import type {
+  ConversationSearch,
+  ConversationStore,
+} from './conversations/index.ts'
 import type { FileStore } from './file-store.ts'
-import type { InstructionWriter } from './projects/index.ts'
-import type { ModelRequests } from './chat/index.ts'
-import type { FollowUpWriter, TitleWriter } from './chat/index.ts'
 import type { ToolRegistry } from './tool-registry.ts'
 import {
   OAUTH_CALLBACK,
@@ -22,18 +28,18 @@ import {
   type McpServers,
 } from './mcp/index.ts'
 import { type MemoryStore } from './memory-store.ts'
-import type {
-  FolderWatcher,
-  ProjectIndex,
-  ProjectSync,
+import {
+  projectRoutes,
+  type FolderWatcher,
+  type InstructionWriter,
+  type ProjectIndex,
+  type ProjectStore,
+  type ProjectSync,
 } from './projects/index.ts'
-import type { ProjectStore } from './projects/index.ts'
 import type { SettingsStore } from './settings-store.ts'
 import type { Transcription } from './transcription.ts'
-import { conversationRoutes } from './chat/index.ts'
 import { fileRoutes } from './routes/files.ts'
 import { memoryRoutes } from './routes/memories.ts'
-import { projectRoutes } from './projects/index.ts'
 import { skillRoutes, type SkillStore } from './skills/index.ts'
 import { settingsRoutes } from './routes/settings.ts'
 import { notFound } from './routes/helpers.ts'

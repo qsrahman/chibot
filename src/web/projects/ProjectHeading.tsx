@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Ellipsis, Folder, Pencil, Trash2 } from 'lucide-react'
 import type { Project } from '../../shared/types.ts'
-import { MenuItem } from '../conversations/ConversationRow.tsx'
+import { MenuItem } from '../ui/MenuItem.tsx'
 import { ConfirmDialog } from '../ui/Dialog.tsx'
 import { useAnchoredPopover } from '../ui/popover.ts'
 import { ProjectDetailsDialog } from './ProjectDialogs.tsx'
