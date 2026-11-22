@@ -10,6 +10,7 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Changed
 
+- Code only: `chat/turns.ts` (691 lines) is split by job into `turns.ts` (grouping items into turns), `nextStep.ts`, `sources.ts`, `toolSummary.ts`, `toolImages.ts` and `toolJson.ts`. Behavior is unchanged.
 - The composer's **+** menu is 280 px wide (it was 384 px, widened by its longest hint); hints wrap, and the camera hint is shorter.
 
 ## [0.25.0] - 2026-11-21

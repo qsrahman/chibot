@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { citedNumbers } from './citations.ts'
-import { type Answer, type Source, sourceHost, sourcesOf } from './turns.ts'
+import { type Answer } from './turns.ts'
+import { type Source, sourceHost, sourcesOf } from './sources.ts'
 import { Summary } from '../ui/Summary.tsx'
 
 /**

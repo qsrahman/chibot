@@ -1,6 +1,7 @@
 import { Download } from 'lucide-react'
 import { opensViewer } from './ImageViewer.tsx'
-import { type Answer, imageInfo, imagesOf } from './turns.ts'
+import { type Answer } from './turns.ts'
+import { imageInfo, imagesOf } from './toolImages.ts'
 
 /** Images the answer's tools made, or placeholders while they're made. */
 export function AnswerImages({

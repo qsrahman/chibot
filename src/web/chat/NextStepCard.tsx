@@ -1,7 +1,7 @@
 // The follow-up an answer offers, as a card under it: what it would make and
 // a button that sends it as the next message.
 import { Sparkles } from 'lucide-react'
-import type { NextStep } from './turns.ts'
+import type { NextStep } from './nextStep.ts'
 
 export function NextStepCard({
   step,

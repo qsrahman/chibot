@@ -1,5 +1,5 @@
 import { sourceKey } from './sourcesContext.ts'
-import type { Source } from './turns.ts'
+import type { Source } from './sources.ts'
 
 /**
  * A citation is a link to one of the answer's sources whose text is only its

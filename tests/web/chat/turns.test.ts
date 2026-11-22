@@ -3,19 +3,22 @@ import type { ResponseInputItem } from 'openai/resources/responses/responses'
 import type { Compaction, StoredItem } from '../../../src/shared/types.ts'
 import {
   fileIds,
-  imageInfo,
-  imagesOf,
-  holdBackCard,
-  nextStepInText,
-  nextStepOf,
   newQuestion,
-  shownText,
-  toolPreview,
-  sourcesOf,
-  summarizeTool,
   toTurns,
   waitingCalls,
 } from '../../../src/web/chat/turns.ts'
+import { imageInfo, imagesOf } from '../../../src/web/chat/toolImages.ts'
+import {
+  holdBackCard,
+  nextStepInText,
+  nextStepOf,
+  shownText,
+} from '../../../src/web/chat/nextStep.ts'
+import {
+  toolPreview,
+  summarizeTool,
+} from '../../../src/web/chat/toolSummary.ts'
+import { sourcesOf } from '../../../src/web/chat/sources.ts'
 import { usage } from '../../server/fakes.ts'
 
 const item = (

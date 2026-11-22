@@ -3,7 +3,7 @@ import {
   citedNumbers,
   isCitationLabel,
 } from '../../../src/web/chat/citations.ts'
-import { sourceHost } from '../../../src/web/chat/turns.ts'
+import { sourceHost } from '../../../src/web/chat/sources.ts'
 
 const sources = [
   { url: 'https://a.test/x', title: 'A' },

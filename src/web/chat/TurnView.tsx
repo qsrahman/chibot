@@ -19,15 +19,9 @@ import { CopyButton, IconAction, VersionSwitcher } from './MessageActions.tsx'
 import { canSpeak, toggleReading, useReading } from './readAloud.ts'
 import { messageTime } from '../conversations/dates.ts'
 import { LiveContext, SourcesContext } from './sourcesContext.ts'
-import {
-  interrupted,
-  nextStepOf,
-  holdBackCard,
-  shownText,
-  sourcesOf,
-  type ToolActivity,
-  type Turn,
-} from './turns.ts'
+import { interrupted, type ToolActivity, type Turn } from './turns.ts'
+import { nextStepOf, holdBackCard, shownText } from './nextStep.ts'
+import { sourcesOf } from './sources.ts'
 import { NextStepCard } from './NextStepCard.tsx'
 import { NEXT_STEP_TOOL } from '../../shared/tools.ts'
 import { describeContext, describeUsage } from './usage.ts'

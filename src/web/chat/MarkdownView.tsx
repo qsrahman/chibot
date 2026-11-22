@@ -31,7 +31,7 @@ import { isCitationLabel } from './citations.ts'
 import { LiveContext, SourcesContext, sourceKey } from './sourcesContext.ts'
 import { useWrapCode } from '../ui/appearance.ts'
 import { countLines, fileName, isCollapsible, saveText } from './codeBlock.ts'
-import type { Source } from './turns.ts'
+import type { Source } from './sources.ts'
 
 const remarkPlugins = [remarkGfm, remarkMath, remarkHtmlBreaks]
 type Katex = typeof import('./katex.ts').rehypeKatex

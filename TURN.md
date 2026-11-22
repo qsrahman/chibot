@@ -130,7 +130,7 @@ provider's message (`explainApiError` says what a 429 means).
 outputs), shown in place of the turns it
 replaces. On `response.completed` (the answer is saved) or `chibot.approval` it
 re-reads the chat (`getConversation`) and shows it as `toTurns(items)`
-(`chat/turns.ts`), which also finds sources and waiting calls. Then:
+(`chat/turns.ts`, which also finds waiting calls; sources are in `chat/sources.ts`, the next-step card in `chat/nextStep.ts`, tool summaries and images in `chat/toolSummary.ts` and `chat/toolImages.ts`). Then:
 
 - a message queued while the answer streamed is sent (`useQueue`, `drain`);
 - Stop aborts the request, and the server keeps the partial answer;

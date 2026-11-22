@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { ArrowUpRight, FileText, Globe, MessageSquare } from 'lucide-react'
 import { Link } from 'react-router'
 import { useAnchoredPopover } from '../ui/popover.ts'
-import { sourceHost, type Source } from './turns.ts'
+import { sourceHost, type Source } from './sources.ts'
 
 const KIND_ICON = { chat: MessageSquare, file: FileText }
 const OPEN = { chat: 'Open chat', file: 'Open file' }

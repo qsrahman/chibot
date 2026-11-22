@@ -6,7 +6,8 @@ import { SourceLink } from './Sources.tsx'
 import { Summary } from '../ui/Summary.tsx'
 import { ToolInfoContext } from './toolInfo.ts'
 import { mcpToolName } from '../settings/mcp.ts'
-import { summarizeTool, toolPreview, type ToolActivity } from './turns.ts'
+import { type ToolActivity } from './turns.ts'
+import { summarizeTool, toolPreview } from './toolSummary.ts'
 
 /**
  * What a tool call shows while it runs, and once it's done: the words the

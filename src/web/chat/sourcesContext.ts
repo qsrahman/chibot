@@ -1,5 +1,5 @@
 import { createContext } from 'react'
-import type { Source } from './turns.ts'
+import type { Source } from './sources.ts'
 
 /** The sources of the answer being shown, so its links to them can say which is which. */
 export const SourcesContext = createContext<Source[]>([])
