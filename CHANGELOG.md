@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.26.1] - 2026-11-25
+
 ### Fixed
 
 - **Chats past the 200th** could be opened only through search: the sidebar stopped at 200. **Show more chats** at the bottom of the list now loads 200 more at a time, in the sidebar, in the archive dialog and on a project's page.
