@@ -133,3 +133,28 @@ test('the + menu is narrow, its hints wrap', async ({ page }) => {
   const box = await page.locator('.add-menu').boundingBox()
   expect(box?.width).toBeLessThanOrEqual(280)
 })
+
+test('the sidebar lists 200 chats and loads the older ones on request', async ({
+  page,
+  request,
+}) => {
+  test.setTimeout(120_000)
+  const made: string[] = []
+  try {
+    for (let i = 0; i < 205; i++) {
+      const created = await request.post('/api/conversations')
+      made.push(((await created.json()) as { id: string }).id)
+    }
+    await page.goto('/')
+    await appReady(page)
+    const rows = page.locator('.sidebar-list .sidebar-row')
+    const more = page.getByRole('button', { name: 'Show more chats' })
+    await expect(more).toBeVisible()
+    const first = await rows.count()
+    await more.click()
+    await expect(more).toHaveCount(0)
+    expect(await rows.count()).toBeGreaterThan(first)
+  } finally {
+    for (const id of made) await request.delete(`/api/conversations/${id}`)
+  }
+})

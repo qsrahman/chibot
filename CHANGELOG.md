@@ -6,6 +6,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ### Fixed
 
+- **Chats past the 200th** could be opened only through search: the sidebar stopped at 200. **Show more chats** at the bottom of the list now loads 200 more at a time.
+- **A call to a tool that isn't there** (the model still asking for `web_search`, which MCP servers replaced) now gets an error that names the tools it can use, so it carries on with those instead of failing the same way again.
 - **Send in the edit box** was greyed out until the text changed. An unchanged message can now be sent (Enter too), which asks again as a new version, for example after a failed answer.
 
 ## [0.26.0] - 2026-11-22

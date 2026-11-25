@@ -4,12 +4,22 @@ import type {
   ConversationPatch,
   ConversationWithItems,
 } from '../../shared/types.ts'
+import { CHAT_PAGE } from '../../shared/list.ts'
 import { JSON_HEADERS, remove, request, send } from '../http.ts'
 
-export const listConversations = ({ archived = false } = {}) =>
-  request<ConversationListItem[]>(
-    `/api/conversations${archived ? '?archived=1' : ''}`,
+export const listConversations = ({
+  archived = false,
+  limit = CHAT_PAGE,
+}: { archived?: boolean; limit?: number } = {}) => {
+  // The first page has the plain address; only a longer list names its size.
+  const query = new URLSearchParams({
+    ...(archived && { archived: '1' }),
+    ...(limit !== CHAT_PAGE && { limit: String(limit) }),
+  }).toString()
+  return request<ConversationListItem[]>(
+    `/api/conversations${query ? `?${query}` : ''}`,
   )
+}
 
 export const searchConversations = (q: string, signal?: AbortSignal) =>
   request<ConversationListItem[]>(

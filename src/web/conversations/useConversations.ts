@@ -1,4 +1,5 @@
-import { useCallback } from 'react'
+import { useCallback, useRef, useState } from 'react'
+import { CHAT_PAGE } from '../../shared/list.ts'
 import type { ConversationPatch } from '../../shared/types.ts'
 import {
   deleteConversation,
@@ -13,9 +14,22 @@ export const UNTITLED = 'New chat'
 
 /** The sidebar's conversation list and the actions that change it. */
 export function useConversations() {
+  // How many chats are loaded; "Show more" raises it. The loader stays the
+  // same function (reading the limit from a ref), so showing more keeps the
+  // list on screen instead of emptying it while it loads.
+  const limitRef = useRef(CHAT_PAGE)
+  // The limit the list on screen was loaded with (a button that waits for it
+  // would vanish while the next page loads).
+  const [loadedLimit, setLoadedLimit] = useState(CHAT_PAGE)
   const { data, error, reload, act } = useLoad(
-    useCallback(() => listConversations(), []),
+    useCallback(() => listConversations({ limit: limitRef.current }), []),
   )
+
+  const showMore = useCallback(async () => {
+    limitRef.current += CHAT_PAGE
+    await reload()
+    setLoadedLimit(limitRef.current)
+  }, [reload])
 
   const update = useCallback(
     (id: string, patch: ConversationPatch) =>
@@ -37,6 +51,9 @@ export function useConversations() {
     conversations: data ?? [],
     /** Whether the first load has finished (an empty list means none, not "not yet"). */
     loaded: data !== undefined,
+    /** A full page came back, so there may be older chats not loaded yet. */
+    hasMore: (data?.length ?? 0) >= loadedLimit,
+    showMore,
     error,
     refresh: reload,
     update,

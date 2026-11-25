@@ -5,7 +5,14 @@ import {
   useNavigate,
   useSearchParams,
 } from 'react-router'
-import { Keyboard, PanelLeft, Search, Settings, SquarePen } from 'lucide-react'
+import {
+  Ellipsis,
+  Keyboard,
+  PanelLeft,
+  Search,
+  Settings,
+  SquarePen,
+} from 'lucide-react'
 import type { ConversationListItem } from '../shared/types.ts'
 import { ArchivedDialog } from './conversations/ArchivedDialog.tsx'
 import { ConversationRow } from './conversations/ConversationRow.tsx'
@@ -236,6 +243,13 @@ export function Sidebar({
                 ))}
               </section>
             ))}
+            {conversations.hasMore && (
+              <SidebarButton
+                icon={<Ellipsis />}
+                label="Show more chats"
+                onClick={() => void conversations.showMore()}
+              />
+            )}
           </div>
         )}
 

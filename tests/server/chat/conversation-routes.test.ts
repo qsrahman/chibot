@@ -75,6 +75,19 @@ describe('conversation routes', () => {
     expect(res.status).toBe(400)
   })
 
+  it('lists a page of chats, and more when asked', async () => {
+    for (let i = 0; i < 205; i++) saved(`chat ${i}`)
+    const count = async (query = '') =>
+      ((await (await app.request(`/api/conversations${query}`)).json()) as [])
+        .length
+    expect(await count()).toBe(200)
+    expect(await count('?limit=400')).toBe(205)
+    expect(await count('?limit=3')).toBe(3)
+    // Nonsense falls back to a page; zero and negatives to one.
+    expect(await count('?limit=abc')).toBe(200)
+    expect(await count('?limit=0')).toBe(1)
+  })
+
   it('lists, searches and shows the archive', async () => {
     const a = saved('walrus facts')
     const b = saved('otter facts')

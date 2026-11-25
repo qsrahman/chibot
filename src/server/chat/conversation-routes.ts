@@ -1,3 +1,4 @@
+import { CHAT_LIST_MAX, CHAT_PAGE } from '../../shared/list.ts'
 import { Hono } from 'hono'
 import { messageText } from '../../shared/messages.ts'
 import {
@@ -48,8 +49,16 @@ export function conversationCrudRoutes({
   app.get('/api/conversations', (c) => {
     const q = c.req.query('q')?.trim()
     if (q) return c.json(search.conversations(q))
+    // How many to list: more than a page when the sidebar asked for more.
+    const asked = Number.parseInt(c.req.query('limit') ?? '', 10)
+    const limit = Number.isFinite(asked)
+      ? Math.min(Math.max(asked, 1), CHAT_LIST_MAX)
+      : CHAT_PAGE
     return c.json(
-      store.listConversations({ archived: c.req.query('archived') === '1' }),
+      store.listConversations({
+        archived: c.req.query('archived') === '1',
+        limit,
+      }),
     )
   })
 

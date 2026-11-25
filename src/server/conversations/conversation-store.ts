@@ -5,6 +5,7 @@ import type {
 } from 'openai/resources/responses/responses'
 import { messageText } from '../../shared/messages.ts'
 import type { ConversationExport } from '../../shared/export.ts'
+import { CHAT_PAGE } from '../../shared/list.ts'
 import { transaction } from '../database.ts'
 import { CompactionStore } from './compaction-store.ts'
 import type {
@@ -49,8 +50,6 @@ const SIBLING_IDS = `(
   )
 ) AS sibling_ids`
 
-const LIST_LIMIT = 200
-
 /** Conversations and their history trees, persisted in SQLite. */
 export class ConversationStore {
   readonly #db: DatabaseSync
@@ -93,9 +92,12 @@ export class ConversationStore {
   listConversations({
     archived = false,
     projectId = null,
+    limit = CHAT_PAGE,
   }: {
     archived?: boolean
     projectId?: string | null
+    /** At most this many, newest first (pinned ones ahead of them). */
+    limit?: number
   } = {}): ConversationListItem[] {
     const rows = this.#db
       .prepare(
@@ -103,11 +105,12 @@ export class ConversationStore {
           WHERE temporary = 0 AND (archived_at IS NOT NULL) = $archived
             AND ($archived OR project_id IS $projectId)
           ORDER BY pinned DESC, updated_at DESC
-          LIMIT ${LIST_LIMIT}`,
+          LIMIT $limit`,
       )
       .all({
         archived: archived ? 1 : 0,
         projectId,
+        limit,
       }) as unknown as ConversationRow[]
     return rows.map(toConversation)
   }
