@@ -12,11 +12,14 @@ export function ProjectChats({
   onUpdate,
   onRetitle,
   onDelete,
+  onShowMore,
 }: {
   chats: ConversationListItem[]
   onUpdate: (id: string, patch: ConversationPatch) => void
   onRetitle: (id: string) => void
   onDelete: (id: string) => void
+  /** Set while there may be older chats not loaded yet. */
+  onShowMore?: () => void
 }) {
   const [toDelete, setToDelete] = useState<ConversationListItem | null>(null)
   if (chats.length === 0) return null
@@ -35,6 +38,11 @@ export function ProjectChats({
           onRemoveFromProject={() => onUpdate(item.id, { projectId: null })}
         />
       ))}
+      {onShowMore && (
+        <button type="button" className="button" onClick={onShowMore}>
+          Show more chats
+        </button>
+      )}
       <DeleteChatDialog
         chat={toDelete}
         onDelete={onDelete}

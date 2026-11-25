@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { ArchiveRestore, Trash2 } from 'lucide-react'
 import type { ConversationListItem } from '../../shared/types.ts'
@@ -11,7 +11,7 @@ import { Dialog } from '../ui/Dialog.tsx'
 import { useToast } from '../ui/toast.tsx'
 import { DeleteChatDialog } from './DeleteChatDialog.tsx'
 import { UNTITLED } from './useConversations.ts'
-import { useLoad } from '../ui/useLoad.ts'
+import { useShowMore } from '../ui/useShowMore.ts'
 
 interface Props {
   open: boolean
@@ -29,8 +29,11 @@ export function ArchivedDialog({ open, onClose, onChanged, onDeleted }: Props) {
     data: archived = [],
     error,
     act,
-  } = useLoad(
-    useCallback(() => listConversations({ archived: true }), []),
+    hasMore,
+    showMore,
+  } = useShowMore(
+    (limit) => listConversations({ archived: true, limit }),
+    (list) => list.length,
     open,
   )
 
@@ -93,6 +96,15 @@ export function ArchivedDialog({ open, onClose, onChanged, onDeleted }: Props) {
           </li>
         ))}
       </ul>
+      {hasMore && (
+        <button
+          type="button"
+          className="button"
+          onClick={() => void showMore()}
+        >
+          Show more chats
+        </button>
+      )}
       <DeleteChatDialog
         chat={toDelete}
         onDelete={(id) => void remove(id)}

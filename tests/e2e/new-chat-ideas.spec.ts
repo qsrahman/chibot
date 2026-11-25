@@ -158,3 +158,58 @@ test('the sidebar lists 200 chats and loads the older ones on request', async ({
     for (const id of made) await request.delete(`/api/conversations/${id}`)
   }
 })
+
+test('the archive and a project page also load past 200 chats on request', async ({
+  page,
+  request,
+}) => {
+  test.setTimeout(180_000)
+  // A step that never matches fails in seconds, not at the end of the test.
+  page.setDefaultTimeout(15_000)
+  const made: string[] = []
+  const project = (await (
+    await request.post('/api/projects', { data: { name: 'Many chats' } })
+  ).json()) as { id: string }
+  try {
+    for (let i = 0; i < 205; i++) {
+      const inProject = await request.post('/api/conversations', {
+        data: { projectId: project.id },
+      })
+      made.push(((await inProject.json()) as { id: string }).id)
+    }
+    await page.goto(`/projects/${project.id}`)
+    await appReady(page)
+    const more = page.locator('.project-chats').getByRole('button', {
+      name: 'Show more chats',
+    })
+    await expect(more).toBeVisible()
+    await more.click()
+    await expect(more).toHaveCount(0)
+    await expect(page.locator('.project-chats .sidebar-row')).toHaveCount(205)
+
+    // The same chats, archived, in the archive dialog.
+    for (const id of made) {
+      await request.patch(`/api/conversations/${id}`, {
+        data: { archived: true, projectId: null },
+      })
+    }
+    await page.goto('/')
+    await appReady(page)
+    await page.getByRole('button', { name: 'Settings' }).click()
+    const settings = page.getByRole('dialog', { name: 'Settings' })
+    await settings.getByRole('button', { name: 'Data', exact: true }).click()
+    await settings
+      .getByRole('button', { name: 'Manage archived chats' })
+      .click()
+    const archivedMore = page
+      .getByRole('dialog', { name: 'Archived chats' })
+      .getByRole('button', { name: 'Show more chats' })
+    await expect(archivedMore).toBeVisible()
+    await archivedMore.click()
+    await expect(archivedMore).toHaveCount(0)
+    await expect(page.locator('.archived-row')).toHaveCount(205)
+  } finally {
+    for (const id of made) await request.delete(`/api/conversations/${id}`)
+    await request.delete(`/api/projects/${project.id}`)
+  }
+})

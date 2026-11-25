@@ -512,6 +512,8 @@ export function ChatPage({
           />
           {empty && projectHome && (
             <ProjectDetails
+              // Its list loads once per project: another project starts afresh.
+              key={projectHome}
               projectId={projectHome}
               onChatsChanged={onListChanged}
             />

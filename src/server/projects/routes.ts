@@ -18,7 +18,7 @@ import type { ProjectSync } from './project-sync.ts'
 import type { ProjectStore } from './project-store.ts'
 import { explainApiError } from '../api-errors.ts'
 import { NothingToSuggestFrom } from './instruction-writer.ts'
-import { json, notFound } from '../routes/helpers.ts'
+import { chatListLimit, json, notFound } from '../routes/helpers.ts'
 import { errorMessage } from '../../shared/errors.ts'
 
 export function projectRoutes({
@@ -54,7 +54,10 @@ export function projectRoutes({
     const contents: ProjectWithContents = {
       project,
       files: projects.files(project.id),
-      conversations: store.listConversations({ projectId: project.id }),
+      conversations: store.listConversations({
+        projectId: project.id,
+        limit: chatListLimit(c),
+      }),
     }
     return c.json(contents)
   })

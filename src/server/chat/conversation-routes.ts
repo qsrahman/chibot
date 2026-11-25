@@ -1,4 +1,3 @@
-import { CHAT_LIST_MAX, CHAT_PAGE } from '../../shared/list.ts'
 import { Hono } from 'hono'
 import { messageText } from '../../shared/messages.ts'
 import {
@@ -20,7 +19,7 @@ import type { FileStore } from '../file-store.ts'
 import type { ProjectStore } from '../projects/index.ts'
 import type { FollowUpWriter } from './follow-up-writer.ts'
 import type { TitleWriter } from './title-writer.ts'
-import { json, notFound } from '../routes/helpers.ts'
+import { chatListLimit, json, notFound } from '../routes/helpers.ts'
 
 /** Listing, creating, changing, deleting and opening chats, and branching them. */
 export function conversationCrudRoutes({
@@ -49,15 +48,10 @@ export function conversationCrudRoutes({
   app.get('/api/conversations', (c) => {
     const q = c.req.query('q')?.trim()
     if (q) return c.json(search.conversations(q))
-    // How many to list: more than a page when the sidebar asked for more.
-    const asked = Number.parseInt(c.req.query('limit') ?? '', 10)
-    const limit = Number.isFinite(asked)
-      ? Math.min(Math.max(asked, 1), CHAT_LIST_MAX)
-      : CHAT_PAGE
     return c.json(
       store.listConversations({
         archived: c.req.query('archived') === '1',
-        limit,
+        limit: chatListLimit(c),
       }),
     )
   })

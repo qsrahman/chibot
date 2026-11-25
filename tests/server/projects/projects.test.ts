@@ -84,6 +84,22 @@ describe('projects', () => {
     })
   })
 
+  it("lists a page of a project's chats, and more when asked", async () => {
+    const project = projects.create('Big')
+    for (let i = 0; i < 205; i++) {
+      store.createConversation({ projectId: project.id })
+    }
+    const count = async (query = '') =>
+      (
+        await call<ProjectWithContents>(
+          'GET',
+          `/api/projects/${project.id}${query}`,
+        )
+      ).body.conversations.length
+    expect(await count()).toBe(200)
+    expect(await count('?limit=300')).toBe(205)
+  })
+
   it('keeps project chats out of the main list, and moves chats', async () => {
     const project = projects.create('Trip')
     const { body: inProject } = await call<Conversation>(

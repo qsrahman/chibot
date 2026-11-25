@@ -5,12 +5,16 @@ import type {
   ProjectFile,
   ProjectWithContents,
 } from '../../shared/types.ts'
+import { CHAT_PAGE } from '../../shared/list.ts'
 import { remove, request, send, uploadFile } from '../http.ts'
 
 export const listProjects = () => request<Project[]>('/api/projects')
 
-export const getProject = (id: string) =>
-  request<ProjectWithContents>(`/api/projects/${id}`)
+export const getProject = (id: string, limit = CHAT_PAGE) =>
+  request<ProjectWithContents>(
+    // The first page of chats has the plain address.
+    `/api/projects/${id}${limit !== CHAT_PAGE ? `?limit=${limit}` : ''}`,
+  )
 
 export const createProject = (name: string) =>
   request<Project>('/api/projects', send('POST', { name }))

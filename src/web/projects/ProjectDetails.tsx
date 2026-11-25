@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   addProjectFile,
   getProject,
@@ -16,7 +16,7 @@ import {
   updateConversation,
 } from '../conversations/api.ts'
 import { keepFolderFiles, syncNotice } from './folderFiles.ts'
-import { useLoad } from '../ui/useLoad.ts'
+import { useShowMore } from '../ui/useShowMore.ts'
 import { ProjectChats } from './ProjectChats.tsx'
 import { ProjectFiles } from './ProjectFiles.tsx'
 import { ProjectInstructions } from './ProjectInstructions.tsx'
@@ -41,7 +41,12 @@ export function ProjectDetails({
     error,
     reload,
     act,
-  } = useLoad(useCallback(() => getProject(projectId), [projectId]))
+    hasMore,
+    showMore,
+  } = useShowMore(
+    (limit) => getProject(projectId, limit),
+    (loaded) => loaded.conversations.length,
+  )
   // What an add did or is doing (not an error): progress, files skipped.
   const [notice, setNotice] = useState<string | null>(null)
 
@@ -165,6 +170,7 @@ export function ProjectDetails({
       />
       <ProjectChats
         chats={contents.conversations}
+        onShowMore={hasMore ? () => void showMore() : undefined}
         onUpdate={(id, patch) =>
           void act(() => updateConversation(id, patch)).then(onChatsChanged)
         }

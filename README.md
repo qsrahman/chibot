@@ -315,7 +315,8 @@ banner says so with a Retry button, and the page reconnects by itself once
 - The first message gives the chat its own URL (`/c/…`). Reloading reopens it.
 - **Sidebar:** chats are grouped as Pinned, Today, Yesterday, Previous 7 days,
   Previous 30 days, then by month. The newest 200 are listed; **Show more
-  chats** at the bottom loads 200 more (older ones also turn up in search). Each gets a short title once its first
+  chats** at the bottom loads 200 more (older ones also turn up in search; the
+  archive and a project's chats work the same way). Each gets a short title once its first
   answer arrives. Hover a chat and click **…** to rename it, have the model
   **regenerate its title** (replacing any name you typed), pin, archive or
   delete it. The panel button collapses the sidebar to an icon rail, which is
