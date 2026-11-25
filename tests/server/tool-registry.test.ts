@@ -43,11 +43,12 @@ describe('ToolRegistry', () => {
 
   it('reports problems to the model instead of throwing', async () => {
     const registry = new ToolRegistry([new EchoTool()])
+    // It names what is there, so the model doesn't ask for the same thing again.
     expect(await registry.run(call('nope', '{}'), context)).toBe(
-      'Error: there is no tool named "nope".',
+      'Error: there is no tool named "nope".\nThe tools you can use: echo.',
     )
     expect(await registry.run(call('echo', '{}'), context, ['echo'])).toBe(
-      'Error: there is no tool named "echo".',
+      'Error: there is no tool named "echo".\nYou have no tools in this chat; answer without them.',
     )
     expect(await registry.run(call('echo', '{'), context)).toBe(
       'Error: the arguments are not valid JSON.',

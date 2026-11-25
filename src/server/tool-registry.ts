@@ -90,8 +90,19 @@ export class ToolRegistry {
     const { signal } = context
     if (signal?.aborted) return TOOL_STOPPED
     const tool = this.get(call.name)
-    if (!tool || disabled.includes(tool.name))
-      return `Error: there is no tool named "${call.name}".`
+    if (!tool || disabled.includes(tool.name)) {
+      // Say what is there, so the model uses that instead of asking again (a
+      // chat's history can still hold calls to tools that no longer exist).
+      const offered = this.tools
+        .map((t) => t.name)
+        .filter((name) => !disabled.includes(name))
+      return [
+        `Error: there is no tool named "${call.name}".`,
+        offered.length > 0
+          ? `The tools you can use: ${offered.join(', ')}.`
+          : 'You have no tools in this chat; answer without them.',
+      ].join('\n')
+    }
     let json: unknown
     try {
       json = JSON.parse(call.arguments)
