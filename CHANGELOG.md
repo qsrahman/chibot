@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- **Send in the edit box** was greyed out until the text changed. An unchanged message can now be sent (Enter too), which asks again as a new version, for example after a failed answer.
+
 ## [0.26.0] - 2026-11-22
 
 ### Added

@@ -255,7 +255,8 @@ focused on it.
   22 px radius, 10×16 px padding, max 70 % width, `white-space: pre-wrap`.
   On hover, **Copy**, **Edit** and (when edited) `< 2/3 >` appear below it,
   right-aligned. Edit opens an inline box (`--surface-muted`, bubble radius)
-  with Cancel and a primary Send.
+  with Cancel and a primary Send (enabled for any non-empty text, also the
+  unchanged message, which asks again as a new version).
 - *Assistant:* full-width Markdown with no background, 16/26 px text, 16 px
   between blocks.
 - *Action rows.* 32 px icon buttons with 18 px icons, muted

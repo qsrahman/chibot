@@ -334,7 +334,8 @@ function EditBox({
   onSend: (text: string) => void
 }) {
   const [text, setText] = useState(initial)
-  const canSend = text.trim() !== '' && text !== initial
+  // An unchanged message can be sent too: it asks again as a new version.
+  const canSend = text.trim() !== ''
   const touchOnly = useMediaQuery(TOUCH_ONLY)
 
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {

@@ -1366,3 +1366,22 @@ test('a code block is a grey card with its actions inside, not bare text', async
   expect(copy.x + copy.width).toBeLessThanOrEqual(box.x + box.width)
   expect(copy.y).toBeGreaterThanOrEqual(box.y)
 })
+
+test('an unchanged message can be sent from the edit box, as a new version', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await appReady(page)
+  await send(page, 'Again please')
+  await answered(page)
+  const first = turns(page).nth(0)
+  await first.hover()
+  await first.getByRole('button', { name: 'Edit message' }).click()
+  const send2 = page.getByRole('button', { name: 'Send', exact: true })
+  await expect(send2).toBeEnabled()
+  await send2.click()
+  await answered(page)
+  await expect(
+    turns(page).nth(0).locator('.user-actions .versions-count'),
+  ).toHaveText('2/2')
+})
