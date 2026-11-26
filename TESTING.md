@@ -79,6 +79,12 @@ How chibot is tested and how to add tests. Part of the developer guide ([AGENTS.
   time, and to test something that happens after a delay (a toast going away),
   `page.clock.install()` and `fastForward` instead of `waitForTimeout`. First run:
   `pnpm exec playwright install chromium`.
+- Other browsers: `pnpm test:e2e:all` runs the specs in Chromium, then Firefox,
+  then WebKit, each run with its own server and fresh data (first run:
+  `pnpm exec playwright install firefox webkit`). `pnpm test:e2e` stays
+  Chromium only. Fake devices and permissions are set per project in
+  `playwright.config.ts`; specs that depend on Chromium-only behaviour have not
+  yet been sorted out for the others.
 
 ## Performance
 

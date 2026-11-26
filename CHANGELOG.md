@@ -4,6 +4,10 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Added
+
+- Testing only: Firefox and WebKit Playwright projects, run with `pnpm test:e2e:all`. `pnpm test:e2e` still runs Chromium alone. The specs have not yet been run or fixed in the other two browsers.
+
 ## [0.26.1] - 2026-11-25
 
 ### Fixed

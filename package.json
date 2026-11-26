@@ -19,7 +19,8 @@
     "test:watch": "vitest",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --project=chromium",
+    "test:e2e:all": "playwright test --project=chromium && playwright test --project=firefox && playwright test --project=webkit",
     "seed:perf": "node scripts/seed-perf.ts",
     "measure:chat": "node scripts/measure-chat.ts",
     "release": "node scripts/release.ts"

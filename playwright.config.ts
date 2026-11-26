@@ -11,18 +11,49 @@ export default defineConfig({
   // One server and database shared by all tests.
   workers: 1,
   reporter: 'list',
-  use: {
-    baseURL: `http://127.0.0.1:${PORT}`,
-    ...devices['Desktop Chrome'],
-    permissions: ['clipboard-read', 'clipboard-write', 'microphone', 'camera'],
-    // A fake microphone (a tone) for voice input.
-    launchOptions: {
-      args: [
-        '--use-fake-device-for-media-stream',
-        '--use-fake-ui-for-media-stream',
-      ],
+  use: { baseURL: `http://127.0.0.1:${PORT}` },
+  // `pnpm test:e2e` runs Chromium; `pnpm test:e2e:all` runs each browser in
+  // turn, as separate runs so each starts with its own server and fresh data.
+  // Permissions and fake devices are named differently in each browser.
+  projects: [
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        permissions: [
+          'clipboard-read',
+          'clipboard-write',
+          'microphone',
+          'camera',
+        ],
+        // A fake microphone (a tone) for voice input.
+        launchOptions: {
+          args: [
+            '--use-fake-device-for-media-stream',
+            '--use-fake-ui-for-media-stream',
+          ],
+        },
+      },
     },
-  },
+    {
+      name: 'firefox',
+      use: {
+        ...devices['Desktop Firefox'],
+        launchOptions: {
+          firefoxUserPrefs: {
+            'media.navigator.streams.fake': true,
+            'media.navigator.permission.disabled': true,
+            // Reading and writing the clipboard without a prompt.
+            'dom.events.testing.asyncClipboard': true,
+          },
+        },
+      },
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+    },
+  ],
   webServer: [
     {
       command: 'node tests/e2e/fake-openai.ts',
