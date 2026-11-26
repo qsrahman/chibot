@@ -15,9 +15,17 @@ export async function droppedFiles(data: DataTransfer): Promise<File[]> {
     const entry = item.webkitGetAsEntry()
     return entry ? [entry] : []
   })
-  if (entries.length === 0) return [...data.files]
-  const found = await Promise.all(entries.map((entry) => walk(entry, '')))
-  return found.flat()
+  const plain = [...data.files]
+  if (entries.length === 0) return plain
+  try {
+    const found = await Promise.all(entries.map((entry) => walk(entry, '')))
+    return found.flat()
+  } catch (err) {
+    // WebKit can hand out an entry it then can't read; dropped files (not
+    // folders) are still in the plain list.
+    if (entries.some((entry) => entry.isDirectory)) throw err
+    return plain
+  }
 }
 
 async function walk(entry: FileSystemEntry, parent: string): Promise<File[]> {
