@@ -59,11 +59,16 @@ export function SettingsDialog({
   }, [open, startTab])
 
   // On a phone the tabs are a scrolling row: keep the current one in sight.
+  // A frame later, as Safari scrolls to the button it focuses on opening (the
+  // first tab) after this effect has run.
   useEffect(() => {
     if (!open) return
-    tabsRef.current
-      ?.querySelector('[aria-current="page"]')
-      ?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    const frame = requestAnimationFrame(() =>
+      tabsRef.current
+        ?.querySelector('[aria-current="page"]')
+        ?.scrollIntoView({ block: 'nearest', inline: 'nearest' }),
+    )
+    return () => cancelAnimationFrame(frame)
   }, [open, tab])
   const current = settings.settings
 
