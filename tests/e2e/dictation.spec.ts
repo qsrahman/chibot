@@ -1,10 +1,18 @@
 import { expect, test } from '@playwright/test'
 import { appReady, FAKE_OPENAI } from './helpers.ts'
 
+// Playwright's WebKit has no fake microphone, so nothing can be recorded there.
+const noMicrophone = (browserName: string) =>
+  test.skip(browserName === 'webkit', 'No fake microphone in WebKit')
+
 // Phase 9: voice input, with Chromium's fake microphone and the fake
 // server's transcription.
 
-test('dictates into the message box at the cursor', async ({ page }) => {
+test('dictates into the message box at the cursor', async ({
+  page,
+  browserName,
+}) => {
+  noMicrophone(browserName)
   await page.goto('/')
   await appReady(page)
   const box = page.getByRole('textbox', { name: 'Message' })
@@ -27,7 +35,9 @@ test('dictates into the message box at the cursor', async ({ page }) => {
 
 test('a shortcut starts and stops dictation, also while typing', async ({
   page,
+  browserName,
 }) => {
+  noMicrophone(browserName)
   await page.goto('/')
   await appReady(page)
   const box = page.getByRole('textbox', { name: 'Message' })
@@ -88,7 +98,9 @@ test('says why voice input is off without transcription', async ({ page }) => {
 
 test('ignores a second dictation click while recording starts', async ({
   page,
+  browserName,
 }) => {
+  noMicrophone(browserName)
   await page.goto('/')
   await appReady(page)
   const box = page.getByRole('textbox', { name: 'Message' })
@@ -112,7 +124,9 @@ for (const [device, viewport] of [
 ] as const) {
   test(`shows how long it has recorded and how loud (${device})`, async ({
     page,
+    browserName,
   }) => {
+    noMicrophone(browserName)
     await page.setViewportSize(viewport)
     await page.goto('/')
     await appReady(page)

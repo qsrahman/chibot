@@ -74,7 +74,9 @@ test('the outline jumps to a message, and only a longer chat has one', async ({
   const id = await longChat(page, TURNS)
   await page.goto(`/c/${id}`)
   await appReady(page)
-  await page.getByRole('button', { name: 'Message outline' }).click()
+  // Opened with the keyboard: Safari doesn't focus a button that is clicked,
+  // so there would be nothing to give focus back to.
+  await page.getByRole('button', { name: 'Message outline' }).press('Enter')
   const menu = page.getByRole('menu', { name: 'Your messages' })
   await expect(menu.getByRole('menuitem')).toHaveCount(TURNS)
   // It opens on the message in view: the newest, at the end of the chat.
@@ -83,7 +85,7 @@ test('the outline jumps to a message, and only a longer chat has one', async ({
     'aria-current',
     'true',
   )
-  await menu.getByRole('menuitem', { name: '3 Question 3' }).click()
+  await menu.getByRole('menuitem', { name: '3 Question 3' }).press('Enter')
   await expect(menu).toBeHidden()
   await expect(
     page.locator('.thread').getByText('Question 3', { exact: true }),

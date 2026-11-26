@@ -121,8 +121,10 @@ test('applies reasoning effort and custom instructions', async ({ page }) => {
 
 test('shows the model thinking, live and after a reload', async ({ page }) => {
   await page.goto('/')
-  await send(page, 'Please think first')
+  // Held mid-thought, so the label can be seen however fast the browser is.
+  await send(page, 'Please think first, then ponder')
   await expect(page.getByText('Thinking…')).toBeVisible()
+  await page.request.post(`${FAKE_OPENAI}/debug/release`)
   await answered(page)
 
   const thoughts = turns(page).first().locator('.thoughts')

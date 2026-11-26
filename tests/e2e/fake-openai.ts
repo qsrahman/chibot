@@ -3,7 +3,7 @@
 // contains "slow" streams a long answer slowly (to act mid-answer), "hold"
 // streams its first word and waits there until POST /debug/release (so a test
 // can act mid-answer without racing a timer), "think"
-// first streams a reasoning summary, and "compact" returns a compaction item.
+// first streams a reasoning summary ("ponder" holds it mid-thought), and "compact" returns a compaction item.
 // "offer-next-step" ends the answer with a next-step card, "next-step-as-text"
 // with the same card written out as text (as a model that does not call the
 // tool does).
@@ -388,7 +388,7 @@ app.post('/v1/responses', async (c) => {
       stream.writeSSE({ event: event.type, data: JSON.stringify(event) })
     await send({ type: 'response.created', response: { id, output: [] } })
     if (thinking) {
-      for (const word of THOUGHT.split(/(?= )/)) {
+      for (const [i, word] of THOUGHT.split(/(?= )/).entries()) {
         await send({
           type: 'response.reasoning_summary_text.delta',
           item_id: reasoning.id,
@@ -396,6 +396,9 @@ app.post('/v1/responses', async (c) => {
           summary_index: 0,
           delta: word,
         })
+        // "ponder" waits mid-thought, for a test that looks while it thinks
+        // (held at once, so a release sent on seeing the thought finds it).
+        if (i === 0 && question.includes('ponder')) await hold()
         await stream.sleep(50)
       }
     }

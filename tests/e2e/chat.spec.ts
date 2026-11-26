@@ -425,7 +425,11 @@ test('says when chibot can’t be reached, and recovers when it can', async ({
     route.abort('connectionrefused'),
   )
   await page.reload()
-  const note = page.getByRole('alert').filter({ hasText: 'Can’t reach chibot' })
+  // The sidebar's own note (the banner says it too, once it has noticed).
+  const note = page
+    .locator('nav.sidebar')
+    .getByRole('alert')
+    .filter({ hasText: 'Can’t reach chibot' })
   await expect(note).toBeVisible()
   await expect(note).toHaveCount(1)
   await page.unroute('**/api/conversations')

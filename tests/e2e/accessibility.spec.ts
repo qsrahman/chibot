@@ -108,7 +108,10 @@ test('the search dialog says when nothing matches', async ({ page }) => {
   await expect(search).not.toHaveAttribute('aria-activedescendant', /.+/)
 })
 
-test('text follows the browser’s font size setting', async ({ page }) => {
+test('text follows the browser’s font size setting', async ({
+  page,
+  browserName,
+}) => {
   await page.goto('/')
   await appReady(page)
   await send(page, 'Hello there')
@@ -129,7 +132,7 @@ test('text follows the browser’s font size setting', async ({ page }) => {
         sidebarRow: size('nav.sidebar .sidebar-row'),
         disclaimer: size('.disclaimer'),
         userMessage: size('.message.user p'),
-        answerLine: line('.message.assistant'),
+        answerLine: line('.message.assistant .markdown'),
         rootLine: line('body'),
       }
     })
@@ -143,6 +146,9 @@ test('text follows the browser’s font size setting', async ({ page }) => {
   await page.addStyleTag({ content: ':root { font-size: 150% !important }' })
   const large = await measure()
   for (const [name, size] of Object.entries(large)) {
+    // WebKit doesn't redo the body's `rem` line height when the root's size
+    // changes under a loaded page, as it would for the real setting.
+    if (browserName === 'webkit' && name === 'rootLine') continue
     expect(size / normal[name as keyof typeof normal], name).toBeCloseTo(1.5, 2)
   }
 })

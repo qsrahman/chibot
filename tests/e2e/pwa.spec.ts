@@ -47,7 +47,11 @@ test('has a manifest with icons, linked from the page', async ({ page }) => {
   expect(touch.ok()).toBe(true)
 })
 
-test('Chromium reads the manifest without complaint', async ({ page }) => {
+test('Chromium reads the manifest without complaint', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium', 'Reads the manifest over CDP')
   await page.goto('/')
   await appReady(page)
   // (Headless Chromium does not judge installability, but it does parse.)

@@ -4,9 +4,16 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+### Fixed
+
+- **Scrolling up during a streaming answer in Safari** could be undone: if more text arrived before the scroll registered, the view jumped back to the end. Turning the wheel up now stops following at once.
+- **Settings on a phone in Safari** opened with the selected tab scrolled out of sight (the first tab was shown instead); it now scrolls to the selected one.
+- **A dropped file WebKit can't read as a folder entry** is added from the drop's plain file list instead of being silently ignored.
+- Testing: the browser specs run in Firefox and WebKit. Playwright's Firefox gets a temporary home on macOS (macOS 27 otherwise stops it launching); specs that need a fake microphone, camera or Chromium's protocol are skipped where those don't exist, and several that raced or relied on Chromium behaviour are fixed.
+
 ### Added
 
-- Testing only: Firefox and WebKit Playwright projects, run with `pnpm test:e2e:all`. `pnpm test:e2e` still runs Chromium alone. The specs have not yet been run or fixed in the other two browsers.
+- Testing only: Firefox and WebKit Playwright projects, run with `pnpm test:e2e:all`. `pnpm test:e2e` still runs Chromium alone.
 
 ## [0.26.1] - 2026-11-25
 

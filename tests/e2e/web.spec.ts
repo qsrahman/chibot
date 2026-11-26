@@ -18,6 +18,7 @@ test.afterEach(async ({ page }) => {
 
 test('creates an image, keeps it, and edits it', async ({ page }) => {
   await page.goto('/')
+  await appReady(page)
   await send(page, 'Please draw a robot')
   await answered(page)
   const image = turns(page).first().locator('.image img')

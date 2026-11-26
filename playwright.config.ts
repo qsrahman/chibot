@@ -1,8 +1,23 @@
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { defineConfig, devices } from '@playwright/test'
 
 const FAKE_OPENAI_PORT = 4010
 const PORT = 4011
 const FAKE_V1 = `http://127.0.0.1:${FAKE_OPENAI_PORT}/v1`
+
+// Playwright's Firefox reads ~/Library/Application Support/Firefox even with
+// its own profile, and macOS 27 guards that folder, so it exits with "Could
+// not find profile folder". A home of its own (for Firefox only) gets past it
+// without giving the terminal Full Disk Access (microsoft/playwright#42768).
+const firefoxEnv =
+  process.platform === 'darwin'
+    ? {
+        ...(process.env as Record<string, string>),
+        CFFIXED_USER_HOME: mkdtempSync(join(tmpdir(), 'chibot-firefox-')),
+      }
+    : undefined
 
 // End-to-end tests: a production build of chibot against a fake
 // OpenAI-compatible server (tests/e2e/fake-openai.ts), with fresh data.
@@ -40,6 +55,7 @@ export default defineConfig({
       use: {
         ...devices['Desktop Firefox'],
         launchOptions: {
+          env: firefoxEnv,
           firefoxUserPrefs: {
             'media.navigator.streams.fake': true,
             'media.navigator.permission.disabled': true,
@@ -51,7 +67,8 @@ export default defineConfig({
     },
     {
       name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      // No fake microphone or camera here, so the specs that record skip it.
+      use: { ...devices['Desktop Safari'], permissions: ['clipboard-read'] },
     },
   ],
   webServer: [

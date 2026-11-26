@@ -83,8 +83,13 @@ How chibot is tested and how to add tests. Part of the developer guide ([AGENTS.
   then WebKit, each run with its own server and fresh data (first run:
   `pnpm exec playwright install firefox webkit`). `pnpm test:e2e` stays
   Chromium only. Fake devices and permissions are set per project in
-  `playwright.config.ts`; specs that depend on Chromium-only behaviour have not
-  yet been sorted out for the others.
+  `playwright.config.ts`; specs that need what only Chromium has (a fake
+  microphone or camera, its DevTools protocol) skip elsewhere. Two things to
+  keep in mind when writing one: Safari does not focus a button that is
+  clicked (use the keyboard to check where focus returns), and a made-up
+  `ClipboardEvent` carries no data in Firefox. On macOS, Firefox gets a
+  temporary home (`CFFIXED_USER_HOME`), without which macOS 27 stops it from
+  starting.
 
 ## Performance
 

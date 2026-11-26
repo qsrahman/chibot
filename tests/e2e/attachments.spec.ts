@@ -121,9 +121,10 @@ test('attaches pasted images', async ({ page }) => {
       data.items.add(
         new File([new Uint8Array(bytes)], 'image.png', { type: 'image/png' }),
       )
-      box.dispatchEvent(
-        new ClipboardEvent('paste', { clipboardData: data, bubbles: true }),
-      )
+      // Firefox ignores `clipboardData` given to a made-up ClipboardEvent.
+      const paste = new Event('paste', { bubbles: true, cancelable: true })
+      Object.defineProperty(paste, 'clipboardData', { value: data })
+      box.dispatchEvent(paste)
     },
     [...PNG],
   )
@@ -300,7 +301,11 @@ test('does not send an empty message after removing a queued file', async ({
   ).toBeVisible()
   await page.getByRole('button', { name: 'Remove notes.md' }).click()
 
-  await expect(page.getByRole('button', { name: 'Send' })).toBeVisible()
+  // The box is empty again: the mic is its button, and nothing is waiting.
+  await expect(page.getByRole('button', { name: 'Dictate' })).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Sending when the files are uploaded' }),
+  ).toHaveCount(0)
   await page.waitForTimeout(1000)
   await expect(turns(page)).toHaveCount(0)
   await expect(page).toHaveURL(/\/$/)
@@ -360,7 +365,11 @@ test('a draft stays with its chat', async ({ page }) => {
   await expect(chips.getByText('notes.md')).toBeVisible()
 })
 
-test('takes a photo with the camera and attaches it', async ({ page }) => {
+test('takes a photo with the camera and attaches it', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName === 'webkit', 'Playwright’s WebKit has no fake camera')
   await page.goto('/')
   await appReady(page)
   await page.getByRole('button', { name: 'Add files and more' }).click()

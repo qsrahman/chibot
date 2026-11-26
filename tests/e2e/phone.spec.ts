@@ -53,7 +53,9 @@ test('the drawer takes focus, shuts out the page behind it, and closes on Escape
   const drawer = page.locator('nav.sidebar')
   await expect(page.locator('main')).toHaveJSProperty('inert', false)
 
-  await open.click()
+  // With the keyboard: Safari doesn't focus a clicked button, so focus
+  // would have nowhere to return to.
+  await open.press('Enter')
   await expect(drawer).toBeVisible()
   await expect(page.locator('main')).toHaveJSProperty('inert', true)
   await expect(drawer.locator(':focus')).toHaveCount(1)
@@ -274,13 +276,16 @@ test.describe('on a touch screen', () => {
     // The drawer is still open behind it.
     await page.getByRole('button', { name: 'Settings', exact: true }).click()
     // The row scrolled to the selected tab, which is last.
-    const inView = await tabs.evaluate((row) => {
-      const current = row.querySelector('[aria-current="page"]')!
-      const a = row.getBoundingClientRect()
-      const b = current.getBoundingClientRect()
-      return b.left >= a.left - 1 && b.right <= a.right + 1
-    })
-    expect(inView).toBe(true)
+    await expect
+      .poll(() =>
+        tabs.evaluate((row) => {
+          const current = row.querySelector('[aria-current="page"]')!
+          const a = row.getBoundingClientRect()
+          const b = current.getBoundingClientRect()
+          return b.left >= a.left - 1 && b.right <= a.right + 1
+        }),
+      )
+      .toBe(true)
   })
 })
 
