@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.26.2] - 2026-11-26
+
 ### Fixed
 
 - **Scrolling up during a streaming answer in Safari** could be undone: if more text arrived before the scroll registered, the view jumped back to the end. Turning the wheel up now stops following at once.
