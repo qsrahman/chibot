@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type UIEvent } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type UIEvent,
+  type WheelEvent,
+} from 'react'
 import { REDUCED_MOTION } from '../ui/useMediaQuery.ts'
 
 /** How long after the thread got shorter a scroll up is taken for the browser's own. */
@@ -65,6 +71,18 @@ export function useScrollFollow(
     inputAtRef.current = performance.now()
   }
 
+  // A wheel turned up leaves the end at once: if more of the answer arrives
+  // before the scroll event does, following would put the view back and the
+  // event would report it still at the end (Safari). Scrolling to the end
+  // again, as ever, resumes it. (With ctrl the wheel zooms.)
+  const onWheel = (e: WheelEvent<HTMLElement>) => {
+    markInput()
+    const el = e.currentTarget
+    if (e.deltaY < 0 && !e.ctrlKey && el.scrollHeight > el.clientHeight) {
+      followRef.current = false
+    }
+  }
+
   return {
     endRef,
     threadRef,
@@ -73,7 +91,7 @@ export function useScrollFollow(
     following,
     /** Spread on the scrolling list, with `onScroll`: they tell a scroll the user made from the layout's. */
     inputProps: {
-      onWheel: markInput,
+      onWheel,
       onTouchMove: markInput,
       onKeyDown: markInput,
       onPointerDown: markInput,
