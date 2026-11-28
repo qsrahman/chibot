@@ -30,10 +30,21 @@ export function skipsPath(path: string): boolean {
 export const MAX_FOLDER_FILES = 1000
 const MAX_FILE_SIZE = 50 * 1024 * 1024
 
+// Data and settings files named for what they hold, since their text would be
+// sent to the model and embedding endpoints: secrets.yaml, aws-credentials.json,
+// Google's client_secret_*.json and service account keys. Only these types, so a
+// document or code about secrets (secrets.md, credentials.ts) is still taken.
+const SECRET_NAME =
+  /^(client_secret.*\.json|service[-_]?account.*\.json|([\w.-]*[-_.])?(secrets?|credentials?|passwords?)(\.[\w-]+)?\.(json|ya?ml|toml|ini|xml|properties|conf|cfg|txt|csv|tsv))$/i
+// Written by tools: long, and no help in answering anything.
+const GENERATED_NAME =
+  /^(package-lock\.json|npm-shrinkwrap\.json|pnpm-lock\.yaml)$|\.min\.(js|mjs|cjs|css)$/i
+
 /**
  * Why a file found in a folder is not taken, in words for the person who
  * wonders where it went, or `null` when it is: a type projects read, not
- * hidden, outside folders like node_modules (or hidden ones), and not huge.
+ * hidden, outside folders like node_modules (or hidden ones), not named as
+ * secrets or generated, and not huge.
  * `path` is relative to the folder, with `/` between its parts.
  */
 export function whyLeftOut(path: string, size: number): string | null {
@@ -43,8 +54,11 @@ export function whyLeftOut(path: string, size: number): string | null {
   ) {
     return 'in a folder that is skipped'
   }
-  if (isHidden(parts.at(-1)!)) return 'a hidden file'
+  const name = parts.at(-1)!
+  if (isHidden(name)) return 'a hidden file'
   if (documentKind(path) === null) return "a type projects can't read"
+  if (SECRET_NAME.test(name)) return 'its name says it may hold secrets'
+  if (GENERATED_NAME.test(name)) return 'a lock or minified file'
   if (size > MAX_FILE_SIZE) return 'larger than 50 MB'
   return null
 }

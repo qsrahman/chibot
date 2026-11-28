@@ -247,7 +247,8 @@ export function FolderDialog({
           The project's files will match this folder: new and changed files are
           indexed again, deleted ones are removed. Files you add by hand stay.
           Hidden files and folders, links, files of a type projects can't read,
-          and folders such as node_modules, build and dist, are left out.
+          lock and minified files, files named as secrets, and folders such as
+          node_modules, build and dist, are left out.
         </p>
         <div className="folder-input-row">
           <input

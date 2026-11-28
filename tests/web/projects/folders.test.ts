@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { skipsPath } from '../../../src/shared/folder-files.ts'
+import { skipsPath, whyLeftOut } from '../../../src/shared/folder-files.ts'
 import {
   keepFolderFiles,
   MAX_FOLDER_FILES,
@@ -74,6 +74,55 @@ describe('skipping what a folder holds that no one added it for', () => {
     }
     for (const path of ['a.md', 'docs/guide.md', 'my.notes/a.md', '']) {
       expect(skipsPath(path), path).toBe(false)
+    }
+  })
+})
+
+describe('skipping secret and generated files', () => {
+  it('leaves out files named for secrets, saying why', () => {
+    for (const path of [
+      'secrets.yaml',
+      'config/secret.json',
+      'app.secrets.yml',
+      'aws-credentials.json',
+      'Credentials.JSON',
+      'secrets.prod.toml',
+      'passwords.csv',
+      'client_secret_123.apps.json',
+      'service-account-key.json',
+      'serviceAccountKey.json',
+    ]) {
+      expect(whyLeftOut(path, 1), path).toBe(
+        'its name says it may hold secrets',
+      )
+    }
+  })
+
+  it('leaves out lock and minified files', () => {
+    for (const path of [
+      'package-lock.json',
+      'web/pnpm-lock.yaml',
+      'npm-shrinkwrap.json',
+      'static/app.min.js',
+      'static/site.MIN.css',
+    ]) {
+      expect(whyLeftOut(path, 1), path).toBe('a lock or minified file')
+    }
+  })
+
+  it('keeps documents, code and look-alike names', () => {
+    for (const path of [
+      'secrets.md',
+      'credentials.ts',
+      'secretary-notes.txt',
+      'nosecrets.json',
+      'docs/password-policy.md',
+      'secrets/readme.md',
+      'package.json',
+      'admin.js',
+      'minutes.min.md',
+    ]) {
+      expect(whyLeftOut(path, 1), path).toBeNull()
     }
   })
 })

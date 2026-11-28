@@ -413,7 +413,12 @@ banner says so with a Retry button, and the page reconnects by itself once
     that can't be watched, such as some network drives). Files added by hand
     stay; **Stop mirroring** keeps the files; **Sync now** says which files it
     left out and why, such as types a project can't read, files over 50 MB,
-    links or a file it can't read. Hidden files and folders such as `.git` or
+    links or a file it can't read. It also leaves out lock and minified files
+    (`package-lock.json`, `*.min.js`) and data or settings files named as
+    secrets (`secrets.yaml`, `credentials.json`, `client_secret_*.json`), so
+    their text isn't sent to a model; add one by hand if you do want it. That
+    goes by name only: a key inside another file is not detected. Folder uploads
+    skip the same files. Hidden files and folders such as `.git` or
     `.obsidian`, and folders such as `node_modules`, `vendor` or `dist`, are
     always skipped without comment.
   - **Write instructions** (preview first). **Suggest from files** drafts them
