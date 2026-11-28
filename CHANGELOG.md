@@ -4,6 +4,8 @@ All notable changes to the codebase are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.26.3] - 2026-11-28
+
 ### Changed
 
 - **Project folders leave out secret and generated files**, when mirrored or uploaded: data and settings files named as secrets (`secrets.yaml`, `credentials.json`, `client_secret_*.json`, service account keys), and lock and minified files. A mirrored project that already has such a file drops it at its next sync; add it by hand to keep it. Files are judged by name only.
